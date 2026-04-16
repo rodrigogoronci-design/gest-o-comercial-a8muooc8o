@@ -7,34 +7,70 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useToast } from '@/hooks/use-toast'
 import useAppStore from '@/stores/main'
-import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
+import { formatCurrency, formatCNPJ } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 
 const PLANS = [
-  { id: 'tms-50', name: 'TMS-50', limit: '50', price: 399.9 },
-  { id: 'tms-100', name: 'TMS-100', limit: '100', price: 499.9 },
-  { id: 'tms-250', name: 'TMS-250', limit: '250', price: 699.9 },
-  { id: 'tms-500', name: 'TMS-500', limit: '500', price: 999.9 },
-  { id: 'tms-1000', name: 'TMS-1000', limit: '1000', price: 1499.9 },
-  { id: 'tms-ilimitado', name: 'TMS-ILIMITADO', limit: 'Ilimitado', price: 2499.9 },
+  { id: 'tms-50', name: 'TMS 50', limit: 'De 0 à 50', maxDocs: '50', price: 400.0 },
+  { id: 'tms-100', name: 'TMS 100', limit: 'De 0 à 100', maxDocs: '100', price: 657.0 },
+  { id: 'tms-300', name: 'TMS 300', limit: 'De 101 à 300', maxDocs: '300', price: 877.0 },
+  { id: 'tms-500', name: 'TMS 500', limit: 'De 301 à 500', maxDocs: '500', price: 1097.0 },
+  { id: 'tms-1000', name: 'TMS 1000', limit: 'De 501 à 1000', maxDocs: '1000', price: 1427.0 },
+  { id: 'tms-3000', name: 'TMS 3000', limit: 'De 1000 à 3000', maxDocs: '3000', price: 1757.0 },
+  { id: 'tms-5000', name: 'TMS 5000', limit: '3001 de 5000', maxDocs: '5000', price: 2087.0 },
+  {
+    id: 'tms-5000-plus',
+    name: 'TMS 5000+',
+    limit: 'Acima de 5000',
+    maxDocs: '10000',
+    price: 2487.0,
+  },
+  {
+    id: 'tms-10000-plus',
+    name: 'TMS 10000+',
+    limit: 'Acima de 10000',
+    maxDocs: 'ilimitado',
+    price: 3200.0,
+  },
 ]
 
 const MODULES = [
-  { id: 'mod-adm', name: 'Administração', price: 50.0 },
-  { id: 'mod-basico', name: 'Básico', price: 0.0 },
-  { id: 'mod-carga', name: 'Carga', price: 80.0 },
-  { id: 'mod-comercial', name: 'Comercial', price: 120.0 },
-  { id: 'mod-estoque', name: 'Estoque', price: 150.0 },
-  { id: 'mod-fat', name: 'Faturamento', price: 90.0 },
-  { id: 'mod-fin', name: 'Financeiro', price: 110.0 },
-  { id: 'mod-fiscal', name: 'Fiscal', price: 140.0 },
-  { id: 'mod-frota', name: 'Frota', price: 160.0 },
-  { id: 'mod-int-banc', name: 'Integração Bancária', price: 70.0 },
-  { id: 'mod-mdfe', name: 'MDF-e', price: 100.0 },
+  { id: 'mod-edi', name: 'EDI', price: 250.0 },
+  { id: 'mod-ctrl-viagem', name: 'Controle de Viagem', price: 199.0 },
+  { id: 'mod-frota', name: 'Frota (até 10 placas)*', price: 250.0 },
+  { id: 'mod-medicao', name: 'Medição', price: 350.0 },
+  { id: 'mod-fracionado', name: 'Fracionado', price: 350.0 },
+  { id: 'mod-transp', name: 'Transporte (Bloco/TCE/TCI)', price: 350.0 },
+  { id: 'mod-fundo-prot', name: 'Fundo de proteção', price: 1201.0 },
+  { id: 'mod-fiscal', name: 'Fiscal', price: 199.0 },
+  { id: 'mod-calendario', name: 'Calendário', price: 165.0 },
+  { id: 'mod-painel', name: 'Painel de Informações', price: 165.0 },
+  { id: 'mod-dfe', name: 'DF-e', price: 165.0 },
+  { id: 'mod-powerbi', name: 'Power BI', price: 199.0 },
+  { id: 'mod-sltrip', name: 'SL-Trip', price: 299.0 },
+  { id: 'mod-patrimonio', name: 'Patrimonio', price: 0.0 },
+  { id: 'mod-sltrack', name: 'SL-Track', price: 0.0 },
+  { id: 'mod-homolog-banc', name: 'Homologação Bancaria', price: 200.0 },
+]
+
+const DFE_TIERS = [
+  { id: 'dfe-none', name: 'Não contratar pacote D.F.E.', docs: '0', price: 0.0 },
+  { id: 'dfe-1000', name: '1000 Doc.', docs: '1000', price: 190.0 },
+  { id: 'dfe-2000', name: '2000 Doc.', docs: '2000', price: 290.0 },
+  { id: 'dfe-3000', name: '3000 Doc.', docs: '3000', price: 390.0 },
+  { id: 'dfe-5000', name: '5000 Doc.', docs: '5000', price: 490.0 },
+  { id: 'dfe-10000', name: '10.000 Doc.', docs: '10000', price: 600.0 },
 ]
 
 const Highlight = ({ value, fallback }: { value: string; fallback: string }) => (
@@ -67,8 +103,8 @@ export default function ContractGeneratorPage() {
   const [repRg, setRepRg] = useState('')
 
   const [selectedPlan, setSelectedPlan] = useState<string>('tms-50')
-  const [selectedModules, setSelectedModules] = useState<string[]>(['mod-basico'])
-  const [additionalPlates, setAdditionalPlates] = useState<number>(0)
+  const [selectedModules, setSelectedModules] = useState<string[]>([])
+  const [selectedDfeTier, setSelectedDfeTier] = useState<string>('dfe-none')
 
   // Calcs
   const planData = useMemo(() => PLANS.find((p) => p.id === selectedPlan), [selectedPlan])
@@ -81,8 +117,10 @@ export default function ContractGeneratorPage() {
     }, 0)
   }, [selectedModules])
 
-  const platesPrice = additionalPlates * 29.9
-  const totalValue = planPrice + modulesPrice + platesPrice
+  const dfeData = useMemo(() => DFE_TIERS.find((d) => d.id === selectedDfeTier), [selectedDfeTier])
+  const dfePrice = dfeData?.price || 0
+
+  const totalValue = planPrice + modulesPrice + dfePrice
 
   const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value.replace(/\D/g, '')
@@ -120,7 +158,7 @@ export default function ContractGeneratorPage() {
       id: `c${Date.now()}`,
       name,
       cnpj,
-      modules: [selectedPlan, ...selectedModules],
+      modules: [selectedPlan, ...selectedModules, selectedDfeTier],
       totalValue,
       createdAt: new Date().toISOString(),
     }
@@ -216,7 +254,7 @@ export default function ContractGeneratorPage() {
                       <RadioGroupItem value={p.id} id={p.id} />
                       <Label htmlFor={p.id} className="flex-1 cursor-pointer flex flex-col gap-0.5">
                         <span className="font-semibold text-sm">{p.name}</span>
-                        <span className="text-xs text-muted-foreground">{p.limit}</span>
+                        <span className="text-xs text-muted-foreground">{p.limit} documentos</span>
                       </Label>
                     </div>
                   ))}
@@ -257,17 +295,22 @@ export default function ContractGeneratorPage() {
 
               <Separator />
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label className="text-sm font-bold text-slate-700">
-                  Placas Adicionais (R$ 29,90/cada)
+                  Pacote de Documentos D.F.E.
                 </Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={additionalPlates}
-                  onChange={(e) => setAdditionalPlates(parseInt(e.target.value) || 0)}
-                  className="w-full sm:w-1/2"
-                />
+                <Select value={selectedDfeTier} onValueChange={setSelectedDfeTier}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o pacote D.F.E." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DFE_TIERS.map((tier) => (
+                      <SelectItem key={tier.id} value={tier.id}>
+                        {tier.name} {tier.price > 0 && `- ${formatCurrency(tier.price)}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
@@ -364,22 +407,28 @@ export default function ContractGeneratorPage() {
                   </p>
 
                   <div className="overflow-x-auto my-3">
-                    <table className="w-full text-xs border-collapse border border-slate-300">
+                    <table className="w-full text-[11px] border-collapse border border-slate-300">
                       <thead>
                         <tr className="bg-slate-100">
-                          <th className="border border-slate-300 p-2 text-left">Plano</th>
-                          <th className="border border-slate-300 p-2 text-left">
-                            Limite (CTes/mês)
-                          </th>
-                          <th className="border border-slate-300 p-2 text-center">Contratado</th>
+                          <th className="border border-slate-300 p-1.5 text-left">Planos</th>
+                          <th className="border border-slate-300 p-1.5 text-left">CTe+NFSe/mês</th>
+                          <th className="border border-slate-300 p-1.5 text-left">Nº Usuários</th>
+                          <th className="border border-slate-300 p-1.5 text-left">Máx docs</th>
+                          <th className="border border-slate-300 p-1.5 text-right">Valor (R$)</th>
+                          <th className="border border-slate-300 p-1.5 text-center">Contratado</th>
                         </tr>
                       </thead>
                       <tbody>
                         {PLANS.map((p) => (
-                          <tr key={p.id}>
-                            <td className="border border-slate-300 p-2">{p.name}</td>
-                            <td className="border border-slate-300 p-2">{p.limit}</td>
-                            <td className="border border-slate-300 p-2 text-center font-bold text-indigo-700 text-sm">
+                          <tr key={p.id} className={selectedPlan === p.id ? 'bg-indigo-50/50' : ''}>
+                            <td className="border border-slate-300 p-1.5">{p.name}</td>
+                            <td className="border border-slate-300 p-1.5">{p.limit}</td>
+                            <td className="border border-slate-300 p-1.5">Ilimitado</td>
+                            <td className="border border-slate-300 p-1.5">{p.maxDocs}</td>
+                            <td className="border border-slate-300 p-1.5 text-right">
+                              {formatCurrency(p.price)}
+                            </td>
+                            <td className="border border-slate-300 p-1.5 text-center font-bold text-indigo-700">
                               {selectedPlan === p.id ? 'X' : ''}
                             </td>
                           </tr>
@@ -397,16 +446,21 @@ export default function ContractGeneratorPage() {
                     <table className="w-full text-xs border-collapse border border-slate-300">
                       <thead>
                         <tr className="bg-slate-100">
-                          <th className="border border-slate-300 p-2 text-left">Módulo</th>
+                          <th className="border border-slate-300 p-2 text-left">
+                            Módulo Adicional
+                          </th>
                           <th className="border border-slate-300 p-2 text-right">
-                            Valor Mensal (R$)
+                            Mensalidade (R$)
                           </th>
                           <th className="border border-slate-300 p-2 text-center">Contratado</th>
                         </tr>
                       </thead>
                       <tbody>
                         {MODULES.map((m) => (
-                          <tr key={m.id}>
+                          <tr
+                            key={m.id}
+                            className={selectedModules.includes(m.id) ? 'bg-indigo-50/50' : ''}
+                          >
                             <td className="border border-slate-300 p-2">{m.name}</td>
                             <td className="border border-slate-300 p-2 text-right">
                               {m.price === 0 ? 'Incluso' : formatCurrency(m.price)}
@@ -419,6 +473,52 @@ export default function ContractGeneratorPage() {
                       </tbody>
                     </table>
                   </div>
+
+                  {selectedDfeTier !== 'dfe-none' && (
+                    <>
+                      <p className="mt-4">
+                        5.15. <strong>Pacote de Documentos D.F.E.:</strong> A CONTRATANTE opta pelo
+                        pacote assinalado com "X" abaixo:
+                      </p>
+
+                      <div className="overflow-x-auto my-3">
+                        <table className="w-full text-xs border-collapse border border-slate-300">
+                          <thead>
+                            <tr className="bg-slate-100">
+                              <th className="border border-slate-300 p-2 text-left">
+                                Pacote D.F.E.
+                              </th>
+                              <th className="border border-slate-300 p-2 text-right">
+                                Valor Mensal (R$)
+                              </th>
+                              <th className="border border-slate-300 p-2 text-center">
+                                Contratado
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {DFE_TIERS.filter((t) => t.id !== 'dfe-none').map((t) => (
+                              <tr
+                                key={t.id}
+                                className={selectedDfeTier === t.id ? 'bg-indigo-50/50' : ''}
+                              >
+                                <td className="border border-slate-300 p-2">{t.name}</td>
+                                <td className="border border-slate-300 p-2 text-right">
+                                  {formatCurrency(t.price)}
+                                </td>
+                                <td className="border border-slate-300 p-2 text-center font-bold text-indigo-700 text-sm">
+                                  {selectedDfeTier === t.id ? 'X' : ''}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1 italic">
+                        * Documentos excedentes custam R$ 0,30 cada.
+                      </p>
+                    </>
+                  )}
 
                   <p className="mt-4">
                     5.22. <strong>Resumo Financeiro Mensal:</strong> A soma dos itens contratados
@@ -445,22 +545,26 @@ export default function ContractGeneratorPage() {
                             {formatCurrency(planPrice)}
                           </td>
                         </tr>
-                        <tr>
-                          <td className="border border-slate-300 p-2">
-                            Módulos Adicionais ({selectedModules.length})
-                          </td>
-                          <td className="border border-slate-300 p-2 text-right">
-                            {formatCurrency(modulesPrice)}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="border border-slate-300 p-2">
-                            Placas Adicionais ({additionalPlates} placa(s))
-                          </td>
-                          <td className="border border-slate-300 p-2 text-right">
-                            {formatCurrency(platesPrice)}
-                          </td>
-                        </tr>
+                        {selectedModules.length > 0 && (
+                          <tr>
+                            <td className="border border-slate-300 p-2">
+                              Módulos Adicionais ({selectedModules.length})
+                            </td>
+                            <td className="border border-slate-300 p-2 text-right">
+                              {formatCurrency(modulesPrice)}
+                            </td>
+                          </tr>
+                        )}
+                        {selectedDfeTier !== 'dfe-none' && (
+                          <tr>
+                            <td className="border border-slate-300 p-2">
+                              Pacote D.F.E. ({dfeData?.name})
+                            </td>
+                            <td className="border border-slate-300 p-2 text-right">
+                              {formatCurrency(dfePrice)}
+                            </td>
+                          </tr>
+                        )}
                         <tr className="bg-slate-50 font-bold">
                           <td className="border border-slate-300 p-2 uppercase text-right">
                             Valor Geral Mensal
