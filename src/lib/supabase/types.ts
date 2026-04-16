@@ -307,6 +307,45 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_prospects: {
+        Row: {
+          contato_nome: string
+          created_at: string | null
+          email: string | null
+          empresa: string
+          id: string
+          observacoes: string | null
+          status: string
+          telefone: string | null
+          ultima_interacao: string | null
+          user_id: string | null
+        }
+        Insert: {
+          contato_nome: string
+          created_at?: string | null
+          email?: string | null
+          empresa: string
+          id?: string
+          observacoes?: string | null
+          status?: string
+          telefone?: string | null
+          ultima_interacao?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          contato_nome?: string
+          created_at?: string | null
+          email?: string | null
+          empresa?: string
+          id?: string
+          observacoes?: string | null
+          status?: string
+          telefone?: string | null
+          ultima_interacao?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       escala_mes: {
         Row: {
           created_at: string
@@ -865,6 +904,17 @@ export const Constants = {
 //   chave: text (not null)
 //   valor: jsonb (not null)
 //   updated_at: timestamp with time zone (not null, default: now())
+// Table: crm_prospects
+//   id: uuid (not null, default: gen_random_uuid())
+//   empresa: text (not null)
+//   contato_nome: text (not null)
+//   telefone: text (nullable)
+//   email: text (nullable)
+//   status: text (not null, default: 'Contato Inicial'::text)
+//   observacoes: text (nullable)
+//   ultima_interacao: timestamp with time zone (nullable, default: now())
+//   created_at: timestamp with time zone (nullable, default: now())
+//   user_id: uuid (nullable)
 // Table: escala_mes
 //   mes_ano: text (not null)
 //   status: text (not null, default: 'Rascunho'::text)
@@ -960,6 +1010,9 @@ export const Constants = {
 //   CHECK valid_roles: CHECK ((role = ANY (ARRAY['Admin'::text, 'Gerente'::text, 'Colaborador'::text])))
 // Table: configuracoes
 //   PRIMARY KEY configuracoes_pkey: PRIMARY KEY (chave)
+// Table: crm_prospects
+//   PRIMARY KEY crm_prospects_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY crm_prospects_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL
 // Table: escala_mes
 //   PRIMARY KEY escala_mes_pkey: PRIMARY KEY (mes_ano)
 // Table: faltas
@@ -1031,6 +1084,13 @@ export const Constants = {
 //     USING: true
 //     WITH CHECK: true
 // Table: configuracoes
+//   Policy "Allow all access to anon users" (ALL, PERMISSIVE) roles={anon}
+//     USING: true
+//     WITH CHECK: true
+//   Policy "Allow all access to authenticated users" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
+// Table: crm_prospects
 //   Policy "Allow all access to anon users" (ALL, PERMISSIVE) roles={anon}
 //     USING: true
 //     WITH CHECK: true
