@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, FileSignature, MoreHorizontal } from 'lucide-react'
+import { Search, FileSignature, MoreHorizontal, Plus } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -20,17 +19,97 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import useAppStore, { ProspectStatus } from '@/stores/main'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { useToast } from '@/hooks/use-toast'
 import { formatDate } from '@/lib/formatters'
+import { supabase } from '@/lib/supabase/client'
+import { CrmProspectForm, ProspectFormValues } from '@/components/CrmProspectForm'
+
+type CrmProspect = {
+  id: string
+  empresa: string
+  contato_nome: string
+  telefone: string | null
+  email: string | null
+  status: string
+  observacoes: string | null
+  ultima_interacao: string
+}
 
 export default function CRMPage() {
-  const { prospects, updateProspectStatus } = useAppStore()
+  const [prospects, setProspects] = useState<CrmProspect[]>([])
   const [searchTerm, setSearchTerm] = useState('')
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { toast } = useToast()
+
+  const fetchProspects = async () => {
+    setIsLoading(true)
+    const { data, error } = await supabase
+      .from('crm_prospects')
+      .select('*')
+      .order('ultima_interacao', { ascending: false })
+
+    if (!error && data) {
+      setProspects(data as CrmProspect[])
+    }
+    setIsLoading(false)
+  }
+
+  useEffect(() => {
+    fetchProspects()
+  }, [])
+
+  const onSubmit = async (values: ProspectFormValues) => {
+    setIsSubmitting(true)
+    const { error } = await supabase.from('crm_prospects').insert([
+      {
+        empresa: values.empresa,
+        contato_nome: values.contato_nome,
+        telefone: values.telefone || null,
+        email: values.email || null,
+        status: values.status,
+        observacoes: values.observacoes || null,
+      },
+    ])
+
+    setIsSubmitting(false)
+
+    if (error) {
+      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' })
+      return
+    }
+
+    toast({ title: 'Sucesso', description: 'Contato adicionado com sucesso!' })
+    setIsDialogOpen(false)
+    fetchProspects()
+  }
+
+  const updateStatus = async (id: string, newStatus: string) => {
+    const { error } = await supabase
+      .from('crm_prospects')
+      .update({ status: newStatus, ultima_interacao: new Date().toISOString() })
+      .eq('id', id)
+
+    if (error) {
+      toast({ title: 'Erro', description: error.message, variant: 'destructive' })
+      return
+    }
+    fetchProspects()
+  }
 
   const filteredProspects = prospects.filter(
     (p) =>
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()),
+      p.empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.contato_nome.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   const getStatusColor = (status: string) => {
@@ -50,11 +129,29 @@ export default function CRMPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">CRM e Prospecção</h1>
-        <p className="text-muted-foreground mt-1">
-          Gerencie seus contatos e acompanhe o funil de vendas.
-        </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">CRM e Prospecção</h1>
+          <p className="text-muted-foreground mt-1">
+            Gerencie seus contatos e acompanhe o funil de vendas.
+          </p>
+        </div>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              Novo Lead/Contato
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Novo Contato</DialogTitle>
+              <DialogDescription>Adicione as informações do novo lead ao CRM.</DialogDescription>
+            </DialogHeader>
+            <CrmProspectForm onSubmit={onSubmit} isSubmitting={isSubmitting} />
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card className="border-slate-200/60 shadow-sm">
@@ -89,10 +186,16 @@ export default function CRMPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProspects.length === 0 ? (
+              {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                    Nenhum prospect encontrado.
+                    Carregando contatos...
+                  </TableCell>
+                </TableRow>
+              ) : filteredProspects.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                    Nenhum contato encontrado.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -101,17 +204,29 @@ export default function CRMPage() {
                     key={prospect.id}
                     className="group hover:bg-slate-50/80 transition-colors"
                   >
-                    <TableCell className="font-medium text-slate-900">{prospect.name}</TableCell>
-                    <TableCell>{prospect.contactPerson}</TableCell>
+                    <TableCell className="font-medium text-slate-900">
+                      {prospect.empresa}
+                      {prospect.email && (
+                        <span className="block text-xs text-muted-foreground font-normal mt-0.5">
+                          {prospect.email}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {prospect.contato_nome}
+                      {prospect.telefone && (
+                        <span className="block text-xs text-muted-foreground font-normal mt-0.5">
+                          {prospect.telefone}
+                        </span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {formatDate(prospect.lastContact)}
+                      {formatDate(prospect.ultima_interacao)}
                     </TableCell>
                     <TableCell>
                       <Select
                         defaultValue={prospect.status}
-                        onValueChange={(val) =>
-                          updateProspectStatus(prospect.id, val as ProspectStatus)
-                        }
+                        onValueChange={(val) => updateStatus(prospect.id, val)}
                       >
                         <SelectTrigger
                           className={`h-8 w-[160px] border rounded-full text-xs font-semibold px-3 ${getStatusColor(prospect.status)}`}
@@ -134,7 +249,7 @@ export default function CRMPage() {
                           className="h-8 gap-1 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
                           asChild
                         >
-                          <Link to={`/contratos?prospect=${prospect.name}`}>
+                          <Link to={`/contratos?prospect=${encodeURIComponent(prospect.empresa)}`}>
                             <FileSignature className="h-4 w-4" />
                             <span className="hidden sm:inline">Gerar Contrato</span>
                           </Link>
