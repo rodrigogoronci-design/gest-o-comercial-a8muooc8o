@@ -57,7 +57,7 @@ export function ImportContracts() {
           contrato_url: extractedData.contrato_url,
           valor_total: extractedData.valor_total,
           status: 'Ativo',
-          modulos: [],
+          modulos: extractedData.modulos || [],
         })
 
         setFiles((prev) =>
@@ -84,8 +84,8 @@ export function ImportContracts() {
       <CardHeader>
         <CardTitle>Importar Contratos em Lote</CardTitle>
         <CardDescription>
-          Faça o upload de arquivos PDF. O sistema irá extrair automaticamente o Nome e CNPJ e
-          inserir na base de clientes.
+          Faça o upload de arquivos PDF. O sistema irá extrair automaticamente o Nome, CNPJ, Plano e
+          Valores, e inserir na base de clientes.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -137,8 +137,19 @@ export function ImportContracts() {
                     <FileText className="h-4 w-4 text-indigo-500 shrink-0" />
                     <span className="truncate max-w-[200px] font-medium">{f.file.name}</span>
                     {f.data && (
-                      <span className="text-xs text-slate-500 truncate">
-                        - {f.data.nome} ({f.data.cnpj})
+                      <span className="text-xs text-slate-500 flex items-center gap-1 truncate">
+                        <span>
+                          - {f.data.nome} ({f.data.cnpj})
+                        </span>
+                        <span className="font-medium px-1 text-emerald-600 bg-emerald-50 rounded">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          }).format(f.data.valor_total || 0)}
+                        </span>
+                        <span className="text-slate-400 truncate max-w-[150px]">
+                          [{f.data.modulos?.join(', ')}]
+                        </span>
                       </span>
                     )}
                   </div>

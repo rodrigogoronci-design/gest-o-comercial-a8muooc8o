@@ -212,6 +212,7 @@ export type Database = {
       clientes: {
         Row: {
           cnpj: string
+          contrato_url: string | null
           created_at: string
           email: string | null
           id: string
@@ -223,6 +224,7 @@ export type Database = {
         }
         Insert: {
           cnpj: string
+          contrato_url?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -234,6 +236,7 @@ export type Database = {
         }
         Update: {
           cnpj?: string
+          contrato_url?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -1092,6 +1095,7 @@ export const Constants = {
 //   valor_total: numeric (nullable, default: 0)
 //   status: text (nullable, default: 'Ativo'::text)
 //   created_at: timestamp with time zone (not null, default: now())
+//   contrato_url: text (nullable)
 // Table: colaboradores
 //   id: uuid (not null, default: gen_random_uuid())
 //   created_at: timestamp with time zone (not null, default: timezone('utc'::text, now()))
