@@ -9,6 +9,8 @@ export const getClientes = async () => {
   return data
 }
 
+export const fetchClientes = getClientes
+
 export const createCliente = async (cliente: any) => {
   const { data, error } = await supabase.from('clientes').insert(cliente).select().single()
   if (error) throw error
