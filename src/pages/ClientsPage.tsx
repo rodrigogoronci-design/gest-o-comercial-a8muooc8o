@@ -1,5 +1,17 @@
 import { useState, useEffect } from 'react'
-import { Search, Filter, Eye, Plus, Building2, Mail, Phone, Hash, Edit, Trash2 } from 'lucide-react'
+import {
+  Search,
+  Filter,
+  Eye,
+  Plus,
+  Building2,
+  Mail,
+  Phone,
+  Hash,
+  Edit,
+  Trash2,
+  FileText,
+} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
@@ -71,6 +83,7 @@ type MergedClient = {
   createdAt: string
   isMock?: boolean
   originalData?: ClienteRecord
+  contratoUrl?: string | null
 }
 
 const clientSchema = z.object({
@@ -213,12 +226,13 @@ export default function ClientsPage() {
       createdAt: c.created_at,
       isMock: false,
       originalData: c,
+      contratoUrl: c.contrato_url,
     })),
   ]
 
   storeClients.forEach((sc) => {
     if (!mergedClients.some((mc) => mc.cnpj === sc.cnpj)) {
-      mergedClients.push({ ...sc, isMock: true })
+      mergedClients.push({ ...sc, isMock: true, contratoUrl: null })
     }
   })
 
@@ -289,6 +303,31 @@ export default function ClientsPage() {
             </span>
           </div>
         </div>
+      </div>
+      <Separator />
+      <div>
+        <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-2">
+          Documentos
+        </h4>
+        {client.contratoUrl ? (
+          <div className="flex items-center justify-between bg-slate-50 border border-slate-200 p-3 rounded-md shadow-sm">
+            <div className="flex items-center gap-3">
+              <FileText className="h-5 w-5 text-indigo-500" />
+              <span className="font-medium text-sm text-slate-700">Contrato Original</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(client.contratoUrl!, '_blank')}
+            >
+              Abrir PDF
+            </Button>
+          </div>
+        ) : (
+          <div className="text-sm text-slate-500 text-center py-4 bg-slate-50 rounded-md border border-dashed border-slate-200">
+            Nenhum contrato anexado para este cliente.
+          </div>
+        )}
       </div>
     </div>
   )
@@ -655,6 +694,17 @@ export default function ClientsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
+                        {client.contratoUrl && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                            title="Ver Contrato"
+                            onClick={() => window.open(client.contratoUrl!, '_blank')}
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"

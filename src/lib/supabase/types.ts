@@ -263,6 +263,10 @@ export type Database = {
           endereco: string | null
           id: string
           image_gender: string | null
+          jornada_entrada: string | null
+          jornada_retorno_intervalo: string | null
+          jornada_saida: string | null
+          jornada_saida_intervalo: string | null
           local_trabalho_lat: number | null
           local_trabalho_lng: number | null
           nome: string
@@ -290,6 +294,10 @@ export type Database = {
           endereco?: string | null
           id?: string
           image_gender?: string | null
+          jornada_entrada?: string | null
+          jornada_retorno_intervalo?: string | null
+          jornada_saida?: string | null
+          jornada_saida_intervalo?: string | null
           local_trabalho_lat?: number | null
           local_trabalho_lng?: number | null
           nome: string
@@ -317,6 +325,10 @@ export type Database = {
           endereco?: string | null
           id?: string
           image_gender?: string | null
+          jornada_entrada?: string | null
+          jornada_retorno_intervalo?: string | null
+          jornada_saida?: string | null
+          jornada_saida_intervalo?: string | null
           local_trabalho_lat?: number | null
           local_trabalho_lng?: number | null
           nome?: string
@@ -1122,6 +1134,10 @@ export const Constants = {
 //   codigo_funcionario: text (nullable)
 //   local_trabalho_lat: numeric (nullable)
 //   local_trabalho_lng: numeric (nullable)
+//   jornada_entrada: text (nullable)
+//   jornada_saida_intervalo: text (nullable)
+//   jornada_retorno_intervalo: text (nullable)
+//   jornada_saida: text (nullable)
 // Table: configuracoes
 //   chave: text (not null)
 //   valor: jsonb (not null)
