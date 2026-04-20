@@ -209,9 +209,47 @@ export type Database = {
           },
         ]
       }
+      clientes: {
+        Row: {
+          cnpj: string
+          created_at: string
+          email: string | null
+          id: string
+          modulos: Json | null
+          nome: string
+          status: string | null
+          telefone: string | null
+          valor_total: number | null
+        }
+        Insert: {
+          cnpj: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          modulos?: Json | null
+          nome: string
+          status?: string | null
+          telefone?: string | null
+          valor_total?: number | null
+        }
+        Update: {
+          cnpj?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          modulos?: Json | null
+          nome?: string
+          status?: string | null
+          telefone?: string | null
+          valor_total?: number | null
+        }
+        Relationships: []
+      }
       colaboradores: {
         Row: {
+          avatar_url: string | null
           cargo: string | null
+          codigo_funcionario: string | null
           cpf: string | null
           created_at: string
           data_admissao: string | null
@@ -222,6 +260,8 @@ export type Database = {
           endereco: string | null
           id: string
           image_gender: string | null
+          local_trabalho_lat: number | null
+          local_trabalho_lng: number | null
           nome: string
           organization_id: string | null
           recebe_transporte: boolean
@@ -234,7 +274,9 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          avatar_url?: string | null
           cargo?: string | null
+          codigo_funcionario?: string | null
           cpf?: string | null
           created_at?: string
           data_admissao?: string | null
@@ -245,6 +287,8 @@ export type Database = {
           endereco?: string | null
           id?: string
           image_gender?: string | null
+          local_trabalho_lat?: number | null
+          local_trabalho_lng?: number | null
           nome: string
           organization_id?: string | null
           recebe_transporte?: boolean
@@ -257,7 +301,9 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          avatar_url?: string | null
           cargo?: string | null
+          codigo_funcionario?: string | null
           cpf?: string | null
           created_at?: string
           data_admissao?: string | null
@@ -268,6 +314,8 @@ export type Database = {
           endereco?: string | null
           id?: string
           image_gender?: string | null
+          local_trabalho_lat?: number | null
+          local_trabalho_lng?: number | null
           nome?: string
           organization_id?: string | null
           recebe_transporte?: boolean
@@ -307,6 +355,53 @@ export type Database = {
         }
         Relationships: []
       }
+      contracheques: {
+        Row: {
+          arquivo_url: string
+          assinado: boolean | null
+          assinatura_nome: string | null
+          colaborador_id: string
+          created_at: string
+          dados_extraidos: Json | null
+          data_assinatura: string | null
+          id: string
+          mes_ano: string
+          valor_liquido: number | null
+        }
+        Insert: {
+          arquivo_url: string
+          assinado?: boolean | null
+          assinatura_nome?: string | null
+          colaborador_id: string
+          created_at?: string
+          dados_extraidos?: Json | null
+          data_assinatura?: string | null
+          id?: string
+          mes_ano: string
+          valor_liquido?: number | null
+        }
+        Update: {
+          arquivo_url?: string
+          assinado?: boolean | null
+          assinatura_nome?: string | null
+          colaborador_id?: string
+          created_at?: string
+          dados_extraidos?: Json | null
+          data_assinatura?: string | null
+          id?: string
+          mes_ano?: string
+          valor_liquido?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'contracheques_colaborador_id_fkey'
+            columns: ['colaborador_id']
+            isOneToOne: false
+            referencedRelation: 'colaboradores'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       crm_prospects: {
         Row: {
           contato_nome: string
@@ -345,6 +440,62 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      dias_home_office: {
+        Row: {
+          created_at: string
+          data: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      dispositivos_autorizados: {
+        Row: {
+          colaborador_id: string | null
+          created_at: string
+          device_id_hash: string
+          id: string
+          status: string
+          tipo: string
+          ultima_autenticacao: string | null
+        }
+        Insert: {
+          colaborador_id?: string | null
+          created_at?: string
+          device_id_hash: string
+          id?: string
+          status?: string
+          tipo: string
+          ultima_autenticacao?: string | null
+        }
+        Update: {
+          colaborador_id?: string | null
+          created_at?: string
+          device_id_hash?: string
+          id?: string
+          status?: string
+          tipo?: string
+          ultima_autenticacao?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'dispositivos_autorizados_colaborador_id_fkey'
+            columns: ['colaborador_id']
+            isOneToOne: false
+            referencedRelation: 'colaboradores'
+            referencedColumns: ['id']
+          },
+        ]
       }
       escala_mes: {
         Row: {
@@ -518,18 +669,21 @@ export type Database = {
           created_at: string
           data: string
           id: string
+          periodo: string | null
         }
         Insert: {
           colaborador_id: string
           created_at?: string
           data: string
           id?: string
+          periodo?: string | null
         }
         Update: {
           colaborador_id?: string
           created_at?: string
           data?: string
           id?: string
+          periodo?: string | null
         }
         Relationships: [
           {
@@ -639,6 +793,56 @@ export type Database = {
             columns: ['vaga_id']
             isOneToOne: false
             referencedRelation: 'vagas'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      registro_ponto: {
+        Row: {
+          colaborador_id: string | null
+          created_at: string
+          data_hora: string
+          device_id_hash: string | null
+          foto_url: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          obs_usuario: string | null
+          status: string
+          tipo_registro: string
+        }
+        Insert: {
+          colaborador_id?: string | null
+          created_at?: string
+          data_hora?: string
+          device_id_hash?: string | null
+          foto_url?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          obs_usuario?: string | null
+          status?: string
+          tipo_registro: string
+        }
+        Update: {
+          colaborador_id?: string | null
+          created_at?: string
+          data_hora?: string
+          device_id_hash?: string | null
+          foto_url?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          obs_usuario?: string | null
+          status?: string
+          tipo_registro?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'registro_ponto_colaborador_id_fkey'
+            columns: ['colaborador_id']
+            isOneToOne: false
+            referencedRelation: 'colaboradores'
             referencedColumns: ['id']
           },
         ]
@@ -878,6 +1082,16 @@ export const Constants = {
 //   created_at: timestamp with time zone (not null, default: now())
 //   atestados: integer (not null, default: 0)
 //   faltas: integer (not null, default: 0)
+// Table: clientes
+//   id: uuid (not null, default: gen_random_uuid())
+//   nome: text (not null)
+//   cnpj: text (not null)
+//   email: text (nullable)
+//   telefone: text (nullable)
+//   modulos: jsonb (nullable, default: '[]'::jsonb)
+//   valor_total: numeric (nullable, default: 0)
+//   status: text (nullable, default: 'Ativo'::text)
+//   created_at: timestamp with time zone (not null, default: now())
 // Table: colaboradores
 //   id: uuid (not null, default: gen_random_uuid())
 //   created_at: timestamp with time zone (not null, default: timezone('utc'::text, now()))
@@ -900,10 +1114,25 @@ export const Constants = {
 //   user_id: uuid (nullable)
 //   organization_id: uuid (nullable)
 //   recebe_transporte: boolean (not null, default: true)
+//   avatar_url: text (nullable)
+//   codigo_funcionario: text (nullable)
+//   local_trabalho_lat: numeric (nullable)
+//   local_trabalho_lng: numeric (nullable)
 // Table: configuracoes
 //   chave: text (not null)
 //   valor: jsonb (not null)
 //   updated_at: timestamp with time zone (not null, default: now())
+// Table: contracheques
+//   id: uuid (not null, default: gen_random_uuid())
+//   colaborador_id: uuid (not null)
+//   mes_ano: text (not null)
+//   arquivo_url: text (not null)
+//   valor_liquido: numeric (nullable)
+//   created_at: timestamp with time zone (not null, default: now())
+//   dados_extraidos: jsonb (nullable)
+//   data_assinatura: timestamp with time zone (nullable)
+//   assinado: boolean (nullable, default: false)
+//   assinatura_nome: text (nullable)
 // Table: crm_prospects
 //   id: uuid (not null, default: gen_random_uuid())
 //   empresa: text (not null)
@@ -915,6 +1144,18 @@ export const Constants = {
 //   ultima_interacao: timestamp with time zone (nullable, default: now())
 //   created_at: timestamp with time zone (nullable, default: now())
 //   user_id: uuid (nullable)
+// Table: dias_home_office
+//   id: uuid (not null, default: gen_random_uuid())
+//   data: date (not null)
+//   created_at: timestamp with time zone (not null, default: now())
+// Table: dispositivos_autorizados
+//   id: uuid (not null, default: gen_random_uuid())
+//   colaborador_id: uuid (nullable)
+//   device_id_hash: text (not null)
+//   tipo: text (not null)
+//   status: text (not null, default: 'pendente'::text)
+//   ultima_autenticacao: timestamp with time zone (nullable)
+//   created_at: timestamp with time zone (not null, default: now())
 // Table: escala_mes
 //   mes_ano: text (not null)
 //   status: text (not null, default: 'Rascunho'::text)
@@ -953,6 +1194,7 @@ export const Constants = {
 //   colaborador_id: uuid (not null)
 //   data: date (not null)
 //   created_at: timestamp with time zone (not null, default: now())
+//   periodo: text (nullable, default: 'Integral'::text)
 // Table: ponto
 //   id: uuid (not null, default: gen_random_uuid())
 //   created_at: timestamp with time zone (not null, default: timezone('utc'::text, now()))
@@ -973,6 +1215,18 @@ export const Constants = {
 //   telefone: text (nullable)
 //   curriculo_url: text (nullable)
 //   organization_id: uuid (nullable)
+// Table: registro_ponto
+//   id: uuid (not null, default: gen_random_uuid())
+//   colaborador_id: uuid (nullable)
+//   data_hora: timestamp with time zone (not null, default: now())
+//   latitude: numeric (nullable)
+//   longitude: numeric (nullable)
+//   foto_url: text (nullable)
+//   status: text (not null, default: 'pendente'::text)
+//   tipo_registro: text (not null)
+//   obs_usuario: text (nullable)
+//   device_id_hash: text (nullable)
+//   created_at: timestamp with time zone (not null, default: now())
 // Table: vagas
 //   id: uuid (not null, default: gen_random_uuid())
 //   created_at: timestamp with time zone (not null, default: now())
@@ -1003,16 +1257,28 @@ export const Constants = {
 //   FOREIGN KEY beneficios_transporte_colaborador_id_fkey: FOREIGN KEY (colaborador_id) REFERENCES colaboradores(id) ON DELETE CASCADE
 //   UNIQUE beneficios_transporte_colaborador_id_mes_ano_key: UNIQUE (colaborador_id, mes_ano)
 //   PRIMARY KEY beneficios_transporte_pkey: PRIMARY KEY (id)
+// Table: clientes
+//   PRIMARY KEY clientes_pkey: PRIMARY KEY (id)
 // Table: colaboradores
 //   FOREIGN KEY colaboradores_organization_id_fkey: FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
 //   PRIMARY KEY colaboradores_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY colaboradores_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id)
-//   CHECK valid_roles: CHECK ((role = ANY (ARRAY['Admin'::text, 'Gerente'::text, 'Colaborador'::text])))
 // Table: configuracoes
 //   PRIMARY KEY configuracoes_pkey: PRIMARY KEY (chave)
+// Table: contracheques
+//   FOREIGN KEY contracheques_colaborador_id_fkey: FOREIGN KEY (colaborador_id) REFERENCES colaboradores(id) ON DELETE CASCADE
+//   UNIQUE contracheques_colaborador_id_mes_ano_key: UNIQUE (colaborador_id, mes_ano)
+//   PRIMARY KEY contracheques_pkey: PRIMARY KEY (id)
 // Table: crm_prospects
 //   PRIMARY KEY crm_prospects_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY crm_prospects_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL
+// Table: dias_home_office
+//   UNIQUE dias_home_office_data_key: UNIQUE (data)
+//   PRIMARY KEY dias_home_office_pkey: PRIMARY KEY (id)
+// Table: dispositivos_autorizados
+//   FOREIGN KEY dispositivos_autorizados_colaborador_id_fkey: FOREIGN KEY (colaborador_id) REFERENCES colaboradores(id) ON DELETE CASCADE
+//   UNIQUE dispositivos_autorizados_device_id_hash_key: UNIQUE (device_id_hash)
+//   PRIMARY KEY dispositivos_autorizados_pkey: PRIMARY KEY (id)
 // Table: escala_mes
 //   PRIMARY KEY escala_mes_pkey: PRIMARY KEY (mes_ano)
 // Table: faltas
@@ -1043,6 +1309,9 @@ export const Constants = {
 //   FOREIGN KEY recrutamento_organization_id_fkey: FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
 //   PRIMARY KEY recrutamento_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY recrutamento_vaga_id_fkey: FOREIGN KEY (vaga_id) REFERENCES vagas(id) ON DELETE CASCADE
+// Table: registro_ponto
+//   FOREIGN KEY registro_ponto_colaborador_id_fkey: FOREIGN KEY (colaborador_id) REFERENCES colaboradores(id) ON DELETE CASCADE
+//   PRIMARY KEY registro_ponto_pkey: PRIMARY KEY (id)
 // Table: vagas
 //   FOREIGN KEY vagas_organization_id_fkey: FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
 //   PRIMARY KEY vagas_pkey: PRIMARY KEY (id)
@@ -1076,6 +1345,13 @@ export const Constants = {
 //   Policy "Allow all access to authenticated users" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: true
 //     WITH CHECK: true
+// Table: clientes
+//   Policy "Allow all access to anon users" (ALL, PERMISSIVE) roles={anon}
+//     USING: true
+//     WITH CHECK: true
+//   Policy "Allow all access to authenticated users" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
 // Table: colaboradores
 //   Policy "Allow all access to anon users" (ALL, PERMISSIVE) roles={anon}
 //     USING: true
@@ -1090,11 +1366,26 @@ export const Constants = {
 //   Policy "Allow all access to authenticated users" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: true
 //     WITH CHECK: true
+// Table: contracheques
+//   Policy "Allow all access to authenticated users" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
 // Table: crm_prospects
 //   Policy "Allow all access to anon users" (ALL, PERMISSIVE) roles={anon}
 //     USING: true
 //     WITH CHECK: true
 //   Policy "Allow all access to authenticated users" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
+// Table: dias_home_office
+//   Policy "Allow all access to anon users" (ALL, PERMISSIVE) roles={anon}
+//     USING: true
+//     WITH CHECK: true
+//   Policy "Allow all access to authenticated users" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
+// Table: dispositivos_autorizados
+//   Policy "authenticated_all_dispositivos" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: true
 //     WITH CHECK: true
 // Table: escala_mes
@@ -1162,6 +1453,10 @@ export const Constants = {
 //     WITH CHECK: true
 //   Policy "Allow insert to anon users" (INSERT, PERMISSIVE) roles={anon}
 //     WITH CHECK: true
+// Table: registro_ponto
+//   Policy "authenticated_all_registro_ponto" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
 // Table: vagas
 //   Policy "Allow all access to anon users" (ALL, PERMISSIVE) roles={anon}
 //     USING: true
@@ -1185,6 +1480,44 @@ export const Constants = {
 //   END;
 //   $function$
 //
+// FUNCTION prevent_unwanted_contracheques()
+//   CREATE OR REPLACE FUNCTION public.prevent_unwanted_contracheques()
+//    RETURNS trigger
+//    LANGUAGE plpgsql
+//    SECURITY DEFINER
+//   AS $function$
+//   DECLARE
+//     v_nome text;
+//     v_role text;
+//   BEGIN
+//     SELECT nome, role INTO v_nome, v_role
+//     FROM public.colaboradores
+//     WHERE id = NEW.colaborador_id;
+//
+//     -- Bloquear João Estagiário e variações (incluindo "Joã estagiaio")
+//     IF v_nome ILIKE '%joão%estagi%' OR v_nome ILIKE '%joao%estagi%' OR v_nome ILIKE '%joã%estagi%' THEN
+//       RETURN NULL;
+//     END IF;
+//
+//     -- Bloquear Brunella
+//     IF v_nome ILIKE '%brunella%' THEN
+//       RETURN NULL;
+//     END IF;
+//
+//     -- Bloquear Ismael Bomfim
+//     IF v_nome ILIKE '%ismael bomfim%' THEN
+//       RETURN NULL;
+//     END IF;
+//
+//     -- Bloquear Administradores e Gerentes, exceto Rodrigo
+//     IF (v_role ILIKE 'admin' OR v_role ILIKE 'gerente') AND v_nome NOT ILIKE '%rodrigo%' THEN
+//       RETURN NULL;
+//     END IF;
+//
+//     RETURN NEW;
+//   END;
+//   $function$
+//
 // FUNCTION sync_ticket_to_transporte()
 //   CREATE OR REPLACE FUNCTION public.sync_ticket_to_transporte()
 //    RETURNS trigger
@@ -1193,10 +1526,27 @@ export const Constants = {
 //   AS $function$
 //   DECLARE
 //     v_recebe boolean;
+//     v_home_office_count integer := 0;
+//     v_start_date date;
+//     v_end_date date;
+//     v_year integer;
+//     v_month integer;
 //   BEGIN
 //     -- Prevent infinite recursion
 //     IF pg_trigger_depth() > 1 THEN
 //       RETURN NEW;
+//     END IF;
+//
+//     -- Calculate the period for the month
+//     v_year := split_part(NEW.mes_ano, '-', 1)::integer;
+//     v_month := split_part(NEW.mes_ano, '-', 2)::integer;
+//
+//     IF v_month = 12 THEN
+//       v_start_date := make_date(v_year, 12, 25);
+//       v_end_date := make_date(v_year + 1, 1, 24);
+//     ELSE
+//       v_start_date := make_date(v_year, v_month, 25);
+//       v_end_date := make_date(v_year, v_month + 1, 24);
 //     END IF;
 //
 //     -- Check if the user is eligible for Vale Transporte
@@ -1204,11 +1554,16 @@ export const Constants = {
 //     FROM public.colaboradores
 //     WHERE id = NEW.colaborador_id;
 //
+//     -- Count global home office days
+//     SELECT count(*) INTO v_home_office_count
+//     FROM public.dias_home_office
+//     WHERE data >= v_start_date AND data <= v_end_date;
+//
 //     IF v_recebe = true THEN
 //       INSERT INTO public.beneficios_transporte (
 //         colaborador_id, mes_ano, ferias, atestados, faltas, dias_uteis, home_office
 //       ) VALUES (
-//         NEW.colaborador_id, NEW.mes_ano, NEW.ferias, NEW.atestados, NEW.faltas, 20, 0
+//         NEW.colaborador_id, NEW.mes_ano, NEW.ferias, NEW.atestados, NEW.faltas, 20, v_home_office_count
 //       )
 //       ON CONFLICT (colaborador_id, mes_ano) DO NOTHING;
 //     END IF;
@@ -1221,6 +1576,8 @@ export const Constants = {
 // --- TRIGGERS ---
 // Table: beneficios_ticket
 //   on_ticket_changes_sync_transporte: CREATE TRIGGER on_ticket_changes_sync_transporte AFTER INSERT OR UPDATE OF ferias, atestados, faltas ON public.beneficios_ticket FOR EACH ROW EXECUTE FUNCTION sync_ticket_to_transporte()
+// Table: contracheques
+//   trg_prevent_unwanted_contracheques: CREATE TRIGGER trg_prevent_unwanted_contracheques BEFORE INSERT OR UPDATE ON public.contracheques FOR EACH ROW EXECUTE FUNCTION prevent_unwanted_contracheques()
 
 // --- INDEXES ---
 // Table: beneficios_ticket
@@ -1230,6 +1587,12 @@ export const Constants = {
 // Table: colaboradores
 //   CREATE INDEX idx_colaboradores_organization_id ON public.colaboradores USING btree (organization_id)
 //   CREATE INDEX idx_colaboradores_user_id ON public.colaboradores USING btree (user_id)
+// Table: contracheques
+//   CREATE UNIQUE INDEX contracheques_colaborador_id_mes_ano_key ON public.contracheques USING btree (colaborador_id, mes_ano)
+// Table: dias_home_office
+//   CREATE UNIQUE INDEX dias_home_office_data_key ON public.dias_home_office USING btree (data)
+// Table: dispositivos_autorizados
+//   CREATE UNIQUE INDEX dispositivos_autorizados_device_id_hash_key ON public.dispositivos_autorizados USING btree (device_id_hash)
 // Table: faltas
 //   CREATE UNIQUE INDEX faltas_colaborador_id_data_key ON public.faltas USING btree (colaborador_id, data)
 // Table: feriados

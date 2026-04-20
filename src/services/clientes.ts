@@ -1,39 +1,33 @@
 import { supabase } from '@/lib/supabase/client'
 
-export interface ClienteRecord {
-  id: string
-  nome: string
-  cnpj: string
-  email?: string | null
-  telefone?: string | null
-  modulos: string[]
-  valor_total: number
-  status: string
-  created_at: string
-}
-
-export async function fetchClientes() {
+export const getClientes = async () => {
   const { data, error } = await supabase
-    .from('clientes' as any)
+    .from('clientes')
     .select('*')
     .order('created_at', { ascending: false })
-
-  if (error) {
-    console.error('Error fetching clients:', error)
-    return []
-  }
-  return data as ClienteRecord[]
+  if (error) throw error
+  return data
 }
 
-export async function createCliente(payload: Omit<ClienteRecord, 'id' | 'created_at' | 'status'>) {
+export const createCliente = async (cliente: any) => {
+  const { data, error } = await supabase.from('clientes').insert(cliente).select().single()
+  if (error) throw error
+  return data
+}
+
+export const updateCliente = async (id: string, cliente: any) => {
   const { data, error } = await supabase
-    .from('clientes' as any)
-    .insert([payload])
+    .from('clientes')
+    .update(cliente)
+    .eq('id', id)
     .select()
     .single()
+  if (error) throw error
+  return data
+}
 
-  if (error) {
-    throw error
-  }
-  return data as ClienteRecord
+export const deleteCliente = async (id: string) => {
+  const { error } = await supabase.from('clientes').delete().eq('id', id)
+  if (error) throw error
+  return true
 }

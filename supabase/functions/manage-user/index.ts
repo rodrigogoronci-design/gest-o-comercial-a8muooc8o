@@ -19,6 +19,16 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseKey)
     const { action, payload } = await req.json()
 
+    const mapRole = (r: string) => {
+      if (!r) return 'Colaborador'
+      const lower = r.toLowerCase()
+      if (lower === 'admin') return 'Admin'
+      if (lower === 'gerente') return 'Gerente'
+      if (lower === 'colaborador') return 'Colaborador'
+      if (lower === 'personalizado') return 'Personalizado'
+      return r.charAt(0).toUpperCase() + r.slice(1).toLowerCase()
+    }
+
     if (action === 'create') {
       let authUser
 
@@ -46,12 +56,23 @@ Deno.serve(async (req: Request) => {
         user_id: authUser.id,
         email: payload.email,
         nome: payload.name,
-        role: payload.role || 'Colaborador',
+        role: mapRole(payload.role),
         departamento: payload.departamento || null,
+        avatar_url: payload.avatar_url || null,
         recebe_transporte:
           payload.recebe_transporte === false || payload.recebe_transporte === 'false'
             ? false
             : true,
+        cpf: payload.cpf || null,
+        rg: payload.rg || null,
+        data_nascimento: payload.data_nascimento || null,
+        endereco: payload.endereco || null,
+        telefone: payload.telefone || null,
+        cargo: payload.cargo || null,
+        data_admissao: payload.data_admissao || null,
+        salario: payload.salario ? parseFloat(payload.salario) : null,
+        tipo_contrato: payload.tipo_contrato || 'CLT',
+        codigo_funcionario: payload.codigo_funcionario || null,
       })
       if (dbErr) throw dbErr
 
@@ -140,15 +161,34 @@ Deno.serve(async (req: Request) => {
       const receivesTransport =
         recebe_transporte === false || recebe_transporte === 'false' ? false : true
 
+      const updateDataDb: any = {
+        email,
+        nome: name,
+        role: mapRole(role),
+        departamento: payload.departamento || null,
+        recebe_transporte: receivesTransport,
+      }
+
+      if (payload.avatar_url !== undefined) {
+        updateDataDb.avatar_url = payload.avatar_url
+      }
+      if (payload.cpf !== undefined) updateDataDb.cpf = payload.cpf
+      if (payload.rg !== undefined) updateDataDb.rg = payload.rg
+      if (payload.data_nascimento !== undefined)
+        updateDataDb.data_nascimento = payload.data_nascimento
+      if (payload.endereco !== undefined) updateDataDb.endereco = payload.endereco
+      if (payload.telefone !== undefined) updateDataDb.telefone = payload.telefone
+      if (payload.cargo !== undefined) updateDataDb.cargo = payload.cargo
+      if (payload.data_admissao !== undefined) updateDataDb.data_admissao = payload.data_admissao
+      if (payload.salario !== undefined)
+        updateDataDb.salario = payload.salario ? parseFloat(payload.salario) : null
+      if (payload.tipo_contrato !== undefined) updateDataDb.tipo_contrato = payload.tipo_contrato
+      if (payload.codigo_funcionario !== undefined)
+        updateDataDb.codigo_funcionario = payload.codigo_funcionario
+
       const { error: dbErr } = await supabase
         .from('colaboradores')
-        .update({
-          email,
-          nome: name,
-          role: role || 'Colaborador',
-          departamento: payload.departamento || null,
-          recebe_transporte: receivesTransport,
-        })
+        .update(updateDataDb)
         .eq('id', colabId)
 
       if (dbErr) throw dbErr

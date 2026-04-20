@@ -1,5 +1,7 @@
 {
   "_versions": {
-    "manage-user": 14
+    "manage-user": 20,
+    "parse-excel": 7,
+    "parse-pdf": 1
   }
 }
