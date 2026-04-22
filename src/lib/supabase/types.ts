@@ -790,6 +790,50 @@ export type Database = {
           },
         ]
       }
+      recebimentos: {
+        Row: {
+          arquivo_origem: string | null
+          cliente_id: string | null
+          cnpj: string | null
+          created_at: string
+          data_pagamento: string
+          id: string
+          razao_social: string
+          valor_pago: number
+          valor_titulo: number
+        }
+        Insert: {
+          arquivo_origem?: string | null
+          cliente_id?: string | null
+          cnpj?: string | null
+          created_at?: string
+          data_pagamento: string
+          id?: string
+          razao_social: string
+          valor_pago: number
+          valor_titulo: number
+        }
+        Update: {
+          arquivo_origem?: string | null
+          cliente_id?: string | null
+          cnpj?: string | null
+          created_at?: string
+          data_pagamento?: string
+          id?: string
+          razao_social?: string
+          valor_pago?: number
+          valor_titulo?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'recebimentos_cliente_id_fkey'
+            columns: ['cliente_id']
+            isOneToOne: false
+            referencedRelation: 'clientes'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       recrutamento: {
         Row: {
           created_at: string
@@ -1265,6 +1309,16 @@ export const Constants = {
 //   hora_entrada: text (nullable)
 //   hora_saida: text (nullable)
 //   organization_id: uuid (nullable)
+// Table: recebimentos
+//   id: uuid (not null, default: gen_random_uuid())
+//   cliente_id: uuid (nullable)
+//   razao_social: text (not null)
+//   cnpj: text (nullable)
+//   valor_pago: numeric (not null)
+//   valor_titulo: numeric (not null)
+//   data_pagamento: date (not null)
+//   arquivo_origem: text (nullable)
+//   created_at: timestamp with time zone (not null, default: now())
 // Table: recrutamento
 //   id: uuid (not null, default: gen_random_uuid())
 //   created_at: timestamp with time zone (not null, default: timezone('utc'::text, now()))
@@ -1370,6 +1424,9 @@ export const Constants = {
 //   FOREIGN KEY ponto_colaborador_id_fkey: FOREIGN KEY (colaborador_id) REFERENCES colaboradores(id) ON DELETE CASCADE
 //   FOREIGN KEY ponto_organization_id_fkey: FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
 //   PRIMARY KEY ponto_pkey: PRIMARY KEY (id)
+// Table: recebimentos
+//   FOREIGN KEY recebimentos_cliente_id_fkey: FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE SET NULL
+//   PRIMARY KEY recebimentos_pkey: PRIMARY KEY (id)
 // Table: recrutamento
 //   FOREIGN KEY recrutamento_organization_id_fkey: FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
 //   PRIMARY KEY recrutamento_pkey: PRIMARY KEY (id)
@@ -1507,6 +1564,13 @@ export const Constants = {
 //     USING: true
 //     WITH CHECK: true
 // Table: ponto
+//   Policy "Allow all access to anon users" (ALL, PERMISSIVE) roles={anon}
+//     USING: true
+//     WITH CHECK: true
+//   Policy "Allow all access to authenticated users" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
+// Table: recebimentos
 //   Policy "Allow all access to anon users" (ALL, PERMISSIVE) roles={anon}
 //     USING: true
 //     WITH CHECK: true

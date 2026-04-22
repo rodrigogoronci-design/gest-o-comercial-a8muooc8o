@@ -58,44 +58,88 @@ export default function ReceiptsPage() {
     const sheets = Object.keys(data)
     if (sheets.length === 0) throw new Error('Arquivo vazio.')
     const rows = data[sheets[0]]
-    if (rows.length < 2) throw new Error('Nenhum dado encontrado ou arquivo sem cabeçalhos.')
+    if (!Array.isArray(rows) || rows.length < 2)
+      throw new Error('Nenhum dado encontrado ou arquivo com formato inválido.')
 
-    const headers = rows[0].map((h: any) => String(h).toLowerCase())
+    let headerRowIdx = -1
+    let headers: string[] = []
+    for (let i = 0; i < Math.min(rows.length, 15); i++) {
+      const row = rows[i]
+      if (!Array.isArray(row)) continue
+      const rowStrs = row.map((c) => String(c || '').toLowerCase())
+      if (
+        rowStrs.some(
+          (c) =>
+            c.includes('cnpj') ||
+            c.includes('cpf') ||
+            c.includes('valor') ||
+            c.includes('data') ||
+            c.includes('nome') ||
+            c.includes('cliente'),
+        )
+      ) {
+        headerRowIdx = i
+        headers = rowStrs
+        break
+      }
+    }
 
-    let cnpjIdx = headers.findIndex((h: string) => h.includes('cnpj') || h.includes('cpf'))
+    if (headerRowIdx === -1) {
+      headerRowIdx = 0
+      headers = (rows[0] || []).map((c: any) => String(c || '').toLowerCase())
+    }
+
+    let cnpjIdx = headers.findIndex((h) => h.includes('cnpj') || h.includes('cpf'))
     let nomeIdx = headers.findIndex(
-      (h: string) =>
-        h.includes('razao') || h.includes('nome') || h.includes('cliente') || h.includes('pagador'),
+      (h) =>
+        h.includes('razao') ||
+        h.includes('nome') ||
+        h.includes('cliente') ||
+        h.includes('pagador') ||
+        h.includes('sacado'),
     )
     let valorPagoIdx = headers.findIndex(
-      (h: string) =>
+      (h) =>
         h.includes('pago') ||
         h.includes('recebido') ||
         h.includes('credito') ||
-        (h.includes('valor') && !h.includes('titulo')),
+        h.includes('líquido') ||
+        h.includes('liquido'),
     )
     let valorTituloIdx = headers.findIndex(
-      (h: string) =>
+      (h) =>
         h.includes('titulo') ||
         h.includes('documento') ||
         h.includes('original') ||
-        (h.includes('valor') && !h.includes('pago')),
+        h.includes('bruto'),
     )
-    let dataIdx = headers.findIndex((h: string) => h.includes('data') || h.includes('pagamento'))
+    let dataIdx = headers.findIndex(
+      (h) => h.includes('data') || h.includes('pagamento') || h.includes('vencimento'),
+    )
 
-    // Fallbacks to standard columns if headers are too weird
     if (cnpjIdx === -1) cnpjIdx = 0
     if (nomeIdx === -1) nomeIdx = 1
-    if (valorTituloIdx === -1) valorTituloIdx = 2
-    if (valorPagoIdx === -1) valorPagoIdx = 3
+
+    if (valorPagoIdx === -1) {
+      valorPagoIdx = headers.findIndex((h) => h.includes('valor'))
+      if (valorPagoIdx === -1) valorPagoIdx = 3
+    }
+    if (valorTituloIdx === -1) {
+      valorTituloIdx = headers.findIndex((h) => h.includes('valor') && h !== headers[valorPagoIdx])
+      if (valorTituloIdx === -1) valorTituloIdx = 2
+    }
+    if (valorTituloIdx === valorPagoIdx) {
+      valorTituloIdx = 2
+      valorPagoIdx = 3
+    }
     if (dataIdx === -1) dataIdx = 4
 
     const { data: clients } = await supabase.from('clientes').select('id, nome, cnpj')
     const parsedRecords = []
 
-    for (let i = 1; i < rows.length; i++) {
+    for (let i = headerRowIdx + 1; i < rows.length; i++) {
       const row = rows[i]
-      if (!row || row.length === 0) continue
+      if (!Array.isArray(row) || row.length === 0) continue
 
       const rawCnpj = String(row[cnpjIdx] || '').replace(/\D/g, '')
       const rawNome = String(row[nomeIdx] || '').trim()
@@ -111,35 +155,65 @@ export default function ReceiptsPage() {
       const cnpj = matchedClient?.cnpj || row[cnpjIdx] || rawCnpj || ''
 
       const parseNumber = (val: any) => {
+        if (val === null || val === undefined || val === '') return 0
         if (typeof val === 'number') return val
-        // Handles PT-BR values: "1.500,00" -> "1500,00" -> "1500.00"
-        const str = String(val || '0')
-          .replace(/[^0-9,-]/g, '')
-          .replace(',', '.')
-        return parseFloat(str) || 0
+        let str = String(val)
+          .trim()
+          .replace(/[R$\s]/g, '')
+        const lastComma = str.lastIndexOf(',')
+        const lastDot = str.lastIndexOf('.')
+        if (lastComma > lastDot) {
+          str = str.replace(/\./g, '').replace(',', '.')
+        } else if (lastDot > lastComma && lastComma !== -1) {
+          str = str.replace(/,/g, '')
+        } else if (lastComma !== -1) {
+          str = str.replace(',', '.')
+        }
+        const num = parseFloat(str)
+        return isNaN(num) ? 0 : num
+      }
+
+      const parseDate = (val: any) => {
+        if (!val) return new Date()
+        const str = String(val).trim()
+        if (str.includes('T')) {
+          const d = new Date(str)
+          if (!isNaN(d.getTime())) return d
+        }
+        const parts = str.split(/[/.-]/)
+        if (parts.length === 3) {
+          let d, m, y
+          if (parts[0].length === 4) {
+            y = parseInt(parts[0])
+            m = parseInt(parts[1])
+            d = parseInt(parts[2])
+          } else {
+            d = parseInt(parts[0])
+            m = parseInt(parts[1])
+            y = parseInt(parts[2])
+            if (y < 100) y += 2000
+          }
+          const date = new Date(y, m - 1, d, 12, 0, 0)
+          if (!isNaN(date.getTime())) return date
+        }
+        const num = parseFloat(str)
+        if (!isNaN(num) && num > 10000 && num < 100000) {
+          return new Date((num - 25569) * 86400 * 1000)
+        }
+        const fallback = new Date(str)
+        return isNaN(fallback.getTime()) ? new Date() : fallback
       }
 
       const valorPago = parseNumber(row[valorPagoIdx])
       const valorTitulo = parseNumber(row[valorTituloIdx])
+      const dataPagamento = parseDate(row[dataIdx])
 
-      let dataPagamento = new Date()
-      const rawData = String(row[dataIdx])
-      if (rawData.includes('/')) {
-        const parts = rawData.split('/')
-        if (parts.length === 3) {
-          dataPagamento = new Date(
-            `${parts[2].length === 2 ? '20' + parts[2] : parts[2]}-${parts[1]}-${parts[0]}T12:00:00`,
-          )
-        }
-      } else if (!isNaN(Date.parse(rawData))) {
-        dataPagamento = new Date(rawData)
-      }
-      if (isNaN(dataPagamento.getTime())) dataPagamento = new Date()
+      if (!razaoSocial || (razaoSocial === 'Cliente não identificado' && valorPago === 0)) continue
 
       parsedRecords.push({
         cliente_id: matchedClient?.id || null,
-        razao_social: razaoSocial,
-        cnpj: cnpj,
+        razao_social: razaoSocial.substring(0, 255),
+        cnpj: cnpj.substring(0, 20),
         valor_pago: valorPago,
         valor_titulo: valorTitulo,
         data_pagamento: dataPagamento.toISOString().split('T')[0],
@@ -148,10 +222,16 @@ export default function ReceiptsPage() {
     }
 
     if (parsedRecords.length > 0) {
-      const { error } = await supabase.from('recebimentos' as any).insert(parsedRecords)
-      if (error) throw error
+      const batchSize = 100
+      for (let i = 0; i < parsedRecords.length; i += batchSize) {
+        const batch = parsedRecords.slice(i, i + batchSize)
+        const { error } = await supabase.from('recebimentos' as any).insert(batch)
+        if (error) throw new Error(`Falha ao inserir dados no banco: ${error.message}`)
+      }
     } else {
-      throw new Error('Nenhum dado válido para importação encontrado.')
+      throw new Error(
+        'Nenhum dado válido para importação encontrado. Verifique o formato das colunas do arquivo.',
+      )
     }
   }
 
