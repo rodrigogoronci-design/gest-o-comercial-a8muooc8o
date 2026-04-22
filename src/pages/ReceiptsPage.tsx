@@ -37,6 +37,9 @@ type Receipt = {
   valor_titulo: number
   data_pagamento: string
   created_at: string
+  clientes?: {
+    nome: string
+  } | null
 }
 
 export default function ReceiptsPage() {
@@ -51,7 +54,12 @@ export default function ReceiptsPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('recebimentos')
-      .select('*')
+      .select(`
+        *,
+        clientes (
+          nome
+        )
+      `)
       .order('data_pagamento', { ascending: false })
 
     if (error) {
@@ -475,7 +483,8 @@ export default function ReceiptsPage() {
 
   const filteredReceipts = receipts.filter(
     (r) =>
-      r.razao_social.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.razao_social?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.clientes?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.cnpj?.includes(searchTerm),
   )
 
@@ -603,8 +612,20 @@ export default function ReceiptsPage() {
                           <TableCell className="font-medium">
                             {formatDate(receipt.data_pagamento)}
                           </TableCell>
-                          <TableCell>{receipt.razao_social}</TableCell>
-                          <TableCell>{receipt.cnpj}</TableCell>
+                          <TableCell>
+                            <span className="font-medium">
+                              {receipt.clientes?.nome ||
+                                receipt.razao_social ||
+                                'Cliente não identificado'}
+                            </span>
+                            {receipt.razao_social !==
+                              (receipt.clientes?.nome || receipt.razao_social) && (
+                              <span className="block text-xs text-muted-foreground mt-0.5">
+                                Original: {receipt.razao_social}
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell>{receipt.cnpj || '-'}</TableCell>
                           <TableCell className="text-right">
                             {formatCurrency(receipt.valor_titulo)}
                           </TableCell>
