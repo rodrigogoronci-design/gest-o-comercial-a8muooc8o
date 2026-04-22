@@ -18,6 +18,7 @@ import {
   FileSignature,
   Rocket,
   ListTodo,
+  CircleDollarSign,
 } from 'lucide-react'
 
 const navigation = [
@@ -27,6 +28,7 @@ const navigation = [
   { name: 'Diário de Atividades', href: '/atividades', icon: ListTodo },
   { name: 'Planos e Preços', href: '/planos', icon: Tags },
   { name: 'Gerador de Contratos', href: '/contratos', icon: FileSignature },
+  { name: 'Acompanhamento de Recebimentos', href: '/recebimentos', icon: CircleDollarSign },
 ]
 
 export function AppSidebar() {

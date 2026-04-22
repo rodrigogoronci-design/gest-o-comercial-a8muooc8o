@@ -12,6 +12,7 @@ import ClientsPage from './pages/ClientsPage'
 import ActivitiesPage from './pages/ActivitiesPage'
 import PlansPage from './pages/PlansPage'
 import ContractGeneratorPage from './pages/ContractGeneratorPage'
+import ReceiptsPage from './pages/ReceiptsPage'
 import NotFound from './pages/NotFound'
 
 const App = () => (
@@ -29,6 +30,7 @@ const App = () => (
               <Route path="/atividades" element={<ActivitiesPage />} />
               <Route path="/planos" element={<PlansPage />} />
               <Route path="/contratos" element={<ContractGeneratorPage />} />
+              <Route path="/recebimentos" element={<ReceiptsPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

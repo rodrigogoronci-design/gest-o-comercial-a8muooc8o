@@ -62,21 +62,24 @@ export type Database = {
       }
       atividades_comerciais: {
         Row: {
-          cliente_id: string
+          cliente_id: string | null
+          cliente_nome: string | null
           created_at: string
           data_atividade: string
           demanda: string
           id: string
         }
         Insert: {
-          cliente_id: string
+          cliente_id?: string | null
+          cliente_nome?: string | null
           created_at?: string
           data_atividade?: string
           demanda: string
           id?: string
         }
         Update: {
-          cliente_id?: string
+          cliente_id?: string | null
+          cliente_nome?: string | null
           created_at?: string
           data_atividade?: string
           demanda?: string
@@ -1100,10 +1103,11 @@ export const Constants = {
 //   organization_id: uuid (nullable)
 // Table: atividades_comerciais
 //   id: uuid (not null, default: gen_random_uuid())
-//   cliente_id: uuid (not null)
+//   cliente_id: uuid (nullable)
 //   demanda: text (not null)
 //   data_atividade: date (not null, default: CURRENT_DATE)
 //   created_at: timestamp with time zone (not null, default: now())
+//   cliente_nome: text (nullable)
 // Table: avaliacoes
 //   id: uuid (not null, default: gen_random_uuid())
 //   created_at: timestamp with time zone (not null, default: now())
