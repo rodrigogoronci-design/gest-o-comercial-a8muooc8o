@@ -432,7 +432,9 @@ export default function ReceiptsPage() {
       if (typeof uploadData === 'string') {
         try {
           parsedData = JSON.parse(uploadData)
-        } catch (e) {}
+        } catch (e) {
+          // ignore parsing error
+        }
       }
 
       if (parsedData?.error) throw new Error(parsedData.error)
