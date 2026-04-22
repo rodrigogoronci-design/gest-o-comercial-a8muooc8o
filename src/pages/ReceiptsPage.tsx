@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -11,10 +11,22 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
-import { Upload, Loader2, Search, CheckCircle2, AlertTriangle, HelpCircle } from 'lucide-react'
+import {
+  Upload,
+  Loader2,
+  Search,
+  CheckCircle2,
+  AlertTriangle,
+  HelpCircle,
+  TrendingUp,
+  FileSpreadsheet,
+} from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from 'recharts'
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 
 type Receipt = {
   id: string
@@ -38,7 +50,7 @@ export default function ReceiptsPage() {
   const fetchReceipts = async () => {
     setLoading(true)
     const { data, error } = await supabase
-      .from('recebimentos' as any)
+      .from('recebimentos')
       .select('*')
       .order('data_pagamento', { ascending: false })
 
@@ -56,272 +68,345 @@ export default function ReceiptsPage() {
   }, [])
 
   const processExcelData = async (data: any, fileName: string) => {
-    const sheets = Object.keys(data)
-    if (sheets.length === 0) throw new Error('Arquivo vazio.')
-    const rows = data[sheets[0]]
-    if (!Array.isArray(rows) || rows.length < 2)
-      throw new Error('Nenhum dado encontrado ou arquivo com formato inválido.')
+    try {
+      const sheets = Object.keys(data)
+      if (sheets.length === 0) throw new Error('Arquivo vazio ou sem abas.')
 
-    let headerRowIdx = -1
-    let headers: string[] = []
-
-    const normalizeStr = (s: any) =>
-      String(s || '')
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .trim()
-
-    for (let i = 0; i < Math.min(rows.length, 20); i++) {
-      const row = rows[i]
-      if (!Array.isArray(row)) continue
-      const rowStrs = row.map(normalizeStr)
-
-      const matches = rowStrs.filter(
-        (c) =>
-          c.includes('cnpj') ||
-          c.includes('cpf') ||
-          c.includes('valor') ||
-          c.includes('data') ||
-          c.includes('nome') ||
-          c.includes('cliente') ||
-          c.includes('sacado') ||
-          c.includes('pagador') ||
-          c.includes('documento') ||
-          c.includes('titulo') ||
-          c.includes('vencimento') ||
-          c.includes('historico'),
-      ).length
-
-      if (matches >= 2) {
-        headerRowIdx = i
-        headers = rowStrs
-        break
-      }
-    }
-
-    if (headerRowIdx === -1) {
-      headerRowIdx = 0
-      headers = (rows[0] || []).map(normalizeStr)
-    }
-
-    let cnpjIdx = headers.findIndex(
-      (h) =>
-        h.includes('cnpj') ||
-        h.includes('cpf') ||
-        h.includes('documento') ||
-        h.includes('inscricao'),
-    )
-    let nomeIdx = headers.findIndex(
-      (h) =>
-        h.includes('razao') ||
-        h.includes('nome') ||
-        h.includes('cliente') ||
-        h.includes('pagador') ||
-        h.includes('sacado') ||
-        h.includes('empresa') ||
-        h.includes('historico'),
-    )
-    let valorPagoIdx = headers.findIndex(
-      (h) =>
-        h.includes('pago') ||
-        h.includes('recebido') ||
-        h.includes('credito') ||
-        h.includes('liquido') ||
-        h.includes('baixa'),
-    )
-    let valorTituloIdx = headers.findIndex(
-      (h) =>
-        h.includes('titulo') ||
-        h.includes('original') ||
-        h.includes('bruto') ||
-        h.includes('nominal') ||
-        h.includes('valor doc') ||
-        h.includes('vlr'),
-    )
-    let dataIdx = headers.findIndex(
-      (h) =>
-        h.includes('data') ||
-        h.includes('pagamento') ||
-        h.includes('vencimento') ||
-        h.includes('dt.') ||
-        h.includes('baixa'),
-    )
-
-    if (valorPagoIdx === -1) {
-      valorPagoIdx = headers.findIndex(
-        (h) => h.includes('valor') && !h.includes('titulo') && !h.includes('doc'),
-      )
-      if (valorPagoIdx === -1) valorPagoIdx = 3
-    }
-    if (valorTituloIdx === -1) {
-      valorTituloIdx = headers.findIndex((h) => h.includes('valor') && h !== headers[valorPagoIdx])
-      if (valorTituloIdx === -1) valorTituloIdx = 2
-    }
-    if (cnpjIdx === -1) cnpjIdx = 0
-    if (nomeIdx === -1) nomeIdx = 1
-    if (dataIdx === -1) dataIdx = 4
-
-    const { data: initialClients } = await supabase.from('clientes').select('id, nome, cnpj')
-    let clientsList = initialClients || []
-
-    const parsedRows = []
-    const missingClientsMap = new Map()
-
-    const parseNumber = (val: any) => {
-      if (val === null || val === undefined || val === '') return 0
-      if (typeof val === 'number') return val
-      let str = String(val)
-        .trim()
-        .replace(/[R$\s]/g, '')
-        .replace(/\xA0/g, '')
-      const lastComma = str.lastIndexOf(',')
-      const lastDot = str.lastIndexOf('.')
-      if (lastComma > lastDot) {
-        str = str.replace(/\./g, '').replace(',', '.')
-      } else if (lastDot > lastComma && lastComma !== -1) {
-        str = str.replace(/,/g, '')
-      } else if (lastComma !== -1) {
-        str = str.replace(',', '.')
-      }
-      const num = parseFloat(str)
-      return isNaN(num) ? 0 : num
-    }
-
-    const parseDate = (val: any) => {
-      if (!val) return new Date()
-      const str = String(val).trim()
-      if (str.match(/^\d{4}-\d{2}-\d{2}T/)) {
-        const d = new Date(str)
-        if (!isNaN(d.getTime())) return d
-      }
-      const parts = str.split(/[/.-]/)
-      if (parts.length >= 3) {
-        let d, m, y
-        if (parts[0].length === 4) {
-          y = parseInt(parts[0])
-          m = parseInt(parts[1])
-          d = parseInt(parts[2].split(' ')[0])
-        } else {
-          d = parseInt(parts[0])
-          m = parseInt(parts[1])
-          y = parseInt(parts[2].split(' ')[0])
-          if (y < 100) y += 2000
-        }
-        const date = new Date(y, m - 1, d, 12, 0, 0)
-        if (!isNaN(date.getTime())) return date
-      }
-      const num = parseFloat(str)
-      if (!isNaN(num) && num > 10000 && num < 100000) {
-        return new Date((num - 25569) * 86400 * 1000)
-      }
-      const fallback = new Date(str)
-      return isNaN(fallback.getTime()) ? new Date() : fallback
-    }
-
-    for (let i = headerRowIdx + 1; i < rows.length; i++) {
-      const row = rows[i]
-      if (!Array.isArray(row) || row.length === 0) continue
-
-      let rawCnpj = String(row[cnpjIdx] || '').replace(/\D/g, '')
-      let rawNome = String(row[nomeIdx] || '').trim()
-
-      if (!rawNome || !isNaN(Number(rawNome))) {
-        const strCol = row.find((c) => typeof c === 'string' && isNaN(Number(c)) && c.length > 3)
-        if (strCol) rawNome = String(strCol).trim()
-      }
-
-      if (!rawCnpj && !rawNome) continue
-
-      const valorPago = parseNumber(row[valorPagoIdx])
-      const valorTitulo = parseNumber(row[valorTituloIdx])
-      const dataPagamento = parseDate(row[dataIdx])
-
-      if (
-        (!rawNome || rawNome === 'Cliente não identificado') &&
-        valorPago === 0 &&
-        valorTitulo === 0
-      )
-        continue
-
-      parsedRows.push({ rawCnpj, rawNome, valorPago, valorTitulo, dataPagamento, originalRow: row })
-
-      let matchedClient = clientsList.find((c) => {
-        const cCnpj = String(c.cnpj || '').replace(/\D/g, '')
-        return cCnpj && rawCnpj && cCnpj === rawCnpj
-      })
-
-      if (!matchedClient && rawNome) {
-        matchedClient = clientsList.find((c) =>
-          c.nome.toLowerCase().includes(rawNome.toLowerCase()),
-        )
-      }
-
-      if (!matchedClient && rawNome && rawNome !== 'Cliente não identificado') {
-        const cleanCnpj = rawCnpj || '00000000000000'
-        const key = cleanCnpj !== '00000000000000' ? cleanCnpj : rawNome.toLowerCase()
-
-        if (!missingClientsMap.has(key)) {
-          missingClientsMap.set(key, {
-            nome: String(rawNome).substring(0, 255),
-            cnpj: String(cleanCnpj).substring(0, 20),
-            status: 'Ativo',
-          })
+      let rows: any[] = []
+      for (const sheet of sheets) {
+        if (Array.isArray(data[sheet])) {
+          rows = rows.concat(data[sheet])
         }
       }
-    }
 
-    if (missingClientsMap.size > 0) {
-      const clientsToInsert = Array.from(missingClientsMap.values())
-      const { data: newClients, error: insertError } = await supabase
-        .from('clientes')
-        .insert(clientsToInsert)
-        .select('id, nome, cnpj')
+      if (rows.length < 1)
+        throw new Error('Nenhum dado encontrado ou arquivo com formato inválido.')
 
-      if (!insertError && newClients) {
-        clientsList = [...clientsList, ...newClients]
-      } else if (insertError) {
-        console.warn('Failed to bulk insert missing clients:', insertError.message)
+      let headerRowIdx = -1
+      let headers: string[] = []
+
+      const normalizeStr = (s: any) =>
+        String(s || '')
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim()
+
+      for (let i = 0; i < Math.min(rows.length, 50); i++) {
+        const row = rows[i]
+        if (!Array.isArray(row)) continue
+        const rowStrs = row.map(normalizeStr)
+
+        const matches = rowStrs.filter(
+          (c) =>
+            c.includes('cnpj') ||
+            c.includes('cpf') ||
+            c.includes('valor') ||
+            c.includes('data') ||
+            c.includes('nome') ||
+            c.includes('cliente') ||
+            c.includes('sacado') ||
+            c.includes('pagador') ||
+            c.includes('documento') ||
+            c.includes('titulo') ||
+            c.includes('vencimento') ||
+            c.includes('historico') ||
+            c.includes('razao') ||
+            c.includes('fantasia'),
+        ).length
+
+        const strCount = row.filter(
+          (c) => typeof c === 'string' && isNaN(Number(c)) && String(c).trim().length > 2,
+        ).length
+
+        if (matches >= 2 || (matches >= 1 && strCount >= 3)) {
+          headerRowIdx = i
+          headers = rowStrs
+          break
+        }
       }
-    }
 
-    const parsedRecords = []
+      let cnpjIdx = -1,
+        nomeIdx = -1,
+        valorPagoIdx = -1,
+        valorTituloIdx = -1,
+        dataIdx = -1
 
-    for (const row of parsedRows) {
-      let matchedClient = clientsList.find((c) => {
-        const cCnpj = String(c.cnpj || '').replace(/\D/g, '')
-        return cCnpj && row.rawCnpj && cCnpj === row.rawCnpj
-      })
-      if (!matchedClient && row.rawNome) {
-        matchedClient = clientsList.find((c) =>
-          c.nome.toLowerCase().includes(row.rawNome.toLowerCase()),
+      if (headerRowIdx !== -1) {
+        cnpjIdx = headers.findIndex(
+          (h) =>
+            h.includes('cnpj') ||
+            h.includes('cpf') ||
+            h.includes('documento') ||
+            h.includes('inscricao'),
+        )
+        nomeIdx = headers.findIndex(
+          (h) =>
+            h.includes('razao') ||
+            h.includes('nome') ||
+            h.includes('cliente') ||
+            h.includes('pagador') ||
+            h.includes('sacado') ||
+            h.includes('empresa') ||
+            h.includes('historico') ||
+            h.includes('fantasia'),
+        )
+        valorPagoIdx = headers.findIndex(
+          (h) =>
+            h.includes('pago') ||
+            h.includes('recebido') ||
+            h.includes('credito') ||
+            h.includes('liquido') ||
+            h.includes('baixa'),
+        )
+        valorTituloIdx = headers.findIndex(
+          (h) =>
+            h.includes('titulo') ||
+            h.includes('original') ||
+            h.includes('bruto') ||
+            h.includes('nominal') ||
+            h.includes('valor doc') ||
+            h.includes('vlr'),
+        )
+        dataIdx = headers.findIndex(
+          (h) =>
+            h.includes('data') ||
+            h.includes('pagamento') ||
+            h.includes('vencimento') ||
+            h.includes('dt.') ||
+            h.includes('baixa'),
+        )
+
+        if (valorPagoIdx === -1) {
+          valorPagoIdx = headers.findIndex(
+            (h) => h.includes('valor') && !h.includes('titulo') && !h.includes('doc'),
+          )
+        }
+        if (valorTituloIdx === -1 && valorPagoIdx !== -1) {
+          valorTituloIdx = headers.findIndex(
+            (h) => h.includes('valor') && h !== headers[valorPagoIdx],
+          )
+        }
+      }
+
+      const { data: initialClients } = await supabase.from('clientes').select('id, nome, cnpj')
+      let clientsList = initialClients || []
+
+      const parsedRows = []
+      const missingClientsMap = new Map()
+
+      const parseNumber = (val: any) => {
+        if (val === null || val === undefined || val === '') return 0
+        if (typeof val === 'number') return val
+        let str = String(val)
+          .trim()
+          .replace(/[R$\s]/g, '')
+          .replace(/\xA0/g, '')
+        const lastComma = str.lastIndexOf(',')
+        const lastDot = str.lastIndexOf('.')
+        if (lastComma > lastDot) {
+          str = str.replace(/\./g, '').replace(',', '.')
+        } else if (lastDot > lastComma && lastComma !== -1) {
+          str = str.replace(/,/g, '')
+        } else if (lastComma !== -1) {
+          str = str.replace(',', '.')
+        }
+        const num = parseFloat(str)
+        return isNaN(num) ? 0 : num
+      }
+
+      const parseDate = (val: any) => {
+        if (!val) return null
+        if (val instanceof Date) return isNaN(val.getTime()) ? null : val
+        const str = String(val).trim()
+        if (!str) return null
+        if (str.match(/^\d{4}-\d{2}-\d{2}/)) {
+          const d = new Date(str)
+          if (!isNaN(d.getTime())) return d
+        }
+        const parts = str.split(/[/.-]/)
+        if (parts.length >= 3) {
+          let d, m, y
+          if (parts[0].length === 4) {
+            y = parseInt(parts[0])
+            m = parseInt(parts[1])
+            d = parseInt(parts[2].split(' ')[0])
+          } else {
+            d = parseInt(parts[0])
+            m = parseInt(parts[1])
+            y = parseInt(parts[2].split(' ')[0])
+            if (y < 100) y += 2000
+          }
+          const date = new Date(y, m - 1, d, 12, 0, 0)
+          if (!isNaN(date.getTime())) return date
+        }
+        const num = parseFloat(str)
+        if (!isNaN(num) && num > 10000 && num < 100000) {
+          return new Date((num - 25569) * 86400 * 1000)
+        }
+        const fallback = new Date(str)
+        return isNaN(fallback.getTime()) ? null : fallback
+      }
+
+      const startIdx = headerRowIdx >= 0 ? headerRowIdx + 1 : 0
+
+      for (let i = startIdx; i < rows.length; i++) {
+        const row = rows[i]
+        if (!Array.isArray(row) || row.length === 0) continue
+
+        let rawCnpj = ''
+        let rawNome = ''
+        let valorPago = 0
+        let valorTitulo = 0
+        let dataPagamento: Date | null = null
+
+        if (cnpjIdx !== -1) rawCnpj = String(row[cnpjIdx] || '').replace(/\D/g, '')
+        if (nomeIdx !== -1) rawNome = String(row[nomeIdx] || '').trim()
+        if (valorPagoIdx !== -1) valorPago = parseNumber(row[valorPagoIdx])
+        if (valorTituloIdx !== -1) valorTitulo = parseNumber(row[valorTituloIdx])
+        if (dataIdx !== -1) dataPagamento = parseDate(row[dataIdx])
+
+        if (!dataPagamento) {
+          for (let c of row) {
+            const d = parseDate(c)
+            if (d) {
+              dataPagamento = d
+              break
+            }
+          }
+        }
+
+        if (valorPago === 0 && valorTitulo === 0) {
+          const nums = row.map(parseNumber).filter((n) => n > 0)
+          if (nums.length > 0) {
+            valorPago = nums[0]
+            valorTitulo = nums.length > 1 ? nums[1] : nums[0]
+          }
+        } else if (valorPago === 0 && valorTitulo > 0) {
+          valorPago = valorTitulo
+        } else if (valorTitulo === 0 && valorPago > 0) {
+          valorTitulo = valorPago
+        }
+
+        if (!rawNome) {
+          const strs = row.filter(
+            (c) =>
+              typeof c === 'string' &&
+              isNaN(Number(c)) &&
+              !parseDate(c) &&
+              String(c).trim().length > 3,
+          )
+          if (strs.length > 0) rawNome = String(strs[0]).trim()
+        }
+
+        if (!rawCnpj) {
+          const cnpjs = row
+            .map((c) => String(c).replace(/\D/g, ''))
+            .filter((c) => c.length === 11 || c.length === 14)
+          if (cnpjs.length > 0) rawCnpj = cnpjs[0]
+        }
+
+        if ((!rawNome && !rawCnpj) || (valorPago === 0 && valorTitulo === 0)) continue
+        if (!dataPagamento) dataPagamento = new Date()
+
+        if (rawNome && !isNaN(Number(rawNome))) {
+          const strCol = row.find(
+            (c) => typeof c === 'string' && isNaN(Number(c)) && String(c).trim().length > 3,
+          )
+          if (strCol) rawNome = String(strCol).trim()
+        }
+        if (rawNome === 'Cliente não identificado' && !rawCnpj) continue
+
+        parsedRows.push({
+          rawCnpj,
+          rawNome,
+          valorPago,
+          valorTitulo,
+          dataPagamento,
+          originalRow: row,
+        })
+
+        let matchedClient = clientsList.find((c) => {
+          const cCnpj = String(c.cnpj || '').replace(/\D/g, '')
+          return cCnpj && rawCnpj && cCnpj === rawCnpj
+        })
+
+        if (!matchedClient && rawNome) {
+          matchedClient = clientsList.find((c) =>
+            c.nome.toLowerCase().includes(rawNome.toLowerCase()),
+          )
+        }
+
+        if (!matchedClient && rawNome && rawNome !== 'Cliente não identificado') {
+          const cleanCnpj = rawCnpj || '00000000000000'
+          const key = cleanCnpj !== '00000000000000' ? cleanCnpj : rawNome.toLowerCase()
+
+          if (!missingClientsMap.has(key)) {
+            missingClientsMap.set(key, {
+              nome: String(rawNome).substring(0, 255),
+              cnpj: String(cleanCnpj).substring(0, 20),
+              status: 'Ativo',
+            })
+          }
+        }
+      }
+
+      if (missingClientsMap.size > 0) {
+        const clientsToInsert = Array.from(missingClientsMap.values())
+        const { data: newClients, error: insertError } = await supabase
+          .from('clientes')
+          .insert(clientsToInsert)
+          .select('id, nome, cnpj')
+
+        if (!insertError && newClients) {
+          clientsList = [...clientsList, ...newClients]
+        } else if (insertError) {
+          console.warn('Failed to bulk insert missing clients:', insertError.message)
+        }
+      }
+
+      const parsedRecords = []
+
+      for (const row of parsedRows) {
+        let matchedClient = clientsList.find((c) => {
+          const cCnpj = String(c.cnpj || '').replace(/\D/g, '')
+          return cCnpj && row.rawCnpj && cCnpj === row.rawCnpj
+        })
+        if (!matchedClient && row.rawNome) {
+          matchedClient = clientsList.find((c) =>
+            c.nome.toLowerCase().includes(row.rawNome.toLowerCase()),
+          )
+        }
+
+        const razaoSocial = String(matchedClient?.nome || row.rawNome || 'Cliente não identificado')
+        const cnpj = String(matchedClient?.cnpj || row.rawCnpj || '')
+
+        parsedRecords.push({
+          cliente_id: matchedClient?.id || null,
+          razao_social: razaoSocial.substring(0, 255),
+          cnpj: cnpj.substring(0, 20),
+          valor_pago: row.valorPago,
+          valor_titulo: row.valorTitulo,
+          data_pagamento: row.dataPagamento.toISOString().split('T')[0],
+          arquivo_origem: fileName,
+        })
+      }
+
+      if (parsedRecords.length > 0) {
+        const batchSize = 100
+        for (let i = 0; i < parsedRecords.length; i += batchSize) {
+          const batch = parsedRecords.slice(i, i + batchSize)
+          const { error } = await supabase.from('recebimentos').insert(batch)
+          if (error) throw new Error(`Falha ao inserir dados no banco: ${error.message}`)
+        }
+      } else {
+        throw new Error(
+          'Nenhum dado válido para importação encontrado. Verifique se o arquivo possui valores preenchidos.',
         )
       }
-
-      const razaoSocial = String(matchedClient?.nome || row.rawNome || 'Cliente não identificado')
-      const cnpj = String(matchedClient?.cnpj || row.originalRow[cnpjIdx] || row.rawCnpj || '')
-
-      parsedRecords.push({
-        cliente_id: matchedClient?.id || null,
-        razao_social: razaoSocial.substring(0, 255),
-        cnpj: cnpj.substring(0, 20),
-        valor_pago: row.valorPago,
-        valor_titulo: row.valorTitulo,
-        data_pagamento: row.dataPagamento.toISOString().split('T')[0],
-        arquivo_origem: fileName,
-      })
-    }
-    if (parsedRecords.length > 0) {
-      const batchSize = 100
-      for (let i = 0; i < parsedRecords.length; i += batchSize) {
-        const batch = parsedRecords.slice(i, i + batchSize)
-        const { error } = await supabase.from('recebimentos' as any).insert(batch)
-        if (error) throw new Error(`Falha ao inserir dados no banco: ${error.message}`)
-      }
-    } else {
-      throw new Error(
-        'Nenhum dado válido para importação encontrado. Verifique o formato das colunas do arquivo.',
-      )
+    } catch (e: any) {
+      console.error('Error inside processExcelData:', e)
+      throw e
     }
   }
 
@@ -342,12 +427,21 @@ export default function ReceiptsPage() {
       )
 
       if (uploadError) throw new Error(uploadError.message)
-      if (uploadData?.error) throw new Error(uploadData.error)
 
-      await processExcelData(uploadData.data, file.name)
+      let parsedData = uploadData
+      if (typeof uploadData === 'string') {
+        try {
+          parsedData = JSON.parse(uploadData)
+        } catch (e) {}
+      }
+
+      if (parsedData?.error) throw new Error(parsedData.error)
+      if (!parsedData?.data) throw new Error('Resposta inválida do servidor ao ler o arquivo.')
+
+      await processExcelData(parsedData.data, file.name)
 
       toast({ title: 'Sucesso', description: 'Arquivo importado e processado com sucesso.' })
-      fetchReceipts()
+      await fetchReceipts()
     } catch (error: any) {
       console.error(error)
       toast({ title: 'Erro na importação', description: error.message, variant: 'destructive' })
@@ -360,7 +454,7 @@ export default function ReceiptsPage() {
   const filteredReceipts = receipts.filter(
     (r) =>
       r.razao_social.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.cnpj.includes(searchTerm),
+      r.cnpj?.includes(searchTerm),
   )
 
   const formatCurrency = (value: number) => {
@@ -374,6 +468,24 @@ export default function ReceiptsPage() {
       return dateStr
     }
   }
+
+  const chartData = useMemo(() => {
+    const grouped = receipts.reduce(
+      (acc, r) => {
+        if (!r.data_pagamento) return acc
+        const month = r.data_pagamento.substring(0, 7)
+        if (!acc[month]) acc[month] = { month, recebido: 0, previsto: 0 }
+        acc[month].recebido += Number(r.valor_pago) || 0
+        acc[month].previsto += Number(r.valor_titulo) || 0
+        return acc
+      },
+      {} as Record<string, { month: string; recebido: number; previsto: number }>,
+    )
+
+    return Object.values(grouped)
+      .sort((a, b) => a.month.localeCompare(b.month))
+      .slice(-6)
+  }, [receipts])
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -407,97 +519,172 @@ export default function ReceiptsPage() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Relatório de Recebimentos</CardTitle>
-          <CardDescription>
-            Histórico de pagamentos identificados a partir dos arquivos de retorno.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center mb-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por cliente ou CNPJ..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
+      <Tabs defaultValue="list" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="list" className="gap-2">
+            <FileSpreadsheet className="w-4 h-4" /> Lista de Recebimentos
+          </TabsTrigger>
+          <TabsTrigger value="metrics" className="gap-2">
+            <TrendingUp className="w-4 h-4" /> Métricas e Gráficos
+          </TabsTrigger>
+        </TabsList>
 
-          <div className="rounded-md border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Cliente (Razão Social)</TableHead>
-                  <TableHead>CNPJ</TableHead>
-                  <TableHead className="text-right">Valor do Título</TableHead>
-                  <TableHead className="text-right">Valor Pago</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                    </TableCell>
-                  </TableRow>
-                ) : filteredReceipts.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      Nenhum recebimento encontrado.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredReceipts.map((receipt) => (
-                    <TableRow key={receipt.id}>
-                      <TableCell className="font-medium">
-                        {formatDate(receipt.data_pagamento)}
-                      </TableCell>
-                      <TableCell>{receipt.razao_social}</TableCell>
-                      <TableCell>{receipt.cnpj}</TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(receipt.valor_titulo)}
-                      </TableCell>
-                      <TableCell className="text-right font-medium text-emerald-600">
-                        {formatCurrency(receipt.valor_pago)}
-                      </TableCell>
-                      <TableCell>
-                        {!receipt.cliente_id ? (
-                          <Badge
-                            variant="outline"
-                            className="text-amber-600 border-amber-200 bg-amber-50"
-                          >
-                            <HelpCircle className="w-3 h-3 mr-1" /> Não Identificado
-                          </Badge>
-                        ) : receipt.valor_pago < receipt.valor_titulo ? (
-                          <Badge
-                            variant="outline"
-                            className="text-rose-600 border-rose-200 bg-rose-50"
-                          >
-                            <AlertTriangle className="w-3 h-3 mr-1" /> Divergência
-                          </Badge>
-                        ) : (
-                          <Badge
-                            variant="outline"
-                            className="text-emerald-600 border-emerald-200 bg-emerald-50"
-                          >
-                            <CheckCircle2 className="w-3 h-3 mr-1" /> Conciliado
-                          </Badge>
-                        )}
-                      </TableCell>
+        <TabsContent value="list" className="mt-0 focus-visible:outline-none">
+          <Card>
+            <CardHeader>
+              <CardTitle>Relatório de Recebimentos</CardTitle>
+              <CardDescription>
+                Histórico de pagamentos identificados a partir dos arquivos de retorno.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center mb-4">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por cliente ou CNPJ..."
+                    className="pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-md border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Cliente (Razão Social)</TableHead>
+                      <TableHead>CNPJ</TableHead>
+                      <TableHead className="text-right">Valor do Título</TableHead>
+                      <TableHead className="text-right">Valor Pago</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8">
+                          <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredReceipts.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                          Nenhum recebimento encontrado.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredReceipts.map((receipt) => (
+                        <TableRow key={receipt.id}>
+                          <TableCell className="font-medium">
+                            {formatDate(receipt.data_pagamento)}
+                          </TableCell>
+                          <TableCell>{receipt.razao_social}</TableCell>
+                          <TableCell>{receipt.cnpj}</TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(receipt.valor_titulo)}
+                          </TableCell>
+                          <TableCell className="text-right font-medium text-emerald-600">
+                            {formatCurrency(receipt.valor_pago)}
+                          </TableCell>
+                          <TableCell>
+                            {!receipt.cliente_id ? (
+                              <Badge
+                                variant="outline"
+                                className="text-amber-600 border-amber-200 bg-amber-50 whitespace-nowrap"
+                              >
+                                <HelpCircle className="w-3 h-3 mr-1" /> Não Identificado
+                              </Badge>
+                            ) : receipt.valor_pago < receipt.valor_titulo ? (
+                              <Badge
+                                variant="outline"
+                                className="text-rose-600 border-rose-200 bg-rose-50 whitespace-nowrap"
+                              >
+                                <AlertTriangle className="w-3 h-3 mr-1" /> Divergência
+                              </Badge>
+                            ) : (
+                              <Badge
+                                variant="outline"
+                                className="text-emerald-600 border-emerald-200 bg-emerald-50 whitespace-nowrap"
+                              >
+                                <CheckCircle2 className="w-3 h-3 mr-1" /> Conciliado
+                              </Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="metrics" className="mt-0 focus-visible:outline-none">
+          <Card>
+            <CardHeader>
+              <CardTitle>Receita Mensal</CardTitle>
+              <CardDescription>
+                Comparativo entre valor previsto (títulos) e valor efetivamente pago nos últimos 6
+                meses.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {chartData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <TrendingUp className="w-12 h-12 mb-4 opacity-20" />
+                  <p>Nenhum dado suficiente para gerar gráficos.</p>
+                </div>
+              ) : (
+                <ChartContainer
+                  config={{
+                    recebido: { label: 'Recebido', color: 'hsl(var(--primary))' },
+                    previsto: { label: 'Previsto', color: 'hsl(var(--muted-foreground))' },
+                  }}
+                  className="h-[400px] w-full mt-4"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={chartData}
+                      margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.5} />
+                      <XAxis
+                        dataKey="month"
+                        tickFormatter={(v) => {
+                          if (!v) return ''
+                          const [y, m] = v.split('-')
+                          return `${m}/${y}`
+                        }}
+                        axisLine={false}
+                        tickLine={false}
+                        dy={10}
+                      />
+                      <YAxis
+                        tickFormatter={(v) => `R$ ${(v / 1000).toFixed(1)}k`}
+                        axisLine={false}
+                        tickLine={false}
+                        dx={-10}
+                      />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar
+                        dataKey="previsto"
+                        fill="var(--color-previsto)"
+                        radius={[4, 4, 0, 0]}
+                        opacity={0.3}
+                      />
+                      <Bar dataKey="recebido" fill="var(--color-recebido)" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
