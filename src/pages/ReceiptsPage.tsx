@@ -213,35 +213,21 @@ export default function ReceiptsPage() {
       return parseFloat(s)
     }
 
-    const textUpper = text.toUpperCase()
-    const isDetailedLayout =
-      textUpper.includes('DATA LIQUIDACAO') ||
-      textUpper.includes('DATA LIQUIDAÇÃO') ||
-      textUpper.includes('TRANSFERÊNCIA') ||
-      textUpper.includes('DIAS EM ABERTO') ||
-      textUpper.includes('SITUAÇÃO ATUAL')
-
     let currentSacado = ''
+    let currentCnpj = ''
     let lastSeenText = ''
 
     let tempDates: string[] = []
     let tempValues: number[] = []
     let tempLine = ''
-    let tempDoc = ''
 
     const flushRecord = () => {
       if (tempDates.length > 0 && tempValues.length > 0) {
-        let dateStr = tempDates[tempDates.length - 1]
-        let isUnpaid = false
+        let isUnpaid = tempValues.length === 1 || tempValues[tempValues.length - 1] === 0
 
-        if (isDetailedLayout) {
-          if (tempDates.length >= 2) {
-            dateStr = tempDates[1] // Data Liquidação
-          } else {
-            // Only 1 date found -> Data Transf. Means it's not paid yet.
-            dateStr = tempDates[0]
-            isUnpaid = true
-          }
+        let dateStr = tempDates[0] // Default: Vencimento (primeira data)
+        if (!isUnpaid && tempDates.length > 1) {
+          dateStr = tempDates[tempDates.length - 1] // Liquidação (última data)
         }
 
         dateStr = dateStr.replace(/\s+/g, '')
@@ -250,21 +236,16 @@ export default function ReceiptsPage() {
         const dataPagamento = new Date(parseInt(year), parseInt(m) - 1, parseInt(d), 12, 0, 0)
 
         if (!isNaN(dataPagamento.getTime())) {
-          let valorPago = tempValues[tempValues.length - 1]
-          let valorTitulo = tempValues.length > 1 ? tempValues[0] : valorPago
+          let valorTitulo = tempValues[0]
+          let valorPago = isUnpaid ? 0 : tempValues[tempValues.length - 1]
 
-          if (isUnpaid) {
-            valorTitulo = valorPago
-            valorPago = 0
-          }
-
-          const rawCnpj = tempDoc ? tempDoc.replace(/\D/g, '') : ''
+          const rawCnpj = currentCnpj.replace(/\D/g, '')
           let rawNome = currentSacado || lastSeenText
 
           if (!rawNome) {
             rawNome = tempLine
-            tempDates.forEach((d) => (rawNome = rawNome.replace(d, '')))
-            if (tempDoc) rawNome = rawNome.replace(tempDoc, '')
+            tempDates.forEach((dt) => (rawNome = rawNome.replace(dt, '')))
+            if (currentCnpj) rawNome = rawNome.replace(currentCnpj, '')
             tempValues.forEach((v) => (rawNome = rawNome.replace(v.toString(), '')))
             rawNome = rawNome
               .replace(/[0-9,.\-/]/g, ' ')
@@ -290,7 +271,6 @@ export default function ReceiptsPage() {
       tempDates = []
       tempValues = []
       tempLine = ''
-      tempDoc = ''
     }
 
     for (let i = 0; i < lines.length; i++) {
@@ -306,12 +286,17 @@ export default function ReceiptsPage() {
         } else if (lines[i + 1] && !lines[i + 1].match(/[\d.,/-]{4,}/)) {
           currentSacado = lines[i + 1].trim()
         }
+
+        const cMatch = line.match(docRegex) || (lines[i + 1] ? lines[i + 1].match(docRegex) : null)
+        if (cMatch) currentCnpj = cMatch[0]
+        else currentCnpj = ''
+
         continue
       }
 
       const dMatches = Array.from(line.matchAll(dateRegex)).map((m) => m[1])
-      const cMatch = line.match(docRegex)
       const vMatches = Array.from(line.matchAll(valRegex)).map((m) => m[1])
+      const parsedV = vMatches.map((v) => parseVal(v.replace(/\s+/g, ''))).filter((v) => v > 0)
 
       if (
         dMatches.length === 0 &&
@@ -325,33 +310,58 @@ export default function ReceiptsPage() {
           !lower.includes('página') &&
           !lower.includes('relatório') &&
           !lower.includes('data') &&
-          !lower.includes('valor')
+          !lower.includes('valor') &&
+          !lower.includes('cnpj') &&
+          !lower.includes('cpf')
         ) {
           lastSeenText = line
         }
       }
 
-      if (dMatches.length > 0 || vMatches.length > 0) {
-        if (!isDetailedLayout && tempDates.length > 0 && tempValues.length > 0) {
+      if (dMatches.length > 0 || parsedV.length > 0) {
+        if (tempDates.length > 0 && tempValues.length > 0 && dMatches.length > 0) {
           flushRecord()
         }
 
         tempDates.push(...dMatches)
-        const parsedV = vMatches.map((v) => parseVal(v.replace(/\s+/g, ''))).filter((v) => v > 0)
         tempValues.push(...parsedV)
-        if (cMatch) tempDoc = cMatch[0]
         tempLine += ' ' + line
-
-        if (!isDetailedLayout && tempDates.length > 0 && tempValues.length > 0) {
-          flushRecord()
-          lastSeenText = ''
-        }
       }
     }
     flushRecord()
 
     if (parsedRows.length === 0) {
       throw new Error('Nenhum dado válido de liquidação encontrado no PDF.')
+    }
+
+    let valorTotalRodape = 0
+    for (let i = lines.length - 1; i >= Math.max(0, lines.length - 30); i--) {
+      const line = lines[i].toUpperCase()
+      if (line.includes('TOTAL') && !line.includes('SACADO')) {
+        const vMatches = Array.from(lines[i].matchAll(valRegex)).map((m) => m[1])
+        if (vMatches.length > 0) {
+          const vals = vMatches.map((v) => parseVal(v.replace(/\s+/g, '')))
+          valorTotalRodape = Math.max(...vals)
+          break
+        }
+      }
+    }
+
+    if (valorTotalRodape > 0 && parsedRows.length > 0) {
+      const somaValoresPagos = parsedRows.reduce((acc, row) => acc + row.valorPago, 0)
+      const somaValoresTitulos = parsedRows.reduce((acc, row) => acc + row.valorTitulo, 0)
+      const formatBR = (v: number) =>
+        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)
+
+      const matchPago = Math.abs(somaValoresPagos - valorTotalRodape) < 2.0
+      const matchTitulo = Math.abs(somaValoresTitulos - valorTotalRodape) < 2.0
+      const matchTotal = Math.abs(somaValoresTitulos + somaValoresPagos - valorTotalRodape) < 2.0
+
+      if (!matchPago && !matchTitulo && !matchTotal) {
+        throw new Error(
+          `Divergência de valores: Soma lida (Títulos: ${formatBR(somaValoresTitulos)} / Pagos: ${formatBR(somaValoresPagos)}) não confere com o Total do rodapé do arquivo (${formatBR(valorTotalRodape)}). Verifique o formato do PDF.`,
+        )
+      }
     }
 
     await persistParsedRows(parsedRows, fileName, clientsList)
