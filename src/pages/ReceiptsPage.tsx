@@ -22,6 +22,7 @@ import {
   HelpCircle,
   TrendingUp,
   FileSpreadsheet,
+  Printer,
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
@@ -74,6 +75,179 @@ export default function ReceiptsPage() {
   useEffect(() => {
     fetchReceipts()
   }, [])
+
+  const persistParsedRows = async (parsedRows: any[], fileName: string, clientsList: any[]) => {
+    const missingClientsMap = new Map()
+
+    for (const row of parsedRows) {
+      let matchedClient = clientsList.find((c: any) => {
+        const cCnpj = String(c.cnpj || '').replace(/\D/g, '')
+        return cCnpj && row.rawCnpj && cCnpj === row.rawCnpj
+      })
+
+      if (!matchedClient && row.rawNome && row.rawNome !== 'Cliente não identificado') {
+        matchedClient = clientsList.find(
+          (c: any) => c.nome.toLowerCase() === row.rawNome.toLowerCase(),
+        )
+      }
+
+      if (!matchedClient && row.rawNome && row.rawNome !== 'Cliente não identificado') {
+        const cleanCnpj = row.rawCnpj || '00000000000000'
+        const key = cleanCnpj !== '00000000000000' ? cleanCnpj : row.rawNome.toLowerCase()
+
+        if (!missingClientsMap.has(key)) {
+          missingClientsMap.set(key, {
+            nome: String(row.rawNome).substring(0, 255),
+            cnpj: String(cleanCnpj).substring(0, 20),
+            status: 'Ativo',
+          })
+        }
+      }
+    }
+
+    if (missingClientsMap.size > 0) {
+      const clientsToInsert = Array.from(missingClientsMap.values())
+      const { data: newClients, error: insertError } = await supabase
+        .from('clientes')
+        .insert(clientsToInsert)
+        .select('id, nome, cnpj')
+
+      if (!insertError && newClients) {
+        clientsList = [...clientsList, ...newClients]
+      } else if (insertError) {
+        console.warn('Failed to bulk insert missing clients:', insertError.message)
+      }
+    }
+
+    const parsedRecords = []
+
+    for (const row of parsedRows) {
+      let matchedClient = clientsList.find((c: any) => {
+        const cCnpj = String(c.cnpj || '').replace(/\D/g, '')
+        return cCnpj && row.rawCnpj && cCnpj === row.rawCnpj
+      })
+
+      if (!matchedClient && row.rawNome && row.rawNome !== 'Cliente não identificado') {
+        matchedClient = clientsList.find(
+          (c: any) =>
+            c.nome.toLowerCase() === row.rawNome.toLowerCase() ||
+            (row.rawNome.length > 5 && c.nome.toLowerCase().includes(row.rawNome.toLowerCase())),
+        )
+      }
+
+      const razaoSocial = String(matchedClient?.nome || row.rawNome || 'Cliente não identificado')
+      const cnpj = String(matchedClient?.cnpj || row.rawCnpj || '')
+
+      parsedRecords.push({
+        cliente_id: matchedClient?.id || null,
+        razao_social: razaoSocial.substring(0, 255),
+        cnpj: cnpj.substring(0, 20),
+        valor_pago: row.valorPago,
+        valor_titulo: row.valorTitulo,
+        data_pagamento: row.dataPagamento.toISOString().split('T')[0],
+        arquivo_origem: fileName,
+      })
+    }
+
+    if (parsedRecords.length > 0) {
+      const batchSize = 100
+      for (let i = 0; i < parsedRecords.length; i += batchSize) {
+        const batch = parsedRecords.slice(i, i + batchSize)
+        const { error } = await supabase.from('recebimentos').insert(batch)
+        if (error) throw new Error(`Falha ao inserir dados no banco: ${error.message}`)
+      }
+    } else {
+      throw new Error(
+        'Nenhum dado válido para importação encontrado. Verifique se o arquivo possui valores preenchidos.',
+      )
+    }
+  }
+
+  const processPdfData = async (text: string, fileName: string) => {
+    const lines = text.split('\n')
+    const parsedRows = []
+
+    const dateRegex = /(\d{2}[/-]\d{2}[/-]\d{2,4})/
+    const docRegex = /(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}|\d{3}\.\d{3}\.\d{3}-\d{2})/
+    const valRegex = /(?:R\$\s*)?(\d{1,3}(?:[.,]\d{3})*[,.]\d{2})/g
+
+    const { data: initialClients } = await supabase.from('clientes').select('id, nome, cnpj')
+    const clientsList = initialClients || []
+
+    const parseVal = (str: string) => {
+      let s = str.replace(/[R$\s]/g, '')
+      const lastComma = s.lastIndexOf(',')
+      const lastDot = s.lastIndexOf('.')
+      if (lastComma > lastDot) {
+        s = s.replace(/\./g, '').replace(',', '.')
+      } else if (lastDot > lastComma && lastComma !== -1) {
+        s = s.replace(/,/g, '')
+      } else if (lastComma !== -1) {
+        s = s.replace(',', '.')
+      }
+      return parseFloat(s)
+    }
+
+    for (const line of lines) {
+      if (!line.trim()) continue
+
+      const dateMatch = line.match(dateRegex)
+      const docMatch = line.match(docRegex)
+
+      const valMatches: string[] = []
+      let match
+      const regex = new RegExp(valRegex)
+      while ((match = regex.exec(line)) !== null) {
+        valMatches.push(match[1])
+      }
+
+      if (dateMatch && valMatches.length > 0) {
+        const [d, m, y] = dateMatch[1].split(/[/-]/)
+        const year = y.length === 2 ? `20${y}` : y
+        const dataPagamento = new Date(parseInt(year), parseInt(m) - 1, parseInt(d), 12, 0, 0)
+
+        if (isNaN(dataPagamento.getTime())) continue
+
+        const values = valMatches.map((v) => parseVal(v))
+        const valorPago = values[values.length - 1]
+        const valorTitulo = values.length > 1 ? values[0] : valorPago
+
+        if (valorPago <= 0) continue
+
+        const rawCnpj = docMatch ? docMatch[1].replace(/\D/g, '') : ''
+
+        let rawNome = line.replace(dateMatch[0], '')
+        if (docMatch) rawNome = rawNome.replace(docMatch[0], '')
+        for (const v of valMatches) {
+          rawNome = rawNome.replace(v, '').replace('R$', '')
+        }
+
+        rawNome = rawNome
+          .replace(/[0-9,.\-/]/g, ' ')
+          .trim()
+          .replace(/\s{2,}/g, ' ')
+
+        if (!rawNome || rawNome.length < 3 || rawNome.toLowerCase().includes('total')) {
+          rawNome = 'Cliente não identificado'
+        }
+
+        parsedRows.push({
+          rawCnpj,
+          rawNome,
+          valorPago,
+          valorTitulo,
+          dataPagamento,
+          originalRow: line,
+        })
+      }
+    }
+
+    if (parsedRows.length === 0) {
+      throw new Error('Nenhum dado válido de liquidação encontrado no PDF.')
+    }
+
+    await persistParsedRows(parsedRows, fileName, clientsList)
+  }
 
   const processExcelData = async (data: any, fileName: string) => {
     try {
@@ -206,10 +380,9 @@ export default function ReceiptsPage() {
       }
 
       const { data: initialClients } = await supabase.from('clientes').select('id, nome, cnpj')
-      let clientsList = initialClients || []
+      const clientsList = initialClients || []
 
       const parsedRows = []
-      const missingClientsMap = new Map()
 
       const parseNumber = (val: any) => {
         if (val === null || val === undefined || val === '') return 0
@@ -346,28 +519,6 @@ export default function ReceiptsPage() {
           dataPagamento,
           originalRow: row,
         })
-
-        let matchedClient = clientsList.find((c) => {
-          const cCnpj = String(c.cnpj || '').replace(/\D/g, '')
-          return cCnpj && rawCnpj && cCnpj === rawCnpj
-        })
-
-        if (!matchedClient && rawNome && rawNome !== 'Cliente não identificado') {
-          matchedClient = clientsList.find((c) => c.nome.toLowerCase() === rawNome.toLowerCase())
-        }
-
-        if (!matchedClient && rawNome && rawNome !== 'Cliente não identificado') {
-          const cleanCnpj = rawCnpj || '00000000000000'
-          const key = cleanCnpj !== '00000000000000' ? cleanCnpj : rawNome.toLowerCase()
-
-          if (!missingClientsMap.has(key)) {
-            missingClientsMap.set(key, {
-              nome: String(rawNome).substring(0, 255),
-              cnpj: String(cleanCnpj).substring(0, 20),
-              status: 'Ativo',
-            })
-          }
-        }
       }
 
       if (parsedRows.length === 0) {
@@ -376,62 +527,7 @@ export default function ReceiptsPage() {
         )
       }
 
-      if (missingClientsMap.size > 0) {
-        const clientsToInsert = Array.from(missingClientsMap.values())
-        const { data: newClients, error: insertError } = await supabase
-          .from('clientes')
-          .insert(clientsToInsert)
-          .select('id, nome, cnpj')
-
-        if (!insertError && newClients) {
-          clientsList = [...clientsList, ...newClients]
-        } else if (insertError) {
-          console.warn('Failed to bulk insert missing clients:', insertError.message)
-        }
-      }
-
-      const parsedRecords = []
-
-      for (const row of parsedRows) {
-        let matchedClient = clientsList.find((c) => {
-          const cCnpj = String(c.cnpj || '').replace(/\D/g, '')
-          return cCnpj && row.rawCnpj && cCnpj === row.rawCnpj
-        })
-
-        if (!matchedClient && row.rawNome && row.rawNome !== 'Cliente não identificado') {
-          matchedClient = clientsList.find(
-            (c) =>
-              c.nome.toLowerCase() === row.rawNome.toLowerCase() ||
-              (row.rawNome.length > 5 && c.nome.toLowerCase().includes(row.rawNome.toLowerCase())),
-          )
-        }
-
-        const razaoSocial = String(matchedClient?.nome || row.rawNome || 'Cliente não identificado')
-        const cnpj = String(matchedClient?.cnpj || row.rawCnpj || '')
-
-        parsedRecords.push({
-          cliente_id: matchedClient?.id || null,
-          razao_social: razaoSocial.substring(0, 255),
-          cnpj: cnpj.substring(0, 20),
-          valor_pago: row.valorPago,
-          valor_titulo: row.valorTitulo,
-          data_pagamento: row.dataPagamento.toISOString().split('T')[0],
-          arquivo_origem: fileName,
-        })
-      }
-
-      if (parsedRecords.length > 0) {
-        const batchSize = 100
-        for (let i = 0; i < parsedRecords.length; i += batchSize) {
-          const batch = parsedRecords.slice(i, i + batchSize)
-          const { error } = await supabase.from('recebimentos').insert(batch)
-          if (error) throw new Error(`Falha ao inserir dados no banco: ${error.message}`)
-        }
-      } else {
-        throw new Error(
-          'Nenhum dado válido para importação encontrado. Verifique se o arquivo possui valores preenchidos.',
-        )
-      }
+      await persistParsedRows(parsedRows, fileName, clientsList)
     } catch (e: any) {
       console.error('Error inside processExcelData:', e)
       throw e
@@ -444,31 +540,42 @@ export default function ReceiptsPage() {
 
     setUploading(true)
     try {
+      const isPdf = file.name.toLowerCase().endsWith('.pdf')
       const formData = new FormData()
       formData.append('file', file)
 
-      const { data: uploadData, error: uploadError } = await supabase.functions.invoke(
-        'parse-excel',
-        {
-          body: formData,
-        },
-      )
+      if (isPdf) {
+        const { data: uploadData, error: uploadError } = await supabase.functions.invoke(
+          'parse-receipt-pdf',
+          { body: formData },
+        )
 
-      if (uploadError) throw new Error(uploadError.message)
+        if (uploadError) throw new Error(uploadError.message)
+        if (uploadData?.error) throw new Error(uploadData.error)
 
-      let parsedData = uploadData
-      if (typeof uploadData === 'string') {
-        try {
-          parsedData = JSON.parse(uploadData)
-        } catch (e) {
-          // ignore parsing error
+        await processPdfData(uploadData.text, file.name)
+      } else {
+        const { data: uploadData, error: uploadError } = await supabase.functions.invoke(
+          'parse-excel',
+          { body: formData },
+        )
+
+        if (uploadError) throw new Error(uploadError.message)
+
+        let parsedData = uploadData
+        if (typeof uploadData === 'string') {
+          try {
+            parsedData = JSON.parse(uploadData)
+          } catch (e) {
+            // ignore parsing error
+          }
         }
+
+        if (parsedData?.error) throw new Error(parsedData.error)
+        if (!parsedData?.data) throw new Error('Resposta inválida do servidor ao ler o arquivo.')
+
+        await processExcelData(parsedData.data, file.name)
       }
-
-      if (parsedData?.error) throw new Error(parsedData.error)
-      if (!parsedData?.data) throw new Error('Resposta inválida do servidor ao ler o arquivo.')
-
-      await processExcelData(parsedData.data, file.name)
 
       toast({ title: 'Sucesso', description: 'Arquivo importado e processado com sucesso.' })
       await fetchReceipts()
@@ -520,7 +627,7 @@ export default function ReceiptsPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Acompanhamento de Recebimentos</h1>
           <p className="text-muted-foreground mt-1">
@@ -528,9 +635,13 @@ export default function ReceiptsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => window.print()}>
+            <Printer className="w-4 h-4" />
+            <span className="hidden sm:inline">Exportar PDF</span>
+          </Button>
           <Input
             type="file"
-            accept=".xlsx,.xls,.csv"
+            accept=".xlsx,.xls,.csv,.pdf"
             className="hidden"
             ref={fileInputRef}
             onChange={handleFileUpload}
@@ -550,8 +661,13 @@ export default function ReceiptsPage() {
         </div>
       </div>
 
+      <div className="hidden print:block mb-6">
+        <h1 className="text-2xl font-bold">Relatório de Recebimentos</h1>
+        <p className="text-sm text-gray-500">Gerado em {format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
+      </div>
+
       <Tabs defaultValue="list" className="w-full">
-        <TabsList className="mb-4">
+        <TabsList className="mb-4 print:hidden">
           <TabsTrigger value="list" className="gap-2">
             <FileSpreadsheet className="w-4 h-4" /> Lista de Recebimentos
           </TabsTrigger>
@@ -560,16 +676,16 @@ export default function ReceiptsPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="list" className="mt-0 focus-visible:outline-none">
-          <Card>
-            <CardHeader>
+        <TabsContent value="list" className="mt-0 focus-visible:outline-none print:block">
+          <Card className="print:border-0 print:shadow-none">
+            <CardHeader className="print:hidden">
               <CardTitle>Relatório de Recebimentos</CardTitle>
               <CardDescription>
                 Histórico de pagamentos identificados a partir dos arquivos de retorno.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center mb-4">
+            <CardContent className="print:p-0">
+              <div className="flex items-center mb-4 print:hidden">
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -581,21 +697,21 @@ export default function ReceiptsPage() {
                 </div>
               </div>
 
-              <div className="rounded-md border overflow-hidden">
+              <div className="rounded-md border print:border-0 overflow-hidden">
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                    <TableRow className="print:border-b-2 print:border-gray-800">
                       <TableHead>Data</TableHead>
                       <TableHead>Cliente (Razão Social)</TableHead>
                       <TableHead>CNPJ</TableHead>
                       <TableHead className="text-right">Valor do Título</TableHead>
                       <TableHead className="text-right">Valor Pago</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead className="print:hidden">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {loading ? (
-                      <TableRow>
+                      <TableRow className="print:hidden">
                         <TableCell colSpan={6} className="text-center py-8">
                           <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
                         </TableCell>
@@ -608,8 +724,8 @@ export default function ReceiptsPage() {
                       </TableRow>
                     ) : (
                       filteredReceipts.map((receipt) => (
-                        <TableRow key={receipt.id}>
-                          <TableCell className="font-medium">
+                        <TableRow key={receipt.id} className="print:break-inside-avoid">
+                          <TableCell className="font-medium whitespace-nowrap">
                             {formatDate(receipt.data_pagamento)}
                           </TableCell>
                           <TableCell>
@@ -620,19 +736,19 @@ export default function ReceiptsPage() {
                             </span>
                             {receipt.razao_social !==
                               (receipt.clientes?.nome || receipt.razao_social) && (
-                              <span className="block text-xs text-muted-foreground mt-0.5">
+                              <span className="block text-xs text-muted-foreground mt-0.5 print:hidden">
                                 Original: {receipt.razao_social}
                               </span>
                             )}
                           </TableCell>
-                          <TableCell>{receipt.cnpj || '-'}</TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="whitespace-nowrap">{receipt.cnpj || '-'}</TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
                             {formatCurrency(receipt.valor_titulo)}
                           </TableCell>
-                          <TableCell className="text-right font-medium text-emerald-600">
+                          <TableCell className="text-right font-medium text-emerald-600 print:text-black whitespace-nowrap">
                             {formatCurrency(receipt.valor_pago)}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="print:hidden">
                             {!receipt.cliente_id ? (
                               <Badge
                                 variant="outline"
@@ -666,7 +782,7 @@ export default function ReceiptsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="metrics" className="mt-0 focus-visible:outline-none">
+        <TabsContent value="metrics" className="mt-0 focus-visible:outline-none print:hidden">
           <Card>
             <CardHeader>
               <CardTitle>Receita Mensal</CardTitle>
