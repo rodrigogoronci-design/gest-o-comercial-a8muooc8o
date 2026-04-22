@@ -213,19 +213,47 @@ export default function ReceiptsPage() {
     }
 
     let currentSacado = ''
+    let lastSeenText = ''
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
       if (!line) continue
 
-      if (line.toUpperCase().startsWith('SACADO')) {
-        currentSacado = line.substring(line.toLowerCase().indexOf('sacado') + 6).trim()
+      if (line.toUpperCase().includes('SACADO:') || line.toUpperCase().startsWith('SACADO ')) {
+        const parts = line.split(/SACADO[:\s]+/i)
+        if (parts.length > 1 && parts[1].trim()) {
+          currentSacado = parts[1].trim()
+        } else if (lines[i + 1] && !lines[i + 1].match(/[\d.,/-]{4,}/)) {
+          currentSacado = lines[i + 1].trim()
+        }
         continue
       }
 
       const dateMatches = Array.from(line.matchAll(dateRegex)).map((m) => m[1])
       const docMatch = line.match(docRegex)
       const valMatches = Array.from(line.matchAll(valRegex)).map((m) => m[1])
+
+      if (
+        dateMatches.length === 0 &&
+        valMatches.length === 0 &&
+        line.length > 4 &&
+        !line.match(/^[\d\s.,/-]+$/)
+      ) {
+        const lower = line.toLowerCase()
+        if (
+          !lower.includes('total') &&
+          !lower.includes('página') &&
+          !lower.includes('relatório') &&
+          !lower.includes('data') &&
+          !lower.includes('valor') &&
+          !lower.includes('vencimento') &&
+          !lower.includes('original') &&
+          !lower.includes('transferência') &&
+          !lower.includes('retorno')
+        ) {
+          lastSeenText = line
+        }
+      }
 
       if (dateMatches.length > 0 && valMatches.length > 0) {
         const dateStr = dateMatches[dateMatches.length - 1]
@@ -236,14 +264,16 @@ export default function ReceiptsPage() {
         if (isNaN(dataPagamento.getTime())) continue
 
         const values = valMatches.map((v) => parseVal(v))
-        const valorPago = values[values.length - 1]
-        const valorTitulo = values.length > 1 ? values[0] : valorPago
+        const validValues = values.filter((v) => v > 0)
 
-        if (valorPago <= 0) continue
+        if (validValues.length === 0) continue
+
+        const valorPago = validValues[validValues.length - 1]
+        const valorTitulo = validValues.length > 1 ? validValues[0] : valorPago
 
         const rawCnpj = docMatch ? docMatch[1].replace(/\D/g, '') : ''
 
-        let rawNome = currentSacado
+        let rawNome = currentSacado || lastSeenText
 
         if (!rawNome) {
           rawNome = line
@@ -273,6 +303,8 @@ export default function ReceiptsPage() {
           dataPagamento,
           originalRow: line,
         })
+
+        lastSeenText = ''
       }
     }
 
