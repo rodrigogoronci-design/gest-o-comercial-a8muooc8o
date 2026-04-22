@@ -162,8 +162,62 @@ export default function ReceiptsPage() {
     if (nomeIdx === -1) nomeIdx = 1
     if (dataIdx === -1) dataIdx = 4
 
-    const { data: clients } = await supabase.from('clientes').select('id, nome, cnpj')
-    const parsedRecords = []
+    const { data: initialClients } = await supabase.from('clientes').select('id, nome, cnpj')
+    let clientsList = initialClients || []
+
+    const parsedRows = []
+    const missingClientsMap = new Map()
+
+    const parseNumber = (val: any) => {
+      if (val === null || val === undefined || val === '') return 0
+      if (typeof val === 'number') return val
+      let str = String(val)
+        .trim()
+        .replace(/[R$\s]/g, '')
+        .replace(/\xA0/g, '')
+      const lastComma = str.lastIndexOf(',')
+      const lastDot = str.lastIndexOf('.')
+      if (lastComma > lastDot) {
+        str = str.replace(/\./g, '').replace(',', '.')
+      } else if (lastDot > lastComma && lastComma !== -1) {
+        str = str.replace(/,/g, '')
+      } else if (lastComma !== -1) {
+        str = str.replace(',', '.')
+      }
+      const num = parseFloat(str)
+      return isNaN(num) ? 0 : num
+    }
+
+    const parseDate = (val: any) => {
+      if (!val) return new Date()
+      const str = String(val).trim()
+      if (str.match(/^\d{4}-\d{2}-\d{2}T/)) {
+        const d = new Date(str)
+        if (!isNaN(d.getTime())) return d
+      }
+      const parts = str.split(/[/.-]/)
+      if (parts.length >= 3) {
+        let d, m, y
+        if (parts[0].length === 4) {
+          y = parseInt(parts[0])
+          m = parseInt(parts[1])
+          d = parseInt(parts[2].split(' ')[0])
+        } else {
+          d = parseInt(parts[0])
+          m = parseInt(parts[1])
+          y = parseInt(parts[2].split(' ')[0])
+          if (y < 100) y += 2000
+        }
+        const date = new Date(y, m - 1, d, 12, 0, 0)
+        if (!isNaN(date.getTime())) return date
+      }
+      const num = parseFloat(str)
+      if (!isNaN(num) && num > 10000 && num < 100000) {
+        return new Date((num - 25569) * 86400 * 1000)
+      }
+      const fallback = new Date(str)
+      return isNaN(fallback.getTime()) ? new Date() : fallback
+    }
 
     for (let i = headerRowIdx + 1; i < rows.length; i++) {
       const row = rows[i]
@@ -179,86 +233,81 @@ export default function ReceiptsPage() {
 
       if (!rawCnpj && !rawNome) continue
 
-      let matchedClient = clients?.find((c) => {
-        const cCnpj = c.cnpj.replace(/\D/g, '')
-        return cCnpj && cCnpj === rawCnpj
-      })
-      if (!matchedClient && rawNome) {
-        matchedClient = clients?.find((c) => c.nome.toLowerCase().includes(rawNome.toLowerCase()))
-      }
-
-      const razaoSocial = matchedClient?.nome || rawNome || 'Cliente não identificado'
-      const cnpj = matchedClient?.cnpj || row[cnpjIdx] || rawCnpj || ''
-
-      const parseNumber = (val: any) => {
-        if (val === null || val === undefined || val === '') return 0
-        if (typeof val === 'number') return val
-        let str = String(val)
-          .trim()
-          .replace(/[R$\s]/g, '')
-          .replace(/\xA0/g, '')
-        const lastComma = str.lastIndexOf(',')
-        const lastDot = str.lastIndexOf('.')
-        if (lastComma > lastDot) {
-          str = str.replace(/\./g, '').replace(',', '.')
-        } else if (lastDot > lastComma && lastComma !== -1) {
-          str = str.replace(/,/g, '')
-        } else if (lastComma !== -1) {
-          str = str.replace(',', '.')
-        }
-        const num = parseFloat(str)
-        return isNaN(num) ? 0 : num
-      }
-
-      const parseDate = (val: any) => {
-        if (!val) return new Date()
-        const str = String(val).trim()
-        if (str.match(/^\d{4}-\d{2}-\d{2}T/)) {
-          const d = new Date(str)
-          if (!isNaN(d.getTime())) return d
-        }
-        const parts = str.split(/[/.-]/)
-        if (parts.length >= 3) {
-          let d, m, y
-          if (parts[0].length === 4) {
-            y = parseInt(parts[0])
-            m = parseInt(parts[1])
-            d = parseInt(parts[2].split(' ')[0])
-          } else {
-            d = parseInt(parts[0])
-            m = parseInt(parts[1])
-            y = parseInt(parts[2].split(' ')[0])
-            if (y < 100) y += 2000
-          }
-          const date = new Date(y, m - 1, d, 12, 0, 0)
-          if (!isNaN(date.getTime())) return date
-        }
-        const num = parseFloat(str)
-        if (!isNaN(num) && num > 10000 && num < 100000) {
-          return new Date((num - 25569) * 86400 * 1000)
-        }
-        const fallback = new Date(str)
-        return isNaN(fallback.getTime()) ? new Date() : fallback
-      }
-
       const valorPago = parseNumber(row[valorPagoIdx])
       const valorTitulo = parseNumber(row[valorTituloIdx])
       const dataPagamento = parseDate(row[dataIdx])
 
       if (
-        (!razaoSocial || razaoSocial === 'Cliente não identificado') &&
+        (!rawNome || rawNome === 'Cliente não identificado') &&
         valorPago === 0 &&
         valorTitulo === 0
       )
         continue
 
+      parsedRows.push({ rawCnpj, rawNome, valorPago, valorTitulo, dataPagamento, originalRow: row })
+
+      let matchedClient = clientsList.find((c) => {
+        const cCnpj = String(c.cnpj || '').replace(/\D/g, '')
+        return cCnpj && rawCnpj && cCnpj === rawCnpj
+      })
+
+      if (!matchedClient && rawNome) {
+        matchedClient = clientsList.find((c) =>
+          c.nome.toLowerCase().includes(rawNome.toLowerCase()),
+        )
+      }
+
+      if (!matchedClient && rawNome && rawNome !== 'Cliente não identificado') {
+        const cleanCnpj = rawCnpj || '00000000000000'
+        const key = cleanCnpj !== '00000000000000' ? cleanCnpj : rawNome.toLowerCase()
+
+        if (!missingClientsMap.has(key)) {
+          missingClientsMap.set(key, {
+            nome: String(rawNome).substring(0, 255),
+            cnpj: String(cleanCnpj).substring(0, 20),
+            status: 'Ativo',
+          })
+        }
+      }
+    }
+
+    if (missingClientsMap.size > 0) {
+      const clientsToInsert = Array.from(missingClientsMap.values())
+      const { data: newClients, error: insertError } = await supabase
+        .from('clientes')
+        .insert(clientsToInsert)
+        .select('id, nome, cnpj')
+
+      if (!insertError && newClients) {
+        clientsList = [...clientsList, ...newClients]
+      } else if (insertError) {
+        console.warn('Failed to bulk insert missing clients:', insertError.message)
+      }
+    }
+
+    const parsedRecords = []
+
+    for (const row of parsedRows) {
+      let matchedClient = clientsList.find((c) => {
+        const cCnpj = String(c.cnpj || '').replace(/\D/g, '')
+        return cCnpj && row.rawCnpj && cCnpj === row.rawCnpj
+      })
+      if (!matchedClient && row.rawNome) {
+        matchedClient = clientsList.find((c) =>
+          c.nome.toLowerCase().includes(row.rawNome.toLowerCase()),
+        )
+      }
+
+      const razaoSocial = String(matchedClient?.nome || row.rawNome || 'Cliente não identificado')
+      const cnpj = String(matchedClient?.cnpj || row.originalRow[cnpjIdx] || row.rawCnpj || '')
+
       parsedRecords.push({
         cliente_id: matchedClient?.id || null,
         razao_social: razaoSocial.substring(0, 255),
         cnpj: cnpj.substring(0, 20),
-        valor_pago: valorPago,
-        valor_titulo: valorTitulo,
-        data_pagamento: dataPagamento.toISOString().split('T')[0],
+        valor_pago: row.valorPago,
+        valor_titulo: row.valorTitulo,
+        data_pagamento: row.dataPagamento.toISOString().split('T')[0],
         arquivo_origem: fileName,
       })
     }
