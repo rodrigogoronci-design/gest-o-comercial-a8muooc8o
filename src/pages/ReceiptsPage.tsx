@@ -24,6 +24,7 @@ import {
   FileSpreadsheet,
   Printer,
   Trash2,
+  Clock,
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
@@ -189,11 +190,11 @@ export default function ReceiptsPage() {
 
   const processPdfData = async (text: string, fileName: string) => {
     const lines = text.split('\n')
-    const parsedRows = []
+    const parsedRows: any[] = []
 
-    const dateRegex = /(\d{2}[/-]\d{2}[/-]\d{2,4})/g
+    const dateRegex = /(\d{2}\s*[/-]\s*\d{2}\s*[/-]\s*\d{2,4})/g
     const docRegex = /(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}|\d{3}\.\d{3}\.\d{3}-\d{2})/
-    const valRegex = /(?:R\$\s*)?(\d{1,3}(?:[.,]\d{3})*[,.]\d{2})/g
+    const valRegex = /(?:R\$\s*)?(\d{1,3}(?:\s*[.,]\s*\d{3})*\s*[,.]\s*\d{2})/g
 
     const { data: initialClients } = await supabase.from('clientes').select('id, nome, cnpj')
     const clientsList = initialClients || []
@@ -212,14 +213,93 @@ export default function ReceiptsPage() {
       return parseFloat(s)
     }
 
+    const textUpper = text.toUpperCase()
+    const isDetailedLayout =
+      textUpper.includes('DATA LIQUIDACAO') ||
+      textUpper.includes('DATA LIQUIDAÇÃO') ||
+      textUpper.includes('TRANSFERÊNCIA') ||
+      textUpper.includes('DIAS EM ABERTO') ||
+      textUpper.includes('SITUAÇÃO ATUAL')
+
     let currentSacado = ''
     let lastSeenText = ''
+
+    let tempDates: string[] = []
+    let tempValues: number[] = []
+    let tempLine = ''
+    let tempDoc = ''
+
+    const flushRecord = () => {
+      if (tempDates.length > 0 && tempValues.length > 0) {
+        let dateStr = tempDates[tempDates.length - 1]
+        let isUnpaid = false
+
+        if (isDetailedLayout) {
+          if (tempDates.length >= 2) {
+            dateStr = tempDates[1] // Data Liquidação
+          } else {
+            // Only 1 date found -> Data Transf. Means it's not paid yet.
+            dateStr = tempDates[0]
+            isUnpaid = true
+          }
+        }
+
+        dateStr = dateStr.replace(/\s+/g, '')
+        const [d, m, y] = dateStr.split(/[/-]/)
+        const year = y.length === 2 ? `20${y}` : y
+        const dataPagamento = new Date(parseInt(year), parseInt(m) - 1, parseInt(d), 12, 0, 0)
+
+        if (!isNaN(dataPagamento.getTime())) {
+          let valorPago = tempValues[tempValues.length - 1]
+          let valorTitulo = tempValues.length > 1 ? tempValues[0] : valorPago
+
+          if (isUnpaid) {
+            valorTitulo = valorPago
+            valorPago = 0
+          }
+
+          const rawCnpj = tempDoc ? tempDoc.replace(/\D/g, '') : ''
+          let rawNome = currentSacado || lastSeenText
+
+          if (!rawNome) {
+            rawNome = tempLine
+            tempDates.forEach((d) => (rawNome = rawNome.replace(d, '')))
+            if (tempDoc) rawNome = rawNome.replace(tempDoc, '')
+            tempValues.forEach((v) => (rawNome = rawNome.replace(v.toString(), '')))
+            rawNome = rawNome
+              .replace(/[0-9,.\-/]/g, ' ')
+              .trim()
+              .replace(/\s{2,}/g, ' ')
+          }
+
+          if (!rawNome || rawNome.length < 3 || rawNome.toLowerCase().includes('total')) {
+            rawNome = 'Cliente não identificado'
+          }
+
+          parsedRows.push({
+            rawCnpj,
+            rawNome,
+            valorPago,
+            valorTitulo,
+            dataPagamento,
+            originalRow: tempLine.trim(),
+          })
+        }
+      }
+
+      tempDates = []
+      tempValues = []
+      tempLine = ''
+      tempDoc = ''
+    }
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
       if (!line) continue
 
-      if (line.toUpperCase().includes('SACADO:') || line.toUpperCase().startsWith('SACADO ')) {
+      if (line.toUpperCase().includes('SACADO:') || line.toUpperCase().startsWith('SACADO')) {
+        flushRecord()
+
         const parts = line.split(/SACADO[:\s]+/i)
         if (parts.length > 1 && parts[1].trim()) {
           currentSacado = parts[1].trim()
@@ -229,13 +309,13 @@ export default function ReceiptsPage() {
         continue
       }
 
-      const dateMatches = Array.from(line.matchAll(dateRegex)).map((m) => m[1])
-      const docMatch = line.match(docRegex)
-      const valMatches = Array.from(line.matchAll(valRegex)).map((m) => m[1])
+      const dMatches = Array.from(line.matchAll(dateRegex)).map((m) => m[1])
+      const cMatch = line.match(docRegex)
+      const vMatches = Array.from(line.matchAll(valRegex)).map((m) => m[1])
 
       if (
-        dateMatches.length === 0 &&
-        valMatches.length === 0 &&
+        dMatches.length === 0 &&
+        vMatches.length === 0 &&
         line.length > 4 &&
         !line.match(/^[\d\s.,/-]+$/)
       ) {
@@ -245,68 +325,30 @@ export default function ReceiptsPage() {
           !lower.includes('página') &&
           !lower.includes('relatório') &&
           !lower.includes('data') &&
-          !lower.includes('valor') &&
-          !lower.includes('vencimento') &&
-          !lower.includes('original') &&
-          !lower.includes('transferência') &&
-          !lower.includes('retorno')
+          !lower.includes('valor')
         ) {
           lastSeenText = line
         }
       }
 
-      if (dateMatches.length > 0 && valMatches.length > 0) {
-        const dateStr = dateMatches[dateMatches.length - 1]
-        const [d, m, y] = dateStr.split(/[/-]/)
-        const year = y.length === 2 ? `20${y}` : y
-        const dataPagamento = new Date(parseInt(year), parseInt(m) - 1, parseInt(d), 12, 0, 0)
-
-        if (isNaN(dataPagamento.getTime())) continue
-
-        const values = valMatches.map((v) => parseVal(v))
-        const validValues = values.filter((v) => v > 0)
-
-        if (validValues.length === 0) continue
-
-        const valorPago = validValues[validValues.length - 1]
-        const valorTitulo = validValues.length > 1 ? validValues[0] : valorPago
-
-        const rawCnpj = docMatch ? docMatch[1].replace(/\D/g, '') : ''
-
-        let rawNome = currentSacado || lastSeenText
-
-        if (!rawNome) {
-          rawNome = line
-          dateMatches.forEach((d) => {
-            rawNome = rawNome.replace(d, '')
-          })
-          if (docMatch) rawNome = rawNome.replace(docMatch[0], '')
-          valMatches.forEach((v) => {
-            rawNome = rawNome.replace(v, '').replace('R$', '')
-          })
-
-          rawNome = rawNome
-            .replace(/[0-9,.\-/]/g, ' ')
-            .trim()
-            .replace(/\s{2,}/g, ' ')
+      if (dMatches.length > 0 || vMatches.length > 0) {
+        if (!isDetailedLayout && tempDates.length > 0 && tempValues.length > 0) {
+          flushRecord()
         }
 
-        if (!rawNome || rawNome.length < 3 || rawNome.toLowerCase().includes('total')) {
-          rawNome = 'Cliente não identificado'
+        tempDates.push(...dMatches)
+        const parsedV = vMatches.map((v) => parseVal(v.replace(/\s+/g, ''))).filter((v) => v > 0)
+        tempValues.push(...parsedV)
+        if (cMatch) tempDoc = cMatch[0]
+        tempLine += ' ' + line
+
+        if (!isDetailedLayout && tempDates.length > 0 && tempValues.length > 0) {
+          flushRecord()
+          lastSeenText = ''
         }
-
-        parsedRows.push({
-          rawCnpj,
-          rawNome,
-          valorPago,
-          valorTitulo,
-          dataPagamento,
-          originalRow: line,
-        })
-
-        lastSeenText = ''
       }
     }
+    flushRecord()
 
     if (parsedRows.length === 0) {
       throw new Error('Nenhum dado válido de liquidação encontrado no PDF.')
@@ -846,6 +888,13 @@ export default function ReceiptsPage() {
                                 className="text-amber-600 border-amber-200 bg-amber-50 whitespace-nowrap"
                               >
                                 <HelpCircle className="w-3 h-3 mr-1" /> Não Identificado
+                              </Badge>
+                            ) : receipt.valor_pago === 0 ? (
+                              <Badge
+                                variant="outline"
+                                className="text-blue-600 border-blue-200 bg-blue-50 whitespace-nowrap"
+                              >
+                                <Clock className="w-3 h-3 mr-1" /> Em Aberto
                               </Badge>
                             ) : receipt.valor_pago < receipt.valor_titulo ? (
                               <Badge
