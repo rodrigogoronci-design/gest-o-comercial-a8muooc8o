@@ -191,7 +191,7 @@ export default function ReceiptsPage() {
     const lines = text.split('\n')
     const parsedRows = []
 
-    const dateRegex = /(\d{2}[/-]\d{2}[/-]\d{2,4})/
+    const dateRegex = /(\d{2}[/-]\d{2}[/-]\d{2,4})/g
     const docRegex = /(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}|\d{3}\.\d{3}\.\d{3}-\d{2})/
     const valRegex = /(?:R\$\s*)?(\d{1,3}(?:[.,]\d{3})*[,.]\d{2})/g
 
@@ -212,21 +212,24 @@ export default function ReceiptsPage() {
       return parseFloat(s)
     }
 
-    for (const line of lines) {
-      if (!line.trim()) continue
+    let currentSacado = ''
 
-      const dateMatch = line.match(dateRegex)
-      const docMatch = line.match(docRegex)
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (!line) continue
 
-      const valMatches: string[] = []
-      let match
-      const regex = new RegExp(valRegex)
-      while ((match = regex.exec(line)) !== null) {
-        valMatches.push(match[1])
+      if (line.toUpperCase().startsWith('SACADO')) {
+        currentSacado = line.substring(line.toLowerCase().indexOf('sacado') + 6).trim()
+        continue
       }
 
-      if (dateMatch && valMatches.length > 0) {
-        const [d, m, y] = dateMatch[1].split(/[/-]/)
+      const dateMatches = Array.from(line.matchAll(dateRegex)).map((m) => m[1])
+      const docMatch = line.match(docRegex)
+      const valMatches = Array.from(line.matchAll(valRegex)).map((m) => m[1])
+
+      if (dateMatches.length > 0 && valMatches.length > 0) {
+        const dateStr = dateMatches[dateMatches.length - 1]
+        const [d, m, y] = dateStr.split(/[/-]/)
         const year = y.length === 2 ? `20${y}` : y
         const dataPagamento = new Date(parseInt(year), parseInt(m) - 1, parseInt(d), 12, 0, 0)
 
@@ -240,16 +243,23 @@ export default function ReceiptsPage() {
 
         const rawCnpj = docMatch ? docMatch[1].replace(/\D/g, '') : ''
 
-        let rawNome = line.replace(dateMatch[0], '')
-        if (docMatch) rawNome = rawNome.replace(docMatch[0], '')
-        for (const v of valMatches) {
-          rawNome = rawNome.replace(v, '').replace('R$', '')
-        }
+        let rawNome = currentSacado
 
-        rawNome = rawNome
-          .replace(/[0-9,.\-/]/g, ' ')
-          .trim()
-          .replace(/\s{2,}/g, ' ')
+        if (!rawNome) {
+          rawNome = line
+          dateMatches.forEach((d) => {
+            rawNome = rawNome.replace(d, '')
+          })
+          if (docMatch) rawNome = rawNome.replace(docMatch[0], '')
+          valMatches.forEach((v) => {
+            rawNome = rawNome.replace(v, '').replace('R$', '')
+          })
+
+          rawNome = rawNome
+            .replace(/[0-9,.\-/]/g, ' ')
+            .trim()
+            .replace(/\s{2,}/g, ' ')
+        }
 
         if (!rawNome || rawNome.length < 3 || rawNome.toLowerCase().includes('total')) {
           rawNome = 'Cliente não identificado'
@@ -564,6 +574,10 @@ export default function ReceiptsPage() {
 
     setUploading(true)
     try {
+      // Limpa os registros anteriores antes de processar o novo arquivo
+      await supabase.from('recebimentos').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+      setReceipts([])
+
       const isPdf = file.name.toLowerCase().endsWith('.pdf')
       const formData = new FormData()
       formData.append('file', file)
