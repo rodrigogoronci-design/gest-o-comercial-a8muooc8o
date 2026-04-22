@@ -10,12 +10,21 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import { LayoutDashboard, Users, Briefcase, Tags, FileSignature, Rocket } from 'lucide-react'
+import {
+  LayoutDashboard,
+  Users,
+  Briefcase,
+  Tags,
+  FileSignature,
+  Rocket,
+  ListTodo,
+} from 'lucide-react'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'CRM / Prospecção', href: '/crm', icon: Users },
   { name: 'Base de Clientes', href: '/clientes', icon: Briefcase },
+  { name: 'Diário de Atividades', href: '/atividades', icon: ListTodo },
   { name: 'Planos e Preços', href: '/planos', icon: Tags },
   { name: 'Gerador de Contratos', href: '/contratos', icon: FileSignature },
 ]

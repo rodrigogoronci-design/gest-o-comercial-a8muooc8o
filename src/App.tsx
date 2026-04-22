@@ -9,6 +9,7 @@ import Layout from './components/Layout'
 import Index from './pages/Index'
 import CRMPage from './pages/CRMPage'
 import ClientsPage from './pages/ClientsPage'
+import ActivitiesPage from './pages/ActivitiesPage'
 import PlansPage from './pages/PlansPage'
 import ContractGeneratorPage from './pages/ContractGeneratorPage'
 import NotFound from './pages/NotFound'
@@ -25,6 +26,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/crm" element={<CRMPage />} />
               <Route path="/clientes" element={<ClientsPage />} />
+              <Route path="/atividades" element={<ActivitiesPage />} />
               <Route path="/planos" element={<PlansPage />} />
               <Route path="/contratos" element={<ContractGeneratorPage />} />
             </Route>
