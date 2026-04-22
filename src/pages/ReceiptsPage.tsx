@@ -12,8 +12,9 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useToast } from '@/hooks/use-toast'
-import { Upload, Loader2, Search } from 'lucide-react'
+import { Upload, Loader2, Search, CheckCircle2, AlertTriangle, HelpCircle } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
+import { Badge } from '@/components/ui/badge'
 
 type Receipt = {
   id: string
@@ -63,21 +64,36 @@ export default function ReceiptsPage() {
 
     let headerRowIdx = -1
     let headers: string[] = []
-    for (let i = 0; i < Math.min(rows.length, 15); i++) {
+
+    const normalizeStr = (s: any) =>
+      String(s || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+
+    for (let i = 0; i < Math.min(rows.length, 20); i++) {
       const row = rows[i]
       if (!Array.isArray(row)) continue
-      const rowStrs = row.map((c) => String(c || '').toLowerCase())
-      if (
-        rowStrs.some(
-          (c) =>
-            c.includes('cnpj') ||
-            c.includes('cpf') ||
-            c.includes('valor') ||
-            c.includes('data') ||
-            c.includes('nome') ||
-            c.includes('cliente'),
-        )
-      ) {
+      const rowStrs = row.map(normalizeStr)
+
+      const matches = rowStrs.filter(
+        (c) =>
+          c.includes('cnpj') ||
+          c.includes('cpf') ||
+          c.includes('valor') ||
+          c.includes('data') ||
+          c.includes('nome') ||
+          c.includes('cliente') ||
+          c.includes('sacado') ||
+          c.includes('pagador') ||
+          c.includes('documento') ||
+          c.includes('titulo') ||
+          c.includes('vencimento') ||
+          c.includes('historico'),
+      ).length
+
+      if (matches >= 2) {
         headerRowIdx = i
         headers = rowStrs
         break
@@ -86,52 +102,64 @@ export default function ReceiptsPage() {
 
     if (headerRowIdx === -1) {
       headerRowIdx = 0
-      headers = (rows[0] || []).map((c: any) => String(c || '').toLowerCase())
+      headers = (rows[0] || []).map(normalizeStr)
     }
 
-    let cnpjIdx = headers.findIndex((h) => h.includes('cnpj') || h.includes('cpf'))
+    let cnpjIdx = headers.findIndex(
+      (h) =>
+        h.includes('cnpj') ||
+        h.includes('cpf') ||
+        h.includes('documento') ||
+        h.includes('inscricao'),
+    )
     let nomeIdx = headers.findIndex(
       (h) =>
         h.includes('razao') ||
         h.includes('nome') ||
         h.includes('cliente') ||
         h.includes('pagador') ||
-        h.includes('sacado'),
+        h.includes('sacado') ||
+        h.includes('empresa') ||
+        h.includes('historico'),
     )
     let valorPagoIdx = headers.findIndex(
       (h) =>
         h.includes('pago') ||
         h.includes('recebido') ||
         h.includes('credito') ||
-        h.includes('líquido') ||
-        h.includes('liquido'),
+        h.includes('liquido') ||
+        h.includes('baixa'),
     )
     let valorTituloIdx = headers.findIndex(
       (h) =>
         h.includes('titulo') ||
-        h.includes('documento') ||
         h.includes('original') ||
-        h.includes('bruto'),
+        h.includes('bruto') ||
+        h.includes('nominal') ||
+        h.includes('valor doc') ||
+        h.includes('vlr'),
     )
     let dataIdx = headers.findIndex(
-      (h) => h.includes('data') || h.includes('pagamento') || h.includes('vencimento'),
+      (h) =>
+        h.includes('data') ||
+        h.includes('pagamento') ||
+        h.includes('vencimento') ||
+        h.includes('dt.') ||
+        h.includes('baixa'),
     )
 
-    if (cnpjIdx === -1) cnpjIdx = 0
-    if (nomeIdx === -1) nomeIdx = 1
-
     if (valorPagoIdx === -1) {
-      valorPagoIdx = headers.findIndex((h) => h.includes('valor'))
+      valorPagoIdx = headers.findIndex(
+        (h) => h.includes('valor') && !h.includes('titulo') && !h.includes('doc'),
+      )
       if (valorPagoIdx === -1) valorPagoIdx = 3
     }
     if (valorTituloIdx === -1) {
       valorTituloIdx = headers.findIndex((h) => h.includes('valor') && h !== headers[valorPagoIdx])
       if (valorTituloIdx === -1) valorTituloIdx = 2
     }
-    if (valorTituloIdx === valorPagoIdx) {
-      valorTituloIdx = 2
-      valorPagoIdx = 3
-    }
+    if (cnpjIdx === -1) cnpjIdx = 0
+    if (nomeIdx === -1) nomeIdx = 1
     if (dataIdx === -1) dataIdx = 4
 
     const { data: clients } = await supabase.from('clientes').select('id, nome, cnpj')
@@ -141,12 +169,20 @@ export default function ReceiptsPage() {
       const row = rows[i]
       if (!Array.isArray(row) || row.length === 0) continue
 
-      const rawCnpj = String(row[cnpjIdx] || '').replace(/\D/g, '')
-      const rawNome = String(row[nomeIdx] || '').trim()
+      let rawCnpj = String(row[cnpjIdx] || '').replace(/\D/g, '')
+      let rawNome = String(row[nomeIdx] || '').trim()
+
+      if (!rawNome || !isNaN(Number(rawNome))) {
+        const strCol = row.find((c) => typeof c === 'string' && isNaN(Number(c)) && c.length > 3)
+        if (strCol) rawNome = String(strCol).trim()
+      }
 
       if (!rawCnpj && !rawNome) continue
 
-      let matchedClient = clients?.find((c) => c.cnpj.replace(/\D/g, '') === rawCnpj)
+      let matchedClient = clients?.find((c) => {
+        const cCnpj = c.cnpj.replace(/\D/g, '')
+        return cCnpj && cCnpj === rawCnpj
+      })
       if (!matchedClient && rawNome) {
         matchedClient = clients?.find((c) => c.nome.toLowerCase().includes(rawNome.toLowerCase()))
       }
@@ -160,6 +196,7 @@ export default function ReceiptsPage() {
         let str = String(val)
           .trim()
           .replace(/[R$\s]/g, '')
+          .replace(/\xA0/g, '')
         const lastComma = str.lastIndexOf(',')
         const lastDot = str.lastIndexOf('.')
         if (lastComma > lastDot) {
@@ -176,21 +213,21 @@ export default function ReceiptsPage() {
       const parseDate = (val: any) => {
         if (!val) return new Date()
         const str = String(val).trim()
-        if (str.includes('T')) {
+        if (str.match(/^\d{4}-\d{2}-\d{2}T/)) {
           const d = new Date(str)
           if (!isNaN(d.getTime())) return d
         }
         const parts = str.split(/[/.-]/)
-        if (parts.length === 3) {
+        if (parts.length >= 3) {
           let d, m, y
           if (parts[0].length === 4) {
             y = parseInt(parts[0])
             m = parseInt(parts[1])
-            d = parseInt(parts[2])
+            d = parseInt(parts[2].split(' ')[0])
           } else {
             d = parseInt(parts[0])
             m = parseInt(parts[1])
-            y = parseInt(parts[2])
+            y = parseInt(parts[2].split(' ')[0])
             if (y < 100) y += 2000
           }
           const date = new Date(y, m - 1, d, 12, 0, 0)
@@ -208,7 +245,12 @@ export default function ReceiptsPage() {
       const valorTitulo = parseNumber(row[valorTituloIdx])
       const dataPagamento = parseDate(row[dataIdx])
 
-      if (!razaoSocial || (razaoSocial === 'Cliente não identificado' && valorPago === 0)) continue
+      if (
+        (!razaoSocial || razaoSocial === 'Cliente não identificado') &&
+        valorPago === 0 &&
+        valorTitulo === 0
+      )
+        continue
 
       parsedRecords.push({
         cliente_id: matchedClient?.id || null,
@@ -220,7 +262,6 @@ export default function ReceiptsPage() {
         arquivo_origem: fileName,
       })
     }
-
     if (parsedRecords.length > 0) {
       const batchSize = 100
       for (let i = 0; i < parsedRecords.length; i += batchSize) {
@@ -346,18 +387,19 @@ export default function ReceiptsPage() {
                   <TableHead>CNPJ</TableHead>
                   <TableHead className="text-right">Valor do Título</TableHead>
                   <TableHead className="text-right">Valor Pago</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">
+                    <TableCell colSpan={6} className="text-center py-8">
                       <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
                     </TableCell>
                   </TableRow>
                 ) : filteredReceipts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                       Nenhum recebimento encontrado.
                     </TableCell>
                   </TableRow>
@@ -374,6 +416,30 @@ export default function ReceiptsPage() {
                       </TableCell>
                       <TableCell className="text-right font-medium text-emerald-600">
                         {formatCurrency(receipt.valor_pago)}
+                      </TableCell>
+                      <TableCell>
+                        {!receipt.cliente_id ? (
+                          <Badge
+                            variant="outline"
+                            className="text-amber-600 border-amber-200 bg-amber-50"
+                          >
+                            <HelpCircle className="w-3 h-3 mr-1" /> Não Identificado
+                          </Badge>
+                        ) : receipt.valor_pago < receipt.valor_titulo ? (
+                          <Badge
+                            variant="outline"
+                            className="text-rose-600 border-rose-200 bg-rose-50"
+                          >
+                            <AlertTriangle className="w-3 h-3 mr-1" /> Divergência
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="text-emerald-600 border-emerald-200 bg-emerald-50"
+                          >
+                            <CheckCircle2 className="w-3 h-3 mr-1" /> Conciliado
+                          </Badge>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))
