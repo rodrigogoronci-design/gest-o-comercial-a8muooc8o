@@ -112,7 +112,10 @@ export default function ReceiptsPage() {
             c.includes('vencimento') ||
             c.includes('historico') ||
             c.includes('razao') ||
-            c.includes('fantasia'),
+            c.includes('fantasia') ||
+            c.includes('descricao') ||
+            c.includes('lancamento') ||
+            c.includes('recebido'),
         ).length
 
         const strCount = row.filter(
@@ -149,7 +152,8 @@ export default function ReceiptsPage() {
             h.includes('sacado') ||
             h.includes('empresa') ||
             h.includes('historico') ||
-            h.includes('fantasia'),
+            h.includes('fantasia') ||
+            h.includes('descricao'),
         )
         valorPagoIdx = headers.findIndex(
           (h) =>
@@ -157,7 +161,9 @@ export default function ReceiptsPage() {
             h.includes('recebido') ||
             h.includes('credito') ||
             h.includes('liquido') ||
-            h.includes('baixa'),
+            h.includes('baixa') ||
+            h.includes('vlr. pago') ||
+            h.includes('valor pago'),
         )
         valorTituloIdx = headers.findIndex(
           (h) =>
@@ -174,7 +180,8 @@ export default function ReceiptsPage() {
             h.includes('pagamento') ||
             h.includes('vencimento') ||
             h.includes('dt.') ||
-            h.includes('baixa'),
+            h.includes('baixa') ||
+            h.includes('lancamento'),
         )
 
         if (valorPagoIdx === -1) {
@@ -187,6 +194,7 @@ export default function ReceiptsPage() {
             (h) => h.includes('valor') && h !== headers[valorPagoIdx],
           )
         }
+        if (valorTituloIdx === -1) valorTituloIdx = valorPagoIdx
       }
 
       const { data: initialClients } = await supabase.from('clientes').select('id, nome, cnpj')
@@ -212,7 +220,7 @@ export default function ReceiptsPage() {
           str = str.replace(',', '.')
         }
         const num = parseFloat(str)
-        return isNaN(num) ? 0 : num
+        return isNaN(num) ? 0 : Math.abs(num)
       }
 
       const parseDate = (val: any) => {
@@ -220,30 +228,27 @@ export default function ReceiptsPage() {
         if (val instanceof Date) return isNaN(val.getTime()) ? null : val
         const str = String(val).trim()
         if (!str) return null
+
+        const ptBrDateMatch = str.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})/)
+        if (ptBrDateMatch) {
+          let d = parseInt(ptBrDateMatch[1])
+          let m = parseInt(ptBrDateMatch[2])
+          let y = parseInt(ptBrDateMatch[3])
+          if (y < 100) y += 2000
+          const date = new Date(y, m - 1, d, 12, 0, 0)
+          if (!isNaN(date.getTime())) return date
+        }
+
         if (str.match(/^\d{4}-\d{2}-\d{2}/)) {
           const d = new Date(str)
           if (!isNaN(d.getTime())) return d
         }
-        const parts = str.split(/[/.-]/)
-        if (parts.length >= 3) {
-          let d, m, y
-          if (parts[0].length === 4) {
-            y = parseInt(parts[0])
-            m = parseInt(parts[1])
-            d = parseInt(parts[2].split(' ')[0])
-          } else {
-            d = parseInt(parts[0])
-            m = parseInt(parts[1])
-            y = parseInt(parts[2].split(' ')[0])
-            if (y < 100) y += 2000
-          }
-          const date = new Date(y, m - 1, d, 12, 0, 0)
-          if (!isNaN(date.getTime())) return date
-        }
+
         const num = parseFloat(str)
         if (!isNaN(num) && num > 10000 && num < 100000) {
           return new Date((num - 25569) * 86400 * 1000)
         }
+
         const fallback = new Date(str)
         return isNaN(fallback.getTime()) ? null : fallback
       }
@@ -269,35 +274,26 @@ export default function ReceiptsPage() {
         if (!dataPagamento) {
           for (let c of row) {
             const d = parseDate(c)
-            if (d) {
+            if (d && d.getFullYear() > 2000 && d.getFullYear() <= new Date().getFullYear() + 2) {
               dataPagamento = d
               break
             }
           }
         }
 
-        if (valorPago === 0 && valorTitulo === 0) {
-          const nums = row.map(parseNumber).filter((n) => n > 0)
+        if (!dataPagamento) continue
+
+        if (valorPago === 0) {
+          const nums = row.map(parseNumber).filter((n) => n > 0 && n < 10000000)
           if (nums.length > 0) {
-            valorPago = nums[0]
-            valorTitulo = nums.length > 1 ? nums[1] : nums[0]
+            valorPago = nums[nums.length - 1]
           }
-        } else if (valorPago === 0 && valorTitulo > 0) {
-          valorPago = valorTitulo
-        } else if (valorTitulo === 0 && valorPago > 0) {
+        }
+        if (valorTitulo === 0) {
           valorTitulo = valorPago
         }
 
-        if (!rawNome) {
-          const strs = row.filter(
-            (c) =>
-              typeof c === 'string' &&
-              isNaN(Number(c)) &&
-              !parseDate(c) &&
-              String(c).trim().length > 3,
-          )
-          if (strs.length > 0) rawNome = String(strs[0]).trim()
-        }
+        if (valorPago === 0) continue
 
         if (!rawCnpj) {
           const cnpjs = row
@@ -306,16 +302,33 @@ export default function ReceiptsPage() {
           if (cnpjs.length > 0) rawCnpj = cnpjs[0]
         }
 
-        if ((!rawNome && !rawCnpj) || (valorPago === 0 && valorTitulo === 0)) continue
-        if (!dataPagamento) dataPagamento = new Date()
-
-        if (rawNome && !isNaN(Number(rawNome))) {
-          const strCol = row.find(
-            (c) => typeof c === 'string' && isNaN(Number(c)) && String(c).trim().length > 3,
+        if (!rawNome) {
+          const strs = row.filter(
+            (c) =>
+              typeof c === 'string' &&
+              isNaN(Number(c)) &&
+              !parseDate(c) &&
+              String(c).trim().length > 3 &&
+              !String(c).match(/^\d+$/) &&
+              !headers.includes(normalizeStr(c)),
           )
-          if (strCol) rawNome = String(strCol).trim()
+          if (strs.length > 0) {
+            const sorted = strs.sort((a, b) => String(b).length - String(a).length)
+            rawNome = String(sorted[0]).trim()
+          }
         }
-        if (rawNome === 'Cliente não identificado' && !rawCnpj) continue
+
+        if (
+          !rawNome ||
+          normalizeStr(rawNome).includes('total') ||
+          normalizeStr(rawNome).includes('saldo')
+        ) {
+          rawNome = 'Cliente não identificado'
+        }
+
+        if (!isNaN(Number(rawNome)) && rawNome !== 'Cliente não identificado') {
+          rawNome = 'Cliente não identificado'
+        }
 
         parsedRows.push({
           rawCnpj,
@@ -331,10 +344,8 @@ export default function ReceiptsPage() {
           return cCnpj && rawCnpj && cCnpj === rawCnpj
         })
 
-        if (!matchedClient && rawNome) {
-          matchedClient = clientsList.find((c) =>
-            c.nome.toLowerCase().includes(rawNome.toLowerCase()),
-          )
+        if (!matchedClient && rawNome && rawNome !== 'Cliente não identificado') {
+          matchedClient = clientsList.find((c) => c.nome.toLowerCase() === rawNome.toLowerCase())
         }
 
         if (!matchedClient && rawNome && rawNome !== 'Cliente não identificado') {
@@ -349,6 +360,12 @@ export default function ReceiptsPage() {
             })
           }
         }
+      }
+
+      if (parsedRows.length === 0) {
+        throw new Error(
+          'Nenhum pagamento válido encontrado. Verifique se o arquivo possui as colunas de Valor e Data preenchidas.',
+        )
       }
 
       if (missingClientsMap.size > 0) {
@@ -372,9 +389,12 @@ export default function ReceiptsPage() {
           const cCnpj = String(c.cnpj || '').replace(/\D/g, '')
           return cCnpj && row.rawCnpj && cCnpj === row.rawCnpj
         })
-        if (!matchedClient && row.rawNome) {
-          matchedClient = clientsList.find((c) =>
-            c.nome.toLowerCase().includes(row.rawNome.toLowerCase()),
+
+        if (!matchedClient && row.rawNome && row.rawNome !== 'Cliente não identificado') {
+          matchedClient = clientsList.find(
+            (c) =>
+              c.nome.toLowerCase() === row.rawNome.toLowerCase() ||
+              (row.rawNome.length > 5 && c.nome.toLowerCase().includes(row.rawNome.toLowerCase())),
           )
         }
 
