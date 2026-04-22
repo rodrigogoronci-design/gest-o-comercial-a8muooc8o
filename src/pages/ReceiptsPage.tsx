@@ -23,6 +23,7 @@ import {
   TrendingUp,
   FileSpreadsheet,
   Printer,
+  Trash2,
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
@@ -50,6 +51,29 @@ export default function ReceiptsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
+
+  const handleClearRecords = async () => {
+    if (
+      !confirm(
+        'Tem certeza que deseja apagar TODOS os recebimentos cadastrados? Esta ação não pode ser desfeita.',
+      )
+    )
+      return
+
+    setLoading(true)
+    const { error } = await supabase
+      .from('recebimentos')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000')
+
+    if (error) {
+      toast({ title: 'Erro ao limpar', description: error.message, variant: 'destructive' })
+    } else {
+      toast({ title: 'Sucesso', description: 'Todos os registros foram apagados.' })
+      setReceipts([])
+    }
+    setLoading(false)
+  }
 
   const fetchReceipts = async () => {
     setLoading(true)
@@ -551,9 +575,21 @@ export default function ReceiptsPage() {
         )
 
         if (uploadError) throw new Error(uploadError.message)
-        if (uploadData?.error) throw new Error(uploadData.error)
 
-        await processPdfData(uploadData.text, file.name)
+        let parsedPdfData = uploadData
+        if (typeof uploadData === 'string') {
+          try {
+            parsedPdfData = JSON.parse(uploadData)
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        if (parsedPdfData?.error) throw new Error(parsedPdfData.error)
+        if (!parsedPdfData?.text)
+          throw new Error('Falha ao obter texto do PDF retornado pelo servidor.')
+
+        await processPdfData(parsedPdfData.text, file.name)
       } else {
         const { data: uploadData, error: uploadError } = await supabase.functions.invoke(
           'parse-excel',
@@ -634,7 +670,16 @@ export default function ReceiptsPage() {
             Importe o arquivo de retorno bancário e visualize os pagamentos mensais.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <Button
+            variant="outline"
+            className="gap-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+            onClick={handleClearRecords}
+            disabled={loading || uploading}
+          >
+            <Trash2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Limpar Registros</span>
+          </Button>
           <Button variant="outline" className="gap-2" onClick={() => window.print()}>
             <Printer className="w-4 h-4" />
             <span className="hidden sm:inline">Exportar PDF</span>
