@@ -56,7 +56,7 @@ export default function ActivitiesPage() {
     const headers = ['Data', 'Cliente', 'Demanda']
     const rows = atividades.map((a) => [
       formatDate(a.data_atividade),
-      `"${a.clientes?.nome || '-'}"`,
+      `"${a.clientes?.nome || a.cliente_nome || '-'}"`,
       `"${a.demanda.replace(/"/g, '""')}"`,
     ])
     const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
@@ -123,7 +123,7 @@ export default function ActivitiesPage() {
                         {formatDate(atividade.data_atividade)}
                       </TableCell>
                       <TableCell className="font-semibold text-gray-900">
-                        {atividade.clientes?.nome || '-'}
+                        {atividade.clientes?.nome || atividade.cliente_nome || '-'}
                       </TableCell>
                       <TableCell className="text-gray-600 whitespace-pre-wrap">
                         {atividade.demanda}

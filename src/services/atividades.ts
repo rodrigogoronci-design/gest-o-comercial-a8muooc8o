@@ -2,7 +2,8 @@ import { supabase } from '@/lib/supabase/client'
 
 export type Atividade = {
   id: string
-  cliente_id: string
+  cliente_id: string | null
+  cliente_nome: string | null
   demanda: string
   data_atividade: string
   created_at: string

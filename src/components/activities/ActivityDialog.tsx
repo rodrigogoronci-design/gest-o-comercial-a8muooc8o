@@ -9,13 +9,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Plus } from 'lucide-react'
 import { getClientesParaAtividades, createAtividade } from '@/services/atividades'
@@ -28,7 +21,7 @@ export function ActivityDialog({ onSaved }: { onSaved: () => void }) {
   const { toast } = useToast()
 
   const [formData, setFormData] = useState({
-    cliente_id: '',
+    cliente_nome: '',
     demanda: '',
     data_atividade: new Date().toISOString().split('T')[0],
   })
@@ -43,12 +36,23 @@ export function ActivityDialog({ onSaved }: { onSaved: () => void }) {
     e.preventDefault()
     try {
       setLoading(true)
-      await createAtividade(formData)
+
+      const existingClient = clientes.find(
+        (c) => c.nome.toLowerCase() === formData.cliente_nome.toLowerCase(),
+      )
+
+      await createAtividade({
+        cliente_id: existingClient ? existingClient.id : null,
+        cliente_nome: existingClient ? null : formData.cliente_nome,
+        demanda: formData.demanda,
+        data_atividade: formData.data_atividade,
+      })
+
       toast({ title: 'Atividade registrada com sucesso!' })
       setOpen(false)
       onSaved()
       setFormData({
-        cliente_id: '',
+        cliente_nome: '',
         demanda: '',
         data_atividade: new Date().toISOString().split('T')[0],
       })
@@ -73,22 +77,18 @@ export function ActivityDialog({ onSaved }: { onSaved: () => void }) {
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
             <Label>Cliente</Label>
-            <Select
-              value={formData.cliente_id}
-              onValueChange={(v) => setFormData({ ...formData, cliente_id: v })}
+            <Input
+              value={formData.cliente_nome}
+              onChange={(e) => setFormData({ ...formData, cliente_nome: e.target.value })}
               required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o cliente" />
-              </SelectTrigger>
-              <SelectContent>
-                {clientes.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Digite o nome ou selecione na lista"
+              list="clientes-list"
+            />
+            <datalist id="clientes-list">
+              {clientes.map((c) => (
+                <option key={c.id} value={c.nome} />
+              ))}
+            </datalist>
           </div>
           <div className="space-y-2">
             <Label>Data da Atividade</Label>

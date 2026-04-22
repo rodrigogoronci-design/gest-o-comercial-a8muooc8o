@@ -60,6 +60,38 @@ export type Database = {
           },
         ]
       }
+      atividades_comerciais: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          data_atividade: string
+          demanda: string
+          id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          data_atividade?: string
+          demanda: string
+          id?: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          data_atividade?: string
+          demanda?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'atividades_comerciais_cliente_id_fkey'
+            columns: ['cliente_id']
+            isOneToOne: false
+            referencedRelation: 'clientes'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       avaliacoes: {
         Row: {
           avaliador_id: string | null
@@ -1066,6 +1098,12 @@ export const Constants = {
 //   observacoes: text (nullable)
 //   created_at: timestamp with time zone (not null, default: now())
 //   organization_id: uuid (nullable)
+// Table: atividades_comerciais
+//   id: uuid (not null, default: gen_random_uuid())
+//   cliente_id: uuid (not null)
+//   demanda: text (not null)
+//   data_atividade: date (not null, default: CURRENT_DATE)
+//   created_at: timestamp with time zone (not null, default: now())
 // Table: avaliacoes
 //   id: uuid (not null, default: gen_random_uuid())
 //   created_at: timestamp with time zone (not null, default: now())
@@ -1264,6 +1302,9 @@ export const Constants = {
 //   FOREIGN KEY atestados_colaborador_id_fkey: FOREIGN KEY (colaborador_id) REFERENCES colaboradores(id) ON DELETE CASCADE
 //   FOREIGN KEY atestados_organization_id_fkey: FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
 //   PRIMARY KEY atestados_pkey: PRIMARY KEY (id)
+// Table: atividades_comerciais
+//   FOREIGN KEY atividades_comerciais_cliente_id_fkey: FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE CASCADE
+//   PRIMARY KEY atividades_comerciais_pkey: PRIMARY KEY (id)
 // Table: avaliacoes
 //   FOREIGN KEY avaliacoes_organization_id_fkey: FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
 //   PRIMARY KEY avaliacoes_pkey: PRIMARY KEY (id)
@@ -1341,6 +1382,10 @@ export const Constants = {
 //   Policy "Allow all access to anon users" (ALL, PERMISSIVE) roles={anon}
 //     USING: true
 //     WITH CHECK: true
+//   Policy "Allow all access to authenticated users" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
+// Table: atividades_comerciais
 //   Policy "Allow all access to authenticated users" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: true
 //     WITH CHECK: true
@@ -1600,6 +1645,9 @@ export const Constants = {
 //   trg_prevent_unwanted_contracheques: CREATE TRIGGER trg_prevent_unwanted_contracheques BEFORE INSERT OR UPDATE ON public.contracheques FOR EACH ROW EXECUTE FUNCTION prevent_unwanted_contracheques()
 
 // --- INDEXES ---
+// Table: atividades_comerciais
+//   CREATE INDEX idx_atividades_cliente_id ON public.atividades_comerciais USING btree (cliente_id)
+//   CREATE INDEX idx_atividades_data ON public.atividades_comerciais USING btree (data_atividade)
 // Table: beneficios_ticket
 //   CREATE UNIQUE INDEX beneficios_ticket_colaborador_id_mes_ano_key ON public.beneficios_ticket USING btree (colaborador_id, mes_ano)
 // Table: beneficios_transporte
