@@ -1,0 +1,51 @@
+export const PLANS = [
+  { id: 'tms-50', name: 'TMS 50', limit: 'De 0 à 50', maxDocs: '50', price: 400.0 },
+  { id: 'tms-100', name: 'TMS 100', limit: 'De 0 à 100', maxDocs: '100', price: 657.0 },
+  { id: 'tms-300', name: 'TMS 300', limit: 'De 101 à 300', maxDocs: '300', price: 877.0 },
+  { id: 'tms-500', name: 'TMS 500', limit: 'De 301 à 500', maxDocs: '500', price: 1097.0 },
+  { id: 'tms-1000', name: 'TMS 1000', limit: 'De 501 à 1000', maxDocs: '1000', price: 1427.0 },
+  { id: 'tms-3000', name: 'TMS 3000', limit: 'De 1000 à 3000', maxDocs: '3000', price: 1757.0 },
+  { id: 'tms-5000', name: 'TMS 5000', limit: '3001 de 5000', maxDocs: '5000', price: 2087.0 },
+  {
+    id: 'tms-5000-plus',
+    name: 'TMS 5000+',
+    limit: 'Acima de 5000',
+    maxDocs: '10000',
+    price: 2487.0,
+  },
+  {
+    id: 'tms-10000-plus',
+    name: 'TMS 10000+',
+    limit: 'Acima de 10000',
+    maxDocs: 'ilimitado',
+    price: 3200.0,
+  },
+]
+
+export const MODULES = [
+  { id: 'mod-edi', name: 'EDI', price: 250.0 },
+  { id: 'mod-ctrl-viagem', name: 'Controle de Viagem', price: 199.0 },
+  { id: 'mod-frota', name: 'Frota (até 10 placas)*', price: 250.0 },
+  { id: 'mod-medicao', name: 'Medição', price: 350.0 },
+  { id: 'mod-fracionado', name: 'Fracionado', price: 350.0 },
+  { id: 'mod-transp', name: 'Transporte (Bloco/TCE/TCI)', price: 350.0 },
+  { id: 'mod-fundo-prot', name: 'Fundo de proteção', price: 1201.0 },
+  { id: 'mod-fiscal', name: 'Fiscal', price: 199.0 },
+  { id: 'mod-calendario', name: 'Calendário', price: 165.0 },
+  { id: 'mod-painel', name: 'Painel de Informações', price: 165.0 },
+  { id: 'mod-dfe', name: 'DF-e', price: 165.0 },
+  { id: 'mod-powerbi', name: 'Power BI', price: 199.0 },
+  { id: 'mod-sltrip', name: 'SL-Trip', price: 299.0 },
+  { id: 'mod-patrimonio', name: 'Patrimonio', price: 0.0 },
+  { id: 'mod-sltrack', name: 'SL-Track', price: 0.0 },
+  { id: 'mod-homolog-banc', name: 'Homologação Bancaria', price: 200.0 },
+]
+
+export const DFE_TIERS = [
+  { id: 'dfe-none', name: 'Não contratar pacote D.F.E.', docs: '0', price: 0.0 },
+  { id: 'dfe-1000', name: '1000 Doc.', docs: '1000', price: 190.0 },
+  { id: 'dfe-2000', name: '2000 Doc.', docs: '2000', price: 290.0 },
+  { id: 'dfe-3000', name: '3000 Doc.', docs: '3000', price: 390.0 },
+  { id: 'dfe-5000', name: '5000 Doc.', docs: '5000', price: 490.0 },
+  { id: 'dfe-10000', name: '10.000 Doc.', docs: '10000', price: 600.0 },
+]

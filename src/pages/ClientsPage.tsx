@@ -328,6 +328,17 @@ export default function ClientsPage() {
             Nenhum contrato anexado para este cliente.
           </div>
         )}
+
+        {/* Proposta (Mock display) */}
+        <div className="flex items-center justify-between bg-slate-50 border border-slate-200 p-3 rounded-md shadow-sm mt-3">
+          <div className="flex items-center gap-3">
+            <FileText className="h-5 w-5 text-amber-500" />
+            <span className="font-medium text-sm text-slate-700">Proposta Aprovada</span>
+          </div>
+          <Button variant="outline" size="sm">
+            Visualizar
+          </Button>
+        </div>
       </div>
     </div>
   )

@@ -161,6 +161,10 @@ export type Database = {
           atestados: number
           colaborador_id: string
           created_at: string
+          credito: number | null
+          credito_justificativa: string | null
+          desconto: number | null
+          desconto_justificativa: string | null
           dias_uteis: number
           faltas: number
           ferias: number
@@ -172,6 +176,10 @@ export type Database = {
           atestados?: number
           colaborador_id: string
           created_at?: string
+          credito?: number | null
+          credito_justificativa?: string | null
+          desconto?: number | null
+          desconto_justificativa?: string | null
           dias_uteis?: number
           faltas?: number
           ferias?: number
@@ -183,6 +191,10 @@ export type Database = {
           atestados?: number
           colaborador_id?: string
           created_at?: string
+          credito?: number | null
+          credito_justificativa?: string | null
+          desconto?: number | null
+          desconto_justificativa?: string | null
           dias_uteis?: number
           faltas?: number
           ferias?: number
@@ -205,34 +217,49 @@ export type Database = {
           atestados: number
           colaborador_id: string
           created_at: string
+          credito: number | null
+          credito_justificativa: string | null
+          desconto: number | null
+          desconto_justificativa: string | null
           dias_uteis: number
           faltas: number
           ferias: number
           home_office: number
           id: string
           mes_ano: string
+          plantoes: number
         }
         Insert: {
           atestados?: number
           colaborador_id: string
           created_at?: string
+          credito?: number | null
+          credito_justificativa?: string | null
+          desconto?: number | null
+          desconto_justificativa?: string | null
           dias_uteis?: number
           faltas?: number
           ferias?: number
           home_office?: number
           id?: string
           mes_ano: string
+          plantoes?: number
         }
         Update: {
           atestados?: number
           colaborador_id?: string
           created_at?: string
+          credito?: number | null
+          credito_justificativa?: string | null
+          desconto?: number | null
+          desconto_justificativa?: string | null
           dias_uteis?: number
           faltas?: number
           ferias?: number
           home_office?: number
           id?: string
           mes_ano?: string
+          plantoes?: number
         }
         Relationships: [
           {
@@ -695,6 +722,33 @@ export type Database = {
           },
         ]
       }
+      meritocracia_cancelamentos: {
+        Row: {
+          cliente_nome: string
+          created_at: string
+          data_cancelamento: string
+          id: string
+          mes_ano: string
+          user_id: string | null
+        }
+        Insert: {
+          cliente_nome: string
+          created_at?: string
+          data_cancelamento?: string
+          id?: string
+          mes_ano: string
+          user_id?: string | null
+        }
+        Update: {
+          cliente_nome?: string
+          created_at?: string
+          data_cancelamento?: string
+          id?: string
+          mes_ano?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           created_at: string
@@ -795,34 +849,55 @@ export type Database = {
           arquivo_origem: string | null
           cliente_id: string | null
           cnpj: string | null
+          contrato: string | null
           created_at: string
-          data_pagamento: string
+          data_pagamento: string | null
+          data_retorno: string | null
+          data_transferencia: string | null
+          data_vencimento: string | null
+          dias_vencidos: number | null
           id: string
+          numero_titulo: string | null
           razao_social: string
-          valor_pago: number
-          valor_titulo: number
+          status: string | null
+          valor_pago: number | null
+          valor_titulo: number | null
         }
         Insert: {
           arquivo_origem?: string | null
           cliente_id?: string | null
           cnpj?: string | null
+          contrato?: string | null
           created_at?: string
-          data_pagamento: string
+          data_pagamento?: string | null
+          data_retorno?: string | null
+          data_transferencia?: string | null
+          data_vencimento?: string | null
+          dias_vencidos?: number | null
           id?: string
+          numero_titulo?: string | null
           razao_social: string
-          valor_pago: number
-          valor_titulo: number
+          status?: string | null
+          valor_pago?: number | null
+          valor_titulo?: number | null
         }
         Update: {
           arquivo_origem?: string | null
           cliente_id?: string | null
           cnpj?: string | null
+          contrato?: string | null
           created_at?: string
-          data_pagamento?: string
+          data_pagamento?: string | null
+          data_retorno?: string | null
+          data_transferencia?: string | null
+          data_vencimento?: string | null
+          dias_vencidos?: number | null
           id?: string
+          numero_titulo?: string | null
           razao_social?: string
-          valor_pago?: number
-          valor_titulo?: number
+          status?: string | null
+          valor_pago?: number | null
+          valor_titulo?: number | null
         }
         Relationships: [
           {
@@ -1173,6 +1248,10 @@ export const Constants = {
 //   ferias: integer (not null, default: 0)
 //   created_at: timestamp with time zone (not null, default: now())
 //   faltas: integer (not null, default: 0)
+//   credito: numeric (nullable, default: 0)
+//   desconto: numeric (nullable, default: 0)
+//   credito_justificativa: text (nullable, default: ''::text)
+//   desconto_justificativa: text (nullable, default: ''::text)
 // Table: beneficios_transporte
 //   id: uuid (not null, default: gen_random_uuid())
 //   colaborador_id: uuid (not null)
@@ -1183,6 +1262,11 @@ export const Constants = {
 //   created_at: timestamp with time zone (not null, default: now())
 //   atestados: integer (not null, default: 0)
 //   faltas: integer (not null, default: 0)
+//   credito: numeric (nullable, default: 0)
+//   desconto: numeric (nullable, default: 0)
+//   credito_justificativa: text (nullable, default: ''::text)
+//   desconto_justificativa: text (nullable, default: ''::text)
+//   plantoes: integer (not null, default: 0)
 // Table: clientes
 //   id: uuid (not null, default: gen_random_uuid())
 //   nome: text (not null)
@@ -1291,6 +1375,13 @@ export const Constants = {
 //   acao: text (not null)
 //   detalhes: jsonb (not null)
 //   created_at: timestamp with time zone (not null, default: now())
+// Table: meritocracia_cancelamentos
+//   id: uuid (not null, default: gen_random_uuid())
+//   mes_ano: text (not null)
+//   cliente_nome: text (not null)
+//   data_cancelamento: date (not null, default: CURRENT_DATE)
+//   created_at: timestamp with time zone (not null, default: now())
+//   user_id: uuid (nullable)
 // Table: organizations
 //   id: uuid (not null, default: gen_random_uuid())
 //   created_at: timestamp with time zone (not null, default: now())
@@ -1314,11 +1405,18 @@ export const Constants = {
 //   cliente_id: uuid (nullable)
 //   razao_social: text (not null)
 //   cnpj: text (nullable)
-//   valor_pago: numeric (not null)
-//   valor_titulo: numeric (not null)
-//   data_pagamento: date (not null)
+//   valor_pago: numeric (nullable, default: 0)
+//   valor_titulo: numeric (nullable, default: 0)
+//   data_pagamento: date (nullable)
 //   arquivo_origem: text (nullable)
 //   created_at: timestamp with time zone (not null, default: now())
+//   contrato: text (nullable)
+//   numero_titulo: text (nullable)
+//   data_vencimento: date (nullable)
+//   data_transferencia: date (nullable)
+//   data_retorno: date (nullable)
+//   dias_vencidos: integer (nullable, default: 0)
+//   status: text (nullable, default: 'EM ABERTO'::text)
 // Table: recrutamento
 //   id: uuid (not null, default: gen_random_uuid())
 //   created_at: timestamp with time zone (not null, default: timezone('utc'::text, now()))
@@ -1414,6 +1512,9 @@ export const Constants = {
 // Table: historico_ajustes
 //   PRIMARY KEY historico_ajustes_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY historico_ajustes_user_id_fkey: FOREIGN KEY (user_id) REFERENCES colaboradores(id) ON DELETE SET NULL
+// Table: meritocracia_cancelamentos
+//   PRIMARY KEY meritocracia_cancelamentos_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY meritocracia_cancelamentos_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL
 // Table: organizations
 //   PRIMARY KEY organizations_pkey: PRIMARY KEY (id)
 // Table: plantoes
@@ -1549,6 +1650,10 @@ export const Constants = {
 //   Policy "Allow all access to authenticated users" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: true
 //     WITH CHECK: true
+// Table: meritocracia_cancelamentos
+//   Policy "Allow all access to authenticated users" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
 // Table: organizations
 //   Policy "Allow all access to anon users" (ALL, PERMISSIVE) roles={anon}
 //     USING: true
@@ -1660,6 +1765,7 @@ export const Constants = {
 //   DECLARE
 //     v_recebe boolean;
 //     v_home_office_count integer := 0;
+//     v_plantoes_count integer := 0;
 //     v_start_date date;
 //     v_end_date date;
 //     v_year integer;
@@ -1670,35 +1776,42 @@ export const Constants = {
 //       RETURN NEW;
 //     END IF;
 //
-//     -- Calculate the period for the month
 //     v_year := split_part(NEW.mes_ano, '-', 1)::integer;
 //     v_month := split_part(NEW.mes_ano, '-', 2)::integer;
 //
-//     IF v_month = 12 THEN
-//       v_start_date := make_date(v_year, 12, 25);
-//       v_end_date := make_date(v_year + 1, 1, 24);
+//     -- Use PREVIOUS cycle dates for Home Office and Plantões as per rules
+//     IF v_month = 1 THEN
+//       v_start_date := make_date(v_year - 1, 12, 25);
+//       v_end_date := make_date(v_year, 1, 24);
 //     ELSE
-//       v_start_date := make_date(v_year, v_month, 25);
-//       v_end_date := make_date(v_year, v_month + 1, 24);
+//       v_start_date := make_date(v_year, v_month - 1, 25);
+//       v_end_date := make_date(v_year, v_month, 24);
 //     END IF;
 //
-//     -- Check if the user is eligible for Vale Transporte
 //     SELECT recebe_transporte INTO v_recebe
 //     FROM public.colaboradores
 //     WHERE id = NEW.colaborador_id;
 //
-//     -- Count global home office days
 //     SELECT count(*) INTO v_home_office_count
 //     FROM public.dias_home_office
 //     WHERE data >= v_start_date AND data <= v_end_date;
 //
+//     SELECT count(*) INTO v_plantoes_count
+//     FROM public.plantoes
+//     WHERE data >= v_start_date AND data <= v_end_date AND colaborador_id = NEW.colaborador_id;
+//
 //     IF v_recebe = true THEN
 //       INSERT INTO public.beneficios_transporte (
-//         colaborador_id, mes_ano, ferias, atestados, faltas, dias_uteis, home_office
+//         colaborador_id, mes_ano, ferias, atestados, faltas, dias_uteis, home_office, plantoes
 //       ) VALUES (
-//         NEW.colaborador_id, NEW.mes_ano, NEW.ferias, NEW.atestados, NEW.faltas, 20, v_home_office_count
+//         NEW.colaborador_id, NEW.mes_ano, NEW.ferias, NEW.atestados, NEW.faltas, 20, v_home_office_count, v_plantoes_count
 //       )
-//       ON CONFLICT (colaborador_id, mes_ano) DO NOTHING;
+//       ON CONFLICT (colaborador_id, mes_ano) DO UPDATE SET
+//         ferias = EXCLUDED.ferias,
+//         atestados = EXCLUDED.atestados,
+//         faltas = EXCLUDED.faltas,
+//         home_office = EXCLUDED.home_office,
+//         plantoes = EXCLUDED.plantoes;
 //     END IF;
 //
 //     RETURN NEW;
