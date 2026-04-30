@@ -318,6 +318,7 @@ export type Database = {
           cpf: string | null
           created_at: string
           data_admissao: string | null
+          data_demissao: string | null
           data_nascimento: string | null
           departamento: string | null
           documentos_urls: Json | null
@@ -331,6 +332,7 @@ export type Database = {
           jornada_saida_intervalo: string | null
           local_trabalho_lat: number | null
           local_trabalho_lng: number | null
+          motivo_demissao: string | null
           nome: string
           organization_id: string | null
           recebe_transporte: boolean
@@ -349,6 +351,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           data_admissao?: string | null
+          data_demissao?: string | null
           data_nascimento?: string | null
           departamento?: string | null
           documentos_urls?: Json | null
@@ -362,6 +365,7 @@ export type Database = {
           jornada_saida_intervalo?: string | null
           local_trabalho_lat?: number | null
           local_trabalho_lng?: number | null
+          motivo_demissao?: string | null
           nome: string
           organization_id?: string | null
           recebe_transporte?: boolean
@@ -380,6 +384,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           data_admissao?: string | null
+          data_demissao?: string | null
           data_nascimento?: string | null
           departamento?: string | null
           documentos_urls?: Json | null
@@ -393,6 +398,7 @@ export type Database = {
           jornada_saida_intervalo?: string | null
           local_trabalho_lat?: number | null
           local_trabalho_lng?: number | null
+          motivo_demissao?: string | null
           nome?: string
           organization_id?: string | null
           recebe_transporte?: boolean
@@ -1308,6 +1314,8 @@ export const Constants = {
 //   jornada_saida_intervalo: text (nullable)
 //   jornada_retorno_intervalo: text (nullable)
 //   jornada_saida: text (nullable)
+//   data_demissao: date (nullable)
+//   motivo_demissao: text (nullable)
 // Table: configuracoes
 //   chave: text (not null)
 //   valor: jsonb (not null)

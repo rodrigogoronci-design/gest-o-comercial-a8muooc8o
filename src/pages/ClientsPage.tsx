@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Search,
   Filter,
@@ -11,6 +11,8 @@ import {
   Edit,
   Trash2,
   FileText,
+  Upload,
+  Loader2,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -30,7 +32,6 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from '@/components/ui/sheet'
 import {
   AlertDialog,
@@ -60,6 +61,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { supabase } from '@/lib/supabase/client'
 
 export interface ClienteRecord {
   id: string
@@ -111,6 +113,9 @@ export default function ClientsPage() {
   const [viewingClient, setViewingClient] = useState<MergedClient | null>(null)
 
   const [clientToDelete, setClientToDelete] = useState<MergedClient | null>(null)
+
+  const [isImporting, setIsImporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
@@ -213,6 +218,142 @@ export default function ClientsPage() {
     } catch (error) {
       console.error(error)
       toast.error('Erro ao excluir cliente')
+    }
+  }
+
+  const handleImportExcel = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsImporting(true)
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-excel`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: formData,
+        },
+      )
+
+      const result = await response.json()
+      if (!result.success) throw new Error(result.error || 'Erro ao processar arquivo Excel')
+
+      const allSheetsData = result.data
+      let totalImported = 0
+      let totalUpdated = 0
+
+      const existingClients = await fetchClientes()
+
+      for (const sheetName of Object.keys(allSheetsData)) {
+        const rows = allSheetsData[sheetName] as any[][]
+        if (rows.length <= 1) continue
+
+        const headers = rows[0].map((h) => String(h).toLowerCase().trim())
+
+        const idxNome = headers.findIndex(
+          (h) =>
+            h.includes('nome') ||
+            h.includes('razão') ||
+            h.includes('razao') ||
+            h.includes('empresa') ||
+            h.includes('cliente'),
+        )
+        const idxCnpj = headers.findIndex((h) => h.includes('cnpj'))
+        const idxEmail = headers.findIndex((h) => h.includes('email') || h.includes('e-mail'))
+        const idxTelefone = headers.findIndex(
+          (h) => h.includes('telefone') || h.includes('celular') || h.includes('contato'),
+        )
+        const idxModulos = headers.findIndex(
+          (h) => h.includes('modulo') || h.includes('módulo') || h.includes('plano'),
+        )
+        const idxValor = headers.findIndex(
+          (h) => h.includes('valor') || h.includes('mensalidade') || h.includes('total'),
+        )
+
+        if (idxNome === -1 || idxCnpj === -1) {
+          toast.warning(
+            `Aba "${sheetName}" ignorada: colunas Nome/Razão Social ou CNPJ não encontradas.`,
+          )
+          continue
+        }
+
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i]
+          const nome = row[idxNome]
+          let cnpj = row[idxCnpj]
+
+          if (!nome || !cnpj) continue
+
+          cnpj = String(cnpj).replace(/\D/g, '')
+          if (cnpj.length < 14) {
+            cnpj = cnpj.padStart(14, '0')
+          }
+
+          const email = idxEmail !== -1 ? String(row[idxEmail] || '') : ''
+          const telefone = idxTelefone !== -1 ? String(row[idxTelefone] || '') : ''
+          const modulosStr = idxModulos !== -1 ? String(row[idxModulos] || '') : ''
+          const valorStr = idxValor !== -1 ? String(row[idxValor] || '0') : '0'
+
+          const parsedModulos = modulosStr
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+          const mappedModulos = parsedModulos
+            .map((mName) => {
+              const mLower = mName.toLowerCase()
+              const found = modules.find((m) => m.name.toLowerCase() === mLower)
+              return found ? found.id : null
+            })
+            .filter(Boolean)
+
+          const rawValor = String(valorStr).replace(/[R$\s]/gi, '')
+          let parsedValor = 0
+          if (rawValor.includes(',')) {
+            parsedValor = parseFloat(rawValor.replace(/\./g, '').replace(',', '.'))
+          } else {
+            parsedValor = parseFloat(rawValor)
+          }
+
+          if (isNaN(parsedValor)) parsedValor = 0
+
+          const payload = {
+            nome: String(nome).trim(),
+            cnpj,
+            email: email.trim(),
+            telefone: telefone.trim(),
+            modulos: mappedModulos,
+            valor_total: parsedValor,
+          }
+
+          const existing = existingClients.find((c) => c.cnpj.replace(/\D/g, '') === cnpj)
+
+          if (existing) {
+            await updateCliente(existing.id, payload)
+            totalUpdated++
+          } else {
+            await createCliente(payload)
+            totalImported++
+          }
+        }
+      }
+
+      toast.success(`Importação concluída! ${totalImported} criados, ${totalUpdated} atualizados.`)
+      loadClientes()
+    } catch (error: any) {
+      console.error(error)
+      toast.error('Falha ao importar arquivo: ' + error.message)
+    } finally {
+      setIsImporting(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
@@ -353,10 +494,32 @@ export default function ClientsPage() {
           </p>
         </div>
 
-        <Button onClick={handleOpenAdd} className="bg-indigo-600 hover:bg-indigo-700">
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Cliente
-        </Button>
+        <div className="flex gap-3">
+          <input
+            type="file"
+            accept=".xlsx, .xls"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleImportExcel}
+          />
+          <Button
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isImporting}
+          >
+            {isImporting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="mr-2 h-4 w-4" />
+            )}
+            Importar Base
+          </Button>
+
+          <Button onClick={handleOpenAdd} className="bg-indigo-600 hover:bg-indigo-700">
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Cliente
+          </Button>
+        </div>
       </div>
 
       {/* Global Form Sheet */}
