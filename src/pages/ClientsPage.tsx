@@ -252,12 +252,18 @@ export default function ClientsPage() {
       let totalUpdated = 0
 
       const existingClients = await fetchClientes()
+      const mergedClientsMap = new Map<string, any>()
 
       for (const sheetName of Object.keys(allSheetsData)) {
         const rows = allSheetsData[sheetName] as any[][]
         if (rows.length <= 1) continue
 
-        const headers = rows[0].map((h) => String(h).toLowerCase().trim())
+        const headers = rows[0].map((h) =>
+          String(h || '')
+            .toLowerCase()
+            .trim(),
+        )
+        const isModulosSheet = sheetName.toLowerCase().includes('modulo')
 
         const idxNome = headers.findIndex(
           (h) =>
@@ -273,76 +279,143 @@ export default function ClientsPage() {
           (h) => h.includes('telefone') || h.includes('celular') || h.includes('contato'),
         )
         const idxModulos = headers.findIndex(
-          (h) => h.includes('modulo') || h.includes('módulo') || h.includes('plano'),
+          (h) =>
+            h.includes('modulo') ||
+            h.includes('módulo') ||
+            h.includes('plano') ||
+            h.includes('serviço'),
         )
         const idxValor = headers.findIndex(
           (h) => h.includes('valor') || h.includes('mensalidade') || h.includes('total'),
         )
 
-        if (idxNome === -1 || idxCnpj === -1) {
+        const moduleHeaders: { index: number; id: string }[] = []
+        if (isModulosSheet || idxModulos === -1) {
+          headers.forEach((h, idx) => {
+            const found = modules.find((m) => m.name.toLowerCase() === h)
+            if (found) moduleHeaders.push({ index: idx, id: found.id })
+          })
+        }
+
+        if (idxNome === -1 && idxCnpj === -1) {
           toast.warning(
-            `Aba "${sheetName}" ignorada: colunas Nome/Razão Social ou CNPJ não encontradas.`,
+            `Aba "${sheetName}" ignorada: não possui coluna identificadora (CNPJ ou Nome).`,
           )
           continue
         }
 
         for (let i = 1; i < rows.length; i++) {
           const row = rows[i]
-          const nome = row[idxNome]
-          let cnpj = row[idxCnpj]
 
-          if (!nome || !cnpj) continue
+          let rawCnpj = idxCnpj !== -1 ? String(row[idxCnpj] || '') : ''
+          let nome = idxNome !== -1 ? String(row[idxNome] || '').trim() : ''
 
-          cnpj = String(cnpj).replace(/\D/g, '')
-          if (cnpj.length < 14) {
+          let cnpj = rawCnpj.replace(/\D/g, '')
+          if (cnpj && cnpj.length < 14) {
             cnpj = cnpj.padStart(14, '0')
           }
 
-          const email = idxEmail !== -1 ? String(row[idxEmail] || '') : ''
-          const telefone = idxTelefone !== -1 ? String(row[idxTelefone] || '') : ''
-          const modulosStr = idxModulos !== -1 ? String(row[idxModulos] || '') : ''
-          const valorStr = idxValor !== -1 ? String(row[idxValor] || '0') : '0'
+          const identifier = cnpj || nome.toLowerCase()
+          if (!identifier) continue
 
-          const parsedModulos = modulosStr
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean)
-          const mappedModulos = parsedModulos
-            .map((mName) => {
+          const existing = mergedClientsMap.get(identifier) || {
+            nome: '',
+            cnpj: '',
+            email: '',
+            telefone: '',
+            modulos: [],
+            valor_total: 0,
+          }
+
+          if (nome && !existing.nome) existing.nome = nome
+          if (cnpj && !existing.cnpj) existing.cnpj = cnpj
+
+          if (idxEmail !== -1 && row[idxEmail]) existing.email = String(row[idxEmail]).trim()
+          if (idxTelefone !== -1 && row[idxTelefone])
+            existing.telefone = String(row[idxTelefone]).trim()
+
+          if (idxModulos !== -1 && row[idxModulos]) {
+            const modulosStr = String(row[idxModulos])
+            const parsedModulos = modulosStr
+              .split(/[,;+&]/)
+              .map((s) => s.trim())
+              .filter(Boolean)
+
+            parsedModulos.forEach((mName) => {
               const mLower = mName.toLowerCase()
-              const found = modules.find((m) => m.name.toLowerCase() === mLower)
-              return found ? found.id : null
+              const found = modules.find(
+                (m) => m.name.toLowerCase() === mLower || mLower.includes(m.name.toLowerCase()),
+              )
+              if (found && !existing.modulos.includes(found.id)) {
+                existing.modulos.push(found.id)
+              }
             })
-            .filter(Boolean)
-
-          const rawValor = String(valorStr).replace(/[R$\s]/gi, '')
-          let parsedValor = 0
-          if (rawValor.includes(',')) {
-            parsedValor = parseFloat(rawValor.replace(/\./g, '').replace(',', '.'))
-          } else {
-            parsedValor = parseFloat(rawValor)
           }
 
-          if (isNaN(parsedValor)) parsedValor = 0
+          moduleHeaders.forEach(({ index, id }) => {
+            const val = String(row[index] || '')
+              .toLowerCase()
+              .trim()
+            if (['sim', 'x', '1', 'true', 'ok', 'contratado'].includes(val)) {
+              if (!existing.modulos.includes(id)) existing.modulos.push(id)
+            }
+          })
 
-          const payload = {
-            nome: String(nome).trim(),
-            cnpj,
-            email: email.trim(),
-            telefone: telefone.trim(),
-            modulos: mappedModulos,
-            valor_total: parsedValor,
+          if (idxValor !== -1 && row[idxValor]) {
+            const rawValor = String(row[idxValor]).replace(/[R$\s]/gi, '')
+            let parsedValor = 0
+            if (rawValor.includes(',')) {
+              parsedValor = parseFloat(rawValor.replace(/\./g, '').replace(',', '.'))
+            } else {
+              parsedValor = parseFloat(rawValor)
+            }
+
+            if (!isNaN(parsedValor) && parsedValor > 0) {
+              existing.valor_total = parsedValor
+            }
           }
 
-          const existing = existingClients.find((c) => c.cnpj.replace(/\D/g, '') === cnpj)
+          mergedClientsMap.set(identifier, existing)
+        }
+      }
 
-          if (existing) {
-            await updateCliente(existing.id, payload)
-            totalUpdated++
-          } else {
-            await createCliente(payload)
-            totalImported++
+      for (const [identifier, payload] of mergedClientsMap.entries()) {
+        if (!payload.cnpj) {
+          payload.cnpj = `00000000${Math.floor(100000 + Math.random() * 900000)}`
+        }
+        if (!payload.nome) {
+          payload.nome = 'Cliente Sem Nome'
+        }
+
+        if (payload.valor_total === 0 && payload.modulos.length > 0) {
+          let calculatedTotal = 0
+          payload.modulos.forEach((modId: string) => {
+            const mod = modules.find((m: any) => m.id === modId)
+            if (mod) calculatedTotal += mod.price
+          })
+          payload.valor_total = calculatedTotal
+        }
+
+        const existing = existingClients.find(
+          (c) =>
+            (payload.cnpj !== '00000000000000' && c.cnpj.replace(/\D/g, '') === payload.cnpj) ||
+            c.nome.toLowerCase() === payload.nome.toLowerCase(),
+        )
+
+        if (existing) {
+          const updatePayload = {
+            nome: payload.nome || existing.nome,
+            cnpj: payload.cnpj !== '00000000000000' ? payload.cnpj : existing.cnpj,
+            email: payload.email || existing.email,
+            telefone: payload.telefone || existing.telefone,
+            modulos: payload.modulos.length > 0 ? payload.modulos : existing.modulos || [],
+            valor_total: payload.valor_total > 0 ? payload.valor_total : existing.valor_total,
           }
+          await updateCliente(existing.id, updatePayload)
+          totalUpdated++
+        } else {
+          await createCliente(payload)
+          totalImported++
         }
       }
 
