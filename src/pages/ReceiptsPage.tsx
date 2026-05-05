@@ -31,11 +31,13 @@ import {
   Printer,
   Trash2,
   Clock,
+  Award,
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from 'recharts'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import { calculateFinancialScore } from '@/lib/financial-score'
 
 type Receipt = {
   id: string
@@ -476,6 +478,32 @@ export default function ReceiptsPage() {
       .slice(-6)
   }, [receipts])
 
+  const rankingData = useMemo(() => {
+    const clientsMap = new Map<string, any[]>()
+
+    receipts.forEach((r) => {
+      const key = r.clientes?.nome || r.razao_social || r.cnpj || 'Desconhecido'
+      if (key === 'Desconhecido') return
+
+      if (!clientsMap.has(key)) {
+        clientsMap.set(key, [])
+      }
+      clientsMap.get(key)!.push(r)
+    })
+
+    return Array.from(clientsMap.entries())
+      .map(([key, clientReceipts]) => {
+        const stats = calculateFinancialScore(clientReceipts)
+        return {
+          name: key,
+          cnpj: clientReceipts[0].cnpj,
+          ...stats,
+        }
+      })
+      .filter((c) => c.relevantTitulos > 0)
+      .sort((a, b) => b.score - a.score)
+  }, [receipts])
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden">
@@ -528,6 +556,9 @@ export default function ReceiptsPage() {
           </TabsTrigger>
           <TabsTrigger value="metrics" className="gap-2">
             <TrendingUp className="w-4 h-4" /> Métricas Financeiras
+          </TabsTrigger>
+          <TabsTrigger value="ranking" className="gap-2">
+            <Award className="w-4 h-4" /> Ranking Financeiro
           </TabsTrigger>
         </TabsList>
 
@@ -647,6 +678,90 @@ export default function ReceiptsPage() {
                                 {receipt.status || 'Desconhecido'}
                               </Badge>
                             )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="ranking" className="mt-0 focus-visible:outline-none print:hidden">
+          <Card>
+            <CardHeader>
+              <CardTitle>Ranking de Comportamento Financeiro</CardTitle>
+              <CardDescription>
+                Classificação automática dos clientes baseada no histórico de pontualidade.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-16">Posição</TableHead>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead className="text-center">Score</TableHead>
+                      <TableHead className="text-center">Títulos Pagos</TableHead>
+                      <TableHead className="text-center">Atrasos (Atual / Histórico)</TableHead>
+                      <TableHead className="text-right">Classificação</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rankingData.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                          Nenhum histórico financeiro encontrado.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      rankingData.map((client, index) => (
+                        <TableRow key={client.name}>
+                          <TableCell className="font-medium text-muted-foreground">
+                            #{index + 1}
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium">{client.name}</div>
+                            {client.cnpj && (
+                              <div className="text-xs text-muted-foreground font-mono mt-0.5">
+                                {client.cnpj}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="font-bold text-lg">{client.score}</span>
+                            <span className="text-xs text-muted-foreground">/100</span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {client.totalPago}{' '}
+                            <span className="text-muted-foreground text-xs">
+                              de {client.relevantTitulos}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center text-sm">
+                            {client.totalAtrasoAtual > 0 ? (
+                              <span className="text-rose-600 font-medium">
+                                {client.totalAtrasoAtual} atuais
+                              </span>
+                            ) : (
+                              <span className="text-emerald-600">Em dia</span>
+                            )}
+                            {client.totalPagoAtrasado > 0 && (
+                              <span className="text-muted-foreground block text-xs">
+                                {client.totalPagoAtrasado} no histórico
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Badge
+                              variant="outline"
+                              className={`${client.color} whitespace-nowrap`}
+                            >
+                              {client.classification}
+                            </Badge>
                           </TableCell>
                         </TableRow>
                       ))

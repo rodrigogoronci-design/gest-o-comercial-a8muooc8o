@@ -62,6 +62,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { supabase } from '@/lib/supabase/client'
+import { calculateFinancialScore } from '@/lib/financial-score'
 
 export interface ClienteRecord {
   id: string
@@ -86,6 +87,7 @@ type MergedClient = {
   isMock?: boolean
   originalData?: ClienteRecord
   contratoUrl?: string | null
+  stats?: ReturnType<typeof calculateFinancialScore>
 }
 
 const clientSchema = z.object({
@@ -103,6 +105,7 @@ export default function ClientsPage() {
   const { clients: storeClients, modules } = useAppStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [clientes, setClientes] = useState<ClienteRecord[]>([])
+  const [receipts, setReceipts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
   // States para gerenciar modais e sheets
@@ -136,8 +139,16 @@ export default function ClientsPage() {
   const loadClientes = async () => {
     setIsLoading(true)
     try {
-      const data = await fetchClientes()
+      const [data, { data: receiptsData }] = await Promise.all([
+        fetchClientes(),
+        supabase
+          .from('recebimentos')
+          .select(
+            'cliente_id, cnpj, status, dias_vencidos, data_pagamento, data_vencimento, razao_social, valor_titulo',
+          ),
+      ])
       setClientes(data)
+      setReceipts(receiptsData || [])
     } catch (error) {
       console.error(error)
       toast.error('Erro ao carregar clientes do banco')
@@ -431,17 +442,27 @@ export default function ClientsPage() {
   }
 
   const mergedClients: MergedClient[] = [
-    ...clientes.map((c) => ({
-      id: c.id,
-      name: c.nome,
-      cnpj: c.cnpj,
-      modules: (c.modulos as string[]) || [],
-      totalValue: c.valor_total || 0,
-      createdAt: c.created_at,
-      isMock: false,
-      originalData: c,
-      contratoUrl: c.contrato_url,
-    })),
+    ...clientes.map((c) => {
+      const clientReceipts = receipts.filter(
+        (r) =>
+          r.cliente_id === c.id ||
+          (r.cnpj && r.cnpj.replace(/\D/g, '') === c.cnpj.replace(/\D/g, '')),
+      )
+      const stats = calculateFinancialScore(clientReceipts)
+
+      return {
+        id: c.id,
+        name: c.nome,
+        cnpj: c.cnpj,
+        modules: (c.modulos as string[]) || [],
+        totalValue: c.valor_total || 0,
+        createdAt: c.created_at,
+        isMock: false,
+        originalData: c,
+        contratoUrl: c.contrato_url,
+        stats,
+      }
+    }),
   ]
 
   storeClients.forEach((sc) => {
@@ -464,9 +485,16 @@ export default function ClientsPage() {
   const ClientDetailsPanel = ({ client }: { client: MergedClient }) => (
     <div className="mt-6 space-y-6">
       <div>
-        <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-2">
-          Dados da Empresa
-        </h4>
+        <div className="flex justify-between items-center mb-2">
+          <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider">
+            Dados da Empresa
+          </h4>
+          {client.stats && client.stats.relevantTitulos > 0 && (
+            <Badge variant="outline" className={`${client.stats.color}`}>
+              {client.stats.classification} (Score: {client.stats.score})
+            </Badge>
+          )}
+        </div>
         <div className="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-100">
           <div>
             <span className="text-xs text-slate-500 block">Razão Social</span>
@@ -907,8 +935,18 @@ export default function ClientsPage() {
                   >
                     <TableCell>
                       <div className="font-medium text-slate-900">{client.name}</div>
-                      <div className="text-xs text-slate-500 font-mono mt-0.5">
-                        {formatCNPJ(client.cnpj)}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-1">
+                        <span className="text-xs text-slate-500 font-mono">
+                          {formatCNPJ(client.cnpj)}
+                        </span>
+                        {client.stats && client.stats.relevantTitulos > 0 && (
+                          <Badge
+                            variant="outline"
+                            className={`w-fit text-[10px] px-1.5 py-0 h-4 leading-none ${client.stats.color}`}
+                          >
+                            {client.stats.classification}
+                          </Badge>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
