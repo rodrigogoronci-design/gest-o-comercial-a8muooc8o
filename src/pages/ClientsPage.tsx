@@ -24,6 +24,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -123,6 +132,8 @@ type ClientFormValues = z.infer<typeof clientSchema>
 
 export default function ClientsPage() {
   const [searchTerm, setSearchTerm] = useState('')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const [filterType, setFilterType] = useState<'all' | 'with_contract' | 'without_contract'>('all')
   const [clientes, setClientes] = useState<ClienteRecord[]>([])
   const [receipts, setReceipts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -643,9 +654,23 @@ export default function ClientsPage() {
     }),
   ]
 
-  const filteredClients = mergedClients.filter(
-    (c) => c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.cnpj.includes(searchTerm),
-  )
+  const filteredClients = mergedClients
+    .filter(
+      (c) => c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.cnpj.includes(searchTerm),
+    )
+    .filter((c) => {
+      if (filterType === 'with_contract')
+        return c.totalValue > 0 || c.modules.length > 0 || c.plano_base
+      if (filterType === 'without_contract')
+        return c.totalValue === 0 && c.modules.length === 0 && !c.plano_base
+      return true
+    })
+    .sort((a, b) => {
+      if (sortOrder === 'asc') {
+        return a.name.localeCompare(b.name)
+      }
+      return b.name.localeCompare(a.name)
+    })
 
   const ClientDetailsPanel = ({ client }: { client: MergedClient }) => {
     const plan = PLANS.find((p) => p.id === client.plano_base || p.name === client.plano_base)
@@ -1196,9 +1221,43 @@ export default function ClientsPage() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <Button variant="outline" size="icon" className="h-9 w-9">
-                <Filter className="h-4 w-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-9 w-9">
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={filterType}
+                    onValueChange={(val: any) => setFilterType(val)}
+                  >
+                    <DropdownMenuRadioItem value="all" className="cursor-pointer">
+                      Todos os clientes
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="with_contract" className="cursor-pointer">
+                      Com contrato ativo
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="without_contract" className="cursor-pointer">
+                      Sem contrato / Pendente
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Ordenar Alfabeticamente</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={sortOrder}
+                    onValueChange={(val: any) => setSortOrder(val)}
+                  >
+                    <DropdownMenuRadioItem value="asc" className="cursor-pointer">
+                      A - Z (Crescente)
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="desc" className="cursor-pointer">
+                      Z - A (Decrescente)
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </CardHeader>
