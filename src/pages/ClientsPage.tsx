@@ -85,11 +85,13 @@ export interface ClienteRecord {
   contrato_url?: string | null
 }
 
+type ModuleItem = { name: string; price: number }
+
 type MergedClient = {
   id: string
   name: string
   cnpj: string
-  modules: string[]
+  modules: ModuleItem[]
   plano_base?: string
   filiais?: number
   totalValue: number
@@ -105,7 +107,14 @@ const clientSchema = z.object({
   cnpj: z.string().min(14, 'CNPJ inválido'),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
   telefone: z.string().optional().or(z.literal('')),
-  modulos: z.array(z.string()),
+  modulos: z
+    .array(
+      z.object({
+        name: z.string(),
+        price: z.number(),
+      }),
+    )
+    .or(z.array(z.string())),
   plano_base: z.string().optional().or(z.literal('')),
   filiais: z.number().min(0).default(0),
   valor_total: z.number().min(0, 'Valor inválido'),
@@ -168,9 +177,13 @@ export default function ClientsPage() {
       }
 
       if (watchModulos) {
-        watchModulos.forEach((modName) => {
-          const mod = MODULES.find((m) => m.name === modName || m.id === modName)
-          if (mod) total += mod.price
+        watchModulos.forEach((modItem: any) => {
+          if (typeof modItem === 'string') {
+            const mod = MODULES.find((m) => m.name === modItem || m.id === modItem)
+            if (mod) total += mod.price
+          } else if (modItem && typeof modItem.price === 'number') {
+            total += modItem.price
+          }
         })
       }
 
@@ -420,8 +433,13 @@ export default function ClientsPage() {
               const found = MODULES.find(
                 (m) => m.name.toLowerCase() === mLower || mLower.includes(m.name.toLowerCase()),
               )
-              if (found && !existing.modulos.includes(found.name)) {
-                existing.modulos.push(found.name)
+              if (
+                found &&
+                !existing.modulos.some((ex: any) =>
+                  typeof ex === 'string' ? ex === found.name : ex.name === found.name,
+                )
+              ) {
+                existing.modulos.push({ name: found.name, price: found.price })
               }
             })
           }
@@ -431,7 +449,15 @@ export default function ClientsPage() {
               .toLowerCase()
               .trim()
             if (['sim', 'x', '1', 'true', 'ok', 'contratado'].includes(val)) {
-              if (!existing.modulos.includes(id)) existing.modulos.push(id)
+              const mod = MODULES.find((m) => m.name === id || m.id === id)
+              if (
+                mod &&
+                !existing.modulos.some((ex: any) =>
+                  typeof ex === 'string' ? ex === id : ex.name === id,
+                )
+              ) {
+                existing.modulos.push({ name: id, price: mod.price })
+              }
             }
           })
 
@@ -463,9 +489,13 @@ export default function ClientsPage() {
 
         if (payload.valor_total === 0 && payload.modulos.length > 0) {
           let calculatedTotal = 0
-          payload.modulos.forEach((modName: string) => {
-            const mod = MODULES.find((m: any) => m.name === modName)
-            if (mod) calculatedTotal += mod.price
+          payload.modulos.forEach((modItem: any) => {
+            if (typeof modItem === 'string') {
+              const mod = MODULES.find((m: any) => m.name === modItem)
+              if (mod) calculatedTotal += mod.price
+            } else if (modItem.price) {
+              calculatedTotal += modItem.price
+            }
           })
           payload.valor_total = calculatedTotal
         }
@@ -478,17 +508,28 @@ export default function ClientsPage() {
 
         let mergedMods: any = { plano_base: '', filiais: 0, adicionais: payload.modulos }
         if (existing) {
+          let existingAdicionais: any[] = []
           if (Array.isArray(existing.modulos)) {
-            mergedMods.adicionais = Array.from(
-              new Set([...(existing.modulos as string[]), ...payload.modulos]),
-            )
+            existingAdicionais = existing.modulos
           } else if (existing.modulos && typeof existing.modulos === 'object') {
-            const exObj = existing.modulos as any
-            mergedMods = {
-              plano_base: exObj.plano_base || '',
-              filiais: exObj.filiais || 0,
-              adicionais: Array.from(new Set([...(exObj.adicionais || []), ...payload.modulos])),
-            }
+            existingAdicionais = (existing.modulos as any).adicionais || []
+          }
+
+          const combined = [...existingAdicionais, ...payload.modulos]
+          const uniqueAdicionais = combined.filter(
+            (item, index, self) =>
+              index ===
+              self.findIndex(
+                (t) =>
+                  (typeof t === 'string' ? t : t.name) ===
+                  (typeof item === 'string' ? item : item.name),
+              ),
+          )
+
+          mergedMods = {
+            plano_base: (existing.modulos as any)?.plano_base || '',
+            filiais: (existing.modulos as any)?.filiais || 0,
+            adicionais: uniqueAdicionais,
           }
         }
 
@@ -529,15 +570,23 @@ export default function ClientsPage() {
       )
       const stats = calculateFinancialScore(clientReceipts)
 
-      let parsedModules: string[] = []
+      let parsedModules: ModuleItem[] = []
       let plano_base = ''
       let filiais = 0
 
+      const formatMod = (m: any): ModuleItem => {
+        if (typeof m === 'string') {
+          const modDef = MODULES.find((x) => x.name === m || x.id === m)
+          return { name: m, price: modDef ? modDef.price : 0 }
+        }
+        return { name: m.name || 'Desconhecido', price: m.price || 0 }
+      }
+
       if (Array.isArray(c.modulos)) {
-        parsedModules = c.modulos as string[]
+        parsedModules = c.modulos.map(formatMod)
       } else if (c.modulos && typeof c.modulos === 'object') {
         const modObj = c.modulos as any
-        parsedModules = modObj.adicionais || []
+        parsedModules = (modObj.adicionais || []).map(formatMod)
         plano_base = modObj.plano_base || ''
         filiais = modObj.filiais || 0
       }
@@ -635,32 +684,20 @@ export default function ClientsPage() {
                 </div>
               ) : null}
 
-              {client.modules.map((modName) => {
-                const mod = MODULES.find((m) => m.name === modName || m.id === modName)
-                return mod ? (
-                  <div
-                    key={mod.name}
-                    className="flex justify-between items-center bg-white border border-slate-200 p-3 rounded-md shadow-sm"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                      <span className="font-medium text-sm">{mod.name}</span>
-                    </div>
-                    <span className="text-sm text-slate-600">{formatCurrency(mod.price)}/mês</span>
+              {client.modules.map((mod) => (
+                <div
+                  key={mod.name}
+                  className="flex justify-between items-center bg-white border border-slate-200 p-3 rounded-md shadow-sm"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                    <span className="font-medium text-sm">{mod.name}</span>
                   </div>
-                ) : (
-                  <div
-                    key={modName}
-                    className="flex justify-between items-center bg-white border border-slate-200 p-3 rounded-md shadow-sm"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                      <span className="font-medium text-sm">{modName}</span>
-                    </div>
-                    <span className="text-sm text-slate-600">-</span>
-                  </div>
-                )
-              })}
+                  <span className="text-sm text-slate-600">
+                    {mod.price > 0 ? formatCurrency(mod.price) + '/mês' : 'Incluso'}
+                  </span>
+                </div>
+              ))}
 
               {!plan &&
                 (!client.filiais || client.filiais === 0) &&
@@ -921,44 +958,103 @@ export default function ClientsPage() {
                           Módulos Adicionais
                         </FormLabel>
                         <div className="space-y-2 mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:space-y-0">
-                          {MODULES.map((module) => (
-                            <FormField
-                              key={module.id}
-                              control={form.control}
-                              name="modulos"
-                              render={({ field }) => {
-                                return (
-                                  <FormItem
-                                    key={module.id}
-                                    className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 bg-white hover:bg-slate-50 transition-colors"
-                                  >
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value?.includes(module.name)}
-                                        onCheckedChange={(checked) => {
-                                          const currentValues = field.value || []
-                                          const updated = checked
-                                            ? [...currentValues, module.name]
-                                            : currentValues.filter((value) => value !== module.name)
-                                          field.onChange(updated)
-                                        }}
-                                      />
-                                    </FormControl>
-                                    <div className="flex-1 flex justify-between items-center">
-                                      <FormLabel className="font-medium cursor-pointer w-full h-full text-sm">
-                                        {module.name}
-                                      </FormLabel>
-                                      <span className="text-xs text-slate-500 whitespace-nowrap ml-2 font-mono">
-                                        {module.price > 0
-                                          ? formatCurrency(module.price)
-                                          : 'Incluso'}
-                                      </span>
+                          {MODULES.map((module) => {
+                            const isSelected = form
+                              .watch('modulos')
+                              ?.some((m: any) =>
+                                typeof m === 'string' ? m === module.name : m.name === module.name,
+                              )
+                            const selectedModule = form
+                              .watch('modulos')
+                              ?.find((m: any) =>
+                                typeof m === 'string' ? m === module.name : m.name === module.name,
+                              )
+                            const currentPrice =
+                              selectedModule && typeof selectedModule !== 'string'
+                                ? selectedModule.price
+                                : module.price
+
+                            return (
+                              <FormField
+                                key={module.id}
+                                control={form.control}
+                                name="modulos"
+                                render={({ field }) => {
+                                  return (
+                                    <div className="flex flex-col rounded-md border bg-white hover:bg-slate-50 transition-colors overflow-hidden">
+                                      <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3">
+                                        <FormControl>
+                                          <Checkbox
+                                            checked={isSelected}
+                                            onCheckedChange={(checked) => {
+                                              const currentValues = field.value || []
+                                              if (checked) {
+                                                field.onChange([
+                                                  ...currentValues,
+                                                  { name: module.name, price: module.price },
+                                                ])
+                                              } else {
+                                                field.onChange(
+                                                  currentValues.filter((m: any) =>
+                                                    typeof m === 'string'
+                                                      ? m !== module.name
+                                                      : m.name !== module.name,
+                                                  ),
+                                                )
+                                              }
+                                            }}
+                                          />
+                                        </FormControl>
+                                        <div className="flex-1 flex justify-between items-center">
+                                          <FormLabel className="font-medium cursor-pointer w-full h-full text-sm leading-none">
+                                            {module.name}
+                                          </FormLabel>
+                                          {!isSelected && (
+                                            <span className="text-xs text-slate-500 whitespace-nowrap ml-2 font-mono">
+                                              {module.price > 0
+                                                ? formatCurrency(module.price)
+                                                : 'Incluso'}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </FormItem>
+
+                                      {isSelected && (
+                                        <div className="flex items-center gap-2 px-3 pb-3 pt-1 bg-slate-50/50 border-t border-slate-100">
+                                          <span className="text-xs text-slate-500 font-medium">
+                                            Valor Mensal:
+                                          </span>
+                                          <div className="relative flex-1">
+                                            <span className="absolute left-2.5 top-1.5 text-xs text-slate-400">
+                                              R$
+                                            </span>
+                                            <Input
+                                              type="number"
+                                              step="0.01"
+                                              className="h-7 text-xs pl-7 bg-white border-slate-200"
+                                              value={currentPrice}
+                                              onChange={(e) => {
+                                                const newPrice = parseFloat(e.target.value) || 0
+                                                const currentValues = field.value || []
+                                                const updated = currentValues.map((m: any) => {
+                                                  const mName = typeof m === 'string' ? m : m.name
+                                                  if (mName === module.name) {
+                                                    return { name: module.name, price: newPrice }
+                                                  }
+                                                  return m
+                                                })
+                                                field.onChange(updated)
+                                              }}
+                                            />
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
-                                  </FormItem>
-                                )
-                              }}
-                            />
-                          ))}
+                                  )
+                                }}
+                              />
+                            )
+                          })}
                         </div>
                         <FormMessage />
                       </FormItem>
@@ -1134,13 +1230,13 @@ export default function ClientsPage() {
                         )}
                         <div className="flex flex-wrap gap-1 max-w-[250px]">
                           {client.modules.length > 0
-                            ? client.modules.map((name) => (
+                            ? client.modules.map((mod) => (
                                 <Badge
-                                  key={name}
+                                  key={mod.name}
                                   variant="secondary"
                                   className="bg-slate-100 text-slate-700 border-slate-200 font-normal text-xs"
                                 >
-                                  {name}
+                                  {mod.name}
                                 </Badge>
                               ))
                             : !client.plano_base && (
