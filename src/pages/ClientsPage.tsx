@@ -204,7 +204,8 @@ export default function ClientsPage() {
           .from('recebimentos')
           .select(
             'cliente_id, cnpj, status, dias_vencidos, data_pagamento, data_vencimento, razao_social, valor_titulo',
-          ),
+          )
+          .limit(10000),
       ])
       setClientes(data)
       setReceipts(receiptsData || [])
@@ -479,6 +480,9 @@ export default function ClientsPage() {
         }
       }
 
+      const newClients: any[] = []
+      const updatedClients: any[] = []
+
       for (const [identifier, payload] of mergedClientsMap.entries()) {
         if (!payload.cnpj) {
           payload.cnpj = `00000000${Math.floor(100000 + Math.random() * 900000)}`
@@ -534,19 +538,48 @@ export default function ClientsPage() {
         }
 
         if (existing) {
-          const updatePayload = {
+          updatedClients.push({
+            id: existing.id,
             nome: payload.nome || existing.nome,
             cnpj: payload.cnpj !== '00000000000000' ? payload.cnpj : existing.cnpj,
             email: payload.email || existing.email,
             telefone: payload.telefone || existing.telefone,
             modulos: mergedMods,
             valor_total: payload.valor_total > 0 ? payload.valor_total : existing.valor_total,
-          }
-          await updateCliente(existing.id, updatePayload)
-          totalUpdated++
+          })
         } else {
-          await createCliente({ ...payload, modulos: mergedMods })
-          totalImported++
+          newClients.push({
+            nome: payload.nome,
+            cnpj: payload.cnpj,
+            email: payload.email,
+            telefone: payload.telefone,
+            valor_total: payload.valor_total,
+            modulos: mergedMods,
+          })
+        }
+      }
+
+      const batchSize = 50
+
+      if (newClients.length > 0) {
+        for (let i = 0; i < newClients.length; i += batchSize) {
+          const batch = newClients.slice(i, i + batchSize)
+          const { error } = await supabase.from('clientes').insert(batch)
+          if (error) throw error
+          totalImported += batch.length
+        }
+      }
+
+      if (updatedClients.length > 0) {
+        for (let i = 0; i < updatedClients.length; i += batchSize) {
+          const batch = updatedClients.slice(i, i + batchSize)
+          await Promise.all(
+            batch.map((client) => {
+              const { id, ...rest } = client
+              return supabase.from('clientes').update(rest).eq('id', id)
+            }),
+          )
+          totalUpdated += batch.length
         }
       }
 
@@ -575,7 +608,14 @@ export default function ClientsPage() {
       let filiais = 0
 
       const formatMod = (m: any): ModuleItem | null => {
+        if (!m) return null
+        if (typeof m === 'object') {
+          if (m.ativo === false || m.selected === false || m.value === false) return null
+        }
+
         const mName = typeof m === 'string' ? m : m.name || ''
+        if (!mName) return null
+
         const mPrice = typeof m === 'string' ? undefined : m.price
 
         const modDef = MODULES.find(

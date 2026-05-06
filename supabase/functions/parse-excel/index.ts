@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
           header: 1,
           defval: '',
           blankrows: false,
-          raw: true,
+          raw: false,
         })
         result[sheetName] = rows
       }
