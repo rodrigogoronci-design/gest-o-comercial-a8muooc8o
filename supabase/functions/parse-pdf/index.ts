@@ -35,41 +35,112 @@ Deno.serve(async (req) => {
       console.error('Error parsing PDF', e)
     }
 
+    // 1. Extração de CNPJ e Nome
     const cnpjMatch = extractedText.match(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/)
     const cnpj = cnpjMatch ? cnpjMatch[0] : `00.000.000/0001-${Math.floor(10 + Math.random() * 89)}`
 
-    const nameMatch = extractedText.match(/CONTRATANTE:\s*([^\.,\n]+)/i)
+    const nameMatch = extractedText.match(/(?:CONTRATANTE|Matriz)\s*:?\s*([^\.,\n0-9]+)/i)
     let nome = nameMatch ? nameMatch[1].trim() : file.name.replace('.pdf', '')
 
-    const valorMatch = extractedText.match(/R\$\s*([\d\.,]+)/i)
-    let valor_total = 0
-    if (valorMatch) {
-      const valorStr = valorMatch[1].replace(/\./g, '').replace(',', '.')
-      if (!isNaN(parseFloat(valorStr))) {
-        valor_total = parseFloat(valorStr)
+    // 2. Extração de Filiais
+    // Procura por linhas de Filial que contenham um CNPJ preenchido
+    const filiaisMatches = [
+      ...extractedText.matchAll(/Filial[\s\S]{1,50}?(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})/gi),
+    ]
+    const numFiliais = filiaisMatches.length
+    const valorFiliais = numFiliais * 199.0
+
+    // 3. Extração do Plano Base
+    let planoBase = 'TMS 50'
+    let valorPlano = 400.0
+
+    const plans = [
+      { name: 'TMS-5000+', price: 2487.0 },
+      { name: 'TMS-5000', price: 2087.0 },
+      { name: 'TMS-3000', price: 1757.0 },
+      { name: 'MTS-1000', price: 1427.0 },
+      { name: 'TMS-1000', price: 1427.0 },
+      { name: 'TMS-500', price: 1097.0 },
+      { name: 'TMS-300', price: 877.0 },
+      { name: 'TMS-100', price: 657.0 },
+      { name: 'TMS-50', price: 400.0 },
+    ]
+
+    for (const plan of plans) {
+      // Heurística: procura o nome do plano seguido de 'Contratado' e um 'X' ou 'x' em algum lugar próximo
+      const regex = new RegExp(
+        `${plan.name.replace('+', '\\+')}[\\s\\S]{0,300}?Contratado[\\s\\S]{0,100}?[xX]`,
+        'i',
+      )
+      if (regex.test(extractedText)) {
+        planoBase = plan.name
+        valorPlano = plan.price
+        break
       }
-    } else {
-      valor_total = Math.floor(Math.random() * 5000) + 1000
     }
 
-    let modulos: string[] = []
-    const planoMatch = extractedText.match(
-      /(?:Plano|Módulos?|Serviços? contratados?|Contratação):\s*([^\.\n]+)/i,
-    )
-    if (planoMatch) {
-      modulos = planoMatch[1]
-        .split(',')
-        .map((m: string) => m.trim())
-        .filter(Boolean)
-    }
+    // 4. Extração de Módulos
+    let modulos: string[] = [
+      'Administração',
+      'Básico',
+      'Carga Comercial',
+      'Faturamento',
+      'Financeiro',
+    ]
+    let valorModulos = 0.0
 
-    if (modulos.length === 0) {
-      const possibleModules = ['CRM', 'Financeiro', 'Gestão de Contratos', 'RH', 'Suporte']
-      modulos = possibleModules.sort(() => 0.5 - Math.random()).slice(0, 2)
-    }
+    const modulosAdicionaisRegex = [
+      { name: 'Fiscal', regex: /Fiscal[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
+      { name: 'B.I.', regex: /B\.?I\.?[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
+      { name: 'EDI', regex: /EDI[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
+      {
+        name: 'Controle de Viagem',
+        regex: /Controle de Viagem[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i,
+      },
+      { name: 'Frota', regex: /Frota[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
+      { name: 'Medição', regex: /Medição[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
+      {
+        name: 'Fracionado',
+        regex: /Fracionado[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i,
+      },
+      {
+        name: 'Transporte',
+        regex: /Transporte[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i,
+      },
+      {
+        name: 'Fundo de proteção',
+        regex: /Fundo de prote[cç][aã]o[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i,
+      },
+      {
+        name: 'Patrimônio',
+        regex: /Patrim[oô]nio[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i,
+      },
+      {
+        name: 'Calendário',
+        regex: /Calend[aá]rio[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i,
+      },
+      {
+        name: 'Painel de Informações',
+        regex: /Painel de Informa[cç][õo]es[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i,
+      },
+      { name: 'Df-e', regex: /Df-e[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
+    ]
+
+    modulosAdicionaisRegex.forEach((mod) => {
+      const match = extractedText.match(mod.regex)
+      if (match) {
+        if (!modulos.includes(mod.name)) {
+          modulos.push(mod.name)
+        }
+        const valorStr = match[1].replace('.', '').replace(',', '.')
+        valorModulos += parseFloat(valorStr)
+      }
+    })
+
+    const valor_total = valorPlano + valorFiliais + valorModulos
 
     const fileName = `${crypto.randomUUID()}.pdf`
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('contratos')
       .upload(fileName, file, { contentType: 'application/pdf' })
 
@@ -81,7 +152,20 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        data: { nome, cnpj, contrato_url, valor_total, modulos },
+        data: {
+          nome,
+          cnpj,
+          contrato_url,
+          valor_total,
+          modulos,
+          planoBase,
+          detalhes: {
+            valorPlano,
+            numFiliais,
+            valorFiliais,
+            valorModulos,
+          },
+        },
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
