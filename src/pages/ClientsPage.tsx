@@ -44,7 +44,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Separator } from '@/components/ui/separator'
-import useAppStore from '@/stores/main'
 import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
 import { fetchClientes, createCliente, updateCliente, deleteCliente } from '@/services/clientes'
 import { z } from 'zod'
@@ -123,7 +122,6 @@ const clientSchema = z.object({
 type ClientFormValues = z.infer<typeof clientSchema>
 
 export default function ClientsPage() {
-  const { clients: storeClients } = useAppStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [clientes, setClientes] = useState<ClienteRecord[]>([])
   const [receipts, setReceipts] = useState<any[]>([])
@@ -268,13 +266,8 @@ export default function ClientsPage() {
 
     try {
       if (editingClient) {
-        if (editingClient.isMock) {
-          await createCliente(payload)
-          toast.success('Cliente adicionado à base com sucesso!')
-        } else {
-          await updateCliente(editingClient.id, payload)
-          toast.success('Cliente atualizado com sucesso!')
-        }
+        await updateCliente(editingClient.id, payload)
+        toast.success('Cliente atualizado com sucesso!')
       } else {
         await createCliente(payload)
         toast.success('Cliente adicionado com sucesso!')
@@ -291,12 +284,6 @@ export default function ClientsPage() {
 
   const handleDelete = async () => {
     if (!clientToDelete) return
-
-    if (clientToDelete.isMock) {
-      toast.error('Não é possível excluir clientes de demonstração via sistema.')
-      setClientToDelete(null)
-      return
-    }
 
     try {
       await deleteCliente(clientToDelete.id)
@@ -655,12 +642,6 @@ export default function ClientsPage() {
       }
     }),
   ]
-
-  storeClients.forEach((sc) => {
-    if (!mergedClients.some((mc) => mc.cnpj === sc.cnpj)) {
-      mergedClients.push({ ...sc, isMock: true, contratoUrl: null })
-    }
-  })
 
   const filteredClients = mergedClients.filter(
     (c) => c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.cnpj.includes(searchTerm),
