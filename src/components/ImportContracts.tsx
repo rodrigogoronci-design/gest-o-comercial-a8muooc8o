@@ -126,7 +126,11 @@ export function ImportContracts() {
           contrato_url: updatedFiles[i].data!.contrato_url,
           valor_total: updatedFiles[i].data!.valor_total,
           status: 'Ativo',
-          modulos: updatedFiles[i].data!.modulos || [],
+          modulos: {
+            plano_base: updatedFiles[i].data!.planoBase,
+            filiais: updatedFiles[i].data!.detalhes?.numFiliais || 0,
+            adicionais: updatedFiles[i].data!.modulos || [],
+          },
         })
         updatedFiles[i].status = 'success'
       } catch (err: any) {

@@ -59,10 +59,18 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { toast } from 'sonner'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { supabase } from '@/lib/supabase/client'
 import { calculateFinancialScore } from '@/lib/financial-score'
+import { PLANS, MODULES } from '@/constants/contracts'
 
 export interface ClienteRecord {
   id: string
@@ -82,6 +90,8 @@ type MergedClient = {
   name: string
   cnpj: string
   modules: string[]
+  plano_base?: string
+  filiais?: number
   totalValue: number
   createdAt: string
   isMock?: boolean
@@ -96,19 +106,20 @@ const clientSchema = z.object({
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
   telefone: z.string().optional().or(z.literal('')),
   modulos: z.array(z.string()),
+  plano_base: z.string().optional().or(z.literal('')),
+  filiais: z.number().min(0).default(0),
   valor_total: z.number().min(0, 'Valor inválido'),
 })
 
 type ClientFormValues = z.infer<typeof clientSchema>
 
 export default function ClientsPage() {
-  const { clients: storeClients, modules } = useAppStore()
+  const { clients: storeClients } = useAppStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [clientes, setClientes] = useState<ClienteRecord[]>([])
   const [receipts, setReceipts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
-  // States para gerenciar modais e sheets
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [editingClient, setEditingClient] = useState<MergedClient | null>(null)
 
@@ -128,9 +139,44 @@ export default function ClientsPage() {
       email: '',
       telefone: '',
       modulos: [],
+      plano_base: '',
+      filiais: 0,
       valor_total: 0,
     },
   })
+
+  const watchPlanoBase = form.watch('plano_base')
+  const watchFiliais = form.watch('filiais')
+  const watchModulos = form.watch('modulos')
+
+  useEffect(() => {
+    if (!isSheetOpen) return
+    const isDirty =
+      form.formState.dirtyFields.plano_base ||
+      form.formState.dirtyFields.filiais ||
+      form.formState.dirtyFields.modulos
+
+    if (isDirty) {
+      let total = 0
+      if (watchPlanoBase) {
+        const plan = PLANS.find((p) => p.id === watchPlanoBase || p.name === watchPlanoBase)
+        if (plan) total += plan.price
+      }
+
+      if (watchFiliais) {
+        total += watchFiliais * 199.0
+      }
+
+      if (watchModulos) {
+        watchModulos.forEach((modName) => {
+          const mod = MODULES.find((m) => m.name === modName || m.id === modName)
+          if (mod) total += mod.price
+        })
+      }
+
+      form.setValue('valor_total', total, { shouldValidate: true })
+    }
+  }, [watchPlanoBase, watchFiliais, watchModulos, isSheetOpen, form])
 
   useEffect(() => {
     loadClientes()
@@ -165,6 +211,8 @@ export default function ClientsPage() {
       email: '',
       telefone: '',
       modulos: [],
+      plano_base: '',
+      filiais: 0,
       valor_total: 0,
     })
     setIsSheetOpen(true)
@@ -178,6 +226,8 @@ export default function ClientsPage() {
       email: client.originalData?.email || '',
       telefone: client.originalData?.telefone || '',
       modulos: client.modules || [],
+      plano_base: client.plano_base || '',
+      filiais: client.filiais || 0,
       valor_total: client.totalValue || 0,
     })
     setIsSheetOpen(true)
@@ -189,17 +239,30 @@ export default function ClientsPage() {
   }
 
   const onSubmit = async (data: ClientFormValues) => {
+    const payload = {
+      nome: data.nome,
+      cnpj: data.cnpj,
+      email: data.email,
+      telefone: data.telefone,
+      valor_total: data.valor_total,
+      modulos: {
+        plano_base: data.plano_base,
+        filiais: data.filiais,
+        adicionais: data.modulos,
+      },
+    }
+
     try {
       if (editingClient) {
         if (editingClient.isMock) {
-          await createCliente(data)
+          await createCliente(payload)
           toast.success('Cliente adicionado à base com sucesso!')
         } else {
-          await updateCliente(editingClient.id, data)
+          await updateCliente(editingClient.id, payload)
           toast.success('Cliente atualizado com sucesso!')
         }
       } else {
-        await createCliente(data)
+        await createCliente(payload)
         toast.success('Cliente adicionado com sucesso!')
       }
       setIsSheetOpen(false)
@@ -303,8 +366,8 @@ export default function ClientsPage() {
         const moduleHeaders: { index: number; id: string }[] = []
         if (isModulosSheet || idxModulos === -1) {
           headers.forEach((h, idx) => {
-            const found = modules.find((m) => m.name.toLowerCase() === h)
-            if (found) moduleHeaders.push({ index: idx, id: found.id })
+            const found = MODULES.find((m) => m.name.toLowerCase() === h)
+            if (found) moduleHeaders.push({ index: idx, id: found.name })
           })
         }
 
@@ -354,11 +417,11 @@ export default function ClientsPage() {
 
             parsedModulos.forEach((mName) => {
               const mLower = mName.toLowerCase()
-              const found = modules.find(
+              const found = MODULES.find(
                 (m) => m.name.toLowerCase() === mLower || mLower.includes(m.name.toLowerCase()),
               )
-              if (found && !existing.modulos.includes(found.id)) {
-                existing.modulos.push(found.id)
+              if (found && !existing.modulos.includes(found.name)) {
+                existing.modulos.push(found.name)
               }
             })
           }
@@ -400,8 +463,8 @@ export default function ClientsPage() {
 
         if (payload.valor_total === 0 && payload.modulos.length > 0) {
           let calculatedTotal = 0
-          payload.modulos.forEach((modId: string) => {
-            const mod = modules.find((m: any) => m.id === modId)
+          payload.modulos.forEach((modName: string) => {
+            const mod = MODULES.find((m: any) => m.name === modName)
             if (mod) calculatedTotal += mod.price
           })
           payload.valor_total = calculatedTotal
@@ -413,19 +476,35 @@ export default function ClientsPage() {
             c.nome.toLowerCase() === payload.nome.toLowerCase(),
         )
 
+        let mergedMods: any = { plano_base: '', filiais: 0, adicionais: payload.modulos }
+        if (existing) {
+          if (Array.isArray(existing.modulos)) {
+            mergedMods.adicionais = Array.from(
+              new Set([...(existing.modulos as string[]), ...payload.modulos]),
+            )
+          } else if (existing.modulos && typeof existing.modulos === 'object') {
+            const exObj = existing.modulos as any
+            mergedMods = {
+              plano_base: exObj.plano_base || '',
+              filiais: exObj.filiais || 0,
+              adicionais: Array.from(new Set([...(exObj.adicionais || []), ...payload.modulos])),
+            }
+          }
+        }
+
         if (existing) {
           const updatePayload = {
             nome: payload.nome || existing.nome,
             cnpj: payload.cnpj !== '00000000000000' ? payload.cnpj : existing.cnpj,
             email: payload.email || existing.email,
             telefone: payload.telefone || existing.telefone,
-            modulos: payload.modulos.length > 0 ? payload.modulos : existing.modulos || [],
+            modulos: mergedMods,
             valor_total: payload.valor_total > 0 ? payload.valor_total : existing.valor_total,
           }
           await updateCliente(existing.id, updatePayload)
           totalUpdated++
         } else {
-          await createCliente(payload)
+          await createCliente({ ...payload, modulos: mergedMods })
           totalImported++
         }
       }
@@ -450,11 +529,26 @@ export default function ClientsPage() {
       )
       const stats = calculateFinancialScore(clientReceipts)
 
+      let parsedModules: string[] = []
+      let plano_base = ''
+      let filiais = 0
+
+      if (Array.isArray(c.modulos)) {
+        parsedModules = c.modulos as string[]
+      } else if (c.modulos && typeof c.modulos === 'object') {
+        const modObj = c.modulos as any
+        parsedModules = modObj.adicionais || []
+        plano_base = modObj.plano_base || ''
+        filiais = modObj.filiais || 0
+      }
+
       return {
         id: c.id,
         name: c.nome,
         cnpj: c.cnpj,
-        modules: (c.modulos as string[]) || [],
+        modules: parsedModules,
+        plano_base,
+        filiais,
         totalValue: c.valor_total || 0,
         createdAt: c.created_at,
         isMock: false,
@@ -475,115 +569,153 @@ export default function ClientsPage() {
     (c) => c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.cnpj.includes(searchTerm),
   )
 
-  const getModuleNames = (moduleIds: string[]) => {
-    return moduleIds.map((id) => {
-      const mod = modules.find((m) => m.id === id)
-      return mod ? mod.name : id
-    })
-  }
+  const ClientDetailsPanel = ({ client }: { client: MergedClient }) => {
+    const plan = PLANS.find((p) => p.id === client.plano_base || p.name === client.plano_base)
 
-  const ClientDetailsPanel = ({ client }: { client: MergedClient }) => (
-    <div className="mt-6 space-y-6">
-      <div>
-        <div className="flex justify-between items-center mb-2">
-          <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider">
-            Dados da Empresa
-          </h4>
-          {client.stats && client.stats.relevantTitulos > 0 && (
-            <Badge variant="outline" className={`${client.stats.color}`}>
-              {client.stats.classification} (Score: {client.stats.score})
-            </Badge>
-          )}
-        </div>
-        <div className="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-100">
-          <div>
-            <span className="text-xs text-slate-500 block">Razão Social</span>
-            <span className="font-medium">{client.name}</span>
-          </div>
-          <div>
-            <span className="text-xs text-slate-500 block">CNPJ</span>
-            <span className="font-medium text-slate-700">{formatCNPJ(client.cnpj)}</span>
-          </div>
-          <div>
-            <span className="text-xs text-slate-500 block">Cliente desde</span>
-            <span className="font-medium text-slate-700">{formatDate(client.createdAt)}</span>
-          </div>
-        </div>
-      </div>
-      <Separator />
-      <div>
-        <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-2">
-          Plano Contratado
-        </h4>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            {client.modules.map((modId) => {
-              const mod = modules.find((m) => m.id === modId)
-              return mod ? (
-                <div
-                  key={mod.id}
-                  className="flex justify-between items-center bg-white border border-slate-200 p-3 rounded-md shadow-sm"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${mod.color.split(' ')[0]}`}></div>
-                    <span className="font-medium text-sm">{mod.name}</span>
-                  </div>
-                  <span className="text-sm text-slate-600">{formatCurrency(mod.price)}/mês</span>
-                </div>
-              ) : null
-            })}
-            {client.modules.length === 0 && (
-              <div className="text-sm text-slate-500 text-center py-4 bg-slate-50 rounded-md border border-dashed border-slate-200">
-                Nenhum módulo selecionado para este cliente.
-              </div>
+    return (
+      <div className="mt-6 space-y-6">
+        <div>
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider">
+              Dados da Empresa
+            </h4>
+            {client.stats && client.stats.relevantTitulos > 0 && (
+              <Badge variant="outline" className={`${client.stats.color}`}>
+                {client.stats.classification} (Score: {client.stats.score})
+              </Badge>
             )}
           </div>
-          <div className="flex justify-between items-center bg-emerald-50 p-4 rounded-lg border border-emerald-100 mt-4">
-            <span className="font-semibold text-emerald-900">Total da Mensalidade</span>
-            <span className="text-xl font-bold text-emerald-700">
-              {formatCurrency(client.totalValue)}
-            </span>
+          <div className="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-100">
+            <div>
+              <span className="text-xs text-slate-500 block">Razão Social</span>
+              <span className="font-medium">{client.name}</span>
+            </div>
+            <div>
+              <span className="text-xs text-slate-500 block">CNPJ</span>
+              <span className="font-medium text-slate-700">{formatCNPJ(client.cnpj)}</span>
+            </div>
+            <div>
+              <span className="text-xs text-slate-500 block">Cliente desde</span>
+              <span className="font-medium text-slate-700">{formatDate(client.createdAt)}</span>
+            </div>
           </div>
         </div>
-      </div>
-      <Separator />
-      <div>
-        <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-2">
-          Documentos
-        </h4>
-        {client.contratoUrl ? (
-          <div className="flex items-center justify-between bg-slate-50 border border-slate-200 p-3 rounded-md shadow-sm">
-            <div className="flex items-center gap-3">
-              <FileText className="h-5 w-5 text-indigo-500" />
-              <span className="font-medium text-sm text-slate-700">Contrato Original</span>
+        <Separator />
+        <div>
+          <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-2">
+            Plano Contratado
+          </h4>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              {plan && (
+                <div className="flex justify-between items-center bg-indigo-50 border border-indigo-100 p-3 rounded-md shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                    <span className="font-medium text-sm text-indigo-900">
+                      Plano Base: {plan.name}
+                    </span>
+                  </div>
+                  <span className="text-sm font-semibold text-indigo-700">
+                    {formatCurrency(plan.price)}/mês
+                  </span>
+                </div>
+              )}
+
+              {client.filiais && client.filiais > 0 ? (
+                <div className="flex justify-between items-center bg-slate-50 border border-slate-200 p-3 rounded-md shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-slate-400"></div>
+                    <span className="font-medium text-sm text-slate-700">
+                      Filiais Adicionais ({client.filiais}x)
+                    </span>
+                  </div>
+                  <span className="text-sm font-semibold text-slate-600">
+                    {formatCurrency(client.filiais * 199.0)}/mês
+                  </span>
+                </div>
+              ) : null}
+
+              {client.modules.map((modName) => {
+                const mod = MODULES.find((m) => m.name === modName || m.id === modName)
+                return mod ? (
+                  <div
+                    key={mod.name}
+                    className="flex justify-between items-center bg-white border border-slate-200 p-3 rounded-md shadow-sm"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                      <span className="font-medium text-sm">{mod.name}</span>
+                    </div>
+                    <span className="text-sm text-slate-600">{formatCurrency(mod.price)}/mês</span>
+                  </div>
+                ) : (
+                  <div
+                    key={modName}
+                    className="flex justify-between items-center bg-white border border-slate-200 p-3 rounded-md shadow-sm"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                      <span className="font-medium text-sm">{modName}</span>
+                    </div>
+                    <span className="text-sm text-slate-600">-</span>
+                  </div>
+                )
+              })}
+
+              {!plan &&
+                (!client.filiais || client.filiais === 0) &&
+                client.modules.length === 0 && (
+                  <div className="text-sm text-slate-500 text-center py-4 bg-slate-50 rounded-md border border-dashed border-slate-200">
+                    Nenhum módulo selecionado para este cliente.
+                  </div>
+                )}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(client.contratoUrl!, '_blank')}
-            >
-              Abrir PDF
+            <div className="flex justify-between items-center bg-emerald-50 p-4 rounded-lg border border-emerald-100 mt-4">
+              <span className="font-semibold text-emerald-900">Total da Mensalidade</span>
+              <span className="text-xl font-bold text-emerald-700">
+                {formatCurrency(client.totalValue)}
+              </span>
+            </div>
+          </div>
+        </div>
+        <Separator />
+        <div>
+          <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-2">
+            Documentos
+          </h4>
+          {client.contratoUrl ? (
+            <div className="flex items-center justify-between bg-slate-50 border border-slate-200 p-3 rounded-md shadow-sm">
+              <div className="flex items-center gap-3">
+                <FileText className="h-5 w-5 text-indigo-500" />
+                <span className="font-medium text-sm text-slate-700">Contrato Original</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(client.contratoUrl!, '_blank')}
+              >
+                Abrir PDF
+              </Button>
+            </div>
+          ) : (
+            <div className="text-sm text-slate-500 text-center py-4 bg-slate-50 rounded-md border border-dashed border-slate-200">
+              Nenhum contrato anexado para este cliente.
+            </div>
+          )}
+
+          <div className="flex items-center justify-between bg-slate-50 border border-slate-200 p-3 rounded-md shadow-sm mt-3">
+            <div className="flex items-center gap-3">
+              <FileText className="h-5 w-5 text-amber-500" />
+              <span className="font-medium text-sm text-slate-700">Proposta Aprovada</span>
+            </div>
+            <Button variant="outline" size="sm">
+              Visualizar
             </Button>
           </div>
-        ) : (
-          <div className="text-sm text-slate-500 text-center py-4 bg-slate-50 rounded-md border border-dashed border-slate-200">
-            Nenhum contrato anexado para este cliente.
-          </div>
-        )}
-
-        {/* Proposta (Mock display) */}
-        <div className="flex items-center justify-between bg-slate-50 border border-slate-200 p-3 rounded-md shadow-sm mt-3">
-          <div className="flex items-center gap-3">
-            <FileText className="h-5 w-5 text-amber-500" />
-            <span className="font-medium text-sm text-slate-700">Proposta Aprovada</span>
-          </div>
-          <Button variant="outline" size="sm">
-            Visualizar
-          </Button>
         </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -623,7 +755,6 @@ export default function ClientsPage() {
         </div>
       </div>
 
-      {/* Global Form Sheet */}
       <Sheet
         open={isSheetOpen}
         onOpenChange={(open) => {
@@ -631,7 +762,7 @@ export default function ClientsPage() {
           if (!open) setEditingClient(null)
         }}
       >
-        <SheetContent className="sm:max-w-lg w-[90vw] flex flex-col h-full">
+        <SheetContent className="sm:max-w-2xl w-[90vw] flex flex-col h-full">
           <SheetHeader>
             <SheetTitle>{editingClient ? 'Editar Cliente' : 'Adicionar Novo Cliente'}</SheetTitle>
             <SheetDescription>
@@ -645,49 +776,49 @@ export default function ClientsPage() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-6">
                 <div className="space-y-4">
-                  <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider">
+                  <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider border-b pb-2">
                     Dados da Empresa
                   </h4>
 
-                  <FormField
-                    control={form.control}
-                    name="nome"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Razão Social</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Building2 className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                            <Input
-                              placeholder="Ex: Transporte Rápido LTDA"
-                              className="pl-9"
-                              {...field}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="nome"
+                      render={({ field }) => (
+                        <FormItem className="sm:col-span-2">
+                          <FormLabel>Razão Social</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Building2 className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                              <Input
+                                placeholder="Ex: Transporte Rápido LTDA"
+                                className="pl-9"
+                                {...field}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="cnpj"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>CNPJ</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Hash className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                            <Input placeholder="00.000.000/0001-00" className="pl-9" {...field} />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={form.control}
+                      name="cnpj"
+                      render={({ field }) => (
+                        <FormItem className="sm:col-span-2">
+                          <FormLabel>CNPJ</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Hash className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                              <Input placeholder="00.000.000/0001-00" className="pl-9" {...field} />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="email"
@@ -728,20 +859,69 @@ export default function ClientsPage() {
                   </div>
                 </div>
 
-                <Separator />
-
-                <div className="space-y-4">
-                  <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider">
-                    Planos e Módulos
+                <div className="space-y-4 pt-2">
+                  <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider border-b pb-2">
+                    Composição do Contrato
                   </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-100">
+                    <FormField
+                      control={form.control}
+                      name="plano_base"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Plano Base</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl>
+                              <SelectTrigger className="bg-white">
+                                <SelectValue placeholder="Selecione um plano" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {PLANS.map((plan) => (
+                                <SelectItem key={plan.id} value={plan.name}>
+                                  {plan.name} - {formatCurrency(plan.price)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="filiais"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nº Filiais Adicionais</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={0}
+                              className="bg-white"
+                              value={field.value}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <p className="text-xs text-slate-500">R$ 199,00 por filial</p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
                   <FormField
                     control={form.control}
                     name="modulos"
                     render={() => (
                       <FormItem>
-                        <div className="space-y-2 mt-2">
-                          {modules.map((module) => (
+                        <FormLabel className="text-base text-slate-700">
+                          Módulos Adicionais
+                        </FormLabel>
+                        <div className="space-y-2 mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:space-y-0">
+                          {MODULES.map((module) => (
                             <FormField
                               key={module.id}
                               control={form.control}
@@ -754,29 +934,24 @@ export default function ClientsPage() {
                                   >
                                     <FormControl>
                                       <Checkbox
-                                        checked={field.value?.includes(module.id)}
+                                        checked={field.value?.includes(module.name)}
                                         onCheckedChange={(checked) => {
                                           const currentValues = field.value || []
                                           const updated = checked
-                                            ? [...currentValues, module.id]
-                                            : currentValues.filter((value) => value !== module.id)
-
+                                            ? [...currentValues, module.name]
+                                            : currentValues.filter((value) => value !== module.name)
                                           field.onChange(updated)
-
-                                          const total = updated.reduce((acc, modId) => {
-                                            const m = modules.find((x) => x.id === modId)
-                                            return acc + (m?.price || 0)
-                                          }, 0)
-                                          form.setValue('valor_total', total, { shouldDirty: true })
                                         }}
                                       />
                                     </FormControl>
                                     <div className="flex-1 flex justify-between items-center">
-                                      <FormLabel className="font-medium cursor-pointer w-full h-full">
+                                      <FormLabel className="font-medium cursor-pointer w-full h-full text-sm">
                                         {module.name}
                                       </FormLabel>
-                                      <span className="text-sm text-slate-500 whitespace-nowrap ml-2">
-                                        {formatCurrency(module.price)}/mês
+                                      <span className="text-xs text-slate-500 whitespace-nowrap ml-2 font-mono">
+                                        {module.price > 0
+                                          ? formatCurrency(module.price)
+                                          : 'Incluso'}
                                       </span>
                                     </div>
                                   </FormItem>
@@ -790,14 +965,14 @@ export default function ClientsPage() {
                     )}
                   />
 
-                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mt-4 space-y-3">
+                  <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100 mt-6 space-y-3">
                     <FormField
                       control={form.control}
                       name="valor_total"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-slate-700 font-semibold">
-                            Mensalidade Acordada (R$)
+                          <FormLabel className="text-emerald-900 font-semibold text-sm">
+                            Valor Total do Contrato (R$)
                           </FormLabel>
                           <FormControl>
                             <Input
@@ -805,12 +980,12 @@ export default function ClientsPage() {
                               step="0.01"
                               value={field.value || ''}
                               onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              className="font-medium bg-white text-lg h-12"
+                              className="font-bold bg-white text-lg h-12 text-emerald-700 border-emerald-200"
                             />
                           </FormControl>
-                          <p className="text-xs text-slate-500 mt-1">
-                            Calculado automaticamente, mas você pode definir o valor exato do
-                            contrato manualmente.
+                          <p className="text-xs text-emerald-600/80 mt-1">
+                            Calculado automaticamente com base no Plano, Filiais e Módulos. Você
+                            pode alterar manualmente se necessário.
                           </p>
                           <FormMessage />
                         </FormItem>
@@ -819,7 +994,7 @@ export default function ClientsPage() {
                   </div>
                 </div>
 
-                <div className="pt-4 flex justify-end gap-3">
+                <div className="pt-6 flex justify-end gap-3">
                   <Button variant="outline" type="button" onClick={() => setIsSheetOpen(false)}>
                     Cancelar
                   </Button>
@@ -841,7 +1016,6 @@ export default function ClientsPage() {
         </SheetContent>
       </Sheet>
 
-      {/* Global View Sheet */}
       <Sheet open={isViewSheetOpen} onOpenChange={setIsViewSheetOpen}>
         <SheetContent className="sm:max-w-md w-[90vw]">
           <SheetHeader>
@@ -852,7 +1026,6 @@ export default function ClientsPage() {
         </SheetContent>
       </Sheet>
 
-      {/* Global Delete Alert */}
       <AlertDialog
         open={!!clientToDelete}
         onOpenChange={(open) => !open && setClientToDelete(null)}
@@ -950,20 +1123,30 @@ export default function ClientsPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap gap-1.5 max-w-[250px]">
-                        {client.modules.length > 0 ? (
-                          getModuleNames(client.modules).map((name) => (
-                            <Badge
-                              key={name}
-                              variant="secondary"
-                              className="bg-slate-100 text-slate-700 border-slate-200 font-normal"
-                            >
-                              {name}
-                            </Badge>
-                          ))
-                        ) : (
-                          <span className="text-xs text-slate-400 italic">Sem módulos</span>
+                      <div className="flex flex-col gap-1.5">
+                        {client.plano_base && (
+                          <Badge
+                            variant="outline"
+                            className="w-fit bg-indigo-50 text-indigo-700 border-indigo-100 font-medium text-[10px] uppercase"
+                          >
+                            {client.plano_base}
+                          </Badge>
                         )}
+                        <div className="flex flex-wrap gap-1 max-w-[250px]">
+                          {client.modules.length > 0
+                            ? client.modules.map((name) => (
+                                <Badge
+                                  key={name}
+                                  variant="secondary"
+                                  className="bg-slate-100 text-slate-700 border-slate-200 font-normal text-xs"
+                                >
+                                  {name}
+                                </Badge>
+                              ))
+                            : !client.plano_base && (
+                                <span className="text-xs text-slate-400 italic">Sem módulos</span>
+                              )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>

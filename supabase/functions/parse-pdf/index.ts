@@ -44,7 +44,9 @@ Deno.serve(async (req) => {
 
     // 2. Extração de Filiais
     // Procura por linhas de Filial que contenham um CNPJ preenchido
-    const filiaisMatches = [...extractedText.matchAll(/Filial[\s\S]{1,50}?(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})/gi)]
+    const filiaisMatches = [
+      ...extractedText.matchAll(/Filial[\s\S]{1,50}?(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})/gi),
+    ]
     const numFiliais = filiaisMatches.length
     const valorFiliais = numFiliais * 199.0
 
@@ -53,20 +55,22 @@ Deno.serve(async (req) => {
     let valorPlano = 400.0
 
     const plans = [
-      { name: 'TMS-5000+', price: 2487.0 },
-      { name: 'TMS-5000', price: 2087.0 },
-      { name: 'TMS-3000', price: 1757.0 },
-      { name: 'MTS-1000', price: 1427.0 },
-      { name: 'TMS-1000', price: 1427.0 },
-      { name: 'TMS-500', price: 1097.0 },
-      { name: 'TMS-300', price: 877.0 },
-      { name: 'TMS-100', price: 657.0 },
-      { name: 'TMS-50', price: 400.0 }
+      { name: 'TMS 5000+', price: 2487.0 },
+      { name: 'TMS 5000', price: 2087.0 },
+      { name: 'TMS 3000', price: 1757.0 },
+      { name: 'TMS 1000', price: 1427.0 },
+      { name: 'TMS 500', price: 1097.0 },
+      { name: 'TMS 300', price: 877.0 },
+      { name: 'TMS 100', price: 657.0 },
+      { name: 'TMS 50', price: 400.0 },
     ]
 
     for (const plan of plans) {
       // Heurística: procura o nome do plano seguido de 'Contratado' e um 'X' ou 'x' em algum lugar próximo
-      const regex = new RegExp(`${plan.name.replace('+', '\\+')}[\\s\\S]{0,300}?Contratado[\\s\\S]{0,100}?[xX]`, 'i')
+      const regex = new RegExp(
+        `${plan.name.replace('+', '\\+')}[\\s\\S]{0,300}?Contratado[\\s\\S]{0,100}?[xX]`,
+        'i',
+      )
       if (regex.test(extractedText)) {
         planoBase = plan.name
         valorPlano = plan.price
@@ -75,26 +79,62 @@ Deno.serve(async (req) => {
     }
 
     // 4. Extração de Módulos
-    let modulos: string[] = ['Administração', 'Básico', 'Carga Comercial', 'Faturamento', 'Financeiro']
+    let modulos: string[] = [
+      'Administração',
+      'Básico',
+      'Carga Comercial',
+      'Faturamento',
+      'Financeiro',
+    ]
     let valorModulos = 0.0
 
     const modulosAdicionaisRegex = [
       { name: 'Fiscal', regex: /Fiscal[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
-      { name: 'B.I.', regex: /B\.?I\.?[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
+      { name: 'Power BI', regex: /B\.?I\.?[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
       { name: 'EDI', regex: /EDI[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
-      { name: 'Controle de Viagem', regex: /Controle de Viagem[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
-      { name: 'Frota', regex: /Frota[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
+      {
+        name: 'Controle de Viagem',
+        regex: /Controle de Viagem[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i,
+      },
+      {
+        name: 'Frota (até 10 placas)*',
+        regex: /Frota[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i,
+      },
       { name: 'Medição', regex: /Medição[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
-      { name: 'Fracionado', regex: /Fracionado[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
-      { name: 'Transporte', regex: /Transporte[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
-      { name: 'Fundo de proteção', regex: /Fundo de prote[cç][aã]o[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
-      { name: 'Patrimônio', regex: /Patrim[oô]nio[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
-      { name: 'Calendário', regex: /Calend[aá]rio[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
-      { name: 'Painel de Informações', regex: /Painel de Informa[cç][õo]es[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
-      { name: 'Df-e', regex: /Df-e[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i }
+      {
+        name: 'Fracionado',
+        regex: /Fracionado[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i,
+      },
+      {
+        name: 'Transporte (Bloco/TCE/TCI)',
+        regex: /Transporte[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i,
+      },
+      {
+        name: 'Fundo de proteção',
+        regex: /Fundo de prote[cç][aã]o[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i,
+      },
+      {
+        name: 'Patrimonio',
+        regex: /Patrim[oô]nio[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i,
+      },
+      {
+        name: 'Calendário',
+        regex: /Calend[aá]rio[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i,
+      },
+      {
+        name: 'Painel de Informações',
+        regex: /Painel de Informa[cç][õo]es[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i,
+      },
+      { name: 'DF-e', regex: /Df-e[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
+      { name: 'SL-Trip', regex: /SL-Trip[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i },
+      {
+        name: 'Homologação Bancaria',
+        regex:
+          /Homologa[cç][aã]o Banc[aá]ria[\s\S]{0,30}?[xX][\s\S]{0,30}?R\$\s*(\d+(?:[.,]\d+)?)/i,
+      },
     ]
 
-    modulosAdicionaisRegex.forEach(mod => {
+    modulosAdicionaisRegex.forEach((mod) => {
       const match = extractedText.match(mod.regex)
       if (match) {
         if (!modulos.includes(mod.name)) {
@@ -131,8 +171,8 @@ Deno.serve(async (req) => {
             valorPlano,
             numFiliais,
             valorFiliais,
-            valorModulos
-          }
+            valorModulos,
+          },
         },
       }),
       {
