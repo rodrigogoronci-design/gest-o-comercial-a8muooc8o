@@ -574,19 +574,27 @@ export default function ClientsPage() {
       let plano_base = ''
       let filiais = 0
 
-      const formatMod = (m: any): ModuleItem => {
-        if (typeof m === 'string') {
-          const modDef = MODULES.find((x) => x.name === m || x.id === m)
-          return { name: m, price: modDef ? modDef.price : 0 }
+      const formatMod = (m: any): ModuleItem | null => {
+        const mName = typeof m === 'string' ? m : m.name || ''
+        const mPrice = typeof m === 'string' ? undefined : m.price
+
+        const modDef = MODULES.find(
+          (x) => x.name.toLowerCase() === mName.toLowerCase() || x.id === mName,
+        )
+
+        if (!modDef) return null
+
+        return {
+          name: modDef.name,
+          price: mPrice !== undefined ? mPrice : modDef.price,
         }
-        return { name: m.name || 'Desconhecido', price: m.price || 0 }
       }
 
       if (Array.isArray(c.modulos)) {
-        parsedModules = c.modulos.map(formatMod)
+        parsedModules = c.modulos.map(formatMod).filter(Boolean) as ModuleItem[]
       } else if (c.modulos && typeof c.modulos === 'object') {
         const modObj = c.modulos as any
-        parsedModules = (modObj.adicionais || []).map(formatMod)
+        parsedModules = (modObj.adicionais || []).map(formatMod).filter(Boolean) as ModuleItem[]
         plano_base = modObj.plano_base || ''
         filiais = modObj.filiais || 0
       }

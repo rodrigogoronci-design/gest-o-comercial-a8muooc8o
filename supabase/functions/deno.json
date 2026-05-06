@@ -2,7 +2,7 @@
   "_versions": {
     "manage-user": 21,
     "parse-excel": 9,
-    "parse-pdf": 6,
+    "parse-pdf": 7,
     "parse-receipt-pdf": 2
   }
 }
