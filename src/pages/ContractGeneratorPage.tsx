@@ -63,6 +63,7 @@ export default function ContractGeneratorPage() {
   const [isDragging, setIsDragging] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [autoFilled, setAutoFilled] = useState(false)
+  const [isLoadingCnpj, setIsLoadingCnpj] = useState(false)
 
   const planData = useMemo(() => PLANS.find((p) => p.id === selectedPlan), [selectedPlan])
   const planPrice = planData?.price || 0
@@ -109,9 +110,69 @@ export default function ContractGeneratorPage() {
     implValue,
   }
 
+  const fetchCnpjData = async (cnpjValue: string) => {
+    setIsLoadingCnpj(true)
+    try {
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjValue}`)
+      if (!res.ok) throw new Error('CNPJ não encontrado ou erro na consulta.')
+      const data = await res.json()
+
+      if (data.razao_social) setName(data.razao_social)
+
+      const addressParts = []
+      if (data.logradouro) addressParts.push(data.logradouro)
+      if (data.numero) addressParts.push(data.numero)
+      if (data.complemento) addressParts.push(data.complemento)
+      const firstPart = addressParts.join(', ')
+
+      const secondPart = []
+      if (data.bairro) secondPart.push(data.bairro)
+      if (data.municipio && data.uf) secondPart.push(`${data.municipio} - ${data.uf}`)
+      if (data.cep) {
+        const cepFormatted = data.cep.replace(/^(\d{5})(\d{3})$/, '$1-$2')
+        secondPart.push(cepFormatted)
+      }
+
+      const fullAddress = [firstPart, secondPart.join(', ')].filter(Boolean).join(' - ')
+      if (fullAddress) setAddress(fullAddress)
+
+      if (data.qsa && data.qsa.length > 0) {
+        const socioAdmin =
+          data.qsa.find(
+            (s: any) =>
+              s.qualificacao_socio?.toLowerCase().includes('administrador') ||
+              s.qualificacao_socio?.toLowerCase().includes('diretor'),
+          ) || data.qsa[0]
+        if (socioAdmin && socioAdmin.nome_socio) {
+          setRepName(socioAdmin.nome_socio)
+        }
+      }
+
+      setAutoFilled(true)
+      setTimeout(() => setAutoFilled(false), 3000)
+
+      toast({
+        title: 'CNPJ Encontrado!',
+        description: 'Dados da empresa preenchidos automaticamente.',
+        className: 'bg-emerald-600 text-white border-none',
+      })
+    } catch (err: any) {
+      toast({
+        title: 'Aviso na busca de CNPJ',
+        description: 'Não foi possível preencher automaticamente. Digite os dados manualmente.',
+      })
+    } finally {
+      setIsLoadingCnpj(false)
+    }
+  }
+
   const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value.replace(/\D/g, '')
     if (rawValue.length <= 14) setCnpj(formatCNPJ(rawValue))
+
+    if (rawValue.length === 14) {
+      fetchCnpjData(rawValue)
+    }
   }
 
   const handleToggleModule = (id: string, checked: boolean) => {
@@ -371,12 +432,18 @@ export default function ContractGeneratorPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>CNPJ</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>CNPJ</Label>
+                      {isLoadingCnpj && (
+                        <Loader2 className="w-3 h-3 animate-spin text-indigo-600" />
+                      )}
+                    </div>
                     <Input
                       value={cnpj}
                       onChange={handleCnpjChange}
                       onFocus={() => scrollToSection('section-contratante')}
                       className={inputHighlightClass}
+                      disabled={isLoadingCnpj}
                     />
                   </div>
                   <div className="space-y-2">
