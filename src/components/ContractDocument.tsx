@@ -282,7 +282,9 @@ export function ContractDocument({
                     <td className="border border-slate-300 p-1.5 text-center">
                       {selectedModules.includes(m.id)
                         ? (m as any).fixedImplPrice !== undefined
-                          ? formatCurrency((m as any).fixedImplPrice)
+                          ? typeof (m as any).fixedImplPrice === 'object'
+                            ? formatCurrency((m as any).fixedImplPrice[implMode])
+                            : formatCurrency((m as any).fixedImplPrice)
                           : formatCurrency(m.implHours * implRate)
                         : '-'}
                     </td>

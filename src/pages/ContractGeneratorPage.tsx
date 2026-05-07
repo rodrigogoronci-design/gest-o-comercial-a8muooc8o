@@ -99,11 +99,15 @@ export default function ContractGeneratorPage() {
     selectedModules.forEach((id) => {
       const mod = MODULES.find((m) => m.id === id) as any
       if (mod && mod.fixedImplPrice !== undefined) {
-        value += mod.fixedImplPrice
+        if (typeof mod.fixedImplPrice === 'object') {
+          value += mod.fixedImplPrice[implMode]
+        } else {
+          value += mod.fixedImplPrice
+        }
       }
     })
     return value
-  }, [totalImplHours, implRate, selectedModules])
+  }, [totalImplHours, implRate, selectedModules, implMode])
 
   const contractProps = {
     name,
