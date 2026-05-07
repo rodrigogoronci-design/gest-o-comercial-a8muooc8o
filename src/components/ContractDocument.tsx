@@ -221,9 +221,9 @@ export function ContractDocument({
           >
             <p>5.4) A CONTRATANTE poderá cadastrar no sistema Usuários ilimitados.</p>
             <p>
-              5.5) Para Adesão ao plano SL-TMS WEB, será cobrado uma taxa única no valor de R$ 99,00
-              (noventa e nove reais) que deverá ser pago em 5 dias corridos após assinatura do
-              contrato.
+              5.5) Para Adesão ao plano SL-TMS WEB, será cobrado uma taxa única no valor de R$
+              165,00 (cento e sessenta e cinco reais) que deverá ser pago em 5 dias corridos após
+              assinatura do contrato.
             </p>
             <p>
               5.6) A CONTRATANTE pagará um valor por cada módulo adicional que for incluído ao seu
@@ -281,7 +281,9 @@ export function ContractDocument({
                     </td>
                     <td className="border border-slate-300 p-1.5 text-center">
                       {selectedModules.includes(m.id)
-                        ? formatCurrency(m.implHours * implRate)
+                        ? (m as any).fixedImplPrice !== undefined
+                          ? formatCurrency((m as any).fixedImplPrice)
+                          : formatCurrency(m.implHours * implRate)
                         : '-'}
                     </td>
                   </tr>

@@ -94,7 +94,16 @@ export default function ContractGeneratorPage() {
     })
     return hours
   }, [selectedModules])
-  const implValue = totalImplHours * implRate
+  const implValue = useMemo(() => {
+    let value = totalImplHours * implRate
+    selectedModules.forEach((id) => {
+      const mod = MODULES.find((m) => m.id === id) as any
+      if (mod && mod.fixedImplPrice !== undefined) {
+        value += mod.fixedImplPrice
+      }
+    })
+    return value
+  }, [totalImplHours, implRate, selectedModules])
 
   const contractProps = {
     name,
@@ -375,13 +384,6 @@ export default function ContractGeneratorPage() {
       .catch((err) => toast({ title: 'Erro', description: err.message, variant: 'destructive' }))
   }
 
-  const scrollToSection = (id: string) => {
-    const el = document.getElementById(id)
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }
-  }
-
   const inputHighlightClass = autoFilled
     ? 'bg-yellow-50 border-yellow-300 transition-all duration-500'
     : 'transition-all duration-500'
@@ -486,7 +488,6 @@ export default function ContractGeneratorPage() {
                     <Input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      onFocus={() => scrollToSection('section-contratante')}
                       className={inputHighlightClass}
                     />
                   </div>
@@ -500,7 +501,6 @@ export default function ContractGeneratorPage() {
                     <Input
                       value={cnpj}
                       onChange={handleCnpjChange}
-                      onFocus={() => scrollToSection('section-contratante')}
                       className={inputHighlightClass}
                       disabled={isLoadingCnpj}
                     />
@@ -510,7 +510,6 @@ export default function ContractGeneratorPage() {
                     <Input
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
-                      onFocus={() => scrollToSection('section-contratante')}
                       className={inputHighlightClass}
                     />
                   </div>
@@ -520,7 +519,6 @@ export default function ContractGeneratorPage() {
                       <Input
                         value={repName}
                         onChange={(e) => setRepName(e.target.value)}
-                        onFocus={() => scrollToSection('section-contratante')}
                         className={inputHighlightClass}
                       />
                     </div>
@@ -529,7 +527,6 @@ export default function ContractGeneratorPage() {
                       <Input
                         value={repCpf}
                         onChange={(e) => setRepCpf(e.target.value)}
-                        onFocus={() => scrollToSection('section-contratante')}
                         className={inputHighlightClass}
                       />
                     </div>
@@ -540,7 +537,6 @@ export default function ContractGeneratorPage() {
                       <Input
                         value={repRg}
                         onChange={(e) => setRepRg(e.target.value)}
-                        onFocus={() => scrollToSection('section-contratante')}
                         className={inputHighlightClass}
                       />
                     </div>
@@ -555,14 +551,8 @@ export default function ContractGeneratorPage() {
                 <CardContent className="space-y-6">
                   <div className="space-y-3">
                     <Label className="text-sm font-bold">Plano Base</Label>
-                    <Select
-                      value={selectedPlan}
-                      onValueChange={(val) => {
-                        setSelectedPlan(val)
-                        scrollToSection('section-planos')
-                      }}
-                    >
-                      <SelectTrigger onFocus={() => scrollToSection('section-planos')}>
+                    <Select value={selectedPlan} onValueChange={setSelectedPlan}>
+                      <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -586,11 +576,7 @@ export default function ContractGeneratorPage() {
                           <Checkbox
                             id={m.id}
                             checked={selectedModules.includes(m.id)}
-                            onCheckedChange={(c) => {
-                              handleToggleModule(m.id, c as boolean)
-                              scrollToSection('section-modulos')
-                            }}
-                            onFocus={() => scrollToSection('section-modulos')}
+                            onCheckedChange={(c) => handleToggleModule(m.id, c as boolean)}
                           />
                           <Label htmlFor={m.id} className="text-xs">
                             {m.name}
@@ -601,21 +587,30 @@ export default function ContractGeneratorPage() {
                   </div>
                   <Separator />
                   <div className="space-y-3">
+                    <Label className="text-sm font-bold">Pacote D.F.E. (Mensalidade)</Label>
+                    <Select value={selectedDfeTier} onValueChange={setSelectedDfeTier}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DFE_TIERS.map((d) => (
+                          <SelectItem key={d.id} value={d.id}>
+                            {d.name} - {formatCurrency(d.price)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Separator />
+                  <div className="space-y-3">
                     <Label className="text-sm font-bold">Implantação</Label>
                     <RadioGroup
                       value={implMode}
-                      onValueChange={(v) => {
-                        setImplMode(v as 'remoto' | 'presencial')
-                        scrollToSection('section-implantacao')
-                      }}
+                      onValueChange={(v) => setImplMode(v as 'remoto' | 'presencial')}
                       className="flex flex-col sm:flex-row gap-4"
                     >
                       <div className="flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors">
-                        <RadioGroupItem
-                          value="remoto"
-                          id="remoto"
-                          onFocus={() => scrollToSection('section-implantacao')}
-                        />
+                        <RadioGroupItem value="remoto" id="remoto" />
                         <Label
                           htmlFor="remoto"
                           className="cursor-pointer font-medium flex-1 h-full py-1"
@@ -624,11 +619,7 @@ export default function ContractGeneratorPage() {
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors">
-                        <RadioGroupItem
-                          value="presencial"
-                          id="presencial"
-                          onFocus={() => scrollToSection('section-implantacao')}
-                        />
+                        <RadioGroupItem value="presencial" id="presencial" />
                         <Label
                           htmlFor="presencial"
                           className="cursor-pointer font-medium flex-1 h-full py-1"
