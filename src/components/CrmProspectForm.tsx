@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -40,15 +40,17 @@ export type ProspectFormValues = z.infer<typeof prospectFormSchema>
 export function CrmProspectForm({
   onSubmit,
   isSubmitting,
+  initialData,
 }: {
   onSubmit: (v: ProspectFormValues) => void
   isSubmitting?: boolean
+  initialData?: Partial<ProspectFormValues>
 }) {
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
   const form = useForm<ProspectFormValues>({
     resolver: zodResolver(prospectFormSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       cnpj: '',
       empresa: '',
       endereco: '',
@@ -60,6 +62,22 @@ export function CrmProspectForm({
       observacoes: '',
     },
   })
+
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        cnpj: initialData.cnpj || '',
+        empresa: initialData.empresa || '',
+        endereco: initialData.endereco || '',
+        contato_nome: initialData.contato_nome || '',
+        telefone: initialData.telefone || '',
+        email: initialData.email || '',
+        status: initialData.status || 'Contato Inicial',
+        data_followup: initialData.data_followup || '',
+        observacoes: initialData.observacoes || '',
+      })
+    }
+  }, [initialData, form])
 
   const formatCnpj = (v: string) =>
     v
@@ -243,7 +261,11 @@ export function CrmProspectForm({
             <FormItem>
               <FormLabel>Observações</FormLabel>
               <FormControl>
-                <Textarea className="resize-none h-16" {...field} />
+                <Textarea
+                  className="resize-none min-h-[120px]"
+                  placeholder="Adicione notas ou histórico de follow-ups aqui..."
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

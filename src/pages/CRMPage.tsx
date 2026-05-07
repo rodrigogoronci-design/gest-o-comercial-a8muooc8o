@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, FileSignature, MoreHorizontal, Plus, CalendarClock, BellRing } from 'lucide-react'
+import {
+  Search,
+  FileSignature,
+  MoreHorizontal,
+  Plus,
+  CalendarClock,
+  BellRing,
+  Pencil,
+} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
@@ -52,6 +60,7 @@ export default function CRMPage() {
   const [prospects, setProspects] = useState<CrmProspect[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [editingProspect, setEditingProspect] = useState<CrmProspect | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
@@ -90,6 +99,35 @@ export default function CRMPage() {
       return toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' })
     toast({ title: 'Sucesso', description: 'Contato adicionado com sucesso!' })
     setIsDialogOpen(false)
+    fetchProspects()
+  }
+
+  const onEditSubmit = async (values: ProspectFormValues) => {
+    if (!editingProspect) return
+    setIsSubmitting(true)
+    const { error } = await supabase
+      .from('crm_prospects')
+      .update({
+        cnpj: values.cnpj || null,
+        empresa: values.empresa,
+        endereco: values.endereco || null,
+        contato_nome: values.contato_nome,
+        telefone: values.telefone || null,
+        email: values.email || null,
+        status: values.status,
+        data_followup: values.data_followup || null,
+        observacoes: values.observacoes || null,
+      })
+      .eq('id', editingProspect.id)
+    setIsSubmitting(false)
+    if (error)
+      return toast({
+        title: 'Erro ao atualizar',
+        description: error.message,
+        variant: 'destructive',
+      })
+    toast({ title: 'Sucesso', description: 'Contato atualizado com sucesso!' })
+    setEditingProspect(null)
     fetchProspects()
   }
 
@@ -288,8 +326,13 @@ export default function CRMPage() {
                             <span className="hidden sm:inline">Gerar Contrato</span>
                           </Link>
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
-                          <MoreHorizontal className="h-4 w-4" />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                          onClick={() => setEditingProspect(p)}
+                        >
+                          <Pencil className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -300,6 +343,34 @@ export default function CRMPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!editingProspect} onOpenChange={(open) => !open && setEditingProspect(null)}>
+        <DialogContent className="sm:max-w-[550px]">
+          <DialogHeader>
+            <DialogTitle>Editar Contato</DialogTitle>
+            <DialogDescription>
+              Atualize as informações e registre novos follow-ups.
+            </DialogDescription>
+          </DialogHeader>
+          {editingProspect && (
+            <CrmProspectForm
+              onSubmit={onEditSubmit}
+              isSubmitting={isSubmitting}
+              initialData={{
+                cnpj: editingProspect.cnpj || '',
+                empresa: editingProspect.empresa,
+                endereco: editingProspect.endereco || '',
+                contato_nome: editingProspect.contato_nome,
+                telefone: editingProspect.telefone || '',
+                email: editingProspect.email || '',
+                status: editingProspect.status,
+                data_followup: editingProspect.data_followup || '',
+                observacoes: editingProspect.observacoes || '',
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
