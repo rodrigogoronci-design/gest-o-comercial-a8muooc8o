@@ -1,6 +1,6 @@
 import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
-import { PLANS, MODULES, DFE_TIERS, BASE_IMPLEMENTATION_HOURS } from '@/constants/contracts'
+import { PLANS, MODULES, BASE_IMPLEMENTATION_HOURS } from '@/constants/contracts'
 import { CONTRACT_TEXT } from '@/constants/contract-text'
 import logoUrl from '@/assets/logomarca-service-f9dbd.png'
 
@@ -42,8 +42,6 @@ export function ContractDocument({
   planData,
   planPrice,
   modulesPrice,
-  dfeData,
-  dfePrice,
   totalValue,
   implMode,
   implRate,
@@ -69,10 +67,7 @@ export function ContractDocument({
           <p>{CONTRACT_TEXT.DEFINICOES}</p>
         </div>
 
-        <div
-          id="section-contratante"
-          className="scroll-mt-6 transition-colors duration-500 p-2 -mx-2 rounded-lg"
-        >
+        <div className="transition-colors duration-500 p-2 -mx-2 rounded-lg">
           <h3 className="font-bold uppercase mt-4 mb-2 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
             CONTRATANTE:
           </h3>
@@ -113,10 +108,7 @@ export function ContractDocument({
           texts={CONTRACT_TEXT.CLAUSULA_4}
         />
 
-        <div
-          id="section-planos"
-          className="mb-6 scroll-mt-6 transition-colors duration-500 p-2 -mx-2 rounded-lg"
-        >
+        <div className="mb-6 transition-colors duration-500 p-2 -mx-2 rounded-lg">
           <h3 className="font-bold uppercase mt-4 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
             CLÁUSULA QUINTA - PREÇO, FORMA DE PAGAMENTO E SUSPENSÃO DOS SERVIÇOS.
           </h3>
@@ -215,10 +207,7 @@ export function ContractDocument({
             </table>
           </div>
 
-          <div
-            id="section-modulos"
-            className="space-y-3 mt-4 scroll-mt-6 p-2 -mx-2 rounded-lg transition-colors duration-500"
-          >
+          <div className="space-y-3 mt-4 p-2 -mx-2 rounded-lg transition-colors duration-500">
             <p>5.4) A CONTRATANTE poderá cadastrar no sistema Usuários ilimitados.</p>
             <p>
               5.5) Para Adesão ao plano SL-TMS WEB, será cobrado uma taxa única no valor de R$
@@ -235,10 +224,7 @@ export function ContractDocument({
             </p>
           </div>
 
-          <div
-            id="section-implantacao"
-            className="overflow-x-auto my-4 scroll-mt-6 p-2 -mx-2 rounded-lg transition-colors duration-500"
-          >
+          <div className="overflow-x-auto my-4 p-2 -mx-2 rounded-lg transition-colors duration-500">
             <table className="w-full text-[10px] border-collapse border border-slate-300">
               <thead>
                 <tr className="bg-[#1b4382] text-white print:bg-slate-200 print:text-black">
@@ -327,7 +313,7 @@ export function ContractDocument({
                   <td className="border border-slate-300 p-2 text-right">
                     {formatCurrency(planPrice)}
                   </td>
-                  <td className="border border-slate-300 p-2" rowSpan={4}>
+                  <td className="border border-slate-300 p-2" rowSpan={3}>
                     <strong>Observações:</strong>
                     <br />
                     Forma de pagamento: Boleto
@@ -341,14 +327,6 @@ export function ContractDocument({
                   </td>
                   <td className="border border-slate-300 p-2 text-right">
                     {formatCurrency(modulesPrice)}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="border border-slate-300 p-2 font-bold">
-                    D.F.E. ({dfeData?.name})
-                  </td>
-                  <td className="border border-slate-300 p-2 text-right">
-                    {formatCurrency(dfePrice)}
                   </td>
                 </tr>
                 <tr className="bg-[#1b4382]/5 print:bg-slate-200 text-[#1b4382] print:text-black">

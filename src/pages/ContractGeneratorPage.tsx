@@ -26,14 +26,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { useToast } from '@/hooks/use-toast'
 import { formatCurrency, formatCNPJ } from '@/lib/formatters'
 import { parsePdfContract } from '@/services/parse-pdf'
 import {
   PLANS,
   MODULES,
-  DFE_TIERS,
   IMPLEMENTATION_RATES,
   BASE_IMPLEMENTATION_HOURS,
 } from '@/constants/contracts'
@@ -56,7 +54,6 @@ export default function ContractGeneratorPage() {
 
   const [selectedPlan, setSelectedPlan] = useState<string>('tms-50')
   const [selectedModules, setSelectedModules] = useState<string[]>([])
-  const [selectedDfeTier, setSelectedDfeTier] = useState<string>('dfe-none')
   const [implMode, setImplMode] = useState<'remoto' | 'presencial'>('remoto')
 
   const [isExtractingCompany, setIsExtractingCompany] = useState(false)
@@ -80,9 +77,7 @@ export default function ContractGeneratorPage() {
       selectedModules.reduce((acc, id) => acc + (MODULES.find((m) => m.id === id)?.price || 0), 0),
     [selectedModules],
   )
-  const dfeData = useMemo(() => DFE_TIERS.find((d) => d.id === selectedDfeTier), [selectedDfeTier])
-  const dfePrice = dfeData?.price || 0
-  const totalValue = planPrice + modulesPrice + dfePrice
+  const totalValue = planPrice + modulesPrice
 
   const implRate =
     implMode === 'remoto' ? IMPLEMENTATION_RATES.remoto : IMPLEMENTATION_RATES.presencial
@@ -118,12 +113,9 @@ export default function ContractGeneratorPage() {
     repRg,
     selectedPlan,
     selectedModules,
-    selectedDfeTier,
     planData,
     planPrice,
     modulesPrice,
-    dfeData,
-    dfePrice,
     totalValue,
     implMode,
     implRate,
@@ -351,8 +343,7 @@ export default function ContractGeneratorPage() {
     try {
       await parsePdfContract(file) // just to trigger OCR backend integration
       setSelectedPlan('tms-300')
-      setSelectedModules(['mod-edi', 'mod-frota', 'mod-calendario'])
-      setSelectedDfeTier('dfe-2000')
+      setSelectedModules(['mod-edi', 'mod-frota', 'mod-calendario', 'mod-dfe'])
       toast({
         title: 'Proposta importada!',
         description: 'Plano e módulos preenchidos automaticamente.',
@@ -377,7 +368,7 @@ export default function ContractGeneratorPage() {
     createCliente({
       nome: name,
       cnpj,
-      modulos: [selectedPlan, ...selectedModules, selectedDfeTier],
+      modulos: [selectedPlan, ...selectedModules],
       valor_total: totalValue,
       status: 'Ativo',
     })
@@ -591,22 +582,6 @@ export default function ContractGeneratorPage() {
                   </div>
                   <Separator />
                   <div className="space-y-3">
-                    <Label className="text-sm font-bold">Pacote D.F.E. (Mensalidade)</Label>
-                    <Select value={selectedDfeTier} onValueChange={setSelectedDfeTier}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {DFE_TIERS.map((d) => (
-                          <SelectItem key={d.id} value={d.id}>
-                            {d.name} - {formatCurrency(d.price)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Separator />
-                  <div className="space-y-3">
                     <Label className="text-sm font-bold">Implantação</Label>
                     <RadioGroup
                       value={implMode}
@@ -639,9 +614,9 @@ export default function ContractGeneratorPage() {
 
             <div className="lg:col-span-7 sticky top-6 print:static print:block print:w-full print:m-0 print:p-0">
               <Card className="flex flex-col h-[calc(100vh-6rem)] min-h-[700px] shadow-xl border-slate-200 overflow-hidden bg-white print:h-auto print:min-h-0 print:shadow-none print:border-none">
-                <ScrollArea className="flex-1 print:hidden">
+                <div className="flex-1 overflow-y-auto print:hidden p-1">
                   <ContractDocument {...contractProps} />
-                </ScrollArea>
+                </div>
                 <div className="hidden print:block">
                   <ContractDocument {...contractProps} />
                 </div>

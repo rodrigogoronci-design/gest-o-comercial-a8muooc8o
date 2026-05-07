@@ -53,12 +53,3 @@ export const MODULES = [
   { id: 'mod-sltrack', name: 'SL-Track', price: 0.0, implHours: 5 },
   { id: 'mod-homolog-banc', name: 'Homologação Bancaria', price: 200.0, implHours: 0 },
 ]
-
-export const DFE_TIERS = [
-  { id: 'dfe-none', name: 'Não contratar pacote D.F.E.', docs: '0', price: 0.0 },
-  { id: 'dfe-1000', name: '1000 Doc.', docs: '1000', price: 190.0 },
-  { id: 'dfe-2000', name: '2000 Doc.', docs: '2000', price: 290.0 },
-  { id: 'dfe-3000', name: '3000 Doc.', docs: '3000', price: 390.0 },
-  { id: 'dfe-5000', name: '5000 Doc.', docs: '5000', price: 490.0 },
-  { id: 'dfe-10000', name: '10.000 Doc.', docs: '10000', price: 600.0 },
-]
