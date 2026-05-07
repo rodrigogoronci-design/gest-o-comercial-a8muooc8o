@@ -11,7 +11,9 @@ import {
 } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ImportContracts } from '@/components/ImportContracts'
-import { createCliente } from '@/services/clientes'
+import { createCliente, updateCliente } from '@/services/clientes'
+import { createHistorico } from '@/services/historico_contratos'
+import { supabase } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -356,7 +358,7 @@ export default function ContractGeneratorPage() {
 
   const handlePrint = () => window.print()
 
-  const handleSaveClient = () => {
+  const handleSaveClient = async () => {
     if (!name || !cnpj) {
       toast({
         title: 'Atenção',
@@ -365,18 +367,80 @@ export default function ContractGeneratorPage() {
       })
       return
     }
-    createCliente({
-      nome: name,
-      cnpj,
-      modulos: [selectedPlan, ...selectedModules],
-      valor_total: totalValue,
-      status: 'Ativo',
-    })
-      .then(() => {
-        toast({ title: 'Contrato Gerado', className: 'bg-emerald-600 text-white' })
-        navigate('/clientes')
+
+    try {
+      const rawCnpj = cnpj.replace(/\D/g, '')
+
+      const { data: existingClients } = await supabase.from('clientes').select('*')
+
+      const existingClient = existingClients?.find((c) => c.cnpj.replace(/\D/g, '') === rawCnpj)
+
+      const adicionais = selectedModules.map((id) => {
+        const mod = MODULES.find((m) => m.id === id)
+        return { name: mod?.name || id, price: mod?.price || 0 }
       })
-      .catch((err) => toast({ title: 'Erro', description: err.message, variant: 'destructive' }))
+
+      const modulosFormatados = {
+        plano_base: planData?.name || selectedPlan,
+        filiais: 0,
+        adicionais: adicionais,
+      }
+
+      if (existingClient) {
+        await updateCliente(existingClient.id, {
+          nome: name,
+          cnpj,
+          modulos: modulosFormatados,
+          valor_total: totalValue,
+        })
+
+        await createHistorico({
+          cliente_id: existingClient.id,
+          tipo: 'Renovação / Novo Contrato',
+          data_solicitacao: new Date().toISOString().split('T')[0],
+          plano: planData?.name,
+          modulos: adicionais,
+          valor_adicional: 0,
+          valor_total: totalValue,
+          observacoes: 'Contrato atualizado via Gerador de Contratos',
+        })
+
+        toast({
+          title: 'Cliente Atualizado',
+          description: 'O contrato e os dados do cliente foram salvos.',
+          className: 'bg-emerald-600 text-white border-none',
+        })
+      } else {
+        const newClient = await createCliente({
+          nome: name,
+          cnpj,
+          modulos: modulosFormatados,
+          valor_total: totalValue,
+          status: 'Ativo',
+        })
+
+        await createHistorico({
+          cliente_id: newClient.id,
+          tipo: 'Contrato Inicial',
+          data_solicitacao: new Date().toISOString().split('T')[0],
+          plano: planData?.name,
+          modulos: adicionais,
+          valor_adicional: 0,
+          valor_total: totalValue,
+          observacoes: 'Contrato gerado via Gerador de Contratos',
+        })
+
+        toast({
+          title: 'Contrato Gerado',
+          description: 'O novo cliente e o contrato foram salvos.',
+          className: 'bg-emerald-600 text-white border-none',
+        })
+      }
+
+      navigate('/clientes')
+    } catch (err: any) {
+      toast({ title: 'Erro ao salvar', description: err.message, variant: 'destructive' })
+    }
   }
 
   const inputHighlightClass = autoFilled
