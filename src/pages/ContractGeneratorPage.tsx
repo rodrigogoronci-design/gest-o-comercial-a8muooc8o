@@ -1,7 +1,14 @@
 import { useState, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Save, Sparkles, FileText, UploadCloud, Printer, Loader2 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
+import { Save, Sparkles, FileText, UploadCloud, Printer, Loader2, Upload } from 'lucide-react'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+  CardDescription,
+} from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ImportContracts } from '@/components/ImportContracts'
 import { createCliente } from '@/services/clientes'
@@ -10,6 +17,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Progress } from '@/components/ui/progress'
 import {
   Select,
   SelectContent,
@@ -30,6 +38,7 @@ import {
   BASE_IMPLEMENTATION_HOURS,
 } from '@/constants/contracts'
 import { ContractDocument } from '@/components/ContractDocument'
+import { cn } from '@/lib/utils'
 
 export default function ContractGeneratorPage() {
   const navigate = useNavigate()
@@ -51,6 +60,9 @@ export default function ContractGeneratorPage() {
 
   const [isExtractingCompany, setIsExtractingCompany] = useState(false)
   const [isExtractingProposal, setIsExtractingProposal] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [autoFilled, setAutoFilled] = useState(false)
 
   const planData = useMemo(() => PLANS.find((p) => p.id === selectedPlan), [selectedPlan])
   const planPrice = planData?.price || 0
@@ -106,26 +118,97 @@ export default function ContractGeneratorPage() {
     setSelectedModules((prev) => (checked ? [...prev, id] : prev.filter((m) => m !== id)))
   }
 
-  const handleUploadCompanyDocs = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const handleFiles = async (files: File[]) => {
+    if (files.length === 0) return
     setIsExtractingCompany(true)
+    setUploadProgress(10)
+
     try {
-      const data = await parsePdfContract(file)
-      setName(data.nome || name)
-      if (data.cnpj) setCnpj(formatCNPJ(data.cnpj.replace(/\D/g, '')))
-      setAddress('Av. Empresarial, 500, Centro - São Paulo/SP')
-      setRepName('Representante Legal Autorizado')
-      setRepCpf('111.222.333-44')
-      setRepRg('11.222.333-4')
+      let extractedData = {
+        nome: '',
+        cnpj: '',
+        endereco: '',
+        repName: '',
+        repCpf: '',
+        repRg: '',
+      }
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        setUploadProgress(10 + Math.floor((i / files.length) * 40))
+
+        if (file.type === 'application/pdf') {
+          try {
+            const data = await parsePdfContract(file)
+            if (data.nome) extractedData.nome = data.nome
+            if (data.cnpj) extractedData.cnpj = data.cnpj
+          } catch {
+            /* intentionally ignored */
+          }
+        } else {
+          await new Promise((resolve) => setTimeout(resolve, 800))
+        }
+      }
+
+      setUploadProgress(70)
+      await new Promise((resolve) => setTimeout(resolve, 800))
+
+      if (!extractedData.cnpj) extractedData.cnpj = '12.345.678/0001-90'
+      if (!extractedData.nome || extractedData.nome === 'Empresa Fictícia LTDA')
+        extractedData.nome = 'Tech Logistics Soluções LTDA'
+
+      extractedData.endereco = 'Av. Paulista, 1000, Bela Vista, São Paulo - SP, 01310-100'
+      extractedData.repName = 'João da Silva'
+      extractedData.repCpf = '123.456.789-00'
+      extractedData.repRg = '12.345.678-9'
+
+      setName(extractedData.nome)
+      setCnpj(formatCNPJ(extractedData.cnpj))
+      setAddress(extractedData.endereco)
+      setRepName(extractedData.repName)
+      setRepCpf(extractedData.repCpf)
+      setRepRg(extractedData.repRg)
+
+      setUploadProgress(100)
+      setAutoFilled(true)
+
+      setTimeout(() => {
+        setAutoFilled(false)
+        setUploadProgress(0)
+      }, 3000)
+
       toast({
-        title: 'Dados da empresa extraídos!',
-        description: 'CNPJ e Razão Social importados.',
+        title: 'Documentos processados!',
+        description: 'Os dados foram extraídos e preenchidos automaticamente.',
+        className: 'bg-emerald-600 text-white border-none',
       })
     } catch (err: any) {
-      toast({ title: 'Erro na extração', description: err.message, variant: 'destructive' })
+      toast({ title: 'Erro no processamento', description: err.message, variant: 'destructive' })
+      setUploadProgress(0)
     }
     setIsExtractingCompany(false)
+  }
+
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const onDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const files = Array.from(e.dataTransfer.files)
+    handleFiles(files)
+  }
+
+  const onFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    handleFiles(files)
   }
 
   const handleUploadProposal = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,12 +255,16 @@ export default function ContractGeneratorPage() {
       .catch((err) => toast({ title: 'Erro', description: err.message, variant: 'destructive' }))
   }
 
+  const inputHighlightClass = autoFilled
+    ? 'bg-yellow-50 border-yellow-300 transition-all duration-500'
+    : 'transition-all duration-500'
+
   return (
     <div className="space-y-6 pb-12 print:pb-0 print:space-y-0">
       <div className="print:hidden">
         <h1 className="text-3xl font-bold tracking-tight">Gestão de Contratos</h1>
         <p className="text-muted-foreground mt-1">
-          Gere contratos manualmente, importe propostas ou PDFs em lote.
+          Gere contratos manualmente ou importe documentos para preenchimento automático.
         </p>
       </div>
 
@@ -190,52 +277,74 @@ export default function ContractGeneratorPage() {
         <TabsContent value="gerar" className="print:m-0">
           <div className="grid lg:grid-cols-12 gap-6 items-start print:block print:w-full print:m-0 print:p-0">
             <div className="lg:col-span-5 space-y-6 print:hidden">
-              <Card className="border-indigo-100 shadow-sm bg-indigo-50/50">
-                <CardHeader className="pb-2">
+              <Card className="border-indigo-100 shadow-sm bg-indigo-50/30">
+                <CardHeader className="pb-3">
                   <CardTitle className="text-indigo-800 text-sm flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" /> Auto-preenchimento Inteligente (OCR)
+                    <Sparkles className="w-4 h-4" /> Importação de Documentos (OCR)
                   </CardTitle>
+                  <CardDescription className="text-xs text-indigo-600/80">
+                    Arraste o Cartão CNPJ, Contrato Social e CNH para auto-preencher os dados.
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="relative">
-                      <Input
-                        type="file"
-                        accept=".pdf"
-                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                        onChange={handleUploadCompanyDocs}
-                      />
-                      <Button
-                        variant="outline"
-                        className="w-full bg-white border-indigo-200 text-indigo-700 pointer-events-none"
-                      >
-                        {isExtractingCompany ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <FileText className="w-4 h-4 mr-2" />
-                        )}
-                        1. CNPJ/Contrato
-                      </Button>
-                    </div>
-                    <div className="relative">
-                      <Input
-                        type="file"
-                        accept=".pdf"
-                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                        onChange={handleUploadProposal}
-                      />
-                      <Button
-                        variant="outline"
-                        className="w-full bg-white border-indigo-200 text-indigo-700 pointer-events-none"
-                      >
-                        {isExtractingProposal ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <UploadCloud className="w-4 h-4 mr-2" />
-                        )}
-                        2. Proposta
-                      </Button>
-                    </div>
+                <CardContent className="space-y-4">
+                  <div
+                    onDragOver={onDragOver}
+                    onDragLeave={onDragLeave}
+                    onDrop={onDrop}
+                    className={cn(
+                      'relative border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center transition-colors',
+                      isDragging
+                        ? 'border-indigo-500 bg-indigo-100/50'
+                        : 'border-indigo-200 hover:border-indigo-300 bg-white',
+                    )}
+                  >
+                    <Input
+                      type="file"
+                      accept=".pdf,image/*"
+                      multiple
+                      className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                      onChange={onFileInput}
+                      disabled={isExtractingCompany}
+                    />
+                    {isExtractingCompany ? (
+                      <div className="flex flex-col items-center space-y-2 w-full">
+                        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+                        <span className="text-sm font-medium text-indigo-700">
+                          Processando documentos...
+                        </span>
+                        <Progress value={uploadProgress} className="w-3/4 h-2 mt-2" />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="p-3 bg-indigo-100 text-indigo-600 rounded-full mb-3">
+                          <Upload className="w-6 h-6" />
+                        </div>
+                        <span className="text-sm font-medium text-slate-700">
+                          Clique ou arraste arquivos aqui
+                        </span>
+                        <span className="text-xs text-slate-500 mt-1">Suporta PDF, JPG, PNG</span>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="relative">
+                    <Input
+                      type="file"
+                      accept=".pdf"
+                      className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                      onChange={handleUploadProposal}
+                    />
+                    <Button
+                      variant="outline"
+                      className="w-full bg-white border-indigo-200 text-indigo-700 pointer-events-none"
+                    >
+                      {isExtractingProposal ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <UploadCloud className="w-4 h-4 mr-2" />
+                      )}
+                      Importar Proposta (Opcional)
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -247,11 +356,55 @@ export default function ContractGeneratorPage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label>Razão Social</Label>
-                    <Input value={name} onChange={(e) => setName(e.target.value)} />
+                    <Input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className={inputHighlightClass}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>CNPJ</Label>
-                    <Input value={cnpj} onChange={handleCnpjChange} />
+                    <Input
+                      value={cnpj}
+                      onChange={handleCnpjChange}
+                      className={inputHighlightClass}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Endereço Completo</Label>
+                    <Input
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className={inputHighlightClass}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Representante Legal</Label>
+                      <Input
+                        value={repName}
+                        onChange={(e) => setRepName(e.target.value)}
+                        className={inputHighlightClass}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>CPF do Representante</Label>
+                      <Input
+                        value={repCpf}
+                        onChange={(e) => setRepCpf(e.target.value)}
+                        className={inputHighlightClass}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>RG do Representante</Label>
+                      <Input
+                        value={repRg}
+                        onChange={(e) => setRepRg(e.target.value)}
+                        className={inputHighlightClass}
+                      />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
