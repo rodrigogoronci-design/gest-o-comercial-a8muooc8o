@@ -78,7 +78,10 @@ import { toast } from 'sonner'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { supabase } from '@/lib/supabase/client'
 import { calculateFinancialScore } from '@/lib/financial-score'
-import { PLANS, MODULES } from '@/constants/contracts'
+import { PLANS, MODULES, BASE_IMPLEMENTATION_HOURS } from '@/constants/contracts'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ContractDocument } from '@/components/ContractDocument'
+import { Link } from 'react-router-dom'
 
 export interface ClienteRecord {
   id: string
@@ -1167,12 +1170,78 @@ export default function ClientsPage() {
       </Sheet>
 
       <Sheet open={isViewSheetOpen} onOpenChange={setIsViewSheetOpen}>
-        <SheetContent className="sm:max-w-md w-[90vw]">
+        <SheetContent className="sm:max-w-4xl w-[90vw] flex flex-col">
           <SheetHeader>
-            <SheetTitle className="text-2xl">{viewingClient?.name}</SheetTitle>
-            <SheetDescription>Dossiê completo do cliente e faturamento.</SheetDescription>
+            <div className="flex justify-between items-start pr-8">
+              <div>
+                <SheetTitle className="text-2xl">{viewingClient?.name}</SheetTitle>
+                <SheetDescription>Dossiê completo do cliente e faturamento.</SheetDescription>
+              </div>
+              <Button variant="outline" size="sm" asChild>
+                <Link
+                  to={`/contratos?prospect=${encodeURIComponent(viewingClient?.name || '')}&cnpj=${viewingClient?.cnpj?.replace(/\D/g, '')}`}
+                >
+                  Gerar Novo Contrato
+                </Link>
+              </Button>
+            </div>
           </SheetHeader>
-          {viewingClient && <ClientDetailsPanel client={viewingClient} />}
+          {viewingClient && (
+            <Tabs defaultValue="resumo" className="mt-6 w-full h-full flex flex-col">
+              <TabsList className="grid w-full max-w-md grid-cols-2">
+                <TabsTrigger value="resumo">Resumo</TabsTrigger>
+                <TabsTrigger value="contrato">Contrato</TabsTrigger>
+              </TabsList>
+              <TabsContent value="resumo" className="mt-4 flex-1">
+                <ScrollArea className="h-[calc(100vh-14rem)] pr-4">
+                  <ClientDetailsPanel client={viewingClient} />
+                </ScrollArea>
+              </TabsContent>
+              <TabsContent value="contrato" className="mt-4 flex-1 bg-white border rounded-md">
+                <ScrollArea className="h-[calc(100vh-14rem)]">
+                  <div className="min-w-[600px] bg-white">
+                    <ContractDocument
+                      name={viewingClient.name}
+                      cnpj={viewingClient.cnpj}
+                      address={viewingClient.originalData?.email || ''}
+                      repName=""
+                      repCpf=""
+                      repRg=""
+                      selectedPlan={
+                        PLANS.find(
+                          (p) =>
+                            p.name === viewingClient.plano_base ||
+                            p.id === viewingClient.plano_base,
+                        )?.id || 'tms-50'
+                      }
+                      selectedModules={viewingClient.modules.map(
+                        (m) => MODULES.find((mod) => mod.name === m.name)?.id || '',
+                      )}
+                      planData={PLANS.find(
+                        (p) =>
+                          p.name === viewingClient.plano_base || p.id === viewingClient.plano_base,
+                      )}
+                      planPrice={
+                        PLANS.find(
+                          (p) =>
+                            p.name === viewingClient.plano_base ||
+                            p.id === viewingClient.plano_base,
+                        )?.price || 0
+                      }
+                      modulesPrice={viewingClient.modules.reduce((acc, m) => acc + m.price, 0)}
+                      dfeData={null}
+                      dfePrice={0}
+                      totalValue={viewingClient.totalValue}
+                      implMode="remoto"
+                      implRate={130}
+                      totalImplHours={BASE_IMPLEMENTATION_HOURS}
+                      implValue={BASE_IMPLEMENTATION_HOURS * 130}
+                    />
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
+          )}
         </SheetContent>
       </Sheet>
 

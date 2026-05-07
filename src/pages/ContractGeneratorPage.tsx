@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Save, Sparkles, FileText, UploadCloud, Printer, Loader2, Upload } from 'lucide-react'
 import {
@@ -45,9 +45,10 @@ export default function ContractGeneratorPage() {
   const { toast } = useToast()
   const [searchParams] = useSearchParams()
   const initialProspect = searchParams.get('prospect') || ''
+  const initialCnpj = searchParams.get('cnpj') || ''
 
   const [name, setName] = useState(initialProspect)
-  const [cnpj, setCnpj] = useState('')
+  const [cnpj, setCnpj] = useState(initialCnpj ? formatCNPJ(initialCnpj) : '')
   const [address, setAddress] = useState('')
   const [repName, setRepName] = useState('')
   const [repCpf, setRepCpf] = useState('')
@@ -64,6 +65,13 @@ export default function ContractGeneratorPage() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [autoFilled, setAutoFilled] = useState(false)
   const [isLoadingCnpj, setIsLoadingCnpj] = useState(false)
+
+  useEffect(() => {
+    if (initialCnpj && initialCnpj.replace(/\D/g, '').length === 14) {
+      fetchCnpjData(initialCnpj.replace(/\D/g, ''))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const planData = useMemo(() => PLANS.find((p) => p.id === selectedPlan), [selectedPlan])
   const planPrice = planData?.price || 0
