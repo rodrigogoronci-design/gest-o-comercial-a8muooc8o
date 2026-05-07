@@ -7,6 +7,15 @@ export type Atividade = {
   demanda: string
   data_atividade: string
   created_at: string
+  tipo?: string | null
+  acao_necessaria?: string | null
+  status?: string | null
+  data_follow_up?: string | null
+  observacoes?: string | null
+  valor_mensalidade?: number | null
+  valor_implantacao?: number | null
+  condicao?: string | null
+  parcelas?: string | null
   clientes?: {
     nome: string
   }
@@ -35,6 +44,17 @@ export const createAtividade = async (
     .insert(atividade)
     .select()
     .single()
+  if (error) throw error
+  return data
+}
+
+export const createAtividadesBatch = async (
+  atividades: Omit<Atividade, 'id' | 'created_at' | 'clientes'>[],
+) => {
+  const { data, error } = await supabase
+    .from('atividades_comerciais' as any)
+    .insert(atividades)
+    .select()
   if (error) throw error
   return data
 }

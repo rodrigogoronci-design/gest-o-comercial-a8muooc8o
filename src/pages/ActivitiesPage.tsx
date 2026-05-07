@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getAtividades, deleteAtividade, Atividade } from '@/services/atividades'
 import { ActivityDialog } from '@/components/activities/ActivityDialog'
+import { ImportActivitiesDialog } from '@/components/activities/ImportActivitiesDialog'
 import {
   Table,
   TableBody,
@@ -13,11 +14,13 @@ import { Button } from '@/components/ui/button'
 import { Download, Trash2, ListTodo } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 
-const formatDate = (dateString: string) => {
+const formatDate = (dateString: string | null | undefined) => {
   if (!dateString) return '-'
-  const [year, month, day] = dateString.split('T')[0].split('-')
-  return `${day}/${month}/${year}`
+  const parts = dateString.split('T')[0].split('-')
+  if (parts.length !== 3) return dateString
+  return `${parts[2]}/${parts[1]}/${parts[0]}`
 }
 
 export default function ActivitiesPage() {
@@ -53,11 +56,33 @@ export default function ActivitiesPage() {
   }
 
   const exportToCSV = () => {
-    const headers = ['Data', 'Cliente', 'Demanda']
+    const headers = [
+      'Data',
+      'Cliente',
+      'Tipo',
+      'Ação Necessária',
+      'Status',
+      'Demanda',
+      'Data Follow-up',
+      'Observações',
+      'Valor Mensalidade',
+      'Valor Implantação',
+      'Condição',
+      'Parcelas',
+    ]
     const rows = atividades.map((a) => [
       formatDate(a.data_atividade),
       `"${a.clientes?.nome || a.cliente_nome || '-'}"`,
-      `"${a.demanda.replace(/"/g, '""')}"`,
+      `"${a.tipo || '-'}"`,
+      `"${a.acao_necessaria || '-'}"`,
+      `"${a.status || '-'}"`,
+      `"${(a.demanda || '').replace(/"/g, '""')}"`,
+      formatDate(a.data_follow_up),
+      `"${(a.observacoes || '').replace(/"/g, '""')}"`,
+      a.valor_mensalidade || 0,
+      a.valor_implantacao || 0,
+      `"${a.condicao || '-'}"`,
+      `"${a.parcelas || '-'}"`,
     ])
     const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
@@ -68,7 +93,7 @@ export default function ActivitiesPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6 max-w-6xl animate-fade-in">
+    <div className="container mx-auto p-6 space-y-6 max-w-7xl animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
@@ -76,13 +101,14 @@ export default function ActivitiesPage() {
             Diário de Atividades
           </h1>
           <p className="text-gray-500 mt-1">
-            Controle diário e relatórios mensais de interações comerciais.
+            Controle diário, importação de planilhas e relatórios de interações comerciais.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" onClick={exportToCSV} disabled={atividades.length === 0}>
             <Download className="mr-2 size-4" /> Exportar Relatório
           </Button>
+          <ImportActivitiesDialog onImported={loadData} />
           <ActivityDialog onSaved={loadData} />
         </div>
       </div>
@@ -103,30 +129,62 @@ export default function ActivitiesPage() {
             <div className="text-center p-12 text-gray-500 border rounded-lg border-dashed bg-gray-50/50">
               <ListTodo className="size-12 mx-auto text-gray-400 mb-3" />
               <p className="text-lg font-medium text-gray-900">Nenhuma atividade registrada</p>
-              <p>Clique em "Nova Atividade" para iniciar seu diário.</p>
+              <p>Importe sua planilha ou clique em "Nova Atividade".</p>
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[120px]">Data</TableHead>
-                    <TableHead className="w-[250px]">Cliente</TableHead>
-                    <TableHead>Demanda</TableHead>
+                    <TableHead className="w-[100px]">Data</TableHead>
+                    <TableHead className="w-[180px]">Cliente</TableHead>
+                    <TableHead className="w-[120px]">Tipo</TableHead>
+                    <TableHead className="w-[120px]">Status</TableHead>
+                    <TableHead className="min-w-[250px]">Demanda / Observações</TableHead>
+                    <TableHead className="w-[110px]">Follow-up</TableHead>
                     <TableHead className="w-[80px] text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {atividades.map((atividade) => (
                     <TableRow key={atividade.id}>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium whitespace-nowrap">
                         {formatDate(atividade.data_atividade)}
                       </TableCell>
                       <TableCell className="font-semibold text-gray-900">
                         {atividade.clientes?.nome || atividade.cliente_nome || '-'}
                       </TableCell>
-                      <TableCell className="text-gray-600 whitespace-pre-wrap">
-                        {atividade.demanda}
+                      <TableCell>
+                        {atividade.tipo ? (
+                          <Badge variant="outline" className="bg-gray-50">
+                            {atividade.tipo}
+                          </Badge>
+                        ) : (
+                          '-'
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {atividade.status ? (
+                          <Badge variant="secondary">{atividade.status}</Badge>
+                        ) : (
+                          '-'
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-gray-900 line-clamp-2" title={atividade.demanda}>
+                          {atividade.demanda}
+                        </div>
+                        {atividade.observacoes && (
+                          <div
+                            className="text-xs text-gray-500 mt-1 line-clamp-1"
+                            title={atividade.observacoes}
+                          >
+                            Obs: {atividade.observacoes}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-gray-500 whitespace-nowrap">
+                        {formatDate(atividade.data_follow_up)}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
