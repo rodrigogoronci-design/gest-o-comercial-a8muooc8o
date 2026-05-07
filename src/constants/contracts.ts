@@ -29,6 +29,21 @@ export const IMPLEMENTATION_RATES = {
 
 export const BASE_IMPLEMENTATION_HOURS = 10
 
+export const DFE_TIERS = [
+  {
+    id: 'dfe-none',
+    name: 'D.F.E. (Não contratar pacote D.F.E.)',
+    limit: '0',
+    maxDocs: '0',
+    price: 0.0,
+  },
+  { id: 'dfe-150', name: 'Pacote 150 D.F.E.', limit: '150', maxDocs: '150', price: 60.0 },
+  { id: 'dfe-300', name: 'Pacote 300 D.F.E.', limit: '300', maxDocs: '300', price: 110.0 },
+  { id: 'dfe-500', name: 'Pacote 500 D.F.E.', limit: '500', maxDocs: '500', price: 160.0 },
+  { id: 'dfe-1000', name: 'Pacote 1000 D.F.E.', limit: '1000', maxDocs: '1000', price: 260.0 },
+  { id: 'dfe-1500', name: 'Pacote 1500 D.F.E.', limit: '1500', maxDocs: '1500', price: 360.0 },
+]
+
 export const MODULES = [
   { id: 'mod-edi', name: 'EDI', price: 250.0, implHours: 2 },
   { id: 'mod-ctrl-viagem', name: 'Controle de Viagem', price: 199.0, implHours: 3 },
