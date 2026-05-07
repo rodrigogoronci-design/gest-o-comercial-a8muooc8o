@@ -390,6 +390,12 @@ export default function ContractGeneratorPage() {
         await updateCliente(existingClient.id, {
           nome: name,
           cnpj,
+          endereco: address,
+          rep_nome: repName,
+          rep_cpf: repCpf,
+          rep_rg: repRg,
+          valor_implantacao: implValue,
+          modo_implantacao: implMode,
           modulos: modulosFormatados,
           valor_total: totalValue,
         })
@@ -402,7 +408,7 @@ export default function ContractGeneratorPage() {
           modulos: adicionais,
           valor_adicional: 0,
           valor_total: totalValue,
-          observacoes: 'Contrato atualizado via Gerador de Contratos',
+          observacoes: `Contrato atualizado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}`,
         })
 
         toast({
@@ -414,6 +420,12 @@ export default function ContractGeneratorPage() {
         const newClient = await createCliente({
           nome: name,
           cnpj,
+          endereco: address,
+          rep_nome: repName,
+          rep_cpf: repCpf,
+          rep_rg: repRg,
+          valor_implantacao: implValue,
+          modo_implantacao: implMode,
           modulos: modulosFormatados,
           valor_total: totalValue,
           status: 'Ativo',
@@ -427,7 +439,7 @@ export default function ContractGeneratorPage() {
           modulos: adicionais,
           valor_adicional: 0,
           valor_total: totalValue,
-          observacoes: 'Contrato gerado via Gerador de Contratos',
+          observacoes: `Contrato gerado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}`,
         })
 
         toast({

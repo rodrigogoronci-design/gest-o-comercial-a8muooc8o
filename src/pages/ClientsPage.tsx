@@ -91,7 +91,12 @@ import { toast } from 'sonner'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { supabase } from '@/lib/supabase/client'
 import { calculateFinancialScore } from '@/lib/financial-score'
-import { PLANS, MODULES, BASE_IMPLEMENTATION_HOURS } from '@/constants/contracts'
+import {
+  PLANS,
+  MODULES,
+  BASE_IMPLEMENTATION_HOURS,
+  IMPLEMENTATION_RATES,
+} from '@/constants/contracts'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ContractDocument, AddendumDocument } from '@/components/ContractDocument'
 import { Link } from 'react-router-dom'
@@ -103,6 +108,12 @@ export interface ClienteRecord {
   cnpj: string
   email?: string | null
   telefone?: string | null
+  endereco?: string | null
+  rep_nome?: string | null
+  rep_cpf?: string | null
+  rep_rg?: string | null
+  valor_implantacao?: number | null
+  modo_implantacao?: string | null
   modulos?: any
   valor_total?: number | null
   status?: string | null
@@ -116,6 +127,12 @@ type MergedClient = {
   id: string
   name: string
   cnpj: string
+  endereco?: string | null
+  rep_nome?: string | null
+  rep_cpf?: string | null
+  rep_rg?: string | null
+  valor_implantacao?: number | null
+  modo_implantacao?: string | null
   modules: ModuleItem[]
   plano_base?: string
   filiais?: number
@@ -132,6 +149,12 @@ const clientSchema = z.object({
   cnpj: z.string().min(14, 'CNPJ inválido'),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
   telefone: z.string().optional().or(z.literal('')),
+  endereco: z.string().optional().or(z.literal('')),
+  rep_nome: z.string().optional().or(z.literal('')),
+  rep_cpf: z.string().optional().or(z.literal('')),
+  rep_rg: z.string().optional().or(z.literal('')),
+  valor_implantacao: z.number().optional(),
+  modo_implantacao: z.string().optional(),
   modulos: z
     .array(
       z.object({
@@ -279,6 +302,12 @@ export default function ClientsPage() {
       cnpj: '',
       email: '',
       telefone: '',
+      endereco: '',
+      rep_nome: '',
+      rep_cpf: '',
+      rep_rg: '',
+      valor_implantacao: 0,
+      modo_implantacao: 'remoto',
       modulos: [],
       plano_base: '',
       filiais: 0,
@@ -294,6 +323,12 @@ export default function ClientsPage() {
       cnpj: client.cnpj,
       email: client.originalData?.email || '',
       telefone: client.originalData?.telefone || '',
+      endereco: client.endereco || '',
+      rep_nome: client.rep_nome || '',
+      rep_cpf: client.rep_cpf || '',
+      rep_rg: client.rep_rg || '',
+      valor_implantacao: client.valor_implantacao || 0,
+      modo_implantacao: client.modo_implantacao || 'remoto',
       modulos: client.modules || [],
       plano_base: client.plano_base || '',
       filiais: client.filiais || 0,
@@ -313,6 +348,12 @@ export default function ClientsPage() {
       cnpj: data.cnpj,
       email: data.email,
       telefone: data.telefone,
+      endereco: data.endereco,
+      rep_nome: data.rep_nome,
+      rep_cpf: data.rep_cpf,
+      rep_rg: data.rep_rg,
+      valor_implantacao: data.valor_implantacao,
+      modo_implantacao: data.modo_implantacao,
       valor_total: data.valor_total,
       modulos: {
         plano_base: data.plano_base,
@@ -775,6 +816,12 @@ export default function ClientsPage() {
         id: c.id,
         name: c.nome,
         cnpj: c.cnpj,
+        endereco: c.endereco,
+        rep_nome: c.rep_nome,
+        rep_cpf: c.rep_cpf,
+        rep_rg: c.rep_rg,
+        valor_implantacao: c.valor_implantacao,
+        modo_implantacao: c.modo_implantacao,
         modules: parsedModules,
         plano_base,
         filiais,
@@ -1338,6 +1385,58 @@ export default function ClientsPage() {
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={form.control}
+                      name="endereco"
+                      render={({ field }) => (
+                        <FormItem className="sm:col-span-2">
+                          <FormLabel>Endereço Completo</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Av. Paulista, 1000 - SP" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="rep_nome"
+                      render={({ field }) => (
+                        <FormItem className="sm:col-span-2">
+                          <FormLabel>Representante Legal</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Nome Completo do Representante" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="rep_cpf"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>CPF do Rep.</FormLabel>
+                          <FormControl>
+                            <Input placeholder="000.000.000-00" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="rep_rg"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>RG do Rep.</FormLabel>
+                          <FormControl>
+                            <Input placeholder="00.000.000-0" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </div>
 
@@ -1605,10 +1704,10 @@ export default function ClientsPage() {
                     <ContractDocument
                       name={viewingClient.name}
                       cnpj={viewingClient.cnpj}
-                      address={viewingClient.originalData?.email || ''}
-                      repName=""
-                      repCpf=""
-                      repRg=""
+                      address={viewingClient.endereco || viewingClient.originalData?.email || ''}
+                      repName={viewingClient.rep_nome || ''}
+                      repCpf={viewingClient.rep_cpf || ''}
+                      repRg={viewingClient.rep_rg || ''}
                       selectedPlan={
                         PLANS.find(
                           (p) =>
@@ -1634,11 +1733,27 @@ export default function ClientsPage() {
                       dfeData={null}
                       dfePrice={0}
                       totalValue={viewingClient.totalValue}
-                      implMode="remoto"
-                      implRate={130}
-                      totalImplHours={BASE_IMPLEMENTATION_HOURS}
-                      implValue={BASE_IMPLEMENTATION_HOURS * 130}
-                    />
+                      implMode={
+                        (viewingClient.modo_implantacao as 'remoto' | 'presencial') || 'remoto'
+                      }
+                      implRate={
+                        viewingClient.modo_implantacao === 'presencial'
+                          ? IMPLEMENTATION_RATES.presencial
+                          : IMPLEMENTATION_RATES.remoto
+                      }
+                      totalImplHours={
+                        BASE_IMPLEMENTATION_HOURS +
+                        viewingClient.modules.reduce(
+                          (acc, m) =>
+                            acc + (MODULES.find((mod) => mod.name === m.name)?.implHours || 0),
+                          0,
+                        )
+                      }
+                      implValue={
+                        viewingClient.valor_implantacao ??
+                        BASE_IMPLEMENTATION_HOURS * IMPLEMENTATION_RATES.remoto
+                      }
+                    />{' '}
                   </div>
                 </ScrollArea>
               </TabsContent>
