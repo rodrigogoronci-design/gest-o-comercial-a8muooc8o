@@ -1,4 +1,4 @@
-import { formatCurrency } from '@/lib/formatters'
+import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { PLANS, MODULES, DFE_TIERS, BASE_IMPLEMENTATION_HOURS } from '@/constants/contracts'
 import { CONTRACT_TEXT } from '@/constants/contract-text'
@@ -393,6 +393,142 @@ export function ContractDocument({
             <div className="border-t border-[#1b4382] pt-2 text-center print:border-black">
               <p className="font-bold uppercase text-[#1b4382] print:text-black">
                 <Highlight value={name} fallback="[NOME DA EMPRESA]" />
+              </p>
+              <p className="text-[11px] text-slate-500">CONTRATANTE</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function AddendumDocument({
+  clientName,
+  cnpj,
+  dataSolicitacao,
+  modules,
+  valorAdicional,
+  valorTotalAtual,
+}: any) {
+  return (
+    <div className="p-8 sm:p-12 text-[12px] text-slate-800 font-serif leading-relaxed space-y-5 bg-white print:p-0 print:text-black">
+      <div className="flex flex-col items-center mb-8 border-b-2 border-[#f37021] print:border-black pb-6">
+        <div className="flex w-full justify-between items-center mb-6">
+          <img src={logoUrl} alt="Service Logic" className="h-16 object-contain" />
+          <h1 className="text-sm font-bold uppercase w-2/3 text-right leading-tight text-[#1b4382] print:text-black">
+            ADITIVO CONTRATUAL DE INCLUSÃO DE MÓDULOS
+          </h1>
+        </div>
+      </div>
+
+      <div className="space-y-6 text-justify">
+        <p>
+          Pelo presente instrumento de aditamento ao contrato original de licença de uso e prestação
+          de serviços, as partes abaixo qualificadas:
+        </p>
+
+        <div>
+          <p className="mb-2">
+            <strong>CONTRATADA:</strong> CONTACTO SOLUÇÕES EM TECNOLOGIA - LTDA, pessoa jurídica de
+            direito privado, inscrita no CNPJ sob o nº 27.751.577/0001-91, com sede na Rua Paulo de
+            Vasconcelos, nº 429, Maria Ortiz, Vitoria-ES - CEP 29.070-364.
+          </p>
+          <p>
+            <strong>CONTRATANTE:</strong> <strong>{clientName || '[NOME DO CLIENTE]'}</strong>,
+            inscrita no CNPJ sob o nº <strong>{cnpj ? formatCNPJ(cnpj) : '[CNPJ]'}</strong>.
+          </p>
+        </div>
+
+        <div>
+          <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+            1. DO OBJETO DO ADITIVO
+          </h3>
+          <p className="mb-4">
+            O presente aditivo tem por objeto formalizar a inclusão de novos módulos ao sistema
+            TMS-SERVICE LOGIC, solicitados pela CONTRATANTE e efetivados no dia{' '}
+            <strong>{dataSolicitacao ? formatDate(dataSolicitacao) : '[DATA]'}</strong>, os quais
+            passam a integrar as condições do contrato principal.
+          </p>
+        </div>
+
+        <div>
+          <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+            2. DOS MÓDULOS ADICIONADOS E VALORES
+          </h3>
+          <p className="mb-3">
+            A CONTRATANTE adere expressamente aos seguintes módulos adicionais:
+          </p>
+
+          <table className="w-full text-xs border-collapse border border-slate-300 mb-6">
+            <thead>
+              <tr className="bg-[#1b4382] text-white print:bg-slate-200 print:text-black">
+                <th className="border border-slate-300 p-2 text-left">Módulo</th>
+                <th className="border border-slate-300 p-2 text-right">Valor Mensal Adicional</th>
+              </tr>
+            </thead>
+            <tbody>
+              {modules && modules.length > 0 ? (
+                modules.map((m: any, idx: number) => (
+                  <tr key={idx}>
+                    <td className="border border-slate-300 p-2">{m.name || m}</td>
+                    <td className="border border-slate-300 p-2 text-right">
+                      {m.price > 0 ? formatCurrency(m.price) : 'Incluso'}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={2}
+                    className="border border-slate-300 p-2 text-center text-slate-500 italic"
+                  >
+                    Nenhum módulo detalhado.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+            <tfoot>
+              <tr className="bg-[#1b4382]/10 print:bg-slate-100 font-bold">
+                <td className="border border-slate-300 p-2 text-right">Acréscimo na Mensalidade</td>
+                <td className="border border-slate-300 p-2 text-right text-emerald-700 print:text-black">
+                  {formatCurrency(valorAdicional || 0)}
+                </td>
+              </tr>
+              <tr className="bg-[#1b4382]/20 print:bg-slate-200 font-bold">
+                <td className="border border-slate-300 p-2 text-right">
+                  Novo Valor Total do Contrato
+                </td>
+                <td className="border border-slate-300 p-2 text-right text-[#1b4382] print:text-black">
+                  {formatCurrency(valorTotalAtual || 0)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div>
+          <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+            3. DISPOSIÇÕES GERAIS
+          </h3>
+          <p className="mb-4">
+            Permanecem inalteradas e em pleno vigor as demais cláusulas e condições estabelecidas no
+            Contrato Principal, que não tenham sido expressamente modificadas por este instrumento.
+          </p>
+        </div>
+
+        <div className="mt-20 text-center space-y-12">
+          <p>E por estarem justos e contratados, assinam eletronicamente o presente Aditivo.</p>
+          <div className="grid grid-cols-2 gap-8 mt-12">
+            <div className="border-t border-[#1b4382] pt-2 text-center print:border-black">
+              <p className="font-bold text-[#1b4382] print:text-black">
+                CONTACTO SOLUÇÕES EM TECNOLOGIA - LTDA
+              </p>
+              <p className="text-[11px] text-slate-500">CONTRATADA</p>
+            </div>
+            <div className="border-t border-[#1b4382] pt-2 text-center print:border-black">
+              <p className="font-bold uppercase text-[#1b4382] print:text-black">
+                {clientName || '[NOME DA EMPRESA]'}
               </p>
               <p className="text-[11px] text-slate-500">CONTRATANTE</p>
             </div>

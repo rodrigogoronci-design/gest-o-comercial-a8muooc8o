@@ -13,6 +13,9 @@ import {
   FileText,
   Upload,
   Loader2,
+  Calendar,
+  CheckCircle,
+  Printer,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -52,9 +55,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
 import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
 import { fetchClientes, createCliente, updateCliente, deleteCliente } from '@/services/clientes'
+import { getHistoricoByCliente, createHistorico } from '@/services/historico_contratos'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -80,7 +92,7 @@ import { supabase } from '@/lib/supabase/client'
 import { calculateFinancialScore } from '@/lib/financial-score'
 import { PLANS, MODULES, BASE_IMPLEMENTATION_HOURS } from '@/constants/contracts'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ContractDocument } from '@/components/ContractDocument'
+import { ContractDocument, AddendumDocument } from '@/components/ContractDocument'
 import { Link } from 'react-router-dom'
 
 export interface ClienteRecord {
@@ -146,6 +158,16 @@ export default function ClientsPage() {
 
   const [isViewSheetOpen, setIsViewSheetOpen] = useState(false)
   const [viewingClient, setViewingClient] = useState<MergedClient | null>(null)
+
+  const [clientHistory, setClientHistory] = useState<any[]>([])
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+
+  const [isAddModuleOpen, setIsAddModuleOpen] = useState(false)
+  const [selectedNewModules, setSelectedNewModules] = useState<string[]>([])
+  const [aditivoDate, setAditivoDate] = useState(new Date().toISOString().split('T')[0])
+  const [isSubmittingAditivo, setIsSubmittingAditivo] = useState(false)
+
+  const [viewingAddendum, setViewingAddendum] = useState<any>(null)
 
   const [clientToDelete, setClientToDelete] = useState<MergedClient | null>(null)
 
@@ -229,6 +251,25 @@ export default function ClientsPage() {
     }
   }
 
+  const loadHistory = async (clienteId: string) => {
+    setIsLoadingHistory(true)
+    try {
+      const history = await getHistoricoByCliente(clienteId)
+      setClientHistory(history)
+    } catch (error) {
+      console.error('Failed to load history', error)
+      toast.error('Erro ao carregar histórico do cliente')
+    } finally {
+      setIsLoadingHistory(false)
+    }
+  }
+
+  useEffect(() => {
+    if (viewingClient && isViewSheetOpen) {
+      loadHistory(viewingClient.id)
+    }
+  }, [viewingClient, isViewSheetOpen])
+
   const handleOpenAdd = () => {
     setEditingClient(null)
     form.reset({
@@ -307,6 +348,94 @@ export default function ClientsPage() {
     } catch (error) {
       console.error(error)
       toast.error('Erro ao excluir cliente')
+    }
+  }
+
+  const handleSaveAditivo = async () => {
+    if (!viewingClient || selectedNewModules.length === 0) return
+    setIsSubmittingAditivo(true)
+    try {
+      const novos = selectedNewModules
+        .map((id) => MODULES.find((m) => m.id === id)!)
+        .filter(Boolean)
+      const valorAdicional = novos.reduce((acc, m) => acc + m.price, 0)
+      const novoValorTotal = viewingClient.totalValue + valorAdicional
+
+      let currentModulosRaw = viewingClient.originalData?.modulos || {
+        plano_base: '',
+        filiais: 0,
+        adicionais: [],
+      }
+      if (Array.isArray(currentModulosRaw)) {
+        currentModulosRaw = {
+          plano_base: viewingClient.plano_base,
+          filiais: viewingClient.filiais,
+          adicionais: currentModulosRaw,
+        }
+      }
+
+      const updatedAdicionais = [
+        ...(currentModulosRaw.adicionais || []),
+        ...novos.map((m) => ({ name: m.name, price: m.price })),
+      ]
+      const updatedModulos = {
+        ...currentModulosRaw,
+        adicionais: updatedAdicionais,
+      }
+
+      await updateCliente(viewingClient.id, {
+        modulos: updatedModulos,
+        valor_total: novoValorTotal,
+      })
+
+      await createHistorico({
+        cliente_id: viewingClient.id,
+        tipo: 'Aditivo de Módulos',
+        data_solicitacao: aditivoDate,
+        modulos: novos,
+        valor_adicional: valorAdicional,
+        valor_total: novoValorTotal,
+        observacoes: `Adição de ${novos.length} módulo(s)`,
+      })
+
+      toast.success('Aditivo registrado com sucesso e contrato atualizado!')
+      setIsAddModuleOpen(false)
+      setSelectedNewModules([])
+      setAditivoDate(new Date().toISOString().split('T')[0])
+
+      loadClientes()
+      loadHistory(viewingClient.id)
+
+      setViewingClient((prev) =>
+        prev
+          ? {
+              ...prev,
+              modules: [...prev.modules, ...novos.map((m) => ({ name: m.name, price: m.price }))],
+              totalValue: novoValorTotal,
+              originalData: {
+                ...prev.originalData!,
+                modulos: updatedModulos,
+                valor_total: novoValorTotal,
+              },
+            }
+          : null,
+      )
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao salvar aditivo')
+    } finally {
+      setIsSubmittingAditivo(false)
+    }
+  }
+
+  const handlePrintAddendum = () => {
+    const printContent = document.getElementById('addendum-print-area')
+    if (printContent) {
+      const originalContents = document.body.innerHTML
+      document.body.innerHTML = printContent.innerHTML
+      window.print()
+      document.body.innerHTML = originalContents
+      window.location.reload()
     }
   }
 
@@ -675,15 +804,20 @@ export default function ClientsPage() {
       return b.name.localeCompare(a.name)
     })
 
+  const availableModulesForAddendum = MODULES.filter(
+    (m) => !viewingClient?.modules.some((existing) => existing.name === m.name),
+  )
+
   const ClientDetailsPanel = ({ client }: { client: MergedClient }) => {
     const plan = PLANS.find((p) => p.id === client.plano_base || p.name === client.plano_base)
 
     return (
-      <div className="mt-6 space-y-6">
+      <div className="mt-6 space-y-8">
+        {/* Resumo Atual */}
         <div>
-          <div className="flex justify-between items-center mb-2">
-            <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider">
-              Dados da Empresa
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-emerald-500" /> Pacote Contratado Vigente
             </h4>
             {client.stats && client.stats.relevantTitulos > 0 && (
               <Badge variant="outline" className={`${client.stats.color}`}>
@@ -691,35 +825,37 @@ export default function ClientsPage() {
               </Badge>
             )}
           </div>
-          <div className="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-100">
-            <div>
-              <span className="text-xs text-slate-500 block">Razão Social</span>
-              <span className="font-medium">{client.name}</span>
+
+          <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+            <div className="p-4 bg-slate-50 border-b border-slate-100 flex flex-wrap gap-4 justify-between items-center">
+              <div>
+                <span className="text-xs text-slate-500 block mb-1">Cliente desde</span>
+                <span className="font-medium text-slate-900 flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                  {formatDate(client.createdAt)}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-xs text-slate-500 block mb-1">Valor Total Mensal</span>
+                <span className="text-lg font-bold text-emerald-700">
+                  {formatCurrency(client.totalValue)}
+                </span>
+              </div>
             </div>
-            <div>
-              <span className="text-xs text-slate-500 block">CNPJ</span>
-              <span className="font-medium text-slate-700">{formatCNPJ(client.cnpj)}</span>
-            </div>
-            <div>
-              <span className="text-xs text-slate-500 block">Cliente desde</span>
-              <span className="font-medium text-slate-700">{formatDate(client.createdAt)}</span>
-            </div>
-          </div>
-        </div>
-        <Separator />
-        <div>
-          <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-2">
-            Plano Contratado
-          </h4>
-          <div className="space-y-4">
-            <div className="space-y-2">
+
+            <div className="p-4 space-y-4">
               {plan && (
-                <div className="flex justify-between items-center bg-indigo-50 border border-indigo-100 p-3 rounded-md shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-                    <span className="font-medium text-sm text-indigo-900">
-                      Plano Base: {plan.name}
-                    </span>
+                <div className="flex justify-between items-center bg-indigo-50/50 border border-indigo-100 p-3 rounded-md">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                      <span className="text-indigo-600 font-bold text-xs">TMS</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-indigo-900 block leading-tight">
+                        Plano Base: {plan.name}
+                      </span>
+                      <span className="text-xs text-indigo-600/80">Limites e recursos padrão</span>
+                    </div>
                   </div>
                   <span className="text-sm font-semibold text-indigo-700">
                     {formatCurrency(plan.price)}/mês
@@ -728,9 +864,11 @@ export default function ClientsPage() {
               )}
 
               {client.filiais && client.filiais > 0 ? (
-                <div className="flex justify-between items-center bg-slate-50 border border-slate-200 p-3 rounded-md shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-slate-400"></div>
+                <div className="flex justify-between items-center bg-slate-50 border border-slate-200 p-3 rounded-md">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center">
+                      <Building2 className="h-4 w-4 text-slate-500" />
+                    </div>
                     <span className="font-medium text-sm text-slate-700">
                       Filiais Adicionais ({client.filiais}x)
                     </span>
@@ -741,70 +879,205 @@ export default function ClientsPage() {
                 </div>
               ) : null}
 
-              {client.modules.map((mod) => (
-                <div
-                  key={mod.name}
-                  className="flex justify-between items-center bg-white border border-slate-200 p-3 rounded-md shadow-sm"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                    <span className="font-medium text-sm">{mod.name}</span>
-                  </div>
-                  <span className="text-sm text-slate-600">
-                    {mod.price > 0 ? formatCurrency(mod.price) + '/mês' : 'Incluso'}
+              {client.modules.length > 0 && (
+                <div className="mt-2">
+                  <span className="text-xs font-bold text-slate-400 uppercase mb-2 block">
+                    Módulos Adicionais
                   </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {client.modules.map((mod) => (
+                      <div
+                        key={mod.name}
+                        className="flex justify-between items-center bg-white border border-slate-200 p-2.5 rounded-md"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                          <span className="font-medium text-xs text-slate-700">{mod.name}</span>
+                        </div>
+                        <span className="text-xs text-slate-500">
+                          {mod.price > 0 ? formatCurrency(mod.price) : 'Incluso'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              )}
 
               {!plan &&
                 (!client.filiais || client.filiais === 0) &&
                 client.modules.length === 0 && (
-                  <div className="text-sm text-slate-500 text-center py-4 bg-slate-50 rounded-md border border-dashed border-slate-200">
-                    Nenhum módulo selecionado para este cliente.
+                  <div className="text-sm text-slate-500 text-center py-6 bg-slate-50 rounded-md border border-dashed border-slate-200">
+                    Nenhum plano ou módulo selecionado para este cliente.
                   </div>
                 )}
             </div>
-            <div className="flex justify-between items-center bg-emerald-50 p-4 rounded-lg border border-emerald-100 mt-4">
-              <span className="font-semibold text-emerald-900">Total da Mensalidade</span>
-              <span className="text-xl font-bold text-emerald-700">
-                {formatCurrency(client.totalValue)}
-              </span>
-            </div>
           </div>
         </div>
-        <Separator />
-        <div>
-          <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-2">
-            Documentos
-          </h4>
-          {client.contratoUrl ? (
-            <div className="flex items-center justify-between bg-slate-50 border border-slate-200 p-3 rounded-md shadow-sm">
-              <div className="flex items-center gap-3">
-                <FileText className="h-5 w-5 text-indigo-500" />
-                <span className="font-medium text-sm text-slate-700">Contrato Original</span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.open(client.contratoUrl!, '_blank')}
-              >
-                Abrir PDF
-              </Button>
-            </div>
-          ) : (
-            <div className="text-sm text-slate-500 text-center py-4 bg-slate-50 rounded-md border border-dashed border-slate-200">
-              Nenhum contrato anexado para este cliente.
-            </div>
-          )}
 
-          <div className="flex items-center justify-between bg-slate-50 border border-slate-200 p-3 rounded-md shadow-sm mt-3">
-            <div className="flex items-center gap-3">
-              <FileText className="h-5 w-5 text-amber-500" />
-              <span className="font-medium text-sm text-slate-700">Proposta Aprovada</span>
-            </div>
-            <Button variant="outline" size="sm">
-              Visualizar
+        {/* Histórico / Evolução */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+              Histórico & Aditivos
+            </h4>
+            <Button
+              size="sm"
+              onClick={() => setIsAddModuleOpen(true)}
+              className="bg-indigo-600 hover:bg-indigo-700 shadow-sm"
+            >
+              <Plus className="h-4 w-4 mr-1.5" /> Adicionar Módulo
             </Button>
+          </div>
+
+          <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+            {isLoadingHistory ? (
+              <div className="flex items-center justify-center py-8 text-slate-500">
+                <Loader2 className="h-6 w-6 animate-spin mr-2" /> Carregando histórico...
+              </div>
+            ) : clientHistory.length === 0 ? (
+              <div className="text-sm text-slate-500 text-center py-6 border border-dashed rounded-md border-slate-200">
+                Nenhum histórico registrado para este cliente.
+              </div>
+            ) : (
+              <div className="space-y-6 border-l-2 border-slate-100 ml-3 pl-6 relative">
+                {clientHistory.map((h, i) => (
+                  <div key={h.id} className="relative group">
+                    <div
+                      className={cn(
+                        'absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 bg-white',
+                        h.tipo === 'Contrato Inicial' ? 'border-slate-300' : 'border-indigo-500',
+                      )}
+                    />
+
+                    <div className="bg-white border border-slate-100 rounded-md p-4 shadow-sm hover:border-indigo-100 transition-colors">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                'text-[10px] uppercase font-bold',
+                                h.tipo === 'Contrato Inicial'
+                                  ? 'text-slate-600 bg-slate-50 border-slate-200'
+                                  : 'text-indigo-700 bg-indigo-50 border-indigo-200',
+                              )}
+                            >
+                              {h.tipo}
+                            </Badge>
+                            <span className="text-xs text-slate-400 font-medium">
+                              {formatDate(h.data_solicitacao)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs text-slate-400 block">Mensalidade (Ref.)</span>
+                          <span className="font-bold text-slate-700">
+                            {formatCurrency(h.valor_total)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded border border-slate-100">
+                        {h.plano && (
+                          <div className="mb-1">
+                            <span className="font-medium text-slate-800">Plano Base:</span>{' '}
+                            {h.plano}
+                          </div>
+                        )}
+                        {h.modulos && h.modulos.length > 0 && (
+                          <div className="mt-2">
+                            <span className="font-medium text-slate-800 block mb-1">
+                              {h.tipo === 'Contrato Inicial'
+                                ? 'Módulos Inclusos:'
+                                : 'Módulos Adicionados:'}
+                            </span>
+                            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs">
+                              {h.modulos.map((m: any, idx: number) => (
+                                <li key={idx} className="flex items-center gap-1.5">
+                                  <div className="h-1 w-1 rounded-full bg-slate-400" />
+                                  <span className="truncate">{m.name || m}</span>
+                                  <span className="text-slate-400 ml-auto">
+                                    {m.price ? formatCurrency(m.price) : ''}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {h.valor_adicional > 0 && (
+                          <div className="mt-3 pt-2 border-t border-slate-200 text-xs font-medium text-emerald-700">
+                            + {formatCurrency(h.valor_adicional)} adicionado ao contrato
+                          </div>
+                        )}
+                      </div>
+
+                      {h.tipo !== 'Contrato Inicial' && (
+                        <div className="mt-3 flex justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={() =>
+                              setViewingAddendum({
+                                clientName: client.name,
+                                cnpj: client.cnpj,
+                                dataSolicitacao: h.data_solicitacao,
+                                modules: h.modulos,
+                                valorAdicional: h.valor_adicional,
+                                valorTotalAtual: h.valor_total,
+                              })
+                            }
+                          >
+                            <Printer className="h-3 w-3 mr-1.5" /> Ver Aditivo
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Documentos */}
+        <div>
+          <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4">
+            Repositório de Documentos
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {client.contratoUrl ? (
+              <div className="flex items-center justify-between bg-white border border-slate-200 p-3 rounded-md shadow-sm hover:border-indigo-200 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-indigo-50 rounded text-indigo-600">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="font-medium text-sm text-slate-800 block">
+                      Contrato Inicial
+                    </span>
+                    <span className="text-xs text-slate-400">Documento Assinado</span>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50"
+                  onClick={() => window.open(client.contratoUrl!, '_blank')}
+                >
+                  Abrir
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between bg-slate-50 border border-dashed border-slate-200 p-3 rounded-md">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-slate-100 rounded text-slate-400">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <span className="text-sm text-slate-500">Sem contrato original anexado</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -815,9 +1088,9 @@ export default function ClientsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Base de Clientes</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Gestão de Clientes e Contratos</h1>
           <p className="text-muted-foreground mt-1">
-            Gerencie os contratos ativos, edite valores e informações detalhadas.
+            Gerencie carteira ativa, histórico de planos, upsell de módulos e contratos.
           </p>
         </div>
 
@@ -849,6 +1122,119 @@ export default function ClientsPage() {
         </div>
       </div>
 
+      {/* Adicionar Módulo Dialog */}
+      <Dialog open={isAddModuleOpen} onOpenChange={setIsAddModuleOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Adicionar Módulos (Upsell)</DialogTitle>
+            <DialogDescription>
+              Selecione os novos módulos que o cliente contratou. Um Aditivo será gerado no
+              histórico do cliente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Data da Solicitação / Adesão</Label>
+              <Input
+                type="date"
+                value={aditivoDate}
+                onChange={(e) => setAditivoDate(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Módulos Disponíveis</Label>
+              {availableModulesForAddendum.length === 0 ? (
+                <div className="text-sm text-slate-500 bg-slate-50 p-3 rounded border">
+                  O cliente já possui todos os módulos disponíveis.
+                </div>
+              ) : (
+                <ScrollArea className="h-64 border rounded-md p-3">
+                  <div className="space-y-3">
+                    {availableModulesForAddendum.map((m) => (
+                      <div
+                        key={m.id}
+                        className="flex items-center space-x-3 bg-white p-2 hover:bg-slate-50 rounded"
+                      >
+                        <Checkbox
+                          id={`new-mod-${m.id}`}
+                          checked={selectedNewModules.includes(m.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) setSelectedNewModules((prev) => [...prev, m.id])
+                            else setSelectedNewModules((prev) => prev.filter((id) => id !== m.id))
+                          }}
+                        />
+                        <Label
+                          htmlFor={`new-mod-${m.id}`}
+                          className="flex-1 cursor-pointer font-normal text-sm flex justify-between"
+                        >
+                          <span>{m.name}</span>
+                          <span className="text-slate-500">
+                            {m.price > 0 ? formatCurrency(m.price) : 'Incluso'}
+                          </span>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </div>
+
+            {selectedNewModules.length > 0 && (
+              <div className="bg-emerald-50 border border-emerald-100 p-3 rounded-md">
+                <div className="text-sm text-emerald-800 flex justify-between font-medium">
+                  <span>Valor Adicional (Mensal):</span>
+                  <span>
+                    {formatCurrency(
+                      selectedNewModules
+                        .map((id) => MODULES.find((m) => m.id === id)?.price || 0)
+                        .reduce((a, b) => a + b, 0),
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddModuleOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveAditivo}
+              disabled={selectedNewModules.length === 0 || isSubmittingAditivo}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              {isSubmittingAditivo ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Confirmar Aditivo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Visualizar Aditivo Dialog */}
+      <Dialog open={!!viewingAddendum} onOpenChange={(open) => !open && setViewingAddendum(null)}>
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden bg-slate-100">
+          <div className="flex justify-between items-center p-4 bg-white border-b shrink-0 print:hidden">
+            <h2 className="font-semibold text-lg text-slate-800">
+              Visualização de Aditivo Contratual
+            </h2>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setViewingAddendum(null)}>
+                Fechar
+              </Button>
+              <Button onClick={handlePrintAddendum} className="bg-indigo-600 hover:bg-indigo-700">
+                <Printer className="h-4 w-4 mr-2" /> Imprimir / Salvar PDF
+              </Button>
+            </div>
+          </div>
+          <ScrollArea className="flex-1 p-4 sm:p-8 overflow-auto">
+            <div className="max-w-[800px] mx-auto bg-white shadow-xl" id="addendum-print-area">
+              {viewingAddendum && <AddendumDocument {...viewingAddendum} />}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
       <Sheet
         open={isSheetOpen}
         onOpenChange={(open) => {
@@ -861,7 +1247,7 @@ export default function ClientsPage() {
             <SheetTitle>{editingClient ? 'Editar Cliente' : 'Adicionar Novo Cliente'}</SheetTitle>
             <SheetDescription>
               {editingClient
-                ? 'Atualize os dados, módulos e valores do contrato deste cliente.'
+                ? 'Atualize os dados básicos da empresa.'
                 : 'Preencha os dados abaixo para cadastrar um novo cliente na base.'}
             </SheetDescription>
           </SheetHeader>
@@ -1137,8 +1523,7 @@ export default function ClientsPage() {
                             />
                           </FormControl>
                           <p className="text-xs text-emerald-600/80 mt-1">
-                            Calculado automaticamente com base no Plano, Filiais e Módulos. Você
-                            pode alterar manualmente se necessário.
+                            Calculado automaticamente. Você pode alterar manualmente se necessário.
                           </p>
                           <FormMessage />
                         </FormItem>
@@ -1170,14 +1555,23 @@ export default function ClientsPage() {
       </Sheet>
 
       <Sheet open={isViewSheetOpen} onOpenChange={setIsViewSheetOpen}>
-        <SheetContent className="sm:max-w-4xl w-[90vw] flex flex-col">
-          <SheetHeader>
+        <SheetContent className="sm:max-w-[700px] w-[95vw] flex flex-col bg-slate-50/50">
+          <SheetHeader className="bg-white p-6 -mx-6 -mt-6 border-b border-slate-200 shadow-sm z-10 relative">
             <div className="flex justify-between items-start pr-8">
               <div>
-                <SheetTitle className="text-2xl">{viewingClient?.name}</SheetTitle>
-                <SheetDescription>Dossiê completo do cliente e faturamento.</SheetDescription>
+                <SheetTitle className="text-2xl text-slate-800">{viewingClient?.name}</SheetTitle>
+                <div className="flex items-center gap-3 mt-2 text-sm text-slate-500">
+                  <span className="font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                    {viewingClient?.cnpj ? formatCNPJ(viewingClient.cnpj) : ''}
+                  </span>
+                  {viewingClient?.originalData?.email && (
+                    <span className="flex items-center gap-1">
+                      <Mail className="h-3 w-3" /> {viewingClient.originalData.email}
+                    </span>
+                  )}
+                </div>
               </div>
-              <Button variant="outline" size="sm" asChild>
+              <Button variant="outline" size="sm" asChild className="bg-white">
                 <Link
                   to={`/contratos?prospect=${encodeURIComponent(viewingClient?.name || '')}&cnpj=${viewingClient?.cnpj?.replace(/\D/g, '')}`}
                 >
@@ -1186,18 +1580,24 @@ export default function ClientsPage() {
               </Button>
             </div>
           </SheetHeader>
+
           {viewingClient && (
             <Tabs defaultValue="resumo" className="mt-6 w-full h-full flex flex-col">
-              <TabsList className="grid w-full max-w-md grid-cols-2">
-                <TabsTrigger value="resumo">Resumo</TabsTrigger>
-                <TabsTrigger value="contrato">Contrato</TabsTrigger>
+              <TabsList className="grid w-full max-w-md grid-cols-2 bg-white border border-slate-200">
+                <TabsTrigger value="resumo">Resumo & Gestão</TabsTrigger>
+                <TabsTrigger value="contrato">Contrato Inicial</TabsTrigger>
               </TabsList>
+
               <TabsContent value="resumo" className="mt-4 flex-1">
                 <ScrollArea className="h-[calc(100vh-14rem)] pr-4">
                   <ClientDetailsPanel client={viewingClient} />
                 </ScrollArea>
               </TabsContent>
-              <TabsContent value="contrato" className="mt-4 flex-1 bg-white border rounded-md">
+
+              <TabsContent
+                value="contrato"
+                className="mt-4 flex-1 bg-white border rounded-md shadow-sm"
+              >
                 <ScrollArea className="h-[calc(100vh-14rem)]">
                   <div className="min-w-[600px] bg-white">
                     <ContractDocument
@@ -1420,7 +1820,7 @@ export default function ClientsPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                            title="Ver Contrato"
+                            title="Ver Contrato Original"
                             onClick={() => window.open(client.contratoUrl!, '_blank')}
                           >
                             <FileText className="h-4 w-4" />
@@ -1430,7 +1830,7 @@ export default function ClientsPage() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                          title="Visualizar"
+                          title="Visualizar Gestão/Aditivos"
                           onClick={() => handleOpenView(client)}
                         >
                           <Eye className="h-4 w-4" />
