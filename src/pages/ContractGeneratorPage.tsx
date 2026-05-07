@@ -255,6 +255,13 @@ export default function ContractGeneratorPage() {
       .catch((err) => toast({ title: 'Erro', description: err.message, variant: 'destructive' }))
   }
 
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }
+
   const inputHighlightClass = autoFilled
     ? 'bg-yellow-50 border-yellow-300 transition-all duration-500'
     : 'transition-all duration-500'
@@ -359,6 +366,7 @@ export default function ContractGeneratorPage() {
                     <Input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
+                      onFocus={() => scrollToSection('section-contratante')}
                       className={inputHighlightClass}
                     />
                   </div>
@@ -367,6 +375,7 @@ export default function ContractGeneratorPage() {
                     <Input
                       value={cnpj}
                       onChange={handleCnpjChange}
+                      onFocus={() => scrollToSection('section-contratante')}
                       className={inputHighlightClass}
                     />
                   </div>
@@ -375,6 +384,7 @@ export default function ContractGeneratorPage() {
                     <Input
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
+                      onFocus={() => scrollToSection('section-contratante')}
                       className={inputHighlightClass}
                     />
                   </div>
@@ -384,6 +394,7 @@ export default function ContractGeneratorPage() {
                       <Input
                         value={repName}
                         onChange={(e) => setRepName(e.target.value)}
+                        onFocus={() => scrollToSection('section-contratante')}
                         className={inputHighlightClass}
                       />
                     </div>
@@ -392,6 +403,7 @@ export default function ContractGeneratorPage() {
                       <Input
                         value={repCpf}
                         onChange={(e) => setRepCpf(e.target.value)}
+                        onFocus={() => scrollToSection('section-contratante')}
                         className={inputHighlightClass}
                       />
                     </div>
@@ -402,6 +414,7 @@ export default function ContractGeneratorPage() {
                       <Input
                         value={repRg}
                         onChange={(e) => setRepRg(e.target.value)}
+                        onFocus={() => scrollToSection('section-contratante')}
                         className={inputHighlightClass}
                       />
                     </div>
@@ -416,8 +429,14 @@ export default function ContractGeneratorPage() {
                 <CardContent className="space-y-6">
                   <div className="space-y-3">
                     <Label className="text-sm font-bold">Plano Base</Label>
-                    <Select value={selectedPlan} onValueChange={setSelectedPlan}>
-                      <SelectTrigger>
+                    <Select
+                      value={selectedPlan}
+                      onValueChange={(val) => {
+                        setSelectedPlan(val)
+                        scrollToSection('section-planos')
+                      }}
+                    >
+                      <SelectTrigger onFocus={() => scrollToSection('section-planos')}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -441,7 +460,11 @@ export default function ContractGeneratorPage() {
                           <Checkbox
                             id={m.id}
                             checked={selectedModules.includes(m.id)}
-                            onCheckedChange={(c) => handleToggleModule(m.id, c as boolean)}
+                            onCheckedChange={(c) => {
+                              handleToggleModule(m.id, c as boolean)
+                              scrollToSection('section-modulos')
+                            }}
+                            onFocus={() => scrollToSection('section-modulos')}
                           />
                           <Label htmlFor={m.id} className="text-xs">
                             {m.name}
@@ -455,11 +478,18 @@ export default function ContractGeneratorPage() {
                     <Label className="text-sm font-bold">Implantação</Label>
                     <RadioGroup
                       value={implMode}
-                      onValueChange={(v) => setImplMode(v as 'remoto' | 'presencial')}
+                      onValueChange={(v) => {
+                        setImplMode(v as 'remoto' | 'presencial')
+                        scrollToSection('section-implantacao')
+                      }}
                       className="flex flex-col sm:flex-row gap-4"
                     >
                       <div className="flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors">
-                        <RadioGroupItem value="remoto" id="remoto" />
+                        <RadioGroupItem
+                          value="remoto"
+                          id="remoto"
+                          onFocus={() => scrollToSection('section-implantacao')}
+                        />
                         <Label
                           htmlFor="remoto"
                           className="cursor-pointer font-medium flex-1 h-full py-1"
@@ -468,7 +498,11 @@ export default function ContractGeneratorPage() {
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors">
-                        <RadioGroupItem value="presencial" id="presencial" />
+                        <RadioGroupItem
+                          value="presencial"
+                          id="presencial"
+                          onFocus={() => scrollToSection('section-implantacao')}
+                        />
                         <Label
                           htmlFor="presencial"
                           className="cursor-pointer font-medium flex-1 h-full py-1"

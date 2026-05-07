@@ -68,8 +68,11 @@ export function ContractDocument({
           <p>{CONTRACT_TEXT.DEFINICOES}</p>
         </div>
 
-        <div>
-          <h3 className="font-bold uppercase mt-6 mb-2 text-sm">CONTRATANTE:</h3>
+        <div
+          id="section-contratante"
+          className="scroll-mt-6 transition-colors duration-500 p-2 -mx-2 rounded-lg"
+        >
+          <h3 className="font-bold uppercase mt-4 mb-2 text-sm">CONTRATANTE:</h3>
           <p>
             <Highlight value={name} fallback="[NOME DA EMPRESA]" />, pessoa jurídica de direito
             privado, inscrita no CNPJ sob o nº <Highlight value={cnpj} fallback="[CNPJ]" />, com
@@ -105,8 +108,11 @@ export function ContractDocument({
           texts={CONTRACT_TEXT.CLAUSULA_4}
         />
 
-        <div className="mb-6">
-          <h3 className="font-bold uppercase mt-6 mb-3 text-sm">
+        <div
+          id="section-planos"
+          className="mb-6 scroll-mt-6 transition-colors duration-500 p-2 -mx-2 rounded-lg"
+        >
+          <h3 className="font-bold uppercase mt-4 mb-3 text-sm">
             CLÁUSULA QUINTA - PREÇO, FORMA DE PAGAMENTO E SUSPENSÃO DOS SERVIÇOS.
           </h3>
           <p className="mb-3">
@@ -204,7 +210,10 @@ export function ContractDocument({
             </table>
           </div>
 
-          <div className="space-y-3 mt-4">
+          <div
+            id="section-modulos"
+            className="space-y-3 mt-4 scroll-mt-6 p-2 -mx-2 rounded-lg transition-colors duration-500"
+          >
             <p>5.4) A CONTRATANTE poderá cadastrar no sistema Usuários ilimitados.</p>
             <p>
               5.5) Para Adesão ao plano SL-TMS WEB, será cobrado uma taxa única no valor de R$ 99,00
@@ -221,7 +230,10 @@ export function ContractDocument({
             </p>
           </div>
 
-          <div className="overflow-x-auto my-4">
+          <div
+            id="section-implantacao"
+            className="overflow-x-auto my-4 scroll-mt-6 p-2 -mx-2 rounded-lg transition-colors duration-500"
+          >
             <table className="w-full text-[10px] border-collapse border border-slate-300">
               <thead>
                 <tr className="bg-slate-100 print:bg-slate-200">
