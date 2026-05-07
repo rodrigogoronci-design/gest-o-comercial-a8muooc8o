@@ -40,7 +40,7 @@ export const MODULES = [
   { id: 'mod-fiscal', name: 'Fiscal', price: 199.0, implHours: 3 },
   { id: 'mod-calendario', name: 'Calendário', price: 165.0, implHours: 1 },
   { id: 'mod-painel', name: 'Painel de Informações', price: 165.0, implHours: 1 },
-  { id: 'mod-dfe', name: 'DF-e', price: 165.0, implHours: 0, fixedImplPrice: 165.0 },
+  { id: 'mod-dfe', name: 'DF-e', price: 165.0, implHours: 0, fixedImplPrice: 260.0 },
   { id: 'mod-powerbi', name: 'Power BI', price: 199.0, implHours: 0 },
   { id: 'mod-sltrip', name: 'SL-Trip', price: 299.0, implHours: 3 },
   { id: 'mod-patrimonio', name: 'Patrimonio', price: 0.0, implHours: 6 },
