@@ -95,6 +95,7 @@ import { PLANS, MODULES, BASE_IMPLEMENTATION_HOURS } from '@/constants/contracts
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ContractDocument, AddendumDocument } from '@/components/ContractDocument'
 import { Link } from 'react-router-dom'
+import { cn } from '@/lib/utils'
 
 export interface ClienteRecord {
   id: string
