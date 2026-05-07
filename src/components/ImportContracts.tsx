@@ -19,6 +19,10 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 interface ExtractedData {
   nome: string
   cnpj: string
+  endereco?: string
+  repName?: string
+  repCpf?: string
+  repRg?: string
   contrato_url: string
   valor_total: number
   modulos: string[]

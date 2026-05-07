@@ -1,8 +1,8 @@
 {
   "_versions": {
-    "manage-user": 20,
-    "parse-excel": 8,
-    "parse-pdf": 2,
-    "parse-receipt-pdf": 1
+    "manage-user": 21,
+    "parse-excel": 10,
+    "parse-pdf": 9,
+    "parse-receipt-pdf": 2
   }
 }

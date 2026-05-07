@@ -203,6 +203,10 @@ export default function ContractGeneratorPage() {
             const data = await parsePdfContract(file)
             if (data.nome) extractedData.nome = data.nome
             if (data.cnpj) extractedData.cnpj = data.cnpj
+            if (data.endereco) extractedData.endereco = data.endereco
+            if (data.repName) extractedData.repName = data.repName
+            if (data.repCpf) extractedData.repCpf = data.repCpf
+            if (data.repRg) extractedData.repRg = data.repRg
           } catch {
             /* intentionally ignored */
           }
@@ -214,14 +218,61 @@ export default function ContractGeneratorPage() {
       setUploadProgress(70)
       await new Promise((resolve) => setTimeout(resolve, 800))
 
-      if (!extractedData.cnpj) extractedData.cnpj = '12.345.678/0001-90'
+      if (extractedData.cnpj) {
+        if (!extractedData.endereco) {
+          const rawCnpj = extractedData.cnpj.replace(/\D/g, '')
+          try {
+            const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${rawCnpj}`)
+            if (res.ok) {
+              const data = await res.json()
+              if (data.razao_social && !extractedData.nome) extractedData.nome = data.razao_social
+
+              const addressParts = []
+              if (data.logradouro) addressParts.push(data.logradouro)
+              if (data.numero) addressParts.push(data.numero)
+              if (data.complemento) addressParts.push(data.complemento)
+              const firstPart = addressParts.join(', ')
+
+              const secondPart = []
+              if (data.bairro) secondPart.push(data.bairro)
+              if (data.municipio && data.uf) secondPart.push(`${data.municipio} - ${data.uf}`)
+              if (data.cep) {
+                const cepFormatted = data.cep.replace(/^(\d{5})(\d{3})$/, '$1-$2')
+                secondPart.push(cepFormatted)
+              }
+
+              const fullAddress = [firstPart, secondPart.join(', ')].filter(Boolean).join(' - ')
+              if (fullAddress) extractedData.endereco = fullAddress
+
+              if (data.qsa && data.qsa.length > 0 && !extractedData.repName) {
+                const socioAdmin =
+                  data.qsa.find(
+                    (s: any) =>
+                      s.qualificacao_socio?.toLowerCase().includes('administrador') ||
+                      s.qualificacao_socio?.toLowerCase().includes('diretor') ||
+                      s.qualificacao_socio?.toLowerCase().includes('socio'),
+                  ) || data.qsa[0]
+                if (socioAdmin && socioAdmin.nome_socio) {
+                  extractedData.repName = socioAdmin.nome_socio
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Failed to fetch CNPJ data', e)
+          }
+        }
+      } else {
+        extractedData.cnpj = '12.345.678/0001-90'
+      }
+
       if (!extractedData.nome || extractedData.nome === 'Empresa Fictícia LTDA')
         extractedData.nome = 'Tech Logistics Soluções LTDA'
 
-      extractedData.endereco = 'Av. Paulista, 1000, Bela Vista, São Paulo - SP, 01310-100'
-      extractedData.repName = 'João da Silva'
-      extractedData.repCpf = '123.456.789-00'
-      extractedData.repRg = '12.345.678-9'
+      if (!extractedData.endereco)
+        extractedData.endereco = 'Av. Paulista, 1000, Bela Vista, São Paulo - SP, 01310-100'
+      if (!extractedData.repName) extractedData.repName = 'João da Silva'
+      if (!extractedData.repCpf) extractedData.repCpf = '123.456.789-00'
+      if (!extractedData.repRg) extractedData.repRg = '12.345.678-9'
 
       setName(extractedData.nome)
       setCnpj(formatCNPJ(extractedData.cnpj))
