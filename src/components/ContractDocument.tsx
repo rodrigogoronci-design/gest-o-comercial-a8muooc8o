@@ -1,6 +1,6 @@
 import { formatCurrency } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
-import { PLANS, MODULES, DFE_TIERS } from '@/constants/contracts'
+import { PLANS, MODULES, DFE_TIERS, BASE_IMPLEMENTATION_HOURS } from '@/constants/contracts'
 
 export const Highlight = ({ value, fallback }: { value: string; fallback: string }) => (
   <strong
@@ -30,6 +30,10 @@ export function ContractDocument({
   dfeData,
   dfePrice,
   totalValue,
+  implMode,
+  implRate,
+  totalImplHours,
+  implValue,
 }: any) {
   return (
     <div className="p-8 sm:p-12 text-[13px] text-slate-800 font-serif leading-relaxed space-y-5 print:p-0 print:text-black">
@@ -178,7 +182,55 @@ export function ContractDocument({
         </div>
 
         <p className="mt-4">
-          5.4. <strong>Resumo Financeiro:</strong> Vencimento dia 10.
+          5.4. <strong>Implantação ({implMode === 'remoto' ? 'Remota' : 'Presencial'}):</strong>
+        </p>
+        <div className="overflow-x-auto my-3">
+          <table className="w-full text-xs border-collapse border border-slate-300">
+            <thead>
+              <tr className="bg-slate-100 print:bg-slate-200">
+                <th className="border border-slate-300 p-2 text-left">Item</th>
+                <th className="border border-slate-300 p-2 text-center w-16">Horas</th>
+                <th className="border border-slate-300 p-2 text-right w-32">Valor (R$)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="border border-slate-300 p-2">Básicos</td>
+                <td className="border border-slate-300 p-2 text-center">
+                  {BASE_IMPLEMENTATION_HOURS}
+                </td>
+                <td className="border border-slate-300 p-2 text-right">
+                  {formatCurrency(BASE_IMPLEMENTATION_HOURS * implRate)}
+                </td>
+              </tr>
+              {selectedModules.map((mId: string) => {
+                const mod = MODULES.find((m) => m.id === mId)
+                if (!mod || !mod.implHours) return null
+                return (
+                  <tr key={mId}>
+                    <td className="border border-slate-300 p-2">{mod.name}</td>
+                    <td className="border border-slate-300 p-2 text-center">{mod.implHours}</td>
+                    <td className="border border-slate-300 p-2 text-right">
+                      {formatCurrency(mod.implHours * implRate)}
+                    </td>
+                  </tr>
+                )
+              })}
+              <tr className="bg-slate-50 font-bold print:bg-slate-200">
+                <td className="border border-slate-300 p-2 uppercase text-right">
+                  Total Implantação
+                </td>
+                <td className="border border-slate-300 p-2 text-center">{totalImplHours}</td>
+                <td className="border border-slate-300 p-2 text-right">
+                  {formatCurrency(implValue)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p className="mt-4">
+          5.5. <strong>Resumo Financeiro (Mensalidade):</strong> Vencimento dia 10.
         </p>
         <div className="overflow-x-auto my-3">
           <table className="w-full text-xs border-collapse border border-slate-300">

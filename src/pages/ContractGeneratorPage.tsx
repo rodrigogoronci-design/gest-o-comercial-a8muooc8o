@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import {
   Select,
   SelectContent,
@@ -21,7 +22,13 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { useToast } from '@/hooks/use-toast'
 import { formatCurrency, formatCNPJ } from '@/lib/formatters'
 import { parsePdfContract } from '@/services/parse-pdf'
-import { PLANS, MODULES, DFE_TIERS } from '@/constants/contracts'
+import {
+  PLANS,
+  MODULES,
+  DFE_TIERS,
+  IMPLEMENTATION_RATES,
+  BASE_IMPLEMENTATION_HOURS,
+} from '@/constants/contracts'
 import { ContractDocument } from '@/components/ContractDocument'
 
 export default function ContractGeneratorPage() {
@@ -40,6 +47,7 @@ export default function ContractGeneratorPage() {
   const [selectedPlan, setSelectedPlan] = useState<string>('tms-50')
   const [selectedModules, setSelectedModules] = useState<string[]>([])
   const [selectedDfeTier, setSelectedDfeTier] = useState<string>('dfe-none')
+  const [implMode, setImplMode] = useState<'remoto' | 'presencial'>('remoto')
 
   const [isExtractingCompany, setIsExtractingCompany] = useState(false)
   const [isExtractingProposal, setIsExtractingProposal] = useState(false)
@@ -54,6 +62,18 @@ export default function ContractGeneratorPage() {
   const dfeData = useMemo(() => DFE_TIERS.find((d) => d.id === selectedDfeTier), [selectedDfeTier])
   const dfePrice = dfeData?.price || 0
   const totalValue = planPrice + modulesPrice + dfePrice
+
+  const implRate =
+    implMode === 'remoto' ? IMPLEMENTATION_RATES.remoto : IMPLEMENTATION_RATES.presencial
+  const totalImplHours = useMemo(() => {
+    let hours = BASE_IMPLEMENTATION_HOURS
+    selectedModules.forEach((id) => {
+      const mod = MODULES.find((m) => m.id === id)
+      if (mod && mod.implHours) hours += mod.implHours
+    })
+    return hours
+  }, [selectedModules])
+  const implValue = totalImplHours * implRate
 
   const contractProps = {
     name,
@@ -71,6 +91,10 @@ export default function ContractGeneratorPage() {
     dfeData,
     dfePrice,
     totalValue,
+    implMode,
+    implRate,
+    totalImplHours,
+    implValue,
   }
 
   const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -234,7 +258,7 @@ export default function ContractGeneratorPage() {
 
               <Card>
                 <CardHeader className="pb-4">
-                  <CardTitle>2. Plano e Módulos</CardTitle>
+                  <CardTitle>2. Plano, Módulos e Implantação</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-3">
@@ -272,6 +296,34 @@ export default function ContractGeneratorPage() {
                         </div>
                       ))}
                     </div>
+                  </div>
+                  <Separator />
+                  <div className="space-y-3">
+                    <Label className="text-sm font-bold">Implantação</Label>
+                    <RadioGroup
+                      value={implMode}
+                      onValueChange={(v) => setImplMode(v as 'remoto' | 'presencial')}
+                      className="flex flex-col sm:flex-row gap-4"
+                    >
+                      <div className="flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors">
+                        <RadioGroupItem value="remoto" id="remoto" />
+                        <Label
+                          htmlFor="remoto"
+                          className="cursor-pointer font-medium flex-1 h-full py-1"
+                        >
+                          Remoto (R$ 130/h)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors">
+                        <RadioGroupItem value="presencial" id="presencial" />
+                        <Label
+                          htmlFor="presencial"
+                          className="cursor-pointer font-medium flex-1 h-full py-1"
+                        >
+                          Presencial (R$ 170/h)
+                        </Label>
+                      </div>
+                    </RadioGroup>
                   </div>
                 </CardContent>
               </Card>
