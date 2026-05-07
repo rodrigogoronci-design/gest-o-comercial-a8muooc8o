@@ -10,7 +10,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/formatters'
-import { PLANS, MODULES } from '@/constants/contracts'
+import { PLANS, MODULES, DFE_TIERS } from '@/constants/contracts'
 
 export default function PlansPage() {
   return (
@@ -120,6 +120,47 @@ export default function PlansPage() {
                 <div className="mb-2">
                   <span className="text-2xl font-bold text-slate-900">
                     {formatCurrency(mod.price)}
+                  </span>
+                  <span className="text-sm text-slate-500 font-medium">/mês</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-6 pt-6">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-6 w-6 text-emerald-600" />
+          <h2 className="text-2xl font-semibold tracking-tight">Pacotes D.F.E.</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {DFE_TIERS.map((dfe) => (
+            <Card
+              key={dfe.id}
+              className="relative overflow-hidden flex flex-col border-slate-200/60 shadow-sm hover:shadow-md transition-shadow group"
+            >
+              <div className="absolute top-0 inset-x-0 h-1.5 bg-emerald-500"></div>
+              <CardHeader className="pb-4">
+                <div className="flex justify-between items-start mb-2">
+                  <Badge
+                    variant="secondary"
+                    className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 shadow-none"
+                  >
+                    D.F.E.
+                  </Badge>
+                </div>
+                <CardTitle className="text-lg group-hover:text-emerald-600 transition-colors">
+                  {dfe.name}
+                </CardTitle>
+                <CardDescription className="mt-2 text-xs">
+                  Franquia: {dfe.docs} Documentos
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <div className="mb-2">
+                  <span className="text-2xl font-bold text-slate-900">
+                    {formatCurrency(dfe.price)}
                   </span>
                   <span className="text-sm text-slate-500 font-medium">/mês</span>
                 </div>

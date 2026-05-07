@@ -1,6 +1,6 @@
 import { formatCurrency } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
-import { PLANS, MODULES } from '@/constants/contracts'
+import { PLANS, MODULES, DFE_TIERS } from '@/constants/contracts'
 
 export const Highlight = ({ value, fallback }: { value: string; fallback: string }) => (
   <strong
@@ -142,7 +142,43 @@ export function ContractDocument({
         </div>
 
         <p className="mt-4">
-          5.3. <strong>Resumo Financeiro:</strong> Vencimento dia 10.
+          5.3. <strong>Pacotes D.F.E.:</strong>
+        </p>
+        <div className="overflow-x-auto my-3">
+          <table className="w-full text-xs border-collapse border border-slate-300">
+            <thead>
+              <tr className="bg-slate-100 print:bg-slate-200">
+                <th className="border border-slate-300 p-2 text-left">Pacote D.F.E.</th>
+                <th className="border border-slate-300 p-2 text-right">Valor (R$)</th>
+                <th className="border border-slate-300 p-2 text-center">Contratado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {DFE_TIERS.map((d) => {
+                const isSelected = dfeData?.id === d.id || dfeData?.name === d.name
+                return (
+                  <tr
+                    key={d.id}
+                    className={
+                      isSelected ? 'bg-indigo-50/50 print:bg-transparent print:font-bold' : ''
+                    }
+                  >
+                    <td className="border border-slate-300 p-2">{d.name}</td>
+                    <td className="border border-slate-300 p-2 text-right">
+                      {d.price === 0 ? 'Não Contratado' : formatCurrency(d.price)}
+                    </td>
+                    <td className="border border-slate-300 p-2 text-center text-indigo-700 print:text-black">
+                      {isSelected ? 'X' : ''}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <p className="mt-4">
+          5.4. <strong>Resumo Financeiro:</strong> Vencimento dia 10.
         </p>
         <div className="overflow-x-auto my-3">
           <table className="w-full text-xs border-collapse border border-slate-300">
