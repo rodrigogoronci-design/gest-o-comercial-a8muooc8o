@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, FileSignature, MoreHorizontal, Plus } from 'lucide-react'
+import { Search, FileSignature, MoreHorizontal, Plus, CalendarClock, BellRing } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
@@ -27,18 +27,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useToast } from '@/hooks/use-toast'
 import { formatDate } from '@/lib/formatters'
 import { supabase } from '@/lib/supabase/client'
+import { cn } from '@/lib/utils'
 import { CrmProspectForm, ProspectFormValues } from '@/components/CrmProspectForm'
 
 type CrmProspect = {
   id: string
+  cnpj: string | null
   empresa: string
+  endereco: string | null
   contato_nome: string
   telefone: string | null
   email: string | null
   status: string
+  data_followup: string | null
   observacoes: string | null
   ultima_interacao: string
 }
@@ -57,10 +62,7 @@ export default function CRMPage() {
       .from('crm_prospects')
       .select('*')
       .order('ultima_interacao', { ascending: false })
-
-    if (!error && data) {
-      setProspects(data as CrmProspect[])
-    }
+    if (!error && data) setProspects(data as CrmProspect[])
     setIsLoading(false)
   }
 
@@ -72,22 +74,20 @@ export default function CRMPage() {
     setIsSubmitting(true)
     const { error } = await supabase.from('crm_prospects').insert([
       {
+        cnpj: values.cnpj || null,
         empresa: values.empresa,
+        endereco: values.endereco || null,
         contato_nome: values.contato_nome,
         telefone: values.telefone || null,
         email: values.email || null,
         status: values.status,
+        data_followup: values.data_followup || null,
         observacoes: values.observacoes || null,
       },
     ])
-
     setIsSubmitting(false)
-
-    if (error) {
-      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' })
-      return
-    }
-
+    if (error)
+      return toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' })
     toast({ title: 'Sucesso', description: 'Contato adicionado com sucesso!' })
     setIsDialogOpen(false)
     fetchProspects()
@@ -98,34 +98,32 @@ export default function CRMPage() {
       .from('crm_prospects')
       .update({ status: newStatus, ultima_interacao: new Date().toISOString() })
       .eq('id', id)
-
-    if (error) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' })
-      return
-    }
+    if (error) return toast({ title: 'Erro', description: error.message, variant: 'destructive' })
     fetchProspects()
   }
 
-  const filteredProspects = prospects.filter(
+  const filtered = prospects.filter(
     (p) =>
       p.empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.contato_nome.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Contato Inicial':
-        return 'bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200'
-      case 'Em Negociação':
-        return 'bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-200'
-      case 'Aguardando Feedback':
-        return 'bg-purple-100 text-purple-800 hover:bg-purple-200 border-purple-200'
-      case 'Fechado':
-        return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200'
-      default:
-        return 'bg-slate-100 text-slate-800 border-slate-200'
-    }
+  const getStatusColor = (s: string) => {
+    if (s === 'Contato Inicial')
+      return 'bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200'
+    if (s === 'Em Negociação')
+      return 'bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-200'
+    if (s === 'Aguardando Feedback')
+      return 'bg-purple-100 text-purple-800 hover:bg-purple-200 border-purple-200'
+    if (s === 'Fechado')
+      return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200'
+    return 'bg-slate-100 text-slate-800 border-slate-200'
   }
+
+  const today = new Date().toISOString().split('T')[0]
+  const followUpsHoje = prospects.filter(
+    (p) => p.data_followup && p.data_followup <= today && !['Fechado'].includes(p.status),
+  )
 
   return (
     <div className="space-y-6">
@@ -133,18 +131,16 @@ export default function CRMPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">CRM e Prospecção</h1>
           <p className="text-muted-foreground mt-1">
-            Gerencie seus contatos e acompanhe o funil de vendas.
+            Gerencie contatos e acompanhe o funil de vendas.
           </p>
         </div>
-
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Novo Lead/Contato
+              <Plus className="h-4 w-4" /> Novo Lead/Contato
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[550px]">
             <DialogHeader>
               <DialogTitle>Novo Contato</DialogTitle>
               <DialogDescription>Adicione as informações do novo lead ao CRM.</DialogDescription>
@@ -153,6 +149,28 @@ export default function CRMPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {followUpsHoje.length > 0 && (
+        <Alert className="bg-amber-50 border-amber-200 text-amber-900 shadow-sm">
+          <BellRing className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-800 font-semibold">
+            Atenção: Follow-ups Pendentes!
+          </AlertTitle>
+          <AlertDescription className="text-amber-700 mt-1">
+            Você tem <strong>{followUpsHoje.length}</strong> contato(s) com retorno agendado para
+            hoje ou em atraso.
+            <ul className="mt-2 space-y-1 list-disc pl-5 text-sm">
+              {followUpsHoje.slice(0, 3).map((p) => (
+                <li key={p.id}>
+                  <strong>{p.empresa}</strong> - {p.contato_nome}{' '}
+                  {p.telefone && `(Tel: ${p.telefone})`}
+                </li>
+              ))}
+              {followUpsHoje.length > 3 && <li>E mais {followUpsHoje.length - 3} contatos...</li>}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card className="border-slate-200/60 shadow-sm">
         <CardHeader className="pb-3 border-b border-slate-100 mb-2">
@@ -167,7 +185,7 @@ export default function CRMPage() {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar prospect..."
-                className="pl-9 h-9 w-full bg-slate-50"
+                className="pl-9 h-9 bg-slate-50"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -178,8 +196,9 @@ export default function CRMPage() {
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow>
-                <TableHead className="w-[300px]">Empresa</TableHead>
+                <TableHead className="w-[250px]">Empresa</TableHead>
                 <TableHead>Contato</TableHead>
+                <TableHead>Follow-up</TableHead>
                 <TableHead>Última Interação</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -188,48 +207,63 @@ export default function CRMPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                     Carregando contatos...
                   </TableCell>
                 </TableRow>
-              ) : filteredProspects.length === 0 ? (
+              ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                     Nenhum contato encontrado.
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredProspects.map((prospect) => (
-                  <TableRow
-                    key={prospect.id}
-                    className="group hover:bg-slate-50/80 transition-colors"
-                  >
+                filtered.map((p) => (
+                  <TableRow key={p.id} className="hover:bg-slate-50/80 transition-colors">
                     <TableCell className="font-medium text-slate-900">
-                      {prospect.empresa}
-                      {prospect.email && (
-                        <span className="block text-xs text-muted-foreground font-normal mt-0.5">
-                          {prospect.email}
+                      {p.empresa}
+                      {p.cnpj && (
+                        <span className="block text-xs text-muted-foreground mt-0.5">{p.cnpj}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {p.contato_nome}
+                      {p.telefone && (
+                        <span className="block text-xs text-muted-foreground mt-0.5">
+                          {p.telefone}
                         </span>
                       )}
                     </TableCell>
                     <TableCell>
-                      {prospect.contato_nome}
-                      {prospect.telefone && (
-                        <span className="block text-xs text-muted-foreground font-normal mt-0.5">
-                          {prospect.telefone}
-                        </span>
+                      {p.data_followup ? (
+                        <div
+                          className={cn(
+                            'flex items-center gap-1.5 text-xs font-medium',
+                            p.data_followup <= today && p.status !== 'Fechado'
+                              ? 'text-amber-600'
+                              : 'text-muted-foreground',
+                          )}
+                        >
+                          <CalendarClock className="h-3.5 w-3.5" />
+                          {new Date(p.data_followup + 'T12:00:00Z').toLocaleDateString('pt-BR')}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(prospect.ultima_interacao)}
+                    <TableCell className="text-xs text-muted-foreground">
+                      {formatDate(p.ultima_interacao)}
                     </TableCell>
                     <TableCell>
                       <Select
-                        defaultValue={prospect.status}
-                        onValueChange={(val) => updateStatus(prospect.id, val)}
+                        defaultValue={p.status}
+                        onValueChange={(val) => updateStatus(p.id, val)}
                       >
                         <SelectTrigger
-                          className={`h-8 w-[160px] border rounded-full text-xs font-semibold px-3 ${getStatusColor(prospect.status)}`}
+                          className={cn(
+                            'h-8 w-[150px] border rounded-full text-xs font-semibold px-3',
+                            getStatusColor(p.status),
+                          )}
                         >
                           <SelectValue />
                         </SelectTrigger>
@@ -242,14 +276,14 @@ export default function CRMPage() {
                       </Select>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
                           className="h-8 gap-1 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
                           asChild
                         >
-                          <Link to={`/contratos?prospect=${encodeURIComponent(prospect.empresa)}`}>
+                          <Link to={`/contratos?prospect=${encodeURIComponent(p.empresa)}`}>
                             <FileSignature className="h-4 w-4" />
                             <span className="hidden sm:inline">Gerar Contrato</span>
                           </Link>

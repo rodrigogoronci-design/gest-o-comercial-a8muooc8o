@@ -1,0 +1,4 @@
+ALTER TABLE public.crm_prospects 
+ADD COLUMN IF NOT EXISTS cnpj TEXT,
+ADD COLUMN IF NOT EXISTS endereco TEXT,
+ADD COLUMN IF NOT EXISTS data_followup DATE;
