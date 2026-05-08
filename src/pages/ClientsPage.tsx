@@ -98,6 +98,7 @@ import {
   IMPLEMENTATION_RATES,
 } from '@/constants/contracts'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
 import { ContractDocument, AddendumDocument } from '@/components/ContractDocument'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -197,6 +198,11 @@ export default function ClientsPage() {
   const [viewingAddendum, setViewingAddendum] = useState<any>(null)
 
   const [clientToDelete, setClientToDelete] = useState<MergedClient | null>(null)
+
+  const [implementationEmailClient, setImplementationEmailClient] = useState<MergedClient | null>(
+    null,
+  )
+  const [emailBody, setEmailBody] = useState('')
 
   const [isImporting, setIsImporting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -342,6 +348,52 @@ export default function ClientsPage() {
   const handleOpenView = (client: MergedClient) => {
     setViewingClient(client)
     setIsViewSheetOpen(true)
+  }
+
+  const handleOpenImplementationEmail = (client: MergedClient) => {
+    setImplementationEmailClient(client)
+    const plan = PLANS.find((p) => p.name === client.plano_base || p.id === client.plano_base)
+    const modulosInclusos = [
+      'Administração',
+      'Básico',
+      'Carga',
+      'Comercial',
+      'Faturamento',
+      'Financeiro',
+    ]
+    const modulosAdicionais = client.modules.map((m) => m.name).join('\n') || 'Nenhum'
+
+    const initialBody = `Bom dia, Gesualdo,
+
+Temos um novo contrato formalizado e já podemos iniciar o processo de implantação do sistema.
+Segue abaixo os dados do cliente e detalhamento do plano contratado:
+
+Empresa: ${client.name}
+CNPJ: ${formatCNPJ(client.cnpj)}
+Regime Tributário: Simples Nacional (ME)
+
+Perfil Operacional:
+Transportadora com atuação em operações municipais, intermunicipais, interestaduais e internacionais, além de atividades de carga e descarga e locação de veículos com e sem condutor.
+
+Plano Contratado:
+${plan ? plan.name : client.plano_base || 'Não especificado'}
+
+Módulos Inclusos no Plano:
+${modulosInclusos.join('\n')}
+
+Módulos Adicionais Contratados:
+${modulosAdicionais}
+
+Responsável / Ponto Focal:
+Nome: ${client.rep_nome || 'Não informado'} - Tel: ${client.originalData?.telefone || 'Não informado'}
+E-mail: ${client.originalData?.email || 'Não informado'}
+
+Peço, por gentileza, dar andamento no contato inicial com o cliente para alinhamento da agenda de implantação, levantamento de informações e início das configurações do sistema.
+
+Fico à disposição para qualquer apoio necessário.
+Obrigada,`
+
+    setEmailBody(initialBody)
   }
 
   const onSubmit = async (data: ClientFormValues) => {
@@ -1799,7 +1851,7 @@ export default function ClientsPage() {
       <Sheet open={isViewSheetOpen} onOpenChange={setIsViewSheetOpen}>
         <SheetContent className="sm:max-w-[700px] w-[95vw] flex flex-col bg-slate-50/50">
           <SheetHeader className="bg-white p-6 -mx-6 -mt-6 border-b border-slate-200 shadow-sm z-10 relative">
-            <div className="flex justify-between items-start pr-8">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 pr-8">
               <div>
                 <SheetTitle className="text-2xl text-slate-800">{viewingClient?.name}</SheetTitle>
                 <div className="flex items-center gap-3 mt-2 text-sm text-slate-500">
@@ -1813,13 +1865,23 @@ export default function ClientsPage() {
                   )}
                 </div>
               </div>
-              <Button variant="outline" size="sm" asChild className="bg-white">
-                <Link
-                  to={`/contratos?prospect=${encodeURIComponent(viewingClient?.name || '')}&cnpj=${viewingClient?.cnpj?.replace(/\D/g, '')}`}
+              <div className="flex flex-wrap gap-2 shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => viewingClient && handleOpenImplementationEmail(viewingClient)}
+                  className="bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100"
                 >
-                  Gerar Novo Contrato
-                </Link>
-              </Button>
+                  <Mail className="h-4 w-4 mr-2" /> Enviar p/ Implantação
+                </Button>
+                <Button variant="outline" size="sm" asChild className="bg-white">
+                  <Link
+                    to={`/contratos?prospect=${encodeURIComponent(viewingClient?.name || '')}&cnpj=${viewingClient?.cnpj?.replace(/\D/g, '')}`}
+                  >
+                    Gerar Novo Contrato
+                  </Link>
+                </Button>
+              </div>
             </div>
           </SheetHeader>
 
@@ -1902,6 +1964,68 @@ export default function ClientsPage() {
           )}
         </SheetContent>
       </Sheet>
+
+      <Dialog
+        open={!!implementationEmailClient}
+        onOpenChange={(open) => !open && setImplementationEmailClient(null)}
+      >
+        <DialogContent className="sm:max-w-2xl h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Enviar para Implantação</DialogTitle>
+            <DialogDescription>
+              Revise os dados abaixo e envie o e-mail de introdução para a equipe de implantação.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 py-4 flex flex-col min-h-0">
+            <Textarea
+              className="flex-1 resize-none h-full font-mono text-sm p-4 bg-slate-50 border-slate-200"
+              value={emailBody}
+              onChange={(e) => setEmailBody(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImplementationEmailClient(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                navigator.clipboard.writeText(emailBody)
+                toast.success('E-mail copiado para a área de transferência!')
+              }}
+            >
+              Copiar Texto
+            </Button>
+            <Button
+              onClick={async () => {
+                const subject = encodeURIComponent(
+                  `Novo Cliente para Implantação - ${implementationEmailClient?.name}`,
+                )
+                const body = encodeURIComponent(emailBody)
+                window.open(
+                  `mailto:gesualdo@servicelogic.com.br?subject=${subject}&body=${body}`,
+                  '_blank',
+                )
+
+                if (implementationEmailClient) {
+                  try {
+                    await updateCliente(implementationEmailClient.id, { status: 'Em Implantação' })
+                    toast.success("Cliente atualizado para 'Em Implantação'")
+                    loadClientes()
+                  } catch (err) {
+                    console.error(err)
+                    toast.error('Erro ao atualizar status do cliente')
+                  }
+                }
+                setImplementationEmailClient(null)
+              }}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              <Mail className="h-4 w-4 mr-2" /> Enviar via E-mail
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={!!clientToDelete}
@@ -2023,6 +2147,14 @@ export default function ClientsPage() {
                         <span className="text-xs text-slate-500 font-mono">
                           {formatCNPJ(client.cnpj)}
                         </span>
+                        {client.originalData?.status === 'Em Implantação' && (
+                          <Badge
+                            variant="outline"
+                            className="w-fit text-[10px] px-1.5 py-0 h-4 leading-none text-blue-600 bg-blue-50 border-blue-200"
+                          >
+                            Em Implantação
+                          </Badge>
+                        )}
                         {client.stats && client.stats.relevantTitulos > 0 && (
                           <Badge
                             variant="outline"
