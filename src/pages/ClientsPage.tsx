@@ -684,9 +684,20 @@ Obrigada,`
         observacoes: solicitacaoObservacoes.trim() || null,
         status: 'Pendente',
       })
+
+      await createHistorico({
+        cliente_id: viewingClient.id,
+        tipo: `Solicitação: ${solicitacaoTipo}`,
+        data_solicitacao: solicitacaoData || new Date().toISOString().split('T')[0],
+        valor_adicional: parsedValor || 0,
+        valor_total: viewingClient.totalValue,
+        observacoes: `${solicitacaoDescricao.trim()}${solicitacaoObservacoes ? `\nObs: ${solicitacaoObservacoes.trim()}` : ''}`,
+      })
+
       toast.success('Solicitação registrada com sucesso!')
       setIsAddSolicitacaoOpen(false)
       loadSolicitacoes(viewingClient.id)
+      loadHistory(viewingClient.id)
 
       // Reset form
       setSolicitacaoTipo('Treinamento')
@@ -1448,7 +1459,9 @@ Obrigada.`)
                                 'text-[10px] uppercase font-bold',
                                 h.tipo === 'Contrato Inicial'
                                   ? 'text-slate-600 bg-slate-50 border-slate-200'
-                                  : 'text-indigo-700 bg-indigo-50 border-indigo-200',
+                                  : h.tipo?.startsWith('Solicitação')
+                                    ? 'text-amber-700 bg-amber-50 border-amber-200'
+                                    : 'text-indigo-700 bg-indigo-50 border-indigo-200',
                               )}
                             >
                               {h.tipo}
@@ -1493,14 +1506,25 @@ Obrigada.`)
                             </ul>
                           </div>
                         )}
-                        {h.valor_adicional > 0 && (
+                        {h.observacoes && h.tipo?.startsWith('Solicitação') && (
+                          <div className="mb-2 whitespace-pre-wrap">
+                            <span className="font-medium text-slate-800">Detalhes:</span>{' '}
+                            {h.observacoes}
+                          </div>
+                        )}
+                        {h.valor_adicional > 0 && !h.tipo?.startsWith('Solicitação') && (
                           <div className="mt-3 pt-2 border-t border-slate-200 text-xs font-medium text-emerald-700">
                             + {formatCurrency(h.valor_adicional)} adicionado ao contrato
                           </div>
                         )}
+                        {h.valor_adicional > 0 && h.tipo?.startsWith('Solicitação') && (
+                          <div className="mt-3 pt-2 border-t border-slate-200 text-xs font-medium text-amber-700">
+                            Valor cobrado: {formatCurrency(h.valor_adicional)} (Faturamento à parte)
+                          </div>
+                        )}
                       </div>
 
-                      {h.tipo !== 'Contrato Inicial' && (
+                      {h.tipo !== 'Contrato Inicial' && !h.tipo?.startsWith('Solicitação') && (
                         <div className="mt-3 flex justify-end">
                           <Button
                             variant="outline"
