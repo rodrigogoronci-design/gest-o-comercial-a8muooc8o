@@ -583,6 +583,27 @@ export default function ClientsPage() {
           let nome = idxNome !== -1 ? String(row[idxNome] || '').trim() : ''
 
           let cnpj = rawCnpj.replace(/\D/g, '')
+
+          if (!cnpj && nome) {
+            const cnpjMatch = nome.match(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/)
+            if (cnpjMatch) {
+              cnpj = cnpjMatch[0].replace(/\D/g, '')
+              nome = nome
+                .replace(cnpjMatch[0], '')
+                .replace(/\s*-\s*$/, '')
+                .trim()
+            } else {
+              const digitsMatch = nome.match(/\b\d{14}\b/)
+              if (digitsMatch) {
+                cnpj = digitsMatch[0]
+                nome = nome
+                  .replace(digitsMatch[0], '')
+                  .replace(/\s*-\s*$/, '')
+                  .trim()
+              }
+            }
+          }
+
           if (cnpj && cnpj.length < 14) {
             cnpj = cnpj.padStart(14, '0')
           }
@@ -775,10 +796,20 @@ export default function ClientsPage() {
             }
           })
 
-          const totalValorCobrancas = combinedCobrancas.reduce(
-            (acc: number, c: any) => acc + c.valor,
-            0,
-          )
+          let finalCobrancas = combinedCobrancas
+          let finalValorTotal = 0
+
+          if (payloadCobrancas.length > 0) {
+            finalValorTotal = combinedCobrancas.reduce((acc: number, c: any) => acc + c.valor, 0)
+          } else if (payload.valor_total > 0) {
+            finalValorTotal = payload.valor_total
+            finalCobrancas = [] // Limpa cobranças antigas se estamos apenas importando um novo valor total consolidado
+          } else {
+            finalValorTotal =
+              combinedCobrancas.length > 0
+                ? combinedCobrancas.reduce((acc: number, c: any) => acc + c.valor, 0)
+                : existing.valor_total || 0
+          }
 
           updatedClients.push({
             id: existing.id,
@@ -787,11 +818,8 @@ export default function ClientsPage() {
             email: payload.email || existing.email,
             telefone: payload.telefone || existing.telefone,
             modulos: mergedMods,
-            valor_total:
-              combinedCobrancas.length > 0
-                ? totalValorCobrancas
-                : Math.max(payload.valor_total || 0, existing.valor_total || 0),
-            cobrancas: combinedCobrancas,
+            valor_total: finalValorTotal,
+            cobrancas: finalCobrancas,
           })
         } else {
           newClients.push({
