@@ -121,6 +121,7 @@ export interface ClienteRecord {
   created_at: string
   contrato_url?: string | null
   cobrancas?: { data_vencimento: string; valor: number }[] | null
+  documentos_urls?: { name: string; url: string }[] | null
 }
 
 type ModuleItem = { name: string; price: number }
@@ -205,6 +206,7 @@ export default function ClientsPage() {
   const [emailBody, setEmailBody] = useState('')
 
   const [isImporting, setIsImporting] = useState(false)
+  const [isUploadingDocs, setIsUploadingDocs] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const form = useForm<ClientFormValues>({
@@ -350,6 +352,85 @@ export default function ClientsPage() {
     setIsViewSheetOpen(true)
   }
 
+  const handleUploadDocs = async (e: React.ChangeEvent<HTMLInputElement>, clientId: string) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    setIsUploadingDocs(true)
+    try {
+      const newDocs = []
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        const fileName = `${clientId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+        const { error: uploadError } = await supabase.storage
+          .from('documentos_clientes')
+          .upload(fileName, file)
+
+        if (uploadError) throw uploadError
+
+        const { data: publicUrlData } = supabase.storage
+          .from('documentos_clientes')
+          .getPublicUrl(fileName)
+
+        newDocs.push({
+          name: file.name,
+          url: publicUrlData.publicUrl,
+        })
+      }
+
+      const currentClient = clientes.find((c) => c.id === clientId)
+      const currentDocs = currentClient?.documentos_urls || []
+      const updatedDocs = [...currentDocs, ...newDocs]
+
+      await updateCliente(clientId, { documentos_urls: updatedDocs })
+      toast.success('Documentos anexados com sucesso!')
+      loadClientes()
+
+      if (viewingClient && viewingClient.id === clientId) {
+        setViewingClient({
+          ...viewingClient,
+          originalData: {
+            ...viewingClient.originalData!,
+            documentos_urls: updatedDocs,
+          },
+        })
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error('Erro ao fazer upload de documentos')
+    } finally {
+      setIsUploadingDocs(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleDeleteDoc = async (clientId: string, docUrl: string) => {
+    try {
+      const currentClient = clientes.find((c) => c.id === clientId)
+      if (!currentClient) return
+
+      const currentDocs = currentClient.documentos_urls || []
+      const updatedDocs = currentDocs.filter((d) => d.url !== docUrl)
+
+      await updateCliente(clientId, { documentos_urls: updatedDocs })
+      toast.success('Documento removido!')
+      loadClientes()
+
+      if (viewingClient && viewingClient.id === clientId) {
+        setViewingClient({
+          ...viewingClient,
+          originalData: {
+            ...viewingClient.originalData!,
+            documentos_urls: updatedDocs,
+          },
+        })
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao remover documento')
+    }
+  }
+
   const handleOpenImplementationEmail = (client: MergedClient) => {
     setImplementationEmailClient(client)
     const plan = PLANS.find((p) => p.name === client.plano_base || p.id === client.plano_base)
@@ -362,6 +443,14 @@ export default function ClientsPage() {
       'Financeiro',
     ]
     const modulosAdicionais = client.modules.map((m) => m.name).join('\n') || 'Nenhum'
+
+    const docs = client.originalData?.documentos_urls || []
+    const docsText =
+      docs.length > 0
+        ? docs.map((d) => `- ${d.name}: ${d.url}`).join('\n')
+        : 'Nenhum documento cadastral extra anexado.'
+
+    const contratoText = client.contratoUrl ? `- Contrato Assinado: ${client.contratoUrl}` : ''
 
     const initialBody = `Bom dia, Gesualdo,
 
@@ -383,6 +472,10 @@ ${modulosInclusos.join('\n')}
 
 Módulos Adicionais Contratados:
 ${modulosAdicionais}
+
+Documentos Anexados para Abertura de Base:
+${contratoText}
+${docsText}
 
 Responsável / Ponto Focal:
 Nome: ${client.rep_nome || 'Não informado'} - Tel: ${client.originalData?.telefone || 'Não informado'}
@@ -1284,18 +1377,45 @@ Obrigada,`
 
         {/* Documentos */}
         <div>
-          <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4">
-            Repositório de Documentos
-          </h4>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
+            <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+              Repositório de Documentos
+            </h4>
+            <div>
+              <input
+                type="file"
+                multiple
+                className="hidden"
+                id={`upload-doc-${client.id}`}
+                onChange={(e) => handleUploadDocs(e, client.id)}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => document.getElementById(`upload-doc-${client.id}`)?.click()}
+                disabled={isUploadingDocs}
+              >
+                {isUploadingDocs ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Upload className="h-4 w-4 mr-2" />
+                )}
+                Anexar Documentos
+              </Button>
+            </div>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {client.contratoUrl ? (
+            {client.contratoUrl && (
               <div className="flex items-center justify-between bg-white border border-slate-200 p-3 rounded-md shadow-sm hover:border-indigo-200 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-indigo-50 rounded text-indigo-600">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="p-2 bg-indigo-50 rounded text-indigo-600 shrink-0">
                     <FileText className="h-5 w-5" />
                   </div>
-                  <div>
-                    <span className="font-medium text-sm text-slate-800 block">
+                  <div className="overflow-hidden">
+                    <span
+                      className="font-medium text-sm text-slate-800 block truncate"
+                      title="Contrato Inicial"
+                    >
                       Contrato Inicial
                     </span>
                     <span className="text-xs text-slate-400">Documento Assinado</span>
@@ -1304,22 +1424,66 @@ Obrigada,`
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50"
+                  className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 shrink-0"
                   onClick={() => window.open(client.contratoUrl!, '_blank')}
                 >
                   Abrir
                 </Button>
               </div>
-            ) : (
-              <div className="flex items-center justify-between bg-slate-50 border border-dashed border-slate-200 p-3 rounded-md">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-slate-100 rounded text-slate-400">
+            )}
+
+            {client.originalData?.documentos_urls?.map((doc, idx) => (
+              <div
+                key={idx}
+                className="flex items-center justify-between bg-white border border-slate-200 p-3 rounded-md shadow-sm hover:border-slate-300 transition-colors"
+              >
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="p-2 bg-slate-50 rounded text-slate-500 shrink-0">
                     <FileText className="h-5 w-5" />
                   </div>
-                  <span className="text-sm text-slate-500">Sem contrato original anexado</span>
+                  <div className="overflow-hidden">
+                    <span
+                      className="font-medium text-sm text-slate-800 block truncate"
+                      title={doc.name}
+                    >
+                      {doc.name}
+                    </span>
+                    <span className="text-xs text-slate-400">Anexo Cadastral</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                    onClick={() => window.open(doc.url, '_blank')}
+                    title="Abrir Documento"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                    onClick={() => handleDeleteDoc(client.id, doc.url)}
+                    title="Remover Documento"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-            )}
+            ))}
+
+            {!client.contratoUrl &&
+              (!client.originalData?.documentos_urls ||
+                client.originalData.documentos_urls.length === 0) && (
+                <div className="col-span-1 sm:col-span-2 flex items-center justify-center bg-slate-50 border border-dashed border-slate-200 p-6 rounded-md">
+                  <div className="flex flex-col items-center gap-2 text-slate-400">
+                    <FileText className="h-8 w-8" />
+                    <span className="text-sm">Nenhum documento anexado a este cliente</span>
+                  </div>
+                </div>
+              )}
           </div>
         </div>
       </div>
