@@ -107,6 +107,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { ContractDocument, AddendumDocument } from '@/components/ContractDocument'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { DiagnosticoOperacional } from '@/components/DiagnosticoOperacional'
 
 export interface ClienteRecord {
   id: string
@@ -127,6 +128,8 @@ export interface ClienteRecord {
   contrato_url?: string | null
   cobrancas?: { data_vencimento: string; valor: number }[] | null
   documentos_urls?: { name: string; url: string }[] | null
+  diagnostico?: any
+  tags?: string[]
 }
 
 type ModuleItem = { name: string; price: number }
@@ -151,6 +154,7 @@ type MergedClient = {
   contratoUrl?: string | null
   stats?: ReturnType<typeof calculateFinancialScore>
   cobrancas?: { data_vencimento: string; valor: number }[]
+  tags?: string[]
 }
 
 const clientSchema = z.object({
@@ -655,17 +659,29 @@ Obrigada,`
 
   const handleSaveSolicitacao = async () => {
     if (!viewingClient) return
+
+    if (!solicitacaoDescricao.trim()) {
+      toast.error('A descrição do serviço é obrigatória')
+      return
+    }
+
+    const parsedValor = solicitacaoValor === '' ? null : Number(solicitacaoValor)
+    if (parsedValor !== null && isNaN(parsedValor)) {
+      toast.error('O valor informado é inválido')
+      return
+    }
+
     setIsSubmittingSolicitacao(true)
     try {
       await createSolicitacao({
         cliente_id: viewingClient.id,
         tipo: solicitacaoTipo,
-        descricao: solicitacaoDescricao,
+        descricao: solicitacaoDescricao.trim(),
         data_solicitacao: solicitacaoData || null,
-        valor: solicitacaoValor || 0,
-        forma_pagamento: solicitacaoFormaPagamento,
+        valor: parsedValor,
+        forma_pagamento: solicitacaoFormaPagamento || null,
         data_vencimento: solicitacaoDataVencimento || null,
-        observacoes: solicitacaoObservacoes,
+        observacoes: solicitacaoObservacoes.trim() || null,
         status: 'Pendente',
       })
       toast.success('Solicitação registrada com sucesso!')
@@ -680,9 +696,9 @@ Obrigada,`
       setSolicitacaoFormaPagamento('Boleto')
       setSolicitacaoDataVencimento('')
       setSolicitacaoObservacoes('')
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
-      toast.error('Erro ao salvar solicitação')
+      toast.error(err?.message || 'Erro ao salvar solicitação. Verifique os dados.')
     } finally {
       setIsSubmittingSolicitacao(false)
     }
@@ -1216,6 +1232,7 @@ Obrigada.`)
         contratoUrl: c.contrato_url,
         stats,
         cobrancas: Array.isArray(c.cobrancas) ? c.cobrancas : [],
+        tags: Array.isArray(c.tags) ? c.tags : [],
       }
     }),
   ]
@@ -2297,8 +2314,9 @@ Obrigada.`)
 
           {viewingClient && (
             <Tabs defaultValue="resumo" className="mt-6 w-full h-full flex flex-col">
-              <TabsList className="grid w-full max-w-lg grid-cols-3 bg-white border border-slate-200">
+              <TabsList className="grid w-full max-w-2xl grid-cols-4 bg-white border border-slate-200">
                 <TabsTrigger value="resumo">Resumo & Gestão</TabsTrigger>
+                <TabsTrigger value="diagnostico">Diagnóstico</TabsTrigger>
                 <TabsTrigger value="contrato">Contrato Inicial</TabsTrigger>
                 <TabsTrigger value="solicitacoes">Treinamentos / Visitas</TabsTrigger>
               </TabsList>
@@ -2306,6 +2324,34 @@ Obrigada.`)
               <TabsContent value="resumo" className="mt-4 flex-1">
                 <ScrollArea className="h-[calc(100vh-14rem)] pr-4">
                   <ClientDetailsPanel client={viewingClient} />
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent
+                value="diagnostico"
+                className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4"
+              >
+                <ScrollArea className="h-[calc(100vh-14rem)] pr-4">
+                  <DiagnosticoOperacional
+                    clientId={viewingClient.id}
+                    initialData={viewingClient.originalData?.diagnostico}
+                    onSaved={(tags) => {
+                      setViewingClient((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              tags,
+                              originalData: {
+                                ...prev.originalData!,
+                                diagnostico: prev.originalData?.diagnostico,
+                                tags,
+                              },
+                            }
+                          : null,
+                      )
+                      loadClientes()
+                    }}
+                  />
                 </ScrollArea>
               </TabsContent>
 
@@ -2713,6 +2759,24 @@ Obrigada.`)
                           </Badge>
                         )}
                       </div>
+                      {client.tags && client.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {client.tags.slice(0, 3).map((tag, idx) => (
+                            <Badge
+                              key={idx}
+                              variant="secondary"
+                              className="text-[9px] px-1.5 py-0 h-4 font-normal bg-purple-50 text-purple-700 border-purple-200"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                          {client.tags.length > 3 && (
+                            <span className="text-[10px] text-slate-400">
+                              +{client.tags.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1.5">
