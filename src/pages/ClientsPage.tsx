@@ -119,6 +119,7 @@ export interface ClienteRecord {
   status?: string | null
   created_at: string
   contrato_url?: string | null
+  cobrancas?: { data_vencimento: string; valor: number }[] | null
 }
 
 type ModuleItem = { name: string; price: number }
@@ -142,6 +143,7 @@ type MergedClient = {
   originalData?: ClienteRecord
   contratoUrl?: string | null
   stats?: ReturnType<typeof calculateFinancialScore>
+  cobrancas?: { data_vencimento: string; valor: number }[]
 }
 
 const clientSchema = z.object({
@@ -547,7 +549,16 @@ export default function ClientsPage() {
             h.includes('serviço'),
         )
         const idxValor = headers.findIndex(
-          (h) => h.includes('valor') || h.includes('mensalidade') || h.includes('total'),
+          (h) =>
+            h.includes('valor') ||
+            h.includes('mensalidade') ||
+            h.includes('total') ||
+            h.includes('liquido') ||
+            h.includes('líquido') ||
+            h.includes('vi liquido'),
+        )
+        const idxDataVenc = headers.findIndex(
+          (h) => h.includes('data venc') || h.includes('vencimento'),
         )
 
         const moduleHeaders: { index: number; id: string }[] = []
@@ -586,6 +597,7 @@ export default function ClientsPage() {
             telefone: '',
             modulos: [],
             valor_total: 0,
+            cobrancas: [],
           }
 
           if (nome && !existing.nome) existing.nome = nome
@@ -635,9 +647,9 @@ export default function ClientsPage() {
             }
           })
 
+          let parsedValor = 0
           if (idxValor !== -1 && row[idxValor]) {
             const rawValor = String(row[idxValor]).replace(/[R$\s]/gi, '')
-            let parsedValor = 0
             if (rawValor.includes(',')) {
               parsedValor = parseFloat(rawValor.replace(/\./g, '').replace(',', '.'))
             } else {
@@ -646,6 +658,31 @@ export default function ClientsPage() {
 
             if (!isNaN(parsedValor) && parsedValor > 0) {
               existing.valor_total = parsedValor
+            }
+          }
+
+          let parsedDataVenc = ''
+          if (idxDataVenc !== -1 && row[idxDataVenc]) {
+            parsedDataVenc = String(row[idxDataVenc]).trim()
+            if (parsedDataVenc.includes('T')) {
+              parsedDataVenc = parsedDataVenc.split('T')[0]
+            } else if (parsedDataVenc.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+              const [d, m, y] = parsedDataVenc.split('/')
+              parsedDataVenc = `${y}-${m}-${d}`
+            }
+          }
+
+          if (parsedDataVenc && !isNaN(parsedValor) && parsedValor > 0) {
+            existing.cobrancas = existing.cobrancas || []
+            if (
+              !existing.cobrancas.some(
+                (c: any) => c.data_vencimento === parsedDataVenc && c.valor === parsedValor,
+              )
+            ) {
+              existing.cobrancas.push({
+                data_vencimento: parsedDataVenc,
+                valor: parsedValor,
+              })
             }
           }
 
@@ -664,7 +701,9 @@ export default function ClientsPage() {
           payload.nome = 'Cliente Sem Nome'
         }
 
-        if (payload.valor_total === 0 && payload.modulos.length > 0) {
+        if (payload.cobrancas && payload.cobrancas.length > 0) {
+          payload.valor_total = payload.cobrancas.reduce((acc: number, c: any) => acc + c.valor, 0)
+        } else if (payload.valor_total === 0 && payload.modulos.length > 0) {
           let calculatedTotal = 0
           payload.modulos.forEach((modItem: any) => {
             if (typeof modItem === 'string') {
@@ -718,7 +757,13 @@ export default function ClientsPage() {
             email: payload.email || existing.email,
             telefone: payload.telefone || existing.telefone,
             modulos: mergedMods,
-            valor_total: payload.valor_total > 0 ? payload.valor_total : existing.valor_total,
+            valor_total:
+              payload.cobrancas?.length > 0
+                ? payload.valor_total
+                : payload.valor_total > 0
+                  ? payload.valor_total
+                  : existing.valor_total,
+            cobrancas: payload.cobrancas?.length > 0 ? payload.cobrancas : existing.cobrancas,
           })
         } else {
           newClients.push({
@@ -728,6 +773,7 @@ export default function ClientsPage() {
             telefone: payload.telefone,
             valor_total: payload.valor_total,
             modulos: mergedMods,
+            cobrancas: payload.cobrancas || [],
           })
         }
       }
@@ -831,6 +877,7 @@ export default function ClientsPage() {
         originalData: c,
         contratoUrl: c.contrato_url,
         stats,
+        cobrancas: Array.isArray(c.cobrancas) ? c.cobrancas : [],
       }
     }),
   ]
@@ -954,11 +1001,49 @@ export default function ClientsPage() {
 
               {!plan &&
                 (!client.filiais || client.filiais === 0) &&
-                client.modules.length === 0 && (
+                client.modules.length === 0 &&
+                (!client.cobrancas || client.cobrancas.length === 0) && (
                   <div className="text-sm text-slate-500 text-center py-6 bg-slate-50 rounded-md border border-dashed border-slate-200">
                     Nenhum plano ou módulo selecionado para este cliente.
                   </div>
                 )}
+
+              {client.cobrancas && client.cobrancas.length > 0 && (
+                <div className="mt-4">
+                  <span className="text-xs font-bold text-slate-400 uppercase mb-2 block">
+                    Mensalidades / Cobranças Programadas
+                  </span>
+                  <div className="space-y-2">
+                    {client.cobrancas.map((cob, idx) => (
+                      <div
+                        key={idx}
+                        className="flex justify-between items-center bg-white border border-slate-200 p-2.5 rounded-md shadow-sm"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                          <span className="font-medium text-xs text-slate-700">
+                            Vencimento:{' '}
+                            {cob.data_vencimento.includes('-')
+                              ? formatDate(cob.data_vencimento)
+                              : cob.data_vencimento}
+                          </span>
+                        </div>
+                        <span className="text-xs font-bold text-slate-700">
+                          {formatCurrency(cob.valor)}
+                        </span>
+                      </div>
+                    ))}
+                    {client.cobrancas.length > 1 && (
+                      <div className="flex justify-between items-center bg-emerald-50 border border-emerald-100 p-2.5 rounded-md mt-2">
+                        <span className="font-bold text-xs text-emerald-800">Total Somado</span>
+                        <span className="text-sm font-bold text-emerald-700">
+                          {formatCurrency(client.cobrancas.reduce((acc, c) => acc + c.valor, 0))}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1146,7 +1231,7 @@ export default function ClientsPage() {
         <div className="flex gap-3">
           <input
             type="file"
-            accept=".xlsx, .xls"
+            accept=".xlsx, .xls, .csv"
             className="hidden"
             ref={fileInputRef}
             onChange={handleImportExcel}
