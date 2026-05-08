@@ -1,14 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  Search,
-  FileSignature,
-  MoreHorizontal,
-  Plus,
-  CalendarClock,
-  BellRing,
-  Pencil,
-} from 'lucide-react'
+import { Search, FileSignature, Plus, CalendarClock, BellRing, Pencil } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
@@ -35,12 +27,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useToast } from '@/hooks/use-toast'
 import { formatDate } from '@/lib/formatters'
 import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { CrmProspectForm, ProspectFormValues } from '@/components/CrmProspectForm'
+import { CrmDiagnosticoForm } from '@/components/CrmDiagnosticoForm'
 
 type CrmProspect = {
   id: string
@@ -54,6 +48,8 @@ type CrmProspect = {
   data_followup: string | null
   observacoes: string | null
   ultima_interacao: string
+  diagnostico: any | null
+  tags: string[] | null
 }
 
 export default function CRMPage() {
@@ -234,7 +230,7 @@ export default function CRMPage() {
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow>
-                <TableHead className="w-[250px]">Empresa</TableHead>
+                <TableHead className="w-[300px]">Empresa</TableHead>
                 <TableHead>Contato</TableHead>
                 <TableHead>Follow-up</TableHead>
                 <TableHead>Última Interação</TableHead>
@@ -262,6 +258,18 @@ export default function CRMPage() {
                       {p.empresa}
                       {p.cnpj && (
                         <span className="block text-xs text-muted-foreground mt-0.5">{p.cnpj}</span>
+                      )}
+                      {p.tags && p.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {p.tags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
                       )}
                     </TableCell>
                     <TableCell>
@@ -345,30 +353,60 @@ export default function CRMPage() {
       </Card>
 
       <Dialog open={!!editingProspect} onOpenChange={(open) => !open && setEditingProspect(null)}>
-        <DialogContent className="sm:max-w-[550px]">
-          <DialogHeader>
-            <DialogTitle>Editar Contato</DialogTitle>
+        <DialogContent className="sm:max-w-[700px] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="p-6 pb-4 shrink-0 border-b border-slate-100">
+            <DialogTitle>Editar Prospecto</DialogTitle>
             <DialogDescription>
-              Atualize as informações e registre novos follow-ups.
+              Atualize as informações do lead e realize o diagnóstico operacional.
             </DialogDescription>
           </DialogHeader>
-          {editingProspect && (
-            <CrmProspectForm
-              onSubmit={onEditSubmit}
-              isSubmitting={isSubmitting}
-              initialData={{
-                cnpj: editingProspect.cnpj || '',
-                empresa: editingProspect.empresa,
-                endereco: editingProspect.endereco || '',
-                contato_nome: editingProspect.contato_nome,
-                telefone: editingProspect.telefone || '',
-                email: editingProspect.email || '',
-                status: editingProspect.status,
-                data_followup: editingProspect.data_followup || '',
-                observacoes: editingProspect.observacoes || '',
-              }}
-            />
-          )}
+          <div className="flex-1 overflow-hidden p-6 pt-4 bg-slate-50/30">
+            <Tabs defaultValue="dados" className="h-full flex flex-col">
+              <TabsList className="grid w-full grid-cols-2 mb-4 shrink-0 bg-slate-100">
+                <TabsTrigger value="dados">Dados Básicos</TabsTrigger>
+                <TabsTrigger value="diagnostico">Diagnóstico Operacional</TabsTrigger>
+              </TabsList>
+
+              <TabsContent
+                value="dados"
+                className="flex-1 overflow-y-auto pr-2 pb-4 focus-visible:outline-none"
+              >
+                {editingProspect && (
+                  <CrmProspectForm
+                    onSubmit={onEditSubmit}
+                    isSubmitting={isSubmitting}
+                    initialData={{
+                      cnpj: editingProspect.cnpj || '',
+                      empresa: editingProspect.empresa,
+                      endereco: editingProspect.endereco || '',
+                      contato_nome: editingProspect.contato_nome,
+                      telefone: editingProspect.telefone || '',
+                      email: editingProspect.email || '',
+                      status: editingProspect.status,
+                      data_followup: editingProspect.data_followup || '',
+                      observacoes: editingProspect.observacoes || '',
+                    }}
+                  />
+                )}
+              </TabsContent>
+
+              <TabsContent
+                value="diagnostico"
+                className="flex-1 overflow-y-auto pr-2 pb-4 focus-visible:outline-none"
+              >
+                {editingProspect && (
+                  <CrmDiagnosticoForm
+                    prospectId={editingProspect.id}
+                    initialData={editingProspect.diagnostico}
+                    onSave={() => {
+                      setEditingProspect(null)
+                      fetchProspects()
+                    }}
+                  />
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
