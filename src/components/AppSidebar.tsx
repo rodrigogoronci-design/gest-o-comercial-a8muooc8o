@@ -19,6 +19,7 @@ import {
   Rocket,
   ListTodo,
   CircleDollarSign,
+  PieChart,
 } from 'lucide-react'
 
 const navigation = [
@@ -29,6 +30,7 @@ const navigation = [
   { name: 'Planos e Preços', href: '/planos', icon: Tags },
   { name: 'Gerador de Contratos', href: '/contratos', icon: FileSignature },
   { name: 'Acompanhamento de Recebimentos', href: '/recebimentos', icon: CircleDollarSign },
+  { name: 'Relatórios', href: '/relatorios', icon: PieChart },
 ]
 
 export function AppSidebar() {
