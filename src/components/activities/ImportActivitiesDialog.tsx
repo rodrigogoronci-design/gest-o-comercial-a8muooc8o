@@ -214,14 +214,16 @@ export function ImportActivitiesDialog({ onImported }: { onImported: () => void 
                       </TableCell>
                       <TableCell>
                         <Select
-                          value={mapping[f.key] || ''}
-                          onValueChange={(v) => setMapping((p) => ({ ...p, [f.key]: v }))}
+                          value={mapping[f.key] || 'none'}
+                          onValueChange={(v) =>
+                            setMapping((p) => ({ ...p, [f.key]: v === 'none' ? '' : v }))
+                          }
                         >
                           <SelectTrigger className="w-[300px]">
                             <SelectValue placeholder="Ignorar campo" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">-- Ignorar --</SelectItem>
+                            <SelectItem value="none">-- Ignorar --</SelectItem>
                             {headers.map((h, i) => (
                               <SelectItem key={i} value={i.toString()}>
                                 {h || `Coluna ${i + 1}`}
