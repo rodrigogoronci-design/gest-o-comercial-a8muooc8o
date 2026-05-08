@@ -716,11 +716,25 @@ export default function ClientsPage() {
           payload.valor_total = calculatedTotal
         }
 
-        const existing = existingClients.find(
-          (c) =>
-            (payload.cnpj !== '00000000000000' && c.cnpj.replace(/\D/g, '') === payload.cnpj) ||
-            c.nome.toLowerCase() === payload.nome.toLowerCase(),
-        )
+        const normalizeStr = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ')
+        const pNomeNorm = normalizeStr(payload.nome || '')
+        const pCnpjNorm = payload.cnpj ? payload.cnpj.replace(/\D/g, '') : ''
+
+        const existing = existingClients.find((c) => {
+          const cCnpjNorm = c.cnpj ? c.cnpj.replace(/\D/g, '') : ''
+          const cNomeNorm = normalizeStr(c.nome || '')
+
+          if (pCnpjNorm && pCnpjNorm !== '00000000000000' && cCnpjNorm === pCnpjNorm) return true
+          if (cNomeNorm && pNomeNorm && cNomeNorm === pNomeNorm) return true
+          if (
+            cNomeNorm &&
+            pNomeNorm &&
+            pNomeNorm.length > 5 &&
+            (cNomeNorm.includes(pNomeNorm) || pNomeNorm.includes(cNomeNorm))
+          )
+            return true
+          return false
+        })
 
         let mergedMods: any = { plano_base: '', filiais: 0, adicionais: payload.modulos }
         if (existing) {
@@ -747,23 +761,37 @@ export default function ClientsPage() {
             filiais: (existing.modulos as any)?.filiais || 0,
             adicionais: uniqueAdicionais,
           }
-        }
 
-        if (existing) {
+          const existingCobrancas = Array.isArray(existing.cobrancas) ? existing.cobrancas : []
+          const payloadCobrancas = Array.isArray(payload.cobrancas) ? payload.cobrancas : []
+
+          const combinedCobrancas = [...existingCobrancas]
+          payloadCobrancas.forEach((pc: any) => {
+            const exists = combinedCobrancas.some(
+              (ec: any) => ec.data_vencimento === pc.data_vencimento && ec.valor === pc.valor,
+            )
+            if (!exists) {
+              combinedCobrancas.push(pc)
+            }
+          })
+
+          const totalValorCobrancas = combinedCobrancas.reduce(
+            (acc: number, c: any) => acc + c.valor,
+            0,
+          )
+
           updatedClients.push({
             id: existing.id,
-            nome: payload.nome || existing.nome,
-            cnpj: payload.cnpj !== '00000000000000' ? payload.cnpj : existing.cnpj,
+            nome: existing.nome, // Mantém o nome original da base
+            cnpj: payload.cnpj !== '00000000000000' && payload.cnpj ? payload.cnpj : existing.cnpj,
             email: payload.email || existing.email,
             telefone: payload.telefone || existing.telefone,
             modulos: mergedMods,
             valor_total:
-              payload.cobrancas?.length > 0
-                ? payload.valor_total
-                : payload.valor_total > 0
-                  ? payload.valor_total
-                  : existing.valor_total,
-            cobrancas: payload.cobrancas?.length > 0 ? payload.cobrancas : existing.cobrancas,
+              combinedCobrancas.length > 0
+                ? totalValorCobrancas
+                : Math.max(payload.valor_total || 0, existing.valor_total || 0),
+            cobrancas: combinedCobrancas,
           })
         } else {
           newClients.push({
