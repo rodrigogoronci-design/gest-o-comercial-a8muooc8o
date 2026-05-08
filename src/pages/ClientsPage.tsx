@@ -68,6 +68,11 @@ import { Separator } from '@/components/ui/separator'
 import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
 import { fetchClientes, createCliente, updateCliente, deleteCliente } from '@/services/clientes'
 import { getHistoricoByCliente, createHistorico } from '@/services/historico_contratos'
+import {
+  getSolicitacoesByCliente,
+  createSolicitacao,
+  deleteSolicitacao,
+} from '@/services/solicitacoes_servico'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -200,6 +205,20 @@ export default function ClientsPage() {
 
   const [clientToDelete, setClientToDelete] = useState<MergedClient | null>(null)
 
+  const [solicitacoes, setSolicitacoes] = useState<any[]>([])
+  const [isLoadingSolicitacoes, setIsLoadingSolicitacoes] = useState(false)
+  const [isAddSolicitacaoOpen, setIsAddSolicitacaoOpen] = useState(false)
+
+  // Form states for Solicitacao
+  const [solicitacaoTipo, setSolicitacaoTipo] = useState('Treinamento')
+  const [solicitacaoDescricao, setSolicitacaoDescricao] = useState('')
+  const [solicitacaoData, setSolicitacaoData] = useState('')
+  const [solicitacaoValor, setSolicitacaoValor] = useState<number | ''>('')
+  const [solicitacaoFormaPagamento, setSolicitacaoFormaPagamento] = useState('Boleto')
+  const [solicitacaoDataVencimento, setSolicitacaoDataVencimento] = useState('')
+  const [solicitacaoObservacoes, setSolicitacaoObservacoes] = useState('')
+  const [isSubmittingSolicitacao, setIsSubmittingSolicitacao] = useState(false)
+
   const [implementationEmailClient, setImplementationEmailClient] = useState<MergedClient | null>(
     null,
   )
@@ -299,9 +318,23 @@ export default function ClientsPage() {
     }
   }
 
+  const loadSolicitacoes = async (clienteId: string) => {
+    setIsLoadingSolicitacoes(true)
+    try {
+      const data = await getSolicitacoesByCliente(clienteId)
+      setSolicitacoes(data)
+    } catch (error) {
+      console.error(error)
+      toast.error('Erro ao carregar solicitações')
+    } finally {
+      setIsLoadingSolicitacoes(false)
+    }
+  }
+
   useEffect(() => {
     if (viewingClient && isViewSheetOpen) {
       loadHistory(viewingClient.id)
+      loadSolicitacoes(viewingClient.id)
     }
   }, [viewingClient, isViewSheetOpen])
 
@@ -618,6 +651,108 @@ Obrigada,`
     } finally {
       setIsSubmittingAditivo(false)
     }
+  }
+
+  const handleSaveSolicitacao = async () => {
+    if (!viewingClient) return
+    setIsSubmittingSolicitacao(true)
+    try {
+      await createSolicitacao({
+        cliente_id: viewingClient.id,
+        tipo: solicitacaoTipo,
+        descricao: solicitacaoDescricao,
+        data_solicitacao: solicitacaoData || null,
+        valor: solicitacaoValor || 0,
+        forma_pagamento: solicitacaoFormaPagamento,
+        data_vencimento: solicitacaoDataVencimento || null,
+        observacoes: solicitacaoObservacoes,
+        status: 'Pendente',
+      })
+      toast.success('Solicitação registrada com sucesso!')
+      setIsAddSolicitacaoOpen(false)
+      loadSolicitacoes(viewingClient.id)
+
+      // Reset form
+      setSolicitacaoTipo('Treinamento')
+      setSolicitacaoDescricao('')
+      setSolicitacaoData('')
+      setSolicitacaoValor('')
+      setSolicitacaoFormaPagamento('Boleto')
+      setSolicitacaoDataVencimento('')
+      setSolicitacaoObservacoes('')
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao salvar solicitação')
+    } finally {
+      setIsSubmittingSolicitacao(false)
+    }
+  }
+
+  const handleDeleteSolicitacao = async (id: string) => {
+    if (!viewingClient) return
+    try {
+      await deleteSolicitacao(id)
+      toast.success('Solicitação excluída')
+      loadSolicitacoes(viewingClient.id)
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao excluir solicitação')
+    }
+  }
+
+  const handleEmailImplantacao = (sol: any) => {
+    const subject = encodeURIComponent(`Agendamento de ${sol.tipo} - ${viewingClient?.name}`)
+    const body = encodeURIComponent(`Boa tarde, tudo bem?
+
+Peço por gentileza que a equipe de Implantação realize contato com o cliente abaixo para alinhamento e agendamento do treinamento/visita técnica:
+
+Cliente: ${viewingClient?.name}
+Responsável: ${viewingClient?.rep_nome || 'Não informado'}
+Telefone: ${viewingClient?.originalData?.telefone || 'Não informado'}
+
+Treinamento/Serviço solicitado:
+${sol.descricao}
+
+Observações:
+${sol.observacoes || 'Nenhuma'}
+
+Assim que possível, peço por gentileza que realizem o contato para definição do melhor dia e horário junto ao cliente.
+
+Obrigada.`)
+
+    window.open(`mailto:implantacao@servicelogic.com.br?subject=${subject}&body=${body}`, '_blank')
+  }
+
+  const handleEmailFinanceiro = (sol: any) => {
+    const subject = encodeURIComponent(`Faturamento de ${sol.tipo} - ${viewingClient?.name}`)
+    const body = encodeURIComponent(`Boa tarde, tudo bem?
+
+Peço por gentileza que seja realizada a cobrança referente ao serviço abaixo:
+
+Cliente: ${viewingClient?.name}
+Responsável: ${viewingClient?.rep_nome || 'Não informado'}
+Telefone: ${viewingClient?.originalData?.telefone || 'Não informado'}
+
+Serviço contratado:
+${sol.descricao}
+
+Valor:
+R$ ${sol.valor ? sol.valor.toFixed(2).replace('.', ',') : '0,00'}
+
+Forma de pagamento:
+${sol.forma_pagamento || 'Não informada'}
+
+Data de Vencimento:
+${sol.data_vencimento ? formatDate(sol.data_vencimento) : 'Não informada'}
+
+Observações:
+${sol.observacoes || 'Nenhuma'}
+
+Peço por gentileza que sigam com o faturamento/cobrança junto ao cliente.
+
+Obrigada.`)
+
+    window.open(`mailto:financeiro@servicelogic.com.br?subject=${subject}&body=${body}`, '_blank')
   }
 
   const handlePrintAddendum = () => {
@@ -1619,6 +1754,115 @@ Obrigada,`
         </DialogContent>
       </Dialog>
 
+      {/* Adicionar Solicitação (Treinamento/Visita) Dialog */}
+      <Dialog open={isAddSolicitacaoOpen} onOpenChange={setIsAddSolicitacaoOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nova Solicitação de Serviço</DialogTitle>
+            <DialogDescription>
+              Registre um treinamento ou visita técnica e defina os detalhes de cobrança.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Tipo de Serviço</Label>
+                <Select value={solicitacaoTipo} onValueChange={setSolicitacaoTipo}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Treinamento">Treinamento</SelectItem>
+                    <SelectItem value="Visita Técnica">Visita Técnica</SelectItem>
+                    <SelectItem value="Outro">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Data da Solicitação</Label>
+                <Input
+                  type="date"
+                  value={solicitacaoData}
+                  onChange={(e) => setSolicitacaoData(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Descrição do Serviço / Módulos</Label>
+              <Textarea
+                placeholder="Ex: Treinamento do módulo financeiro..."
+                value={solicitacaoDescricao}
+                onChange={(e) => setSolicitacaoDescricao(e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-md border border-slate-100">
+              <div className="space-y-2">
+                <Label>Valor Acordado (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0,00"
+                  value={solicitacaoValor}
+                  onChange={(e) =>
+                    setSolicitacaoValor(e.target.value === '' ? '' : parseFloat(e.target.value))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Forma de Pagamento</Label>
+                <Select
+                  value={solicitacaoFormaPagamento}
+                  onValueChange={setSolicitacaoFormaPagamento}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Boleto">Boleto</SelectItem>
+                    <SelectItem value="PIX">PIX</SelectItem>
+                    <SelectItem value="Cartão">Cartão</SelectItem>
+                    <SelectItem value="Outro">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label>Data de Vencimento</Label>
+                <Input
+                  type="date"
+                  value={solicitacaoDataVencimento}
+                  onChange={(e) => setSolicitacaoDataVencimento(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Observações</Label>
+              <Textarea
+                placeholder="Informações adicionais..."
+                value={solicitacaoObservacoes}
+                onChange={(e) => setSolicitacaoObservacoes(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddSolicitacaoOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveSolicitacao}
+              disabled={!solicitacaoDescricao || isSubmittingSolicitacao}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              {isSubmittingSolicitacao ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Salvar Solicitação
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Visualizar Aditivo Dialog */}
       <Dialog open={!!viewingAddendum} onOpenChange={(open) => !open && setViewingAddendum(null)}>
         <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden bg-slate-100">
@@ -2053,9 +2297,10 @@ Obrigada,`
 
           {viewingClient && (
             <Tabs defaultValue="resumo" className="mt-6 w-full h-full flex flex-col">
-              <TabsList className="grid w-full max-w-md grid-cols-2 bg-white border border-slate-200">
+              <TabsList className="grid w-full max-w-lg grid-cols-3 bg-white border border-slate-200">
                 <TabsTrigger value="resumo">Resumo & Gestão</TabsTrigger>
                 <TabsTrigger value="contrato">Contrato Inicial</TabsTrigger>
+                <TabsTrigger value="solicitacoes">Treinamentos / Visitas</TabsTrigger>
               </TabsList>
 
               <TabsContent value="resumo" className="mt-4 flex-1">
@@ -2124,6 +2369,144 @@ Obrigada,`
                       }
                     />{' '}
                   </div>
+                </ScrollArea>
+              </TabsContent>
+              <TabsContent
+                value="solicitacoes"
+                className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4"
+              >
+                <ScrollArea className="h-[calc(100vh-14rem)] pr-4">
+                  <div className="flex justify-between items-center mb-6">
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-800">
+                        Solicitações de Serviço
+                      </h3>
+                      <p className="text-sm text-slate-500">
+                        Registre treinamentos e visitas técnicas para {viewingClient.name}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => setIsAddSolicitacaoOpen(true)}
+                      size="sm"
+                      className="bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      <Plus className="h-4 w-4 mr-2" /> Nova Solicitação
+                    </Button>
+                  </div>
+
+                  {isLoadingSolicitacoes ? (
+                    <div className="flex justify-center items-center py-12 text-slate-500">
+                      <Loader2 className="h-6 w-6 animate-spin mr-2" /> Carregando...
+                    </div>
+                  ) : solicitacoes.length === 0 ? (
+                    <div className="text-center py-12 bg-slate-50 border border-dashed border-slate-200 rounded-lg">
+                      <p className="text-slate-500 text-sm">Nenhuma solicitação registrada.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {solicitacoes.map((sol) => (
+                        <div
+                          key={sol.id}
+                          className="border border-slate-200 rounded-lg overflow-hidden shadow-sm"
+                        >
+                          <div className="flex justify-between items-center bg-slate-50 p-3 border-b border-slate-200">
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant="outline"
+                                className={
+                                  sol.tipo === 'Treinamento'
+                                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                }
+                              >
+                                {sol.tipo}
+                              </Badge>
+                              <span className="text-xs text-slate-500 font-medium">
+                                Solicitado em:{' '}
+                                {sol.data_solicitacao ? formatDate(sol.data_solicitacao) : 'N/I'}
+                              </span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-slate-400 hover:text-red-600"
+                              onClick={() => handleDeleteSolicitacao(sol.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          <div className="p-4">
+                            <p className="text-sm text-slate-800 font-medium mb-1">Descrição</p>
+                            <p className="text-sm text-slate-600 mb-4 whitespace-pre-wrap">
+                              {sol.descricao}
+                            </p>
+
+                            {(sol.valor > 0 || sol.forma_pagamento || sol.data_vencimento) && (
+                              <div className="bg-slate-50 rounded p-3 mb-4 flex flex-wrap gap-4 border border-slate-100">
+                                {sol.valor > 0 && (
+                                  <div>
+                                    <span className="text-xs text-slate-500 block">
+                                      Valor Acordado
+                                    </span>
+                                    <span className="text-sm font-semibold text-slate-800">
+                                      {formatCurrency(sol.valor)}
+                                    </span>
+                                  </div>
+                                )}
+                                {sol.forma_pagamento && (
+                                  <div>
+                                    <span className="text-xs text-slate-500 block">
+                                      Forma de Pagamento
+                                    </span>
+                                    <span className="text-sm font-medium text-slate-700">
+                                      {sol.forma_pagamento}
+                                    </span>
+                                  </div>
+                                )}
+                                {sol.data_vencimento && (
+                                  <div>
+                                    <span className="text-xs text-slate-500 block">Vencimento</span>
+                                    <span className="text-sm font-medium text-slate-700">
+                                      {formatDate(sol.data_vencimento)}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {sol.observacoes && (
+                              <div className="mb-4">
+                                <p className="text-xs text-slate-500 font-medium mb-1">
+                                  Observações
+                                </p>
+                                <p className="text-sm text-slate-600 italic">{sol.observacoes}</p>
+                              </div>
+                            )}
+
+                            <div className="flex gap-2 pt-2 border-t border-slate-100">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full text-xs"
+                                onClick={() => handleEmailImplantacao(sol)}
+                              >
+                                <Mail className="h-3.5 w-3.5 mr-1.5" /> Enviar p/ Implantação
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                                onClick={() => handleEmailFinanceiro(sol)}
+                              >
+                                <Mail className="h-3.5 w-3.5 mr-1.5" /> Enviar p/ Financeiro
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </ScrollArea>
               </TabsContent>
             </Tabs>
