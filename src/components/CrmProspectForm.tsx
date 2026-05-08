@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2 } from 'lucide-react'
+import { Loader2, UploadCloud } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -22,6 +23,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/lib/supabase/client'
 
 export const prospectFormSchema = z.object({
   cnpj: z.string().optional(),
@@ -106,6 +108,11 @@ export function CrmProspectForm({
           if (addr && !form.getValues('endereco')) form.setValue('endereco', addr)
           if (d.ddd_telefone_1 && !form.getValues('telefone'))
             form.setValue('telefone', d.ddd_telefone_1)
+
+          if (!form.getValues('contato_nome')) {
+            form.setValue('contato_nome', d.nome_fantasia || 'Responsável')
+          }
+
           toast({ title: 'Dados preenchidos', description: 'CNPJ consultado com sucesso.' })
         }
       } catch {
@@ -116,9 +123,92 @@ export function CrmProspectForm({
     }
   }
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsLoading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-receipt-pdf`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: formData,
+        },
+      )
+
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Falha ao processar arquivo')
+
+      const text = result.text
+      const cnpjMatch = text.match(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/)
+
+      if (cnpjMatch) {
+        const cnpj = cnpjMatch[0]
+        toast({
+          title: 'CNPJ Identificado',
+          description: `Consultando dados para o CNPJ ${cnpj}...`,
+        })
+        form.setValue('cnpj', cnpj)
+        await handleCnpjChange(cnpj)
+      } else {
+        toast({
+          title: 'Nenhum CNPJ',
+          description: 'Não foi possível identificar o CNPJ no arquivo PDF.',
+          variant: 'destructive',
+        })
+      }
+    } catch (error: any) {
+      toast({ title: 'Erro', description: error.message, variant: 'destructive' })
+    } finally {
+      setIsLoading(false)
+      e.target.value = ''
+    }
+  }
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 py-2">
+        {!initialData && (
+          <div className="flex justify-between items-center mb-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
+            <div className="text-sm text-slate-600">
+              <span className="font-semibold block text-slate-800">Preenchimento Automático</span>
+              Importe o Cartão CNPJ em PDF para preencher os dados.
+            </div>
+            <div>
+              <Input
+                type="file"
+                accept="application/pdf"
+                className="hidden"
+                id="cnpj-upload"
+                onChange={handleFileUpload}
+                disabled={isLoading || isSubmitting}
+              />
+              <Label
+                htmlFor="cnpj-upload"
+                className="flex items-center gap-2 cursor-pointer bg-white hover:bg-slate-100 text-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors border shadow-sm"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                ) : (
+                  <UploadCloud className="h-4 w-4 text-indigo-600" />
+                )}
+                Importar PDF
+              </Label>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
           <FormField
             control={form.control}
@@ -262,7 +352,7 @@ export function CrmProspectForm({
               <FormLabel>Observações</FormLabel>
               <FormControl>
                 <Textarea
-                  className="resize-none min-h-[120px]"
+                  className="resize-none min-h-[100px]"
                   placeholder="Adicione notas ou histórico de follow-ups aqui..."
                   {...field}
                 />
@@ -272,7 +362,7 @@ export function CrmProspectForm({
           )}
         />
         <div className="pt-2 flex justify-end">
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting || isLoading}>
             {isSubmitting ? 'Salvando...' : 'Salvar Contato'}
           </Button>
         </div>
