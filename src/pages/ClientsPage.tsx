@@ -364,7 +364,7 @@ export default function ClientsPage() {
         const fileName = `${clientId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
         const { error: uploadError } = await supabase.storage
           .from('documentos_clientes')
-          .upload(fileName, file)
+          .upload(fileName, file, { upsert: true })
 
         if (uploadError) throw uploadError
 
@@ -395,12 +395,14 @@ export default function ClientsPage() {
           },
         })
       }
-    } catch (error) {
-      console.error(error)
-      toast.error('Erro ao fazer upload de documentos')
+    } catch (error: any) {
+      console.error('Upload Error:', error)
+      toast.error('Erro ao fazer upload: ' + (error.message || 'Falha desconhecida'))
     } finally {
       setIsUploadingDocs(false)
-      e.target.value = ''
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     }
   }
 
