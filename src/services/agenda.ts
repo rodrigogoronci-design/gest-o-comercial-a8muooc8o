@@ -13,11 +13,14 @@ export const createEvento = async (evento: any) => {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  const { data, error } = await supabase
-    .from('agenda_eventos')
-    .insert([{ ...evento, user_id: user?.id }])
-    .select()
-    .single()
+
+  const payload = { ...evento }
+  if (user?.id) {
+    payload.user_id = user.id
+  }
+
+  const { data, error } = await supabase.from('agenda_eventos').insert([payload]).select().single()
+
   if (error) throw error
   return data
 }

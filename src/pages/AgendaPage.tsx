@@ -82,12 +82,16 @@ export default function AgendaPage() {
     end: endDate,
   })
 
+  const [filterTipo, setFilterTipo] = useState('Todos')
+  const [filterStatus, setFilterStatus] = useState('Todos')
+
   const openNewEventDialog = (date: Date) => {
     setEditingEvent(null)
     const now = new Date()
-    date.setHours(now.getHours())
-    date.setMinutes(now.getMinutes())
-    setSelectedDate(date)
+    const newDate = new Date(date)
+    newDate.setHours(now.getHours())
+    newDate.setMinutes(now.getMinutes())
+    setSelectedDate(newDate)
     setTitulo('')
     setDescricao('')
     setTipo('Reunião')
@@ -152,9 +156,37 @@ export default function AgendaPage() {
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6 max-w-[1400px] mx-auto">
-      <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0">
-        <h2 className="text-3xl font-bold tracking-tight">Agenda</h2>
-        <div className="flex items-center space-x-2">
+      <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
+          <h2 className="text-3xl font-bold tracking-tight mr-4">Agenda</h2>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Select value={filterTipo} onValueChange={setFilterTipo}>
+              <SelectTrigger className="w-full sm:w-[150px]">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Todos">Todos os Tipos</SelectItem>
+                <SelectItem value="Reunião">Reunião</SelectItem>
+                <SelectItem value="Visita Técnica">Visita Técnica</SelectItem>
+                <SelectItem value="Treinamento">Treinamento</SelectItem>
+                <SelectItem value="Outro">Outro</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-full sm:w-[150px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Todos">Todos os Status</SelectItem>
+                <SelectItem value="Pendente">Pendente</SelectItem>
+                <SelectItem value="Confirmado">Confirmado</SelectItem>
+                <SelectItem value="Concluído">Concluído</SelectItem>
+                <SelectItem value="Cancelado">Cancelado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="flex items-center space-x-2 w-full md:w-auto justify-between md:justify-end mt-4 md:mt-0">
           <Button variant="outline" onClick={prevMonth} size="icon">
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -180,7 +212,12 @@ export default function AgendaPage() {
         </div>
         <div className="grid grid-cols-7 gap-px bg-border">
           {days.map((day) => {
-            const dayEvents = events.filter((e) => isSameDay(new Date(e.data_evento), day))
+            const filteredEvents = events.filter((e) => {
+              if (filterTipo !== 'Todos' && e.tipo !== filterTipo) return false
+              if (filterStatus !== 'Todos' && e.status !== filterStatus) return false
+              return true
+            })
+            const dayEvents = filteredEvents.filter((e) => isSameDay(new Date(e.data_evento), day))
             const isCurrentMonth = isSameMonth(day, currentDate)
             const isToday = isSameDay(day, new Date())
 
@@ -188,6 +225,27 @@ export default function AgendaPage() {
               <div
                 key={day.toString()}
                 onClick={() => openNewEventDialog(day)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={async (e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  const eventId = e.dataTransfer.getData('eventId')
+                  if (eventId) {
+                    const evt = events.find((ev) => ev.id === eventId)
+                    if (evt) {
+                      const oldDate = new Date(evt.data_evento)
+                      const newDate = new Date(day)
+                      newDate.setHours(oldDate.getHours(), oldDate.getMinutes())
+                      try {
+                        await updateEvento(eventId, { data_evento: newDate.toISOString() })
+                        toast({ title: 'Sucesso', description: 'Evento reagendado com sucesso.' })
+                        loadData()
+                      } catch (error: any) {
+                        toast({ title: 'Erro', description: error.message, variant: 'destructive' })
+                      }
+                    }
+                  }
+                }}
                 className={`min-h-[140px] bg-background p-2 cursor-pointer transition-colors hover:bg-accent/50 group ${
                   !isCurrentMonth ? 'text-muted-foreground bg-muted/20' : ''
                 }`}
@@ -210,27 +268,36 @@ export default function AgendaPage() {
                   {dayEvents.map((evt) => {
                     let eventClass =
                       'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
-                    if (evt.tipo === 'Reunião')
+
+                    if (evt.status === 'Confirmado' || evt.status === 'Agendado')
                       eventClass =
                         'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800/50'
-                    if (evt.tipo === 'Visita Técnica')
-                      eventClass =
-                        'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800/50'
-                    if (evt.tipo === 'Treinamento')
+                    else if (evt.status === 'Concluído')
                       eventClass =
                         'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800/50'
+                    else if (evt.status === 'Pendente')
+                      eventClass =
+                        'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800/50'
+                    else if (evt.status === 'Cancelado')
+                      eventClass =
+                        'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'
 
                     return (
                       <div
                         key={evt.id}
+                        draggable
+                        onDragStart={(e) => {
+                          e.stopPropagation()
+                          e.dataTransfer.setData('eventId', evt.id)
+                        }}
                         onClick={(e) => openEditEventDialog(e, evt)}
-                        className={`text-[11px] px-1.5 py-1 rounded truncate border cursor-pointer hover:brightness-95 transition-all ${eventClass}`}
+                        className={`text-[11px] px-1.5 py-1 rounded truncate border cursor-pointer hover:brightness-95 transition-all flex items-center gap-1 ${eventClass}`}
                         title={evt.titulo}
                       >
-                        <span className="font-semibold">
+                        <span className="font-semibold whitespace-nowrap">
                           {format(new Date(evt.data_evento), 'HH:mm')}
-                        </span>{' '}
-                        {evt.titulo}
+                        </span>
+                        <span className="truncate">{evt.titulo}</span>
                       </div>
                     )
                   })}
