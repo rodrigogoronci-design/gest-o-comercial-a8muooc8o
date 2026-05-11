@@ -7,8 +7,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { clienteNome, clienteCnpj, servico, valor, mesCompetencia, mesVencimento, detalhes } =
-      await req.json()
+    const { clienteNome, clienteCnpj, servico, valor, mesCompetencia, mesVencimento, detalhes } = await req.json()
 
     const emailContent = `
 Boa tarde, Sr Israel
@@ -33,12 +32,9 @@ Equipe Comercial
     console.log(emailContent)
     console.log('--- FIM: E-MAIL PARA O FINANCEIRO ---')
 
-    return new Response(
-      JSON.stringify({ success: true, message: 'E-mail enviado com sucesso (simulação)' }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    )
+    return new Response(JSON.stringify({ success: true, message: 'E-mail enviado com sucesso (simulação)' }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
