@@ -45,6 +45,12 @@ export const DFE_TIERS = [
 ]
 
 export const MODULES = [
+  { id: 'mod-admin', name: 'Administração', price: 0.0, implHours: 0, isBasic: true },
+  { id: 'mod-basico', name: 'Básico', price: 0.0, implHours: 0, isBasic: true },
+  { id: 'mod-carga', name: 'Carga', price: 0.0, implHours: 0, isBasic: true },
+  { id: 'mod-comercial', name: 'Comercial', price: 0.0, implHours: 0, isBasic: true },
+  { id: 'mod-faturamento', name: 'Faturamento', price: 0.0, implHours: 0, isBasic: true },
+  { id: 'mod-financeiro', name: 'Financeiro', price: 0.0, implHours: 0, isBasic: true },
   { id: 'mod-edi', name: 'EDI', price: 250.0, implHours: 2 },
   { id: 'mod-ctrl-viagem', name: 'Controle de Viagem', price: 199.0, implHours: 3 },
   { id: 'mod-frota', name: 'Frota (até 10 placas)*', price: 250.0, implHours: 16 },

@@ -16,6 +16,7 @@ import {
   Calendar,
   CheckCircle,
   Printer,
+  ChevronDown,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -368,7 +369,10 @@ export default function ClientsPage() {
       rep_rg: '',
       valor_implantacao: 0,
       modo_implantacao: 'remoto',
-      modulos: [],
+      modulos: MODULES.filter((m: any) => m.isBasic).map((m: any) => ({
+        name: m.name,
+        price: m.price,
+      })),
       plano_base: '',
       filiais: 0,
       valor_total: 0,
@@ -713,8 +717,8 @@ Obrigada,`
       }
 
       setIsAddSolicitacaoOpen(false)
-      loadSolicitacoes(viewingClient.id)
-      loadHistory(viewingClient.id)
+      await loadSolicitacoes(viewingClient.id)
+      await loadHistory(viewingClient.id)
 
       resetSolicitacaoForm()
     } catch (err: any) {
@@ -742,8 +746,8 @@ Obrigada,`
     try {
       await deleteSolicitacao(id)
       toast.success('Solicitação excluída')
-      loadSolicitacoes(viewingClient.id)
-      loadHistory(viewingClient.id)
+      await loadSolicitacoes(viewingClient.id)
+      await loadHistory(viewingClient.id)
     } catch (err) {
       console.error(err)
       toast.error('Erro ao excluir solicitação')
@@ -2130,21 +2134,36 @@ Obrigada.`)
                       name="plano_base"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Plano Base</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ''}>
-                            <FormControl>
-                              <SelectTrigger className="bg-white">
-                                <SelectValue placeholder="Selecione um plano" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {PLANS.map((plan) => (
-                                <SelectItem key={plan.id} value={plan.name}>
-                                  {plan.name} - {formatCurrency(plan.price)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <FormLabel>Plano Base / Emissões</FormLabel>
+                          <FormControl>
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="Ex: TMS 30 ou selecione..."
+                                value={field.value || ''}
+                                onChange={field.onChange}
+                                className="bg-white flex-1"
+                              />
+                              <Select
+                                onValueChange={field.onChange}
+                                value={
+                                  PLANS.some((p) => p.name === field.value)
+                                    ? field.value
+                                    : undefined
+                                }
+                              >
+                                <SelectTrigger className="w-12 bg-white flex justify-center px-0">
+                                  <ChevronDown className="h-4 w-4 opacity-50" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {PLANS.map((plan) => (
+                                    <SelectItem key={plan.id} value={plan.name}>
+                                      {plan.name} - {formatCurrency(plan.price)}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -2175,113 +2194,126 @@ Obrigada.`)
                   <FormField
                     control={form.control}
                     name="modulos"
-                    render={() => (
-                      <FormItem>
-                        <FormLabel className="text-base text-slate-700">
-                          Módulos Adicionais
-                        </FormLabel>
-                        <div className="space-y-2 mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:space-y-0">
-                          {MODULES.map((module) => {
-                            const isSelected = form
-                              .watch('modulos')
-                              ?.some((m: any) =>
-                                typeof m === 'string' ? m === module.name : m.name === module.name,
-                              )
-                            const selectedModule = form
-                              .watch('modulos')
-                              ?.find((m: any) =>
-                                typeof m === 'string' ? m === module.name : m.name === module.name,
-                              )
-                            const currentPrice =
-                              selectedModule && typeof selectedModule !== 'string'
-                                ? selectedModule.price
-                                : module.price
+                    render={() => {
+                      const renderModule = (module: any) => {
+                        const isSelected = form
+                          .watch('modulos')
+                          ?.some((m: any) =>
+                            typeof m === 'string' ? m === module.name : m.name === module.name,
+                          )
+                        const selectedModule = form
+                          .watch('modulos')
+                          ?.find((m: any) =>
+                            typeof m === 'string' ? m === module.name : m.name === module.name,
+                          )
+                        const currentPrice =
+                          selectedModule && typeof selectedModule !== 'string'
+                            ? selectedModule.price
+                            : module.price
 
-                            return (
-                              <FormField
-                                key={module.id}
-                                control={form.control}
-                                name="modulos"
-                                render={({ field }) => {
-                                  return (
-                                    <div className="flex flex-col rounded-md border bg-white hover:bg-slate-50 transition-colors overflow-hidden">
-                                      <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3">
-                                        <FormControl>
-                                          <Checkbox
-                                            checked={isSelected}
-                                            onCheckedChange={(checked) => {
-                                              const currentValues = field.value || []
-                                              if (checked) {
-                                                field.onChange([
-                                                  ...currentValues,
-                                                  { name: module.name, price: module.price },
-                                                ])
-                                              } else {
-                                                field.onChange(
-                                                  currentValues.filter((m: any) =>
-                                                    typeof m === 'string'
-                                                      ? m !== module.name
-                                                      : m.name !== module.name,
-                                                  ),
-                                                )
-                                              }
-                                            }}
-                                          />
-                                        </FormControl>
-                                        <div className="flex-1 flex justify-between items-center">
-                                          <FormLabel className="font-medium cursor-pointer w-full h-full text-sm leading-none">
-                                            {module.name}
-                                          </FormLabel>
-                                          {!isSelected && (
-                                            <span className="text-xs text-slate-500 whitespace-nowrap ml-2 font-mono">
-                                              {module.price > 0
-                                                ? formatCurrency(module.price)
-                                                : 'Incluso'}
-                                            </span>
-                                          )}
-                                        </div>
-                                      </FormItem>
-
-                                      {isSelected && (
-                                        <div className="flex items-center gap-2 px-3 pb-3 pt-1 bg-slate-50/50 border-t border-slate-100">
-                                          <span className="text-xs text-slate-500 font-medium">
-                                            Valor Mensal:
-                                          </span>
-                                          <div className="relative flex-1">
-                                            <span className="absolute left-2.5 top-1.5 text-xs text-slate-400">
-                                              R$
-                                            </span>
-                                            <Input
-                                              type="number"
-                                              step="0.01"
-                                              className="h-7 text-xs pl-7 bg-white border-slate-200"
-                                              value={currentPrice}
-                                              onChange={(e) => {
-                                                const newPrice = parseFloat(e.target.value) || 0
-                                                const currentValues = field.value || []
-                                                const updated = currentValues.map((m: any) => {
-                                                  const mName = typeof m === 'string' ? m : m.name
-                                                  if (mName === module.name) {
-                                                    return { name: module.name, price: newPrice }
-                                                  }
-                                                  return m
-                                                })
-                                                field.onChange(updated)
-                                              }}
-                                            />
-                                          </div>
-                                        </div>
+                        return (
+                          <FormField
+                            key={module.id}
+                            control={form.control}
+                            name="modulos"
+                            render={({ field }) => {
+                              return (
+                                <div className="flex flex-col rounded-md border bg-white hover:bg-slate-50 transition-colors overflow-hidden">
+                                  <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3">
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={isSelected}
+                                        onCheckedChange={(checked) => {
+                                          const currentValues = field.value || []
+                                          if (checked) {
+                                            field.onChange([
+                                              ...currentValues,
+                                              { name: module.name, price: module.price },
+                                            ])
+                                          } else {
+                                            field.onChange(
+                                              currentValues.filter((m: any) =>
+                                                typeof m === 'string'
+                                                  ? m !== module.name
+                                                  : m.name !== module.name,
+                                              ),
+                                            )
+                                          }
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <div className="flex-1 flex justify-between items-center">
+                                      <FormLabel className="font-medium cursor-pointer w-full h-full text-sm leading-none">
+                                        {module.name}
+                                      </FormLabel>
+                                      {!isSelected && (
+                                        <span className="text-xs text-slate-500 whitespace-nowrap ml-2 font-mono">
+                                          {module.price > 0
+                                            ? formatCurrency(module.price)
+                                            : 'Incluso'}
+                                        </span>
                                       )}
                                     </div>
-                                  )
-                                }}
-                              />
-                            )
-                          })}
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                                  </FormItem>
+
+                                  {isSelected && (
+                                    <div className="flex items-center gap-2 px-3 pb-3 pt-1 bg-slate-50/50 border-t border-slate-100">
+                                      <span className="text-xs text-slate-500 font-medium">
+                                        {module.isBasic
+                                          ? 'Valor (Desconto se negativo):'
+                                          : 'Valor Mensal:'}
+                                      </span>
+                                      <div className="relative flex-1">
+                                        <span className="absolute left-2.5 top-1.5 text-xs text-slate-400">
+                                          R$
+                                        </span>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          className="h-7 text-xs pl-7 bg-white border-slate-200"
+                                          value={currentPrice}
+                                          onChange={(e) => {
+                                            const newPrice = parseFloat(e.target.value) || 0
+                                            const currentValues = field.value || []
+                                            const updated = currentValues.map((m: any) => {
+                                              const mName = typeof m === 'string' ? m : m.name
+                                              if (mName === module.name) {
+                                                return { name: module.name, price: newPrice }
+                                              }
+                                              return m
+                                            })
+                                            field.onChange(updated)
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            }}
+                          />
+                        )
+                      }
+
+                      return (
+                        <FormItem>
+                          <FormLabel className="text-base text-slate-700 block mb-2">
+                            Módulos do Plano Básico
+                          </FormLabel>
+                          <div className="space-y-2 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:space-y-0">
+                            {MODULES.filter((m: any) => m.isBasic).map(renderModule)}
+                          </div>
+
+                          <FormLabel className="text-base text-slate-700 block mt-6 mb-2">
+                            Módulos Adicionais
+                          </FormLabel>
+                          <div className="space-y-2 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:space-y-0">
+                            {MODULES.filter((m: any) => !m.isBasic).map(renderModule)}
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )
+                    }}
                   />
 
                   <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100 mt-6 space-y-3">
