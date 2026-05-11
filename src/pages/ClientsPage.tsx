@@ -72,6 +72,7 @@ import {
   getSolicitacoesByCliente,
   createSolicitacao,
   deleteSolicitacao,
+  updateSolicitacao,
 } from '@/services/solicitacoes_servico'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
@@ -222,6 +223,18 @@ export default function ClientsPage() {
   const [solicitacaoDataVencimento, setSolicitacaoDataVencimento] = useState('')
   const [solicitacaoObservacoes, setSolicitacaoObservacoes] = useState('')
   const [isSubmittingSolicitacao, setIsSubmittingSolicitacao] = useState(false)
+  const [editingSolicitacaoId, setEditingSolicitacaoId] = useState<string | null>(null)
+
+  const resetSolicitacaoForm = () => {
+    setEditingSolicitacaoId(null)
+    setSolicitacaoTipo('Treinamento')
+    setSolicitacaoDescricao('')
+    setSolicitacaoData('')
+    setSolicitacaoValor('')
+    setSolicitacaoFormaPagamento('Boleto')
+    setSolicitacaoDataVencimento('')
+    setSolicitacaoObservacoes('')
+  }
 
   const [implementationEmailClient, setImplementationEmailClient] = useState<MergedClient | null>(
     null,
@@ -673,46 +686,66 @@ Obrigada,`
 
     setIsSubmittingSolicitacao(true)
     try {
-      await createSolicitacao({
-        cliente_id: viewingClient.id,
-        tipo: solicitacaoTipo,
-        descricao: solicitacaoDescricao.trim(),
-        data_solicitacao: solicitacaoData || null,
-        valor: parsedValor,
-        forma_pagamento: solicitacaoFormaPagamento || null,
-        data_vencimento: solicitacaoDataVencimento || null,
-        observacoes: solicitacaoObservacoes.trim() || null,
-        status: 'Pendente',
-      })
+      if (editingSolicitacaoId) {
+        await updateSolicitacao(editingSolicitacaoId, {
+          tipo: solicitacaoTipo,
+          descricao: solicitacaoDescricao.trim(),
+          data_solicitacao: solicitacaoData || null,
+          valor: parsedValor,
+          forma_pagamento: solicitacaoFormaPagamento || null,
+          data_vencimento: solicitacaoDataVencimento || null,
+          observacoes: solicitacaoObservacoes.trim() || null,
+        })
+        toast.success('Solicitação atualizada com sucesso!')
+      } else {
+        await createSolicitacao({
+          cliente_id: viewingClient.id,
+          tipo: solicitacaoTipo,
+          descricao: solicitacaoDescricao.trim(),
+          data_solicitacao: solicitacaoData || null,
+          valor: parsedValor,
+          forma_pagamento: solicitacaoFormaPagamento || null,
+          data_vencimento: solicitacaoDataVencimento || null,
+          observacoes: solicitacaoObservacoes.trim() || null,
+          status: 'Pendente',
+        })
 
-      await createHistorico({
-        cliente_id: viewingClient.id,
-        tipo: `Solicitação: ${solicitacaoTipo}`,
-        data_solicitacao: solicitacaoData || new Date().toISOString().split('T')[0],
-        valor_adicional: parsedValor || 0,
-        valor_total: viewingClient.totalValue,
-        observacoes: `${solicitacaoDescricao.trim()}${solicitacaoObservacoes ? `\nObs: ${solicitacaoObservacoes.trim()}` : ''}`,
-      })
+        await createHistorico({
+          cliente_id: viewingClient.id,
+          tipo: `Solicitação: ${solicitacaoTipo}`,
+          data_solicitacao: solicitacaoData || new Date().toISOString().split('T')[0],
+          valor_adicional: parsedValor || 0,
+          valor_total: viewingClient.totalValue,
+          observacoes: `${solicitacaoDescricao.trim()}${solicitacaoObservacoes ? `\nObs: ${solicitacaoObservacoes.trim()}` : ''}`,
+        })
+        toast.success('Solicitação registrada com sucesso!')
+      }
 
-      toast.success('Solicitação registrada com sucesso!')
       setIsAddSolicitacaoOpen(false)
       loadSolicitacoes(viewingClient.id)
-      loadHistory(viewingClient.id)
+      if (!editingSolicitacaoId) {
+        loadHistory(viewingClient.id)
+      }
 
-      // Reset form
-      setSolicitacaoTipo('Treinamento')
-      setSolicitacaoDescricao('')
-      setSolicitacaoData('')
-      setSolicitacaoValor('')
-      setSolicitacaoFormaPagamento('Boleto')
-      setSolicitacaoDataVencimento('')
-      setSolicitacaoObservacoes('')
+      resetSolicitacaoForm()
     } catch (err: any) {
       console.error(err)
       toast.error(err?.message || 'Erro ao salvar solicitação. Verifique os dados.')
     } finally {
       setIsSubmittingSolicitacao(false)
     }
+  }
+
+  const handleOpenEditSolicitacao = (sol: any) => {
+    setEditingSolicitacaoId(sol.id)
+    setSolicitacaoTipo(sol.tipo || 'Treinamento')
+    setSolicitacaoDescricao(sol.descricao || '')
+    setSolicitacaoData(sol.data_solicitacao || '')
+    setSolicitacaoValor(sol.valor ?? '')
+    setSolicitacaoFormaPagamento(sol.forma_pagamento || 'Boleto')
+    setSolicitacaoDataVencimento(sol.data_vencimento || '')
+    setSolicitacaoObservacoes(sol.observacoes || '')
+    setIsAddSolicitacaoOpen(true)
   }
 
   const handleDeleteSolicitacao = async (id: string) => {
@@ -1795,13 +1828,25 @@ Obrigada.`)
         </DialogContent>
       </Dialog>
 
-      {/* Adicionar Solicitação (Treinamento/Visita) Dialog */}
-      <Dialog open={isAddSolicitacaoOpen} onOpenChange={setIsAddSolicitacaoOpen}>
+      {/* Adicionar/Editar Solicitação (Treinamento/Visita) Dialog */}
+      <Dialog
+        open={isAddSolicitacaoOpen}
+        onOpenChange={(open) => {
+          setIsAddSolicitacaoOpen(open)
+          if (!open) resetSolicitacaoForm()
+        }}
+      >
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Nova Solicitação de Serviço</DialogTitle>
+            <DialogTitle>
+              {editingSolicitacaoId
+                ? 'Editar Solicitação de Serviço'
+                : 'Nova Solicitação de Serviço'}
+            </DialogTitle>
             <DialogDescription>
-              Registre um treinamento ou visita técnica e defina os detalhes de cobrança.
+              {editingSolicitacaoId
+                ? 'Atualize os detalhes da solicitação de serviço.'
+                : 'Registre um treinamento ou visita técnica e defina os detalhes de cobrança.'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -1898,7 +1943,7 @@ Obrigada.`)
               className="bg-indigo-600 hover:bg-indigo-700 text-white"
             >
               {isSubmittingSolicitacao ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Salvar Solicitação
+              {editingSolicitacaoId ? 'Atualizar Solicitação' : 'Salvar Solicitação'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2456,7 +2501,10 @@ Obrigada.`)
                       </p>
                     </div>
                     <Button
-                      onClick={() => setIsAddSolicitacaoOpen(true)}
+                      onClick={() => {
+                        resetSolicitacaoForm()
+                        setIsAddSolicitacaoOpen(true)
+                      }}
                       size="sm"
                       className="bg-indigo-600 hover:bg-indigo-700"
                     >
@@ -2496,14 +2544,24 @@ Obrigada.`)
                                 {sol.data_solicitacao ? formatDate(sol.data_solicitacao) : 'N/I'}
                               </span>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-slate-400 hover:text-red-600"
-                              onClick={() => handleDeleteSolicitacao(sol.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-slate-400 hover:text-blue-600"
+                                onClick={() => handleOpenEditSolicitacao(sol)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-slate-400 hover:text-red-600"
+                                onClick={() => handleDeleteSolicitacao(sol.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
 
                           <div className="p-4">
