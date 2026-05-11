@@ -709,23 +709,12 @@ Obrigada,`
           observacoes: solicitacaoObservacoes.trim() || null,
           status: 'Pendente',
         })
-
-        await createHistorico({
-          cliente_id: viewingClient.id,
-          tipo: `Solicitação: ${solicitacaoTipo}`,
-          data_solicitacao: solicitacaoData || new Date().toISOString().split('T')[0],
-          valor_adicional: parsedValor || 0,
-          valor_total: viewingClient.totalValue,
-          observacoes: `${solicitacaoDescricao.trim()}${solicitacaoObservacoes ? `\nObs: ${solicitacaoObservacoes.trim()}` : ''}`,
-        })
         toast.success('Solicitação registrada com sucesso!')
       }
 
       setIsAddSolicitacaoOpen(false)
       loadSolicitacoes(viewingClient.id)
-      if (!editingSolicitacaoId) {
-        loadHistory(viewingClient.id)
-      }
+      loadHistory(viewingClient.id)
 
       resetSolicitacaoForm()
     } catch (err: any) {
@@ -754,6 +743,7 @@ Obrigada,`
       await deleteSolicitacao(id)
       toast.success('Solicitação excluída')
       loadSolicitacoes(viewingClient.id)
+      loadHistory(viewingClient.id)
     } catch (err) {
       console.error(err)
       toast.error('Erro ao excluir solicitação')
