@@ -14,6 +14,7 @@ import { ImportContracts } from '@/components/ImportContracts'
 import { createCliente, updateCliente } from '@/services/clientes'
 import { createHistorico } from '@/services/historico_contratos'
 import { supabase } from '@/lib/supabase/client'
+import { QuoteDocument } from '@/components/QuoteDocument'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -64,6 +65,20 @@ export default function ContractGeneratorPage() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [autoFilled, setAutoFilled] = useState(false)
   const [isLoadingCnpj, setIsLoadingCnpj] = useState(false)
+
+  // Cotação State
+  const [quoteEmpresa, setQuoteEmpresa] = useState('')
+  const [quoteContato, setQuoteContato] = useState('')
+  const [selectedProspectId, setSelectedProspectId] = useState<string>('novo')
+  const [prospects, setProspects] = useState<any[]>([])
+
+  useEffect(() => {
+    const fetchProspects = async () => {
+      const { data } = await supabase.from('crm_prospects').select('id, empresa, contato_nome')
+      if (data) setProspects(data)
+    }
+    fetchProspects()
+  }, [])
 
   useEffect(() => {
     if (initialCnpj && initialCnpj.replace(/\D/g, '').length === 14) {
@@ -116,6 +131,27 @@ export default function ContractGeneratorPage() {
     selectedPlan,
     selectedModules,
     planData,
+    planPrice,
+    modulesPrice,
+    totalValue,
+    implMode,
+    implRate,
+    totalImplHours,
+    implValue,
+  }
+
+  const quoteProps = {
+    empresa: quoteEmpresa,
+    aosCuidadosDe: quoteContato,
+    date: new Date().toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    }),
+    planName: planData?.name || 'Plano Personalizado',
+    selectedModules: selectedModules
+      .map((id) => MODULES.find((m) => m.id === id)?.name)
+      .filter(Boolean) as string[],
     planPrice,
     modulesPrice,
     totalValue,
@@ -358,6 +394,56 @@ export default function ContractGeneratorPage() {
 
   const handlePrint = () => window.print()
 
+  const handleSaveQuote = async () => {
+    if (!quoteEmpresa || !quoteContato) {
+      toast({
+        title: 'Atenção',
+        description: 'Preencha a Empresa e o Contato.',
+        variant: 'destructive',
+      })
+      return
+    }
+    try {
+      let prospectId = selectedProspectId === 'novo' ? null : selectedProspectId
+      if (!prospectId) {
+        const { data, error } = await supabase
+          .from('crm_prospects')
+          .insert({
+            empresa: quoteEmpresa,
+            contato_nome: quoteContato,
+            status: 'Contato Inicial',
+          })
+          .select()
+          .single()
+        if (error) throw error
+        prospectId = data.id
+      }
+
+      const { error } = await supabase.from('crm_propostas').insert({
+        prospect_id: prospectId,
+        user_id: (await supabase.auth.getUser()).data.user?.id,
+        data_proposta: new Date().toISOString().split('T')[0],
+        aos_cuidados_de: quoteContato,
+        itens: selectedModules.map((id) => {
+          const m = MODULES.find((mod) => mod.id === id)
+          return { id, name: m?.name, price: m?.price }
+        }),
+        valor_mensalidade: totalValue,
+        valor_implantacao: implValue,
+      })
+      if (error) throw error
+
+      toast({
+        title: 'Cotação salva!',
+        description: 'A proposta foi registrada no CRM.',
+        className: 'bg-emerald-600 text-white border-none',
+      })
+      navigate('/crm')
+    } catch (err: any) {
+      toast({ title: 'Erro ao salvar cotação', description: err.message, variant: 'destructive' })
+    }
+  }
+
   const handleSaveClient = async () => {
     if (!name || !cnpj) {
       toast({
@@ -471,6 +557,7 @@ export default function ContractGeneratorPage() {
       <Tabs defaultValue="gerar" className="space-y-6 print:space-y-0">
         <TabsList className="print:hidden">
           <TabsTrigger value="gerar">Gerar Contrato</TabsTrigger>
+          <TabsTrigger value="cotacao">Gerar Cotação</TabsTrigger>
           <TabsTrigger value="importar">Importar PDFs Lote</TabsTrigger>
         </TabsList>
 
@@ -615,6 +702,7 @@ export default function ContractGeneratorPage() {
                 </CardContent>
               </Card>
 
+              {/* PLANOS E MODULOS */}
               <Card>
                 <CardHeader className="pb-4">
                   <CardTitle>2. Plano, Módulos e Implantação</CardTitle>
@@ -716,6 +804,160 @@ export default function ContractGeneratorPage() {
             </div>
           </div>
         </TabsContent>
+
+        <TabsContent value="cotacao" className="print:m-0">
+          <div className="grid lg:grid-cols-12 gap-6 items-start print:block print:w-full print:m-0 print:p-0">
+            <div className="lg:col-span-5 space-y-6 print:hidden">
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle>1. Dados do Prospect / Cliente</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Vincular a um Prospect (Opcional)</Label>
+                    <Select
+                      value={selectedProspectId}
+                      onValueChange={(val) => {
+                        setSelectedProspectId(val)
+                        if (val !== 'novo') {
+                          const p = prospects.find((p) => p.id === val)
+                          if (p) {
+                            setQuoteEmpresa(p.empresa)
+                            setQuoteContato(p.contato_nome)
+                          }
+                        } else {
+                          setQuoteEmpresa('')
+                          setQuoteContato('')
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="novo">-- Novo Prospect --</SelectItem>
+                        {prospects.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.empresa}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Empresa (Razão Social)</Label>
+                    <Input value={quoteEmpresa} onChange={(e) => setQuoteEmpresa(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Aos Cuidados de</Label>
+                    <Input value={quoteContato} onChange={(e) => setQuoteContato(e.target.value)} />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* PLANOS E MODULOS REUSED STATE */}
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle>2. Plano, Módulos e Implantação</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-3">
+                    <Label className="text-sm font-bold">Plano Base</Label>
+                    <Select value={selectedPlan} onValueChange={setSelectedPlan}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PLANS.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name} - {formatCurrency(p.price)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Separator />
+                  <div className="space-y-3">
+                    <Label className="text-sm font-bold">Módulos Adicionais</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {MODULES.map((m) => (
+                        <div
+                          key={m.id}
+                          className="flex items-center space-x-2 border p-2 rounded-lg"
+                        >
+                          <Checkbox
+                            id={`quote-${m.id}`}
+                            checked={selectedModules.includes(m.id)}
+                            onCheckedChange={(c) => handleToggleModule(m.id, c as boolean)}
+                          />
+                          <Label htmlFor={`quote-${m.id}`} className="text-xs">
+                            {m.name}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="space-y-3">
+                    <Label className="text-sm font-bold">Implantação</Label>
+                    <RadioGroup
+                      value={implMode}
+                      onValueChange={(v) => setImplMode(v as 'remoto' | 'presencial')}
+                      className="flex flex-col sm:flex-row gap-4"
+                    >
+                      <div className="flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors">
+                        <RadioGroupItem value="remoto" id="quote-remoto" />
+                        <Label
+                          htmlFor="quote-remoto"
+                          className="cursor-pointer font-medium flex-1 h-full py-1"
+                        >
+                          Remoto (R$ 130/h)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors">
+                        <RadioGroupItem value="presencial" id="quote-presencial" />
+                        <Label
+                          htmlFor="quote-presencial"
+                          className="cursor-pointer font-medium flex-1 h-full py-1"
+                        >
+                          Presencial (R$ 170/h)
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="lg:col-span-7 sticky top-6 print:static print:block print:w-full print:m-0 print:p-0">
+              <Card className="flex flex-col h-[calc(100vh-6rem)] min-h-[700px] shadow-xl border-slate-200 overflow-hidden bg-white print:h-auto print:min-h-0 print:shadow-none print:border-none">
+                <div className="flex-1 overflow-y-auto print:hidden p-1 bg-slate-100/50">
+                  <QuoteDocument {...quoteProps} />
+                </div>
+                <div className="hidden print:block">
+                  <QuoteDocument {...quoteProps} />
+                </div>
+                <CardFooter className="bg-slate-50 border-t p-4 flex flex-col sm:flex-row gap-3 justify-end shrink-0 print:hidden">
+                  <Button
+                    variant="outline"
+                    onClick={handlePrint}
+                    className="w-full sm:w-auto"
+                    disabled={!quoteEmpresa || !quoteContato}
+                  >
+                    <Printer className="mr-2 h-4 w-4" /> Imprimir / PDF
+                  </Button>
+                  <Button
+                    onClick={handleSaveQuote}
+                    className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white"
+                  >
+                    <Save className="mr-2 h-4 w-4" /> Salvar Cotação
+                  </Button>
+                </CardFooter>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
         <TabsContent value="importar">
           <ImportContracts />
         </TabsContent>
