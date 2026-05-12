@@ -45,9 +45,13 @@ export default function ContractGeneratorPage() {
   const navigate = useNavigate()
   const { toast } = useToast()
   const [searchParams] = useSearchParams()
+  const initialTab = searchParams.get('tab') || 'gerar'
   const initialProspect = searchParams.get('prospect') || ''
   const initialCnpj = searchParams.get('cnpj') || ''
+  const initialProspectId = searchParams.get('prospectId') || 'novo'
+  const initialContato = searchParams.get('contato') || ''
 
+  const [activeTab, setActiveTab] = useState(initialTab)
   const [name, setName] = useState(initialProspect)
   const [cnpj, setCnpj] = useState(initialCnpj ? formatCNPJ(initialCnpj) : '')
   const [address, setAddress] = useState('')
@@ -67,9 +71,9 @@ export default function ContractGeneratorPage() {
   const [isLoadingCnpj, setIsLoadingCnpj] = useState(false)
 
   // Cotação State
-  const [quoteEmpresa, setQuoteEmpresa] = useState('')
-  const [quoteContato, setQuoteContato] = useState('')
-  const [selectedProspectId, setSelectedProspectId] = useState<string>('novo')
+  const [quoteEmpresa, setQuoteEmpresa] = useState(initialTab === 'cotacao' ? initialProspect : '')
+  const [quoteContato, setQuoteContato] = useState(initialTab === 'cotacao' ? initialContato : '')
+  const [selectedProspectId, setSelectedProspectId] = useState<string>(initialProspectId)
   const [prospects, setProspects] = useState<any[]>([])
 
   useEffect(() => {
@@ -554,7 +558,11 @@ export default function ContractGeneratorPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="gerar" className="space-y-6 print:space-y-0">
+      <Tabs
+        value={activeTab}
+        onValueChange={(val) => setActiveTab(val)}
+        className="space-y-6 print:space-y-0"
+      >
         <TabsList className="print:hidden">
           <TabsTrigger value="gerar">Gerar Contrato</TabsTrigger>
           <TabsTrigger value="cotacao">Gerar Cotação</TabsTrigger>

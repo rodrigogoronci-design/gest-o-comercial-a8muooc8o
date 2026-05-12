@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, FileSignature, Plus, CalendarClock, BellRing, Pencil, Trash2 } from 'lucide-react'
+import {
+  Search,
+  FileSignature,
+  Plus,
+  CalendarClock,
+  BellRing,
+  Pencil,
+  Trash2,
+  FileText,
+} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
@@ -447,9 +456,24 @@ export default function CRMPage() {
                           className="h-8 gap-1 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
                           asChild
                         >
-                          <Link to={`/contratos?prospect=${encodeURIComponent(p.empresa)}`}>
+                          <Link
+                            to={`/contratos?prospect=${encodeURIComponent(p.empresa)}&cnpj=${p.cnpj ? p.cnpj.replace(/\D/g, '') : ''}`}
+                          >
                             <FileSignature className="h-4 w-4" />
                             <span className="hidden lg:inline">Gerar Contrato</span>
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 gap-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                          asChild
+                        >
+                          <Link
+                            to={`/contratos?tab=cotacao&prospectId=${p.id}&prospect=${encodeURIComponent(p.empresa)}&contato=${encodeURIComponent(p.contato_nome)}`}
+                          >
+                            <FileText className="h-4 w-4" />
+                            <span className="hidden lg:inline">Gerar Proposta</span>
                           </Link>
                         </Button>
                         <Button
