@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, FileSignature, Plus, CalendarClock, BellRing, Pencil } from 'lucide-react'
+import { Search, FileSignature, Plus, CalendarClock, BellRing, Pencil, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
@@ -35,6 +35,7 @@ import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { CrmProspectForm, ProspectFormValues } from '@/components/CrmProspectForm'
 import { CrmDiagnosticoForm } from '@/components/CrmDiagnosticoForm'
+import { CrmHistorico } from '@/components/CrmHistorico'
 
 type CrmProspect = {
   id: string
@@ -45,6 +46,7 @@ type CrmProspect = {
   telefone: string | null
   email: string | null
   status: string
+  classificacao: string | null
   data_followup: string | null
   observacoes: string | null
   ultima_interacao: string
@@ -86,6 +88,7 @@ export default function CRMPage() {
         telefone: values.telefone || null,
         email: values.email || null,
         status: values.status,
+        classificacao: values.classificacao || 'Frio',
         data_followup: values.data_followup || null,
         observacoes: values.observacoes || null,
       },
@@ -111,6 +114,7 @@ export default function CRMPage() {
         telefone: values.telefone || null,
         email: values.email || null,
         status: values.status,
+        classificacao: values.classificacao || 'Frio',
         data_followup: values.data_followup || null,
         observacoes: values.observacoes || null,
       })
@@ -124,6 +128,18 @@ export default function CRMPage() {
       })
     toast({ title: 'Sucesso', description: 'Contato atualizado com sucesso!' })
     setEditingProspect(null)
+    fetchProspects()
+  }
+
+  const handleDelete = async (id: string) => {
+    if (
+      !window.confirm('Tem certeza que deseja excluir este lead? Essa ação não pode ser desfeita.')
+    )
+      return
+    const { error } = await supabase.from('crm_prospects').delete().eq('id', id)
+    if (error)
+      return toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' })
+    toast({ title: 'Sucesso', description: 'Lead excluído com sucesso!' })
     fetchProspects()
   }
 
@@ -152,6 +168,12 @@ export default function CRMPage() {
     if (s === 'Fechado')
       return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200'
     return 'bg-slate-100 text-slate-800 border-slate-200'
+  }
+
+  const getClassificacaoColor = (c: string | null) => {
+    if (c === 'Quente') return 'bg-red-100 text-red-800 border-red-200'
+    if (c === 'Morno') return 'bg-amber-100 text-amber-800 border-amber-200'
+    return 'bg-blue-100 text-blue-800 border-blue-200'
   }
 
   const today = new Date().toISOString().split('T')[0]
@@ -255,7 +277,19 @@ export default function CRMPage() {
                 filtered.map((p) => (
                   <TableRow key={p.id} className="hover:bg-slate-50/80 transition-colors">
                     <TableCell className="font-medium text-slate-900">
-                      {p.empresa}
+                      <div className="flex items-center">
+                        {p.empresa}
+                        {p.classificacao && (
+                          <span
+                            className={cn(
+                              'ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border',
+                              getClassificacaoColor(p.classificacao),
+                            )}
+                          >
+                            {p.classificacao}
+                          </span>
+                        )}
+                      </div>
                       {p.cnpj && (
                         <span className="block text-xs text-muted-foreground mt-0.5">{p.cnpj}</span>
                       )}
@@ -331,7 +365,7 @@ export default function CRMPage() {
                         >
                           <Link to={`/contratos?prospect=${encodeURIComponent(p.empresa)}`}>
                             <FileSignature className="h-4 w-4" />
-                            <span className="hidden sm:inline">Gerar Contrato</span>
+                            <span className="hidden lg:inline">Gerar Contrato</span>
                           </Link>
                         </Button>
                         <Button
@@ -339,8 +373,18 @@ export default function CRMPage() {
                           size="icon"
                           className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
                           onClick={() => setEditingProspect(p)}
+                          title="Editar/Diagnóstico"
                         >
                           <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                          onClick={() => handleDelete(p.id)}
+                          title="Excluir"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -353,18 +397,19 @@ export default function CRMPage() {
       </Card>
 
       <Dialog open={!!editingProspect} onOpenChange={(open) => !open && setEditingProspect(null)}>
-        <DialogContent className="sm:max-w-[700px] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0">
+        <DialogContent className="sm:max-w-[800px] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0">
           <DialogHeader className="p-6 pb-4 shrink-0 border-b border-slate-100">
-            <DialogTitle>Editar Prospecto</DialogTitle>
+            <DialogTitle>Detalhes do Prospecto</DialogTitle>
             <DialogDescription>
-              Atualize as informações do lead e realize o diagnóstico operacional.
+              Atualize informações, preencha o diagnóstico e acompanhe o histórico.
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-hidden p-6 pt-4 bg-slate-50/30">
             <Tabs defaultValue="dados" className="h-full flex flex-col">
-              <TabsList className="grid w-full grid-cols-2 mb-4 shrink-0 bg-slate-100">
+              <TabsList className="grid w-full grid-cols-3 mb-4 shrink-0 bg-slate-100">
                 <TabsTrigger value="dados">Dados Básicos</TabsTrigger>
-                <TabsTrigger value="diagnostico">Diagnóstico Operacional</TabsTrigger>
+                <TabsTrigger value="diagnostico">Diagnóstico</TabsTrigger>
+                <TabsTrigger value="historico">Histórico</TabsTrigger>
               </TabsList>
 
               <TabsContent
@@ -383,6 +428,7 @@ export default function CRMPage() {
                       telefone: editingProspect.telefone || '',
                       email: editingProspect.email || '',
                       status: editingProspect.status,
+                      classificacao: editingProspect.classificacao || 'Frio',
                       data_followup: editingProspect.data_followup || '',
                       observacoes: editingProspect.observacoes || '',
                     }}
@@ -404,6 +450,13 @@ export default function CRMPage() {
                     }}
                   />
                 )}
+              </TabsContent>
+
+              <TabsContent
+                value="historico"
+                className="flex-1 overflow-y-auto pr-2 pb-4 focus-visible:outline-none"
+              >
+                {editingProspect && <CrmHistorico prospectId={editingProspect.id} />}
               </TabsContent>
             </Tabs>
           </div>

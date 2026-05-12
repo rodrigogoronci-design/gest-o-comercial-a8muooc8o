@@ -33,6 +33,7 @@ export const prospectFormSchema = z.object({
   telefone: z.string().optional(),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
   status: z.string().min(1, 'Obrigatório'),
+  classificacao: z.string().optional(),
   data_followup: z.string().optional(),
   observacoes: z.string().optional(),
 })
@@ -60,6 +61,7 @@ export function CrmProspectForm({
       telefone: '',
       email: '',
       status: 'Contato Inicial',
+      classificacao: 'Frio',
       data_followup: '',
       observacoes: '',
     },
@@ -75,6 +77,7 @@ export function CrmProspectForm({
         telefone: initialData.telefone || '',
         email: initialData.email || '',
         status: initialData.status || 'Contato Inicial',
+        classificacao: initialData.classificacao || 'Frio',
         data_followup: initialData.data_followup || '',
         observacoes: initialData.observacoes || '',
       })
@@ -306,7 +309,7 @@ export function CrmProspectForm({
             )}
           />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <FormField
             control={form.control}
             name="status"
@@ -324,6 +327,28 @@ export function CrmProspectForm({
                     <SelectItem value="Em Negociação">Em Negociação</SelectItem>
                     <SelectItem value="Aguardando Feedback">Aguardando Feedback</SelectItem>
                     <SelectItem value="Fechado">Fechado</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="classificacao"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Classificação</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value || 'Frio'}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Frio">Frio</SelectItem>
+                    <SelectItem value="Morno">Morno</SelectItem>
+                    <SelectItem value="Quente">Quente</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
