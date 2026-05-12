@@ -39,28 +39,35 @@ export default function Index() {
     clientes: [] as any[],
     leads: [] as any[],
     atividades: [] as any[],
+    eventos: [] as any[],
     isLoading: true,
   })
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [{ data: clientes }, { data: leads }, { data: atividades }] = await Promise.all([
-          supabase.from('clientes').select('id, nome, valor_total, created_at, status'),
-          supabase
-            .from('crm_prospects')
-            .select('id, empresa, contato_nome, status, data_followup, ultima_interacao'),
-          supabase
-            .from('atividades_comerciais')
-            .select('id, demanda, data_atividade, created_at, cliente_nome, clientes(nome)')
-            .order('created_at', { ascending: false })
-            .limit(10),
-        ])
+        const [{ data: clientes }, { data: leads }, { data: atividades }, { data: eventos }] =
+          await Promise.all([
+            supabase.from('clientes').select('id, nome, valor_total, created_at, status'),
+            supabase
+              .from('crm_prospects')
+              .select('id, empresa, contato_nome, status, data_followup, ultima_interacao'),
+            supabase
+              .from('atividades_comerciais')
+              .select('id, demanda, data_atividade, created_at, cliente_nome, clientes(nome)')
+              .order('created_at', { ascending: false })
+              .limit(10),
+            supabase
+              .from('agenda_eventos')
+              .select('id, titulo, data_evento, tipo, status, clientes(nome)')
+              .order('data_evento', { ascending: true }),
+          ])
 
         setDashboardData({
           clientes: clientes || [],
           leads: leads || [],
           atividades: atividades || [],
+          eventos: eventos || [],
           isLoading: false,
         })
       } catch (err) {
@@ -72,7 +79,7 @@ export default function Index() {
     fetchDashboardData()
   }, [])
 
-  const { clientes, leads, atividades, isLoading } = dashboardData
+  const { clientes, leads, atividades, eventos, isLoading } = dashboardData
 
   const totalMRR = clientes.reduce((acc, c) => acc + (Number(c.valor_total) || 0), 0)
   const activeClients = clientes.length
@@ -97,16 +104,45 @@ export default function Index() {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
+  const upcomingEventos = eventos
+    .filter((e) => e.data_evento)
+    .map((e) => ({
+      id: `evento-${e.id}`,
+      title: e.titulo,
+      subtitle: e.clientes?.nome || 'Sem cliente vinculado',
+      dateObj: new Date(e.data_evento),
+      type: e.tipo || 'Evento',
+      status: e.status,
+      isEvent: true,
+      originalDate: e.data_evento,
+    }))
+    .filter(
+      (e) =>
+        e.dateObj >= today ||
+        (e.dateObj < today && e.status !== 'Concluído' && e.status !== 'Cancelado'),
+    )
+
   const upcomingFollowups = leads
     .filter((l) => l.data_followup)
-    .map((l) => ({ ...l, dateObj: new Date(l.data_followup) }))
+    .map((l) => ({
+      id: `lead-${l.id}`,
+      title: l.empresa,
+      subtitle: l.contato_nome,
+      dateObj: new Date(l.data_followup),
+      type: 'Follow-up',
+      status: l.status,
+      isEvent: false,
+      originalDate: l.data_followup,
+    }))
     .filter(
       (l) =>
         l.dateObj >= today ||
         (l.dateObj < today && !['Fechado', 'Perdido', 'Cancelado'].includes(l.status)),
     )
+
+  const combinedUpcoming = [...upcomingEventos, ...upcomingFollowups]
     .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
-    .slice(0, 5)
+    .slice(0, 6)
 
   const funnelCounts = leads.reduce((acc: any, lead) => {
     const status = lead.status || 'Novo'
@@ -278,25 +314,45 @@ export default function Index() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-indigo-500" />
-              Próximos Follow-ups
+              Compromissos e Follow-ups
             </CardTitle>
-            <CardDescription>Ações mapeadas para breve</CardDescription>
+            <CardDescription>Agenda e ações mapeadas para breve</CardDescription>
           </CardHeader>
           <CardContent className="flex-1">
-            {upcomingFollowups.length > 0 ? (
+            {combinedUpcoming.length > 0 ? (
               <div className="space-y-4">
-                {upcomingFollowups.map((lead) => {
-                  const isOverdue = lead.dateObj < today
+                {combinedUpcoming.map((item) => {
+                  const isOverdue = item.dateObj < today
                   return (
                     <div
-                      key={lead.id}
+                      key={item.id}
                       className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0 hover:bg-slate-50/50 p-2 -mx-2 rounded-md transition-colors"
                     >
-                      <div>
-                        <p className="text-sm font-medium text-slate-800">{lead.empresa}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{lead.contato_nome}</p>
+                      <div className="flex gap-3 items-center">
+                        <div
+                          className={cn(
+                            'flex items-center justify-center h-8 w-8 rounded-full border shrink-0',
+                            item.isEvent
+                              ? 'bg-indigo-50 text-indigo-600 border-indigo-100'
+                              : 'bg-amber-50 text-amber-600 border-amber-100',
+                          )}
+                        >
+                          {item.isEvent ? (
+                            <Calendar className="h-4 w-4" />
+                          ) : (
+                            <Target className="h-4 w-4" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-800 line-clamp-1">
+                            {item.title}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                            {item.subtitle}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right shrink-0 ml-2">
                         <span
                           className={cn(
                             'px-2 py-1 rounded-full text-[10px] font-medium inline-flex items-center gap-1',
@@ -306,18 +362,20 @@ export default function Index() {
                           )}
                         >
                           {isOverdue && <AlertCircle className="h-3 w-3" />}
-                          {formatDt(lead.data_followup)}
+                          {formatDt(item.originalDate)}
                         </span>
-                        <p className="text-[10px] text-slate-400 mt-1.5">{lead.status}</p>
+                        <p className="text-[10px] text-slate-400 mt-1.5">
+                          {item.type} {item.status ? `• ${item.status}` : ''}
+                        </p>
                       </div>
                     </div>
                   )
                 })}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+              <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground min-h-[200px]">
                 <Calendar className="h-10 w-10 text-slate-200 mb-3" />
-                <p>Nenhum follow-up programado.</p>
+                <p>Nenhum compromisso ou follow-up programado.</p>
               </div>
             )}
           </CardContent>
