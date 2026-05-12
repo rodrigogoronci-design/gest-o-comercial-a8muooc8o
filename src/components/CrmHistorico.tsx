@@ -62,6 +62,14 @@ export function CrmHistorico({ prospectId }: { prospectId: string }) {
         detalhes: detalhes || null,
       },
     ])
+
+    if (!error) {
+      await supabase
+        .from('crm_prospects')
+        .update({ ultima_interacao: new Date().toISOString() })
+        .eq('id', prospectId)
+    }
+
     setIsSubmitting(false)
 
     if (error) {

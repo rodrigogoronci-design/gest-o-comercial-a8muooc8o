@@ -349,6 +349,7 @@ export function CrmProspectForm({
                     <SelectItem value="Frio">Frio</SelectItem>
                     <SelectItem value="Morno">Morno</SelectItem>
                     <SelectItem value="Quente">Quente</SelectItem>
+                    <SelectItem value="Muito Quente">Muito Quente</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

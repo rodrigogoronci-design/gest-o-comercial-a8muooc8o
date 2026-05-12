@@ -152,6 +152,15 @@ export default function CRMPage() {
     fetchProspects()
   }
 
+  const updateClassificacao = async (id: string, newClassificacao: string) => {
+    const { error } = await supabase
+      .from('crm_prospects')
+      .update({ classificacao: newClassificacao, ultima_interacao: new Date().toISOString() })
+      .eq('id', id)
+    if (error) return toast({ title: 'Erro', description: error.message, variant: 'destructive' })
+    fetchProspects()
+  }
+
   const filtered = prospects.filter(
     (p) =>
       p.empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -171,6 +180,7 @@ export default function CRMPage() {
   }
 
   const getClassificacaoColor = (c: string | null) => {
+    if (c === 'Muito Quente') return 'bg-red-500 text-white border-red-600'
     if (c === 'Quente') return 'bg-red-100 text-red-800 border-red-200'
     if (c === 'Morno') return 'bg-amber-100 text-amber-800 border-amber-200'
     return 'bg-blue-100 text-blue-800 border-blue-200'
@@ -252,10 +262,10 @@ export default function CRMPage() {
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow>
-                <TableHead className="w-[300px]">Empresa</TableHead>
+                <TableHead className="w-[280px]">Empresa</TableHead>
                 <TableHead>Contato</TableHead>
                 <TableHead>Follow-up</TableHead>
-                <TableHead>Última Interação</TableHead>
+                <TableHead>Classificação</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -277,42 +287,32 @@ export default function CRMPage() {
                 filtered.map((p) => (
                   <TableRow key={p.id} className="hover:bg-slate-50/80 transition-colors">
                     <TableCell className="font-medium text-slate-900">
-                      <div className="flex items-center">
-                        {p.empresa}
-                        {p.classificacao && (
-                          <span
-                            className={cn(
-                              'ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border',
-                              getClassificacaoColor(p.classificacao),
-                            )}
-                          >
-                            {p.classificacao}
-                          </span>
+                      <div className="flex flex-col">
+                        <span>{p.empresa}</span>
+                        {p.cnpj && (
+                          <span className="text-xs text-muted-foreground mt-0.5">{p.cnpj}</span>
+                        )}
+                        {p.tags && p.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {p.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
                         )}
                       </div>
-                      {p.cnpj && (
-                        <span className="block text-xs text-muted-foreground mt-0.5">{p.cnpj}</span>
-                      )}
-                      {p.tags && p.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1.5">
-                          {p.tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
                     </TableCell>
                     <TableCell>
-                      {p.contato_nome}
-                      {p.telefone && (
-                        <span className="block text-xs text-muted-foreground mt-0.5">
-                          {p.telefone}
-                        </span>
-                      )}
+                      <div className="flex flex-col">
+                        <span>{p.contato_nome}</span>
+                        {p.telefone && (
+                          <span className="text-xs text-muted-foreground mt-0.5">{p.telefone}</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {p.data_followup ? (
@@ -330,9 +330,33 @@ export default function CRMPage() {
                       ) : (
                         <span className="text-xs text-muted-foreground">-</span>
                       )}
+                      <div
+                        className="text-[10px] text-muted-foreground mt-1"
+                        title="Última Interação"
+                      >
+                        Int: {formatDate(p.ultima_interacao)}
+                      </div>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {formatDate(p.ultima_interacao)}
+                    <TableCell>
+                      <Select
+                        defaultValue={p.classificacao || 'Frio'}
+                        onValueChange={(val) => updateClassificacao(p.id, val)}
+                      >
+                        <SelectTrigger
+                          className={cn(
+                            'h-8 w-[120px] border rounded-full text-xs font-semibold px-3',
+                            getClassificacaoColor(p.classificacao),
+                          )}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Frio">Frio</SelectItem>
+                          <SelectItem value="Morno">Morno</SelectItem>
+                          <SelectItem value="Quente">Quente</SelectItem>
+                          <SelectItem value="Muito Quente">Muito Quente</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>
                       <Select
