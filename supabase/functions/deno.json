@@ -1,8 +1,8 @@
 {
   "_versions": {
     "manage-user": 21,
-    "parse-pdf": 9,
+    "parse-pdf": 10,
     "parse-receipt-pdf": 2,
-    "send-finance-email": 1
+    "send-finance-email": 2
   }
 }
