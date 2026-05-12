@@ -104,6 +104,12 @@ export default function CRMPage() {
   const onEditSubmit = async (values: ProspectFormValues) => {
     if (!editingProspect) return
     setIsSubmitting(true)
+
+    const statusChanged = editingProspect.status !== values.status
+    const classifChanged =
+      editingProspect.classificacao !== values.classificacao &&
+      (editingProspect.classificacao || 'Frio') !== (values.classificacao || 'Frio')
+
     const { error } = await supabase
       .from('crm_prospects')
       .update({
@@ -117,8 +123,36 @@ export default function CRMPage() {
         classificacao: values.classificacao || 'Frio',
         data_followup: values.data_followup || null,
         observacoes: values.observacoes || null,
+        ultima_interacao:
+          statusChanged || classifChanged
+            ? new Date().toISOString()
+            : editingProspect.ultima_interacao,
       })
       .eq('id', editingProspect.id)
+
+    if (!error) {
+      if (statusChanged) {
+        await supabase.from('crm_historico_interacoes').insert([
+          {
+            prospect_id: editingProspect.id,
+            tipo_contato: 'Sistema',
+            resumo: `Mudança de Fase: ${values.status}`,
+            detalhes: `Lead movido da fase "${editingProspect.status}" para "${values.status}".`,
+          },
+        ])
+      }
+      if (classifChanged) {
+        await supabase.from('crm_historico_interacoes').insert([
+          {
+            prospect_id: editingProspect.id,
+            tipo_contato: 'Sistema',
+            resumo: `Classificação atualizada: ${values.classificacao || 'Frio'}`,
+            detalhes: `Classificação do lead alterada de "${editingProspect.classificacao || 'Frio'}" para "${values.classificacao || 'Frio'}".`,
+          },
+        ])
+      }
+    }
+
     setIsSubmitting(false)
     if (error)
       return toast({
@@ -143,21 +177,47 @@ export default function CRMPage() {
     fetchProspects()
   }
 
-  const updateStatus = async (id: string, newStatus: string) => {
+  const updateStatus = async (id: string, newStatus: string, oldStatus: string) => {
+    if (newStatus === oldStatus) return
     const { error } = await supabase
       .from('crm_prospects')
       .update({ status: newStatus, ultima_interacao: new Date().toISOString() })
       .eq('id', id)
     if (error) return toast({ title: 'Erro', description: error.message, variant: 'destructive' })
+
+    await supabase.from('crm_historico_interacoes').insert([
+      {
+        prospect_id: id,
+        tipo_contato: 'Sistema',
+        resumo: `Mudança de Fase: ${newStatus}`,
+        detalhes: `Lead movido da fase "${oldStatus}" para "${newStatus}".`,
+      },
+    ])
+
     fetchProspects()
   }
 
-  const updateClassificacao = async (id: string, newClassificacao: string) => {
+  const updateClassificacao = async (
+    id: string,
+    newClassificacao: string,
+    oldClassificacao: string | null,
+  ) => {
+    if (newClassificacao === oldClassificacao) return
     const { error } = await supabase
       .from('crm_prospects')
       .update({ classificacao: newClassificacao, ultima_interacao: new Date().toISOString() })
       .eq('id', id)
     if (error) return toast({ title: 'Erro', description: error.message, variant: 'destructive' })
+
+    await supabase.from('crm_historico_interacoes').insert([
+      {
+        prospect_id: id,
+        tipo_contato: 'Sistema',
+        resumo: `Classificação atualizada: ${newClassificacao}`,
+        detalhes: `Classificação do lead alterada de "${oldClassificacao || 'N/A'}" para "${newClassificacao}".`,
+      },
+    ])
+
     fetchProspects()
   }
 
@@ -340,7 +400,7 @@ export default function CRMPage() {
                     <TableCell>
                       <Select
                         defaultValue={p.classificacao || 'Frio'}
-                        onValueChange={(val) => updateClassificacao(p.id, val)}
+                        onValueChange={(val) => updateClassificacao(p.id, val, p.classificacao)}
                       >
                         <SelectTrigger
                           className={cn(
@@ -361,7 +421,7 @@ export default function CRMPage() {
                     <TableCell>
                       <Select
                         defaultValue={p.status}
-                        onValueChange={(val) => updateStatus(p.id, val)}
+                        onValueChange={(val) => updateStatus(p.id, val, p.status)}
                       >
                         <SelectTrigger
                           className={cn(
