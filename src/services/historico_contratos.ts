@@ -20,3 +20,20 @@ export const createHistorico = async (payload: any) => {
   if (error) throw error
   return data
 }
+
+export const deleteHistorico = async (id: string) => {
+  const { error } = await supabase.from('historico_contratos').delete().eq('id', id)
+  if (error) throw error
+  return true
+}
+
+export const updateHistorico = async (id: string, payload: any) => {
+  const { data, error } = await supabase
+    .from('historico_contratos')
+    .update(payload)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}

@@ -259,7 +259,7 @@ export function CrmHistorico({ prospectId }: { prospectId: string }) {
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       {h.tipo_contato !== 'Sistema' && (
                         <button
                           type="button"
