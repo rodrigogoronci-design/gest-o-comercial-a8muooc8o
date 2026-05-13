@@ -212,6 +212,14 @@ const TRAINING_FEATURES: Record<string, string[]> = {
   ],
 }
 
+type FilialDetalhe = {
+  id: string
+  nome: string
+  cnpj: string
+  dfe_incluso: boolean
+  valor_mensalidade: number
+}
+
 type MergedClient = {
   id: string
   name: string
@@ -225,6 +233,7 @@ type MergedClient = {
   modules: ModuleItem[]
   plano_base?: string
   filiais?: number
+  filiais_detalhes?: FilialDetalhe[]
   totalValue: number
   createdAt: string
   isMock?: boolean
@@ -286,6 +295,14 @@ export default function ClientsPage() {
   const [viewingAddendum, setViewingAddendum] = useState<any>(null)
 
   const [clientToDelete, setClientToDelete] = useState<MergedClient | null>(null)
+
+  const [isAddFilialOpen, setIsAddFilialOpen] = useState(false)
+  const [filialForm, setFilialForm] = useState({
+    nome: '',
+    cnpj: '',
+    dfe_incluso: false,
+    valor_mensalidade: 199.0,
+  })
 
   const [solicitacoes, setSolicitacoes] = useState<any[]>([])
   const [isLoadingSolicitacoes, setIsLoadingSolicitacoes] = useState(false)
@@ -750,6 +767,84 @@ Obrigada,`
     } catch (error) {
       console.error(error)
       toast.error('Erro ao excluir cliente')
+    }
+  }
+
+  const handleSaveFilial = async () => {
+    if (!viewingClient) return
+    setIsSubmittingAditivo(true)
+    try {
+      let currentModulosRaw = viewingClient.originalData?.modulos || {
+        plano_base: viewingClient.plano_base,
+        filiais: viewingClient.filiais,
+        adicionais: viewingClient.modules,
+      }
+
+      if (Array.isArray(currentModulosRaw)) {
+        currentModulosRaw = {
+          plano_base: viewingClient.plano_base,
+          filiais: viewingClient.filiais,
+          adicionais: currentModulosRaw,
+        }
+      }
+
+      const currentFiliaisDet = currentModulosRaw.filiais_detalhes || []
+
+      const novaFilial = {
+        id: crypto.randomUUID(),
+        nome: filialForm.nome,
+        cnpj: filialForm.cnpj,
+        dfe_incluso: filialForm.dfe_incluso,
+        valor_mensalidade: filialForm.valor_mensalidade,
+      }
+
+      const updatedModulos = {
+        ...currentModulosRaw,
+        filiais_detalhes: [...currentFiliaisDet, novaFilial],
+      }
+
+      const novoValorTotal = viewingClient.totalValue + filialForm.valor_mensalidade
+
+      await updateCliente(viewingClient.id, {
+        modulos: updatedModulos,
+        valor_total: novoValorTotal,
+      })
+
+      await createHistorico({
+        cliente_id: viewingClient.id,
+        tipo: 'Aditivo de Filial',
+        data_solicitacao: new Date().toISOString().split('T')[0],
+        observacoes: `Adição de Filial: ${novaFilial.nome} (CNPJ: ${novaFilial.cnpj}). DF-e: ${novaFilial.dfe_incluso ? 'Sim' : 'Não'}`,
+        valor_adicional: filialForm.valor_mensalidade,
+        valor_total: novoValorTotal,
+      })
+
+      toast.success('Filial adicionada com sucesso e aditivo gerado!')
+      setIsAddFilialOpen(false)
+      setFilialForm({ nome: '', cnpj: '', dfe_incluso: false, valor_mensalidade: 199.0 })
+
+      loadClientes()
+      loadHistory(viewingClient.id)
+
+      setViewingClient((prev) =>
+        prev
+          ? {
+              ...prev,
+              totalValue: novoValorTotal,
+              filiais_detalhes: [...(prev.filiais_detalhes || []), novaFilial],
+              originalData: {
+                ...prev.originalData!,
+                modulos: updatedModulos,
+                valor_total: novoValorTotal,
+              },
+            }
+          : null,
+      )
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao salvar filial')
+    } finally {
+      setIsSubmittingAditivo(false)
     }
   }
 
@@ -1444,6 +1539,7 @@ Obrigada.`)
       let parsedModules: ModuleItem[] = []
       let plano_base = ''
       let filiais = 0
+      let filiais_detalhes: FilialDetalhe[] = []
 
       const formatMod = (m: any): ModuleItem | null => {
         if (!m) return null
@@ -1475,6 +1571,7 @@ Obrigada.`)
         parsedModules = (modObj.adicionais || []).map(formatMod).filter(Boolean) as ModuleItem[]
         plano_base = modObj.plano_base || ''
         filiais = modObj.filiais || 0
+        filiais_detalhes = modObj.filiais_detalhes || []
       }
 
       return {
@@ -1490,6 +1587,7 @@ Obrigada.`)
         modules: parsedModules,
         plano_base,
         filiais,
+        filiais_detalhes,
         totalValue: c.valor_total || 0,
         createdAt: c.created_at,
         isMock: false,
@@ -1628,6 +1726,42 @@ Obrigada.`)
                   </div>
                 )}
 
+              {client.filiais_detalhes && client.filiais_detalhes.length > 0 && (
+                <div className="mt-4">
+                  <span className="text-xs font-bold text-slate-400 uppercase mb-2 block">
+                    Filiais Detalhadas
+                  </span>
+                  <div className="space-y-2">
+                    {client.filiais_detalhes.map((filial, idx) => (
+                      <div
+                        key={idx}
+                        className="flex justify-between items-center bg-slate-50 border border-slate-200 p-3 rounded-md"
+                      >
+                        <div>
+                          <span className="font-medium text-sm text-slate-700 block">
+                            {filial.nome}
+                          </span>
+                          <span className="text-xs text-slate-500 font-mono flex items-center gap-2">
+                            {formatCNPJ(filial.cnpj)}
+                            {filial.dfe_incluso && (
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] py-0 px-1.5 h-4 bg-indigo-50 text-indigo-700 border-indigo-200"
+                              >
+                                DF-e Incluso
+                              </Badge>
+                            )}
+                          </span>
+                        </div>
+                        <span className="text-sm font-semibold text-slate-600">
+                          {formatCurrency(filial.valor_mensalidade)}/mês
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {client.cobrancas && client.cobrancas.length > 0 && (
                 <div className="mt-4">
                   <span className="text-xs font-bold text-slate-400 uppercase mb-2 block">
@@ -1670,17 +1804,27 @@ Obrigada.`)
 
         {/* Histórico / Evolução */}
         <div>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
             <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
               Histórico & Aditivos
             </h4>
-            <Button
-              size="sm"
-              onClick={() => setIsAddModuleOpen(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 shadow-sm"
-            >
-              <Plus className="h-4 w-4 mr-1.5" /> Adicionar Módulo
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsAddFilialOpen(true)}
+                className="bg-white hover:bg-slate-50 shadow-sm"
+              >
+                <Building2 className="h-4 w-4 mr-1.5" /> Adicionar Filial
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setIsAddModuleOpen(true)}
+                className="bg-indigo-600 hover:bg-indigo-700 shadow-sm"
+              >
+                <Plus className="h-4 w-4 mr-1.5" /> Adicionar Módulo
+              </Button>
+            </div>
           </div>
 
           <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
@@ -2054,6 +2198,107 @@ Obrigada.`)
             >
               {isSubmittingAditivo ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Confirmar Aditivo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Adicionar Filial Dialog */}
+      <Dialog open={isAddFilialOpen} onOpenChange={setIsAddFilialOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Adicionar Nova Filial</DialogTitle>
+            <DialogDescription>
+              Cadastre uma nova filial para este cliente e configure a cobrança, incluindo DF-e se
+              necessário. Um Aditivo será gerado.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>CNPJ da Filial</Label>
+              <Input
+                placeholder="00.000.000/0000-00"
+                value={filialForm.cnpj}
+                onChange={(e) => {
+                  const formatted = formatCNPJ(e.target.value)
+                  setFilialForm((prev) => ({ ...prev, cnpj: formatted }))
+
+                  const clean = formatted.replace(/\D/g, '')
+                  if (clean.length === 14 && !filialForm.nome) {
+                    fetch(`https://brasilapi.com.br/api/cnpj/v1/${clean}`)
+                      .then((res) => res.json())
+                      .then((data) => {
+                        if (data.razao_social) {
+                          setFilialForm((prev) => ({ ...prev, nome: data.razao_social }))
+                          toast.success('Razão Social preenchida via Receita Federal.')
+                        }
+                      })
+                      .catch(() => {})
+                  }
+                }}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Razão Social / Nome da Filial</Label>
+              <Input
+                placeholder="Nome da Filial"
+                value={filialForm.nome}
+                onChange={(e) => setFilialForm((prev) => ({ ...prev, nome: e.target.value }))}
+              />
+            </div>
+
+            <div className="flex items-center space-x-3 bg-slate-50 p-3 rounded-md border border-slate-200">
+              <Checkbox
+                id="dfe-incluso"
+                checked={filialForm.dfe_incluso}
+                onCheckedChange={(c) => {
+                  const checked = !!c
+                  setFilialForm((prev) => ({
+                    ...prev,
+                    dfe_incluso: checked,
+                    valor_mensalidade: checked
+                      ? prev.valor_mensalidade + 49.9
+                      : prev.valor_mensalidade - 49.9,
+                  }))
+                }}
+              />
+              <div className="flex-1">
+                <Label htmlFor="dfe-incluso" className="font-medium cursor-pointer">
+                  Incluir DF-e para esta Filial?
+                </Label>
+                <p className="text-xs text-slate-500">
+                  Adiciona o valor do DF-e na mensalidade da filial.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Valor da Mensalidade (Filial) - R$</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={filialForm.valor_mensalidade}
+                onChange={(e) =>
+                  setFilialForm((prev) => ({
+                    ...prev,
+                    valor_mensalidade: parseFloat(e.target.value) || 0,
+                  }))
+                }
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddFilialOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveFilial}
+              disabled={!filialForm.cnpj || !filialForm.nome || isSubmittingAditivo}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              {isSubmittingAditivo ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Confirmar e Gerar Aditivo
             </Button>
           </DialogFooter>
         </DialogContent>
