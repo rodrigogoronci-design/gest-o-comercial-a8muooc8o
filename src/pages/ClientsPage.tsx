@@ -345,6 +345,119 @@ export default function ClientsPage() {
   )
   const [emailBody, setEmailBody] = useState('')
 
+  const handleRemoveModule = async (moduleToRemove: ModuleItem) => {
+    if (!viewingClient) return
+    if (!confirm('Tem certeza que deseja remover "' + moduleToRemove.name + '"?')) return
+
+    try {
+      let currentModulosRaw = viewingClient.originalData?.modulos || {
+        plano_base: viewingClient.plano_base,
+        filiais: viewingClient.filiais,
+        adicionais: viewingClient.modules,
+      }
+
+      if (Array.isArray(currentModulosRaw)) {
+        currentModulosRaw = {
+          plano_base: viewingClient.plano_base,
+          filiais: viewingClient.filiais,
+          adicionais: currentModulosRaw,
+        }
+      }
+
+      let updatedAdicionais = [...(currentModulosRaw.adicionais || [])]
+      let updatedFiliaisDet = [...(currentModulosRaw.filiais_detalhes || [])]
+
+      let priceToDeduct = moduleToRemove.price
+      let extractedCnpj = ''
+      const isFilial = moduleToRemove.name.startsWith('Filial: ')
+
+      if (isFilial) {
+        const cnpjMatch = moduleToRemove.name.match(/\(([\d.\-/]+)\)/)
+        if (cnpjMatch && cnpjMatch[1]) {
+          extractedCnpj = cnpjMatch[1].replace(/\D/g, '')
+
+          const filialToRemove = updatedFiliaisDet.find(
+            (f: any) => f.cnpj.replace(/\D/g, '') === extractedCnpj,
+          )
+
+          if (filialToRemove) {
+            if (filialToRemove.dfe_incluso) {
+              const dfeName = 'DF-e (Filial: ' + filialToRemove.nome + ')'
+              const dfeMod = updatedAdicionais.find(
+                (m: any) => (typeof m === 'string' ? m : m.name) === dfeName,
+              )
+              if (dfeMod) {
+                priceToDeduct +=
+                  (typeof dfeMod === 'string' ? 0 : dfeMod.price) || filialToRemove.valor_dfe || 0
+              }
+              updatedAdicionais = updatedAdicionais.filter(
+                (m: any) => (typeof m === 'string' ? m : m.name) !== dfeName,
+              )
+            }
+          }
+
+          updatedFiliaisDet = updatedFiliaisDet.filter(
+            (f: any) => f.cnpj.replace(/\D/g, '') !== extractedCnpj,
+          )
+        }
+      }
+
+      updatedAdicionais = updatedAdicionais.filter((m: any) => {
+        const name = typeof m === 'string' ? m : m.name
+        return name !== moduleToRemove.name
+      })
+
+      const updatedModulos = {
+        ...currentModulosRaw,
+        adicionais: updatedAdicionais,
+        filiais_detalhes: updatedFiliaisDet,
+      }
+
+      let novoValorTotal = viewingClient.totalValue - priceToDeduct
+      if (novoValorTotal < 0) novoValorTotal = 0
+
+      await updateCliente(viewingClient.id, {
+        modulos: updatedModulos,
+        valor_total: novoValorTotal,
+      })
+
+      await createHistorico({
+        cliente_id: viewingClient.id,
+        tipo: 'Remoção de Item',
+        data_solicitacao: new Date().toISOString().split('T')[0],
+        observacoes: 'Remoção manual do item: ' + moduleToRemove.name,
+        valor_adicional: -priceToDeduct,
+        valor_total: novoValorTotal,
+      })
+
+      toast.success('Item removido com sucesso!')
+
+      loadClientes()
+      loadHistory(viewingClient.id)
+
+      const parsedModules = viewingClient.modules.filter((m) => {
+        if (m.name === moduleToRemove.name) return false
+        if (isFilial && m.name.includes(extractedCnpj) && m.name.startsWith('DF-e')) return false
+        return true
+      })
+
+      setViewingClient({
+        ...viewingClient,
+        modules: parsedModules,
+        filiais_detalhes: updatedFiliaisDet,
+        totalValue: novoValorTotal,
+        originalData: {
+          ...viewingClient.originalData!,
+          modulos: updatedModulos,
+          valor_total: novoValorTotal,
+        },
+      })
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao remover o item')
+    }
+  }
+
   const [isImporting, setIsImporting] = useState(false)
   const [isLoadingCnpj, setIsLoadingCnpj] = useState(false)
   const [isUploadingDocs, setIsUploadingDocs] = useState(false)
@@ -1886,7 +1999,7 @@ Obrigada.`)
                     {client.modules.map((mod, idx) => (
                       <div
                         key={`${mod.name}-${idx}`}
-                        className="flex justify-between items-center bg-white border border-slate-200 p-2.5 rounded-md"
+                        className="flex justify-between items-center bg-white border border-slate-200 p-2.5 rounded-md group/mod"
                       >
                         <div className="flex items-center gap-2 overflow-hidden mr-2">
                           <div
@@ -1902,9 +2015,20 @@ Obrigada.`)
                             {mod.name}
                           </span>
                         </div>
-                        <span className="text-xs text-slate-500 whitespace-nowrap shrink-0">
-                          {mod.price > 0 ? formatCurrency(mod.price) : 'Incluso'}
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-slate-500 whitespace-nowrap shrink-0">
+                            {mod.price > 0 ? formatCurrency(mod.price) : 'Incluso'}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-slate-400 hover:text-red-600 opacity-0 group-hover/mod:opacity-100 transition-opacity ml-1"
+                            onClick={() => handleRemoveModule(mod)}
+                            title="Remover Item"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
