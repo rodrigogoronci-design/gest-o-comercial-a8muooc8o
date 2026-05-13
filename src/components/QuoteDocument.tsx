@@ -68,79 +68,68 @@ export function QuoteDocument({
   implValue,
 }: QuoteDocumentProps) {
   return (
-    <div className="bg-white w-full max-w-[210mm] mx-auto print:m-0 print:p-0 text-slate-800 text-sm shadow-sm print:shadow-none font-sans">
-      {/* PAGE 1 */}
-      <div
-        className="break-after-page min-h-[297mm] p-12 relative flex flex-col bg-[#eef2f6] print:bg-[#eef2f6] print:break-after-page"
-        style={
-          { WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' } as React.CSSProperties
-        }
-      >
-        {/* Background shape */}
-        <div className="absolute top-0 right-0 w-2/3 h-full bg-[#d0dbe7] rounded-l-[100%] opacity-50 pointer-events-none" />
-
-        {/* Header */}
-        <div className="flex items-center gap-6 mt-12 mb-32 relative z-10">
-          <img src={logoUrl} alt="Service Logic" className="h-24 object-contain shrink-0" />
-          <div>
-            <div className="text-xs text-slate-600 leading-tight space-y-0.5 mt-2">
-              <p>SERVICE LOGIC, CNPJ: 10.929.600/0001-92</p>
-              <p>ENDEREÇO: Avenida Central, 1439 CEP: 29165-130, Serra-ES</p>
-              <p>CONTATO: (27) 99879-6306 / comercial@servicelogic.com.br</p>
-            </div>
+    <div
+      className="bg-white w-full max-w-[210mm] mx-auto p-6 md:p-10 print:m-0 print:p-8 text-slate-800 text-sm shadow-sm print:shadow-none font-sans"
+      id="quote-proposal-print"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between gap-6 mb-6">
+        <div className="flex items-center gap-4">
+          <img src={logoUrl} alt="Service Logic" className="h-14 object-contain shrink-0" />
+          <div className="text-[10px] text-slate-500 leading-tight space-y-0.5 border-l border-slate-200 pl-4">
+            <p className="font-semibold text-slate-700">SERVICE LOGIC SOLUÇÕES EM TECNOLOGIA</p>
+            <p>CNPJ: 10.929.600/0001-92</p>
+            <p>Avenida Central, 1439 CEP: 29165-130, Serra-ES</p>
+            <p>(27) 2141-0107 / comercial@servicelogic.com.br</p>
           </div>
-        </div>
-
-        {/* Title */}
-        <div className="relative z-10 border-l-[6px] border-orange-500 pl-8 mb-20">
-          <h1 className="text-[3.5rem] font-bold text-[#1e3a8a] leading-tight">
-            Proposta <br /> Comercial
-          </h1>
-        </div>
-
-        {/* Info */}
-        <div className="relative z-10 space-y-6 text-2xl font-bold text-[#1e3a8a] mb-32">
-          <p>{date}</p>
-          <p>{planName}</p>
-        </div>
-
-        {/* Client */}
-        <div className="relative z-10 space-y-4 text-xl font-semibold text-[#1e3a8a] border-l-[4px] border-[#1e3a8a] pl-6 mt-auto mb-12">
-          <p>Empresa: {empresa || '_________________________'}</p>
-          <p>Aos Cuidados de: {aosCuidadosDe || '_________________________'}</p>
         </div>
       </div>
 
-      {/* PAGE 2 */}
-      <div
-        className="break-after-page min-h-[297mm] p-12 bg-[#f8fafc] print:bg-[#f8fafc] print:break-after-page flex flex-col"
-        style={
-          { WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' } as React.CSSProperties
-        }
-      >
-        <div className="flex items-center gap-4 mb-12 shrink-0">
-          <div className="w-2 h-12 bg-orange-500 rounded-full" />
-          <h2 className="text-4xl font-bold text-[#1e3a8a]">
-            Conheça + <br /> Funcionalidades
-          </h2>
-          <div className="ml-auto flex items-center">
-            <img src={logoUrl} alt="Service Logic" className="h-10 object-contain" />
-          </div>
+      {/* Title & Client Info */}
+      <div className="flex justify-between items-end border-b-2 border-orange-500 pb-2 mb-4">
+        <div>
+          <h1 className="text-xl font-bold uppercase tracking-wider text-[#1e3a8a]">
+            Proposta Comercial
+          </h1>
+          <p className="text-sm font-semibold text-slate-600 mt-1">{planName}</p>
         </div>
+        <div className="text-right text-xs">
+          <p>
+            <strong>Data:</strong> {date}
+          </p>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-6 flex-1">
+      <div className="flex gap-4 mb-6 bg-slate-50 p-3 rounded border border-slate-200 text-xs">
+        <div className="flex-1">
+          <span className="block text-slate-500 mb-0.5">Empresa</span>
+          <strong className="text-slate-900 text-sm">{empresa || 'Não informado'}</strong>
+        </div>
+        <div className="flex-1">
+          <span className="block text-slate-500 mb-0.5">Aos Cuidados de</span>
+          <strong className="text-slate-900 text-sm">{aosCuidadosDe || 'Não informado'}</strong>
+        </div>
+      </div>
+
+      {/* Features */}
+      <div className="mb-6">
+        <h3 className="font-bold text-sm text-[#1e3a8a] mb-3 flex items-center gap-2">
+          <div className="w-1.5 h-4 bg-orange-500 rounded-full" />
+          Funcionalidades Inclusas no Plano
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {FEATURE_CATEGORIES.map((cat, i) => (
-            <div
-              key={i}
-              className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col"
-            >
-              <h3 className="text-lg font-bold text-slate-800 mb-4 text-center border-b pb-2">
+            <div key={i} className="bg-white p-2.5 rounded border border-slate-200 shadow-sm">
+              <h4 className="font-bold text-slate-800 text-xs mb-1.5 pb-1 border-b border-slate-100">
                 {cat.title}
-              </h3>
-              <ul className="space-y-2 flex-1">
+              </h4>
+              <ul className="space-y-1">
                 {cat.items.map((item, j) => (
-                  <li key={j} className="flex items-start gap-2 text-xs text-slate-600 font-medium">
-                    <span className="text-emerald-500 font-bold shrink-0">√</span>
+                  <li
+                    key={j}
+                    className="flex items-start gap-1.5 text-[10px] text-slate-600 leading-tight"
+                  >
+                    <span className="text-emerald-500 font-bold shrink-0">✓</span>
                     {item}
                   </li>
                 ))}
@@ -148,120 +137,103 @@ export function QuoteDocument({
             </div>
           ))}
         </div>
-
-        <div className="mt-12 flex items-center justify-center gap-6 font-bold text-sm bg-white p-4 rounded-xl border border-slate-100 shrink-0">
-          <div className="flex items-center gap-2 text-emerald-600">
-            <span className="text-xl">√</span> Incluso
-          </div>
-          <div className="flex items-center gap-2 text-rose-500">
-            <span className="text-xl">X</span> Não Incluso
-          </div>
-        </div>
       </div>
 
-      {/* PAGE 3 */}
-      <div
-        className="break-after-page min-h-[297mm] p-12 bg-[#f8fafc] print:bg-[#f8fafc] print:break-after-page"
-        style={
-          { WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' } as React.CSSProperties
-        }
-      >
-        <div className="flex items-center gap-4 mb-12">
-          <div className="w-2 h-12 bg-orange-500 rounded-full" />
-          <h2 className="text-4xl font-bold text-[#1e3a8a]">Proposta Detalhada</h2>
-          <div className="ml-auto flex items-center">
-            <img src={logoUrl} alt="Service Logic" className="h-10 object-contain" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 mb-16">
-          <table className="w-full text-left">
-            <thead className="bg-[#e2e8f0] text-slate-700 font-bold text-sm">
+      {/* Investment Details */}
+      <div className="mb-6">
+        <h3 className="font-bold text-sm text-[#1e3a8a] mb-3 flex items-center gap-2">
+          <div className="w-1.5 h-4 bg-orange-500 rounded-full" />
+          Investimento Detalhado
+        </h3>
+        <div className="bg-white rounded overflow-hidden border border-slate-200 shadow-sm">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50 text-slate-700 font-bold">
               <tr>
-                <th className="p-4">Descrição do Produto</th>
-                <th className="p-4 text-center">Quantidade</th>
-                <th className="p-4 text-right">Valor unitário</th>
-                <th className="p-4 text-right">Valor Total</th>
-                <th className="p-4 text-center">Forma de Pagamento</th>
+                <th className="p-2.5 border-b border-slate-200">Descrição</th>
+                <th className="p-2.5 border-b border-slate-200 text-center">Qtd</th>
+                <th className="p-2.5 border-b border-slate-200 text-right">V. Unitário</th>
+                <th className="p-2.5 border-b border-slate-200 text-right">V. Total</th>
+                <th className="p-2.5 border-b border-slate-200 text-center">Pagamento</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-sm">
+            <tbody className="divide-y divide-slate-100">
               <tr>
-                <td className="p-4 font-semibold text-slate-800">
-                  {planName}
-                  <div className="text-xs font-normal text-slate-500 mt-1">
+                <td className="p-2.5">
+                  <span className="font-semibold text-slate-800">{planName}</span>
+                  <span className="text-[10px] block text-slate-500 mt-0.5">
                     Administração, Básico, Carga, Faturamento e Financeiro
-                  </div>
+                  </span>
                 </td>
-                <td className="p-4 text-center font-medium">1</td>
-                <td className="p-4 text-right font-medium">{formatCurrency(planPrice)}</td>
-                <td className="p-4 text-right font-medium">{formatCurrency(planPrice)}</td>
-                <td className="p-4 text-center text-slate-600">Mensalidade</td>
+                <td className="p-2.5 text-center font-medium">1</td>
+                <td className="p-2.5 text-right">{formatCurrency(planPrice)}</td>
+                <td className="p-2.5 text-right font-medium">{formatCurrency(planPrice)}</td>
+                <td className="p-2.5 text-center text-slate-600">Mensalidade</td>
               </tr>
               {selectedModules.length > 0 && (
                 <tr>
-                  <td className="p-4 font-semibold text-slate-800">
-                    Módulos Adicionais
-                    <div className="text-xs font-normal text-slate-500 mt-1">
+                  <td className="p-2.5">
+                    <span className="font-semibold text-slate-800">Módulos Adicionais</span>
+                    <span className="text-[10px] block text-slate-500 mt-0.5">
                       {selectedModules.join(', ')}
-                    </div>
+                    </span>
                   </td>
-                  <td className="p-4 text-center font-medium">1</td>
-                  <td className="p-4 text-right font-medium">{formatCurrency(modulesPrice)}</td>
-                  <td className="p-4 text-right font-medium">{formatCurrency(modulesPrice)}</td>
-                  <td className="p-4 text-center text-slate-600">Mensalidade</td>
+                  <td className="p-2.5 text-center font-medium">1</td>
+                  <td className="p-2.5 text-right">{formatCurrency(modulesPrice)}</td>
+                  <td className="p-2.5 text-right font-medium">{formatCurrency(modulesPrice)}</td>
+                  <td className="p-2.5 text-center text-slate-600">Mensalidade</td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+      </div>
 
-        <div className="mt-16 flex items-center gap-4 mb-8">
-          <div className="w-2 h-12 bg-orange-500 rounded-full" />
-          <h2 className="text-4xl font-bold text-[#1e3a8a]">Valor Final</h2>
-        </div>
-
-        <div className="grid grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h3 className="font-bold text-slate-500 mb-6 uppercase tracking-wider text-xs">
-              Total Mensalidade
-            </h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center text-slate-700">
-                <span>Plano Recorrente</span>
-                <span className="font-bold">{formatCurrency(planPrice)}</span>
-              </div>
-              <div className="flex justify-between items-center text-slate-700">
-                <span>Módulos Adicionais</span>
-                <span className="font-bold">{formatCurrency(modulesPrice)}</span>
-              </div>
-              <div className="pt-4 border-t flex justify-between items-center text-2xl font-bold text-[#1e3a8a]">
-                <span>Total</span>
-                <span>{formatCurrency(totalValue)}</span>
-              </div>
+      {/* Totals */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-slate-50 p-4 rounded border border-slate-200">
+          <h4 className="font-bold text-slate-500 text-[10px] uppercase tracking-wider mb-3">
+            Total Recorrente
+          </h4>
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between items-center text-slate-600">
+              <span>Plano Base</span>
+              <span className="font-medium">{formatCurrency(planPrice)}</span>
             </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h3 className="font-bold text-slate-500 mb-6 uppercase tracking-wider text-xs">
-              Total Parcela Única
-            </h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center text-slate-700">
-                <span>Serviços Únicos</span>
-                <span className="font-bold">R$ 0,00</span>
-              </div>
-              <div className="flex justify-between items-center text-slate-700">
-                <span>Implantação ({implMode})</span>
-                <span className="font-bold">{formatCurrency(implValue)}</span>
-              </div>
-              <div className="pt-4 border-t flex justify-between items-center text-2xl font-bold text-[#1e3a8a]">
-                <span>Total</span>
-                <span>{formatCurrency(implValue)}</span>
-              </div>
+            <div className="flex justify-between items-center text-slate-600">
+              <span>Módulos Adicionais</span>
+              <span className="font-medium">{formatCurrency(modulesPrice)}</span>
+            </div>
+            <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-sm">
+              <span>Total Mensal</span>
+              <span>{formatCurrency(totalValue)}</span>
             </div>
           </div>
         </div>
+
+        <div className="bg-slate-50 p-4 rounded border border-slate-200">
+          <h4 className="font-bold text-slate-500 text-[10px] uppercase tracking-wider mb-3">
+            Total Parcela Única
+          </h4>
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between items-center text-slate-600">
+              <span>Serviços Únicos</span>
+              <span className="font-medium">R$ 0,00</span>
+            </div>
+            <div className="flex justify-between items-center text-slate-600">
+              <span>Implantação ({implMode})</span>
+              <span className="font-medium">{formatCurrency(implValue)}</span>
+            </div>
+            <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-sm">
+              <span>Total à Vista</span>
+              <span>{formatCurrency(implValue)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8 pt-4 border-t border-slate-200 text-center text-[10px] text-slate-400">
+        <p>Validade desta proposta: 15 dias corridos.</p>
+        <p>Para dúvidas ou esclarecimentos, entre em contato conosco.</p>
       </div>
     </div>
   )
