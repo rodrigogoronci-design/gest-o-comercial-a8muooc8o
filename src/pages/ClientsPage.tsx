@@ -163,12 +163,41 @@ const TRAINING_FEATURES: Record<string, string[]> = {
     'Emissão do Contrato de Frete/CIOT',
     'Controle de Entregas Realizadas',
   ],
-  Frota: [
+  'Frota - Compras': [
+    'Solicitação de compras',
+    'Cotação de preços',
+    'Pedido de compras',
+    'Entrada de notas fiscais',
+  ],
+  'Frota - Estoque': [
     'Cadastro de peças e produtos',
-    'Movimentação e controle de estoque (bomba interna)',
-    'Manutenção preventiva e corretiva',
-    'Cadastro e controle de vida do pneu',
+    'Movimentação e controle de estoque',
+    'Inventário',
+    'Controle de EPIs',
+  ],
+  'Frota - Abastecimento': [
     'Abastecimento interno e externo',
+    'Controle de bombas (bomba interna)',
+    'Integração com cartões de abastecimento',
+    'Médias de consumo',
+  ],
+  'Frota - Manutenção': [
+    'Manutenção preventiva e corretiva',
+    'Plano de manutenção',
+    'Ordem de serviço',
+    'Apontamento de mecânicos',
+  ],
+  'Frota - Pneu': [
+    'Cadastro e controle de vida do pneu',
+    'Movimentação de pneus (montagem/desmontagem)',
+    'Controle de sulcos e desgaste',
+    'Envio para recapagem',
+  ],
+  'Frota - Vencimento': [
+    'Controle de vencimentos de CNH e MOPP',
+    'Controle de exames médicos',
+    'Licenciamento de veículos e multas',
+    'Avisos e alertas automáticos',
   ],
   Comercial: [
     'Criação, registro e controle de propostas comerciais',
@@ -275,7 +304,7 @@ export default function ClientsPage() {
 
   const [isSetupTrainingProposalOpen, setIsSetupTrainingProposalOpen] = useState(false)
   const [selectedTrainingModules, setSelectedTrainingModules] = useState<string[]>([])
-  const [trainingPrice, setTrainingPrice] = useState<number>(250)
+  const [trainingPrice, setTrainingPrice] = useState<number>(0)
   const [viewingTrainingProposal, setViewingTrainingProposal] = useState<any>(null)
 
   const resetSolicitacaoForm = () => {
@@ -855,7 +884,7 @@ Atenciosamente`)
     setViewingTrainingProposal(data)
     setIsSetupTrainingProposalOpen(false)
     setSelectedTrainingModules([])
-    setTrainingPrice(250)
+    setTrainingPrice(0)
   }
 
   const handleEmailFinanceiro = (sol: any) => {
@@ -2049,8 +2078,19 @@ Obrigada.`)
                         id={`train-mod-${mod}`}
                         checked={selectedTrainingModules.includes(mod)}
                         onCheckedChange={(checked) => {
-                          if (checked) setSelectedTrainingModules((prev) => [...prev, mod])
-                          else setSelectedTrainingModules((prev) => prev.filter((id) => id !== mod))
+                          if (checked) {
+                            setSelectedTrainingModules((prev) => {
+                              const newModules = [...prev, mod]
+                              setTrainingPrice(newModules.length * 250)
+                              return newModules
+                            })
+                          } else {
+                            setSelectedTrainingModules((prev) => {
+                              const newModules = prev.filter((id) => id !== mod)
+                              setTrainingPrice(newModules.length * 250)
+                              return newModules
+                            })
+                          }
                         }}
                       />
                       <Label
@@ -2074,7 +2114,7 @@ Obrigada.`)
                 onChange={(e) => setTrainingPrice(parseFloat(e.target.value) || 0)}
               />
               <p className="text-xs text-slate-500">
-                Valor padrão sugerido: R$ 250,00 (pagamento único)
+                Calculado automaticamente: R$ 250,00 por módulo. Pode ser ajustado manualmente.
               </p>
             </div>
           </div>
