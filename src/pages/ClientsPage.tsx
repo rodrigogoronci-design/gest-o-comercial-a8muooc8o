@@ -2158,7 +2158,45 @@ Obrigada.`)
                 }}
                 className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
               >
-                <Mail className="h-4 w-4 mr-2" /> Enviar por E-mail
+                <Mail className="h-4 w-4 mr-2" /> E-mail Cliente
+              </Button>
+              <Button
+                variant="outline"
+                className="text-blue-700 border-blue-200 hover:bg-blue-50"
+                onClick={() => {
+                  const subject = encodeURIComponent(
+                    `Agendamento de Treinamento - ${viewingTrainingProposal.clientName}`,
+                  )
+                  const body = encodeURIComponent(
+                    `Gesualdo,\n\nPeço, por gentileza, que entre em contato com a cliente abaixo para realizar o agendamento de treinamento.\n\nCliente: ${viewingTrainingProposal.clientName}\nContato: ${viewingTrainingProposal.contato || 'Não informado'}\nMódulos: ${viewingTrainingProposal.modules.map((m: any) => m.name).join(', ')}\n\nAtenciosamente,`,
+                  )
+                  window.open(
+                    `mailto:gesualdo@servicelogic.com.br?subject=${subject}&body=${body}`,
+                    '_blank',
+                  )
+                  toast.success('Solicitação de implantação gerada.')
+                }}
+              >
+                <Mail className="h-4 w-4 mr-2" /> Solicitar Implantação
+              </Button>
+              <Button
+                variant="outline"
+                className="text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                onClick={() => {
+                  const subject = encodeURIComponent(
+                    `Faturamento de Treinamento - ${viewingTrainingProposal.clientName}`,
+                  )
+                  const body = encodeURIComponent(
+                    `Boa tarde, tudo bem?\n\nPeço por gentileza que seja realizada a cobrança referente ao serviço abaixo:\n\nCliente: ${viewingTrainingProposal.clientName}\nResponsável: ${viewingTrainingProposal.contato || 'Não informado'}\n\nServiço contratado: Treinamento dos módulos ${viewingTrainingProposal.modules.map((m: any) => m.name).join(', ')}\nValor: R$ ${viewingTrainingProposal.price.toFixed(2).replace('.', ',')}\n\nPeço por gentileza que sigam com o faturamento/cobrança junto ao cliente.\n\nObrigada.`,
+                  )
+                  window.open(
+                    `mailto:financeiro@servicelogic.com.br?subject=${subject}&body=${body}`,
+                    '_blank',
+                  )
+                  toast.success('Solicitação de cobrança gerada.')
+                }}
+              >
+                <Mail className="h-4 w-4 mr-2" /> Solicitar Cobrança
               </Button>
               <Button
                 onClick={() => {
@@ -2173,7 +2211,7 @@ Obrigada.`)
                 }}
                 className="bg-indigo-600 hover:bg-indigo-700"
               >
-                <Printer className="h-4 w-4 mr-2" /> Imprimir / Salvar PDF
+                <Printer className="h-4 w-4 mr-2" /> Imprimir / PDF
               </Button>
             </div>
           </div>
