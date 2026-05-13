@@ -351,11 +351,145 @@ export default function ClientsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleDeleteHistory = async (id: string) => {
-    if (!confirm('Tem certeza que deseja apagar este registro do histórico?')) return
+    if (
+      !confirm(
+        'Tem certeza que deseja apagar este registro do histórico e reverter a adição no plano atual (se aplicável)?',
+      )
+    )
+      return
     try {
+      const historyRecord = clientHistory.find((h) => h.id === id)
+
+      if (viewingClient && historyRecord) {
+        let changed = false
+        let novoValorTotal = viewingClient.totalValue
+
+        let currentModulosRaw = viewingClient.originalData?.modulos || {
+          plano_base: viewingClient.plano_base,
+          filiais: viewingClient.filiais,
+          adicionais: viewingClient.modules,
+        }
+
+        if (Array.isArray(currentModulosRaw)) {
+          currentModulosRaw = {
+            plano_base: viewingClient.plano_base,
+            filiais: viewingClient.filiais,
+            adicionais: currentModulosRaw,
+          }
+        }
+
+        let updatedAdicionais = [...(currentModulosRaw.adicionais || [])]
+        let updatedFiliaisDet = [...(currentModulosRaw.filiais_detalhes || [])]
+
+        if (historyRecord.tipo === 'Aditivo de Módulos' && historyRecord.modulos) {
+          const removedNames = historyRecord.modulos.map((m: any) =>
+            typeof m === 'string' ? m : m.name,
+          )
+          updatedAdicionais = updatedAdicionais.filter((m: any) => {
+            const name = typeof m === 'string' ? m : m.name
+            return !removedNames.includes(name)
+          })
+          novoValorTotal -= historyRecord.valor_adicional || 0
+          changed = true
+        } else if (historyRecord.tipo === 'Aditivo de Filial' && historyRecord.observacoes) {
+          const cnpjMatch = historyRecord.observacoes.match(/CNPJ:\s*([\d.\-/]+)/)
+          if (cnpjMatch && cnpjMatch[1]) {
+            const extractedCnpj = cnpjMatch[1].replace(/\D/g, '')
+
+            const filialToRemove = updatedFiliaisDet.find(
+              (f: any) => f.cnpj.replace(/\D/g, '') === extractedCnpj,
+            )
+            if (filialToRemove) {
+              const filialName = `Filial: ${filialToRemove.nome} (${formatCNPJ(filialToRemove.cnpj)})`
+              const dfeName = `DF-e (Filial: ${filialToRemove.nome})`
+
+              updatedAdicionais = updatedAdicionais.filter((m: any) => {
+                const name = typeof m === 'string' ? m : m.name
+                return name !== filialName && name !== dfeName
+              })
+            } else {
+              updatedAdicionais = updatedAdicionais.filter((m: any) => {
+                const name = typeof m === 'string' ? m : m.name
+                return !(
+                  name.includes('Filial:') && name.replace(/\D/g, '').includes(extractedCnpj)
+                )
+              })
+            }
+
+            updatedFiliaisDet = updatedFiliaisDet.filter(
+              (f: any) => f.cnpj.replace(/\D/g, '') !== extractedCnpj,
+            )
+            novoValorTotal -= historyRecord.valor_adicional || 0
+            changed = true
+          }
+        }
+
+        if (changed) {
+          novoValorTotal = Math.max(0, novoValorTotal)
+          const updatedModulos = {
+            ...currentModulosRaw,
+            adicionais: updatedAdicionais,
+            filiais_detalhes: updatedFiliaisDet,
+          }
+
+          await updateCliente(viewingClient.id, {
+            modulos: updatedModulos,
+            valor_total: novoValorTotal,
+          })
+
+          const formatMod = (m: any): ModuleItem | null => {
+            if (!m) return null
+            const mName = typeof m === 'string' ? m : m.name || ''
+            if (!mName) return null
+            const mPrice = typeof m === 'string' ? undefined : m.price
+            const modDef = MODULES.find(
+              (x) => x.name.toLowerCase() === mName.toLowerCase() || x.id === mName,
+            )
+            if (!modDef) {
+              if (mPrice !== undefined) return { name: mName, price: mPrice }
+              return null
+            }
+            return { name: modDef.name, price: mPrice !== undefined ? mPrice : modDef.price }
+          }
+
+          let parsedModules = updatedAdicionais.map(formatMod).filter(Boolean) as ModuleItem[]
+
+          updatedFiliaisDet.forEach((f: any) => {
+            const filialName = `Filial: ${f.nome} (${formatCNPJ(f.cnpj)})`
+            const dfeName = `DF-e (Filial: ${f.nome})`
+
+            if (!parsedModules.some((m) => m.name === filialName)) {
+              parsedModules.push({ name: filialName, price: f.valor_mensalidade })
+            }
+            if (f.dfe_incluso && !parsedModules.some((m) => m.name === dfeName)) {
+              parsedModules.push({ name: dfeName, price: f.valor_dfe || 0 })
+            }
+          })
+
+          setViewingClient((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  modules: parsedModules,
+                  filiais_detalhes: updatedFiliaisDet,
+                  totalValue: novoValorTotal,
+                  originalData: {
+                    ...prev.originalData!,
+                    modulos: updatedModulos,
+                    valor_total: novoValorTotal,
+                  },
+                }
+              : null,
+          )
+
+          loadClientes()
+        }
+      }
+
       await supabase.from('historico_contratos').delete().eq('id', id)
-      toast.success('Registro apagado com sucesso!')
       if (viewingClient) loadHistory(viewingClient.id)
+
+      toast.success('Registro apagado com sucesso!')
     } catch (err) {
       console.error(err)
       toast.error('Erro ao apagar registro')
@@ -721,6 +855,8 @@ Obrigada,`
   }
 
   const onSubmit = async (data: ClientFormValues) => {
+    const currentFiliaisDet = editingClient?.originalData?.modulos?.filiais_detalhes || []
+
     const payload = {
       nome: data.nome,
       cnpj: data.cnpj,
@@ -737,6 +873,7 @@ Obrigada,`
         plano_base: data.plano_base,
         filiais: data.filiais,
         adicionais: data.modulos,
+        filiais_detalhes: currentFiliaisDet,
       },
     }
 
