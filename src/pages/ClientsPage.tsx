@@ -327,8 +327,21 @@ export default function ClientsPage() {
   const [emailBody, setEmailBody] = useState('')
 
   const [isImporting, setIsImporting] = useState(false)
+  const [isLoadingCnpj, setIsLoadingCnpj] = useState(false)
   const [isUploadingDocs, setIsUploadingDocs] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleDeleteHistory = async (id: string) => {
+    if (!confirm('Tem certeza que deseja apagar este registro do histórico?')) return
+    try {
+      await supabase.from('historico_contratos').delete().eq('id', id)
+      toast.success('Registro apagado com sucesso!')
+      if (viewingClient) loadHistory(viewingClient.id)
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao apagar registro')
+    }
+  }
 
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
@@ -439,6 +452,65 @@ export default function ClientsPage() {
       loadSolicitacoes(viewingClient.id)
     }
   }, [viewingClient, isViewSheetOpen])
+
+  const handleCnpjChange = async (val: string) => {
+    const formatted = formatCNPJ(val)
+    form.setValue('cnpj', formatted, { shouldValidate: true })
+    const clean = formatted.replace(/\D/g, '')
+
+    if (clean.length === 14) {
+      setIsLoadingCnpj(true)
+      try {
+        const existing = clientes.find((c) => c.cnpj.replace(/\D/g, '') === clean)
+        if (existing) {
+          toast.info('Cliente já cadastrado na base. Preenchendo dados...')
+          if (!form.getValues('nome')) form.setValue('nome', existing.nome)
+          if (!form.getValues('email')) form.setValue('email', existing.email || '')
+          if (!form.getValues('telefone')) form.setValue('telefone', existing.telefone || '')
+          if (!form.getValues('endereco')) form.setValue('endereco', existing.endereco || '')
+          if (!form.getValues('rep_nome')) form.setValue('rep_nome', existing.rep_nome || '')
+          if (!form.getValues('rep_cpf')) form.setValue('rep_cpf', existing.rep_cpf || '')
+          if (!form.getValues('rep_rg')) form.setValue('rep_rg', existing.rep_rg || '')
+          setIsLoadingCnpj(false)
+          return
+        }
+
+        const { data: prospect } = await supabase
+          .from('crm_prospects')
+          .select('*')
+          .eq('cnpj', formatted)
+          .maybeSingle()
+        if (prospect) {
+          toast.info('Prospect encontrado no CRM. Preenchendo dados...')
+          if (!form.getValues('nome')) form.setValue('nome', prospect.empresa)
+          if (!form.getValues('endereco')) form.setValue('endereco', prospect.endereco || '')
+          if (!form.getValues('telefone')) form.setValue('telefone', prospect.telefone || '')
+          if (!form.getValues('email')) form.setValue('email', prospect.email || '')
+          if (!form.getValues('rep_nome')) form.setValue('rep_nome', prospect.contato_nome || '')
+          setIsLoadingCnpj(false)
+          return
+        }
+
+        const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${clean}`)
+        if (res.ok) {
+          const d = await res.json()
+          if (d.razao_social && !form.getValues('nome')) form.setValue('nome', d.razao_social)
+          const addr = [d.logradouro, d.numero, d.bairro, d.municipio, d.uf]
+            .filter(Boolean)
+            .join(', ')
+          if (addr && !form.getValues('endereco')) form.setValue('endereco', addr)
+          if (d.ddd_telefone_1 && !form.getValues('telefone'))
+            form.setValue('telefone', d.ddd_telefone_1)
+          if (d.email && !form.getValues('email')) form.setValue('email', d.email)
+          toast.success('Dados preenchidos via Receita Federal.')
+        }
+      } catch {
+        toast.error('Erro ao consultar CNPJ na Receita Federal.')
+      } finally {
+        setIsLoadingCnpj(false)
+      }
+    }
+  }
 
   const handleOpenAdd = () => {
     setEditingClient(null)
@@ -1653,8 +1725,18 @@ Obrigada.`)
                             </span>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <span className="text-xs text-slate-400 block">Mensalidade (Ref.)</span>
+                        <div className="text-right flex flex-col items-end gap-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-400 block">Mensalidade (Ref.)</span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-slate-400 hover:text-red-600"
+                              onClick={() => handleDeleteHistory(h.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
                           <span className="font-bold text-slate-700">
                             {formatCurrency(h.valor_total)}
                           </span>
@@ -2472,7 +2554,18 @@ Obrigada.`)
                           <FormControl>
                             <div className="relative">
                               <Hash className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                              <Input placeholder="00.000.000/0001-00" className="pl-9" {...field} />
+                              <Input
+                                placeholder="00.000.000/0001-00"
+                                className="pl-9"
+                                {...field}
+                                onChange={(e) => {
+                                  field.onChange(e)
+                                  handleCnpjChange(e.target.value)
+                                }}
+                              />
+                              {isLoadingCnpj && (
+                                <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-slate-400" />
+                              )}
                             </div>
                           </FormControl>
                           <FormMessage />

@@ -101,6 +101,46 @@ export function CrmProspectForm({
     if (clean.length === 14) {
       setIsLoading(true)
       try {
+        const { data: cliente } = await supabase
+          .from('clientes')
+          .select('*')
+          .eq('cnpj', formatted)
+          .maybeSingle()
+        if (cliente) {
+          toast({
+            title: 'Cliente Encontrado',
+            description: 'Preenchendo dados do cliente existente na base.',
+          })
+          if (!form.getValues('empresa')) form.setValue('empresa', cliente.nome)
+          if (!form.getValues('endereco')) form.setValue('endereco', cliente.endereco || '')
+          if (!form.getValues('telefone')) form.setValue('telefone', cliente.telefone || '')
+          if (!form.getValues('email')) form.setValue('email', cliente.email || '')
+          if (!form.getValues('contato_nome'))
+            form.setValue('contato_nome', cliente.rep_nome || 'Responsável')
+          setIsLoading(false)
+          return
+        }
+
+        const { data: prospect } = await supabase
+          .from('crm_prospects')
+          .select('*')
+          .eq('cnpj', formatted)
+          .maybeSingle()
+        if (prospect) {
+          toast({
+            title: 'Prospect Encontrado',
+            description: 'Preenchendo dados do prospect existente no CRM.',
+          })
+          if (!form.getValues('empresa')) form.setValue('empresa', prospect.empresa)
+          if (!form.getValues('endereco')) form.setValue('endereco', prospect.endereco || '')
+          if (!form.getValues('telefone')) form.setValue('telefone', prospect.telefone || '')
+          if (!form.getValues('email')) form.setValue('email', prospect.email || '')
+          if (!form.getValues('contato_nome'))
+            form.setValue('contato_nome', prospect.contato_nome || 'Responsável')
+          setIsLoading(false)
+          return
+        }
+
         const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${clean}`)
         if (res.ok) {
           const d = await res.json()
@@ -111,12 +151,16 @@ export function CrmProspectForm({
           if (addr && !form.getValues('endereco')) form.setValue('endereco', addr)
           if (d.ddd_telefone_1 && !form.getValues('telefone'))
             form.setValue('telefone', d.ddd_telefone_1)
+          if (d.email && !form.getValues('email')) form.setValue('email', d.email)
 
           if (!form.getValues('contato_nome')) {
             form.setValue('contato_nome', d.nome_fantasia || 'Responsável')
           }
 
-          toast({ title: 'Dados preenchidos', description: 'CNPJ consultado com sucesso.' })
+          toast({
+            title: 'Dados preenchidos',
+            description: 'CNPJ consultado com sucesso na base pública.',
+          })
         }
       } catch {
         toast({ title: 'Erro na consulta', variant: 'destructive' })
