@@ -11,7 +11,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { Download, Trash2, ListTodo } from 'lucide-react'
+import { Download, Trash2, ListTodo, Pencil } from 'lucide-react'
+import { EditActivityDialog } from '@/components/activities/EditActivityDialog'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -26,6 +27,7 @@ const formatDate = (dateString: string | null | undefined) => {
 export default function ActivitiesPage() {
   const [atividades, setAtividades] = useState<Atividade[]>([])
   const [loading, setLoading] = useState(true)
+  const [editingActivity, setEditingActivity] = useState<Atividade | null>(null)
   const { toast } = useToast()
 
   const loadData = async () => {
@@ -113,6 +115,16 @@ export default function ActivitiesPage() {
         </div>
       </div>
 
+      <EditActivityDialog
+        atividade={editingActivity}
+        open={!!editingActivity}
+        onOpenChange={(open) => !open && setEditingActivity(null)}
+        onSaved={() => {
+          setEditingActivity(null)
+          loadData()
+        }}
+      />
+
       <Card>
         <CardHeader>
           <CardTitle>Histórico de Demandas</CardTitle>
@@ -187,15 +199,26 @@ export default function ActivitiesPage() {
                         {formatDate(atividade.data_follow_up)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => handleDelete(atividade.id)}
-                          title="Excluir atividade"
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
+                        <div className="flex justify-end items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50"
+                            onClick={() => setEditingActivity(atividade)}
+                            title="Editar atividade"
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleDelete(atividade.id)}
+                            title="Excluir atividade"
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

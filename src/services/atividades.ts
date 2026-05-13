@@ -48,6 +48,20 @@ export const createAtividade = async (
   return data
 }
 
+export const updateAtividade = async (
+  id: string,
+  atividade: Partial<Omit<Atividade, 'id' | 'created_at' | 'clientes'>>,
+) => {
+  const { data, error } = await supabase
+    .from('atividades_comerciais' as any)
+    .update(atividade)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
 export const createAtividadesBatch = async (
   atividades: Omit<Atividade, 'id' | 'created_at' | 'clientes'>[],
 ) => {
