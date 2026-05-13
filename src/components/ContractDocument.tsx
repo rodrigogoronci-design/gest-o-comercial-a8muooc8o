@@ -392,7 +392,56 @@ export function AddendumDocument({
   modules,
   valorAdicional,
   valorTotalAtual,
+  tipo,
+  observacoes,
 }: any) {
+  let formattedModules: Array<{ name: string; price: number }> = []
+
+  if (Array.isArray(modules)) {
+    formattedModules = modules.map((m: any) => {
+      if (typeof m === 'string') return { name: m, price: 0 }
+      return {
+        name: m.name || m.descricao || m.modulo || m.titulo || 'Item Adicional',
+        price: Number(m.price || m.valor || m.valor_mensalidade || 0),
+      }
+    })
+  } else if (modules && typeof modules === 'object') {
+    if (Array.isArray(modules.adicionais)) {
+      formattedModules = modules.adicionais.map((m: any) => ({
+        name: m.name || m.descricao || 'Item Adicional',
+        price: Number(m.price || m.valor || 0),
+      }))
+    }
+    if (modules.filiais && typeof modules.filiais === 'number' && modules.filiais > 0) {
+      formattedModules.push({
+        name: `Inclusão de Filiais Adicionais (${modules.filiais} unidade${modules.filiais > 1 ? 's' : ''})`,
+        price: modules.filiais * 199,
+      })
+    }
+    if (Array.isArray(modules.filiais_detalhes)) {
+      modules.filiais_detalhes.forEach((f: any) => {
+        formattedModules.push({
+          name: `Inclusão de Filial: ${f.nome || f.cnpj || 'Nova Unidade'}`,
+          price: Number(f.price || f.valor || 199),
+        })
+        if (f.dfe || f.dfe_ativo) {
+          formattedModules.push({
+            name: `Ativação de DF-e (Filial: ${f.nome || f.cnpj || 'Nova Unidade'})`,
+            price: Number(f.dfe_price || f.dfe_valor || 0),
+          })
+        }
+      })
+    }
+  }
+
+  // Fallback para observações do histórico se os módulos estiverem vazios
+  if (formattedModules.length === 0 && (observacoes || tipo)) {
+    formattedModules.push({
+      name: observacoes || tipo || 'Adição de Serviços Contratuais',
+      price: Number(valorAdicional || 0),
+    })
+  }
+
   return (
     <div className="p-8 sm:p-12 text-[12px] text-slate-800 font-serif leading-relaxed space-y-5 bg-white print:p-0 print:text-black">
       <div className="flex flex-col items-center mb-8 border-b-2 border-[#f37021] print:border-black pb-6">
@@ -436,24 +485,28 @@ export function AddendumDocument({
 
         <div>
           <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
-            2. DOS MÓDULOS ADICIONADOS E VALORES
+            2. DOS SERVIÇOS E MÓDULOS ADICIONADOS
           </h3>
           <p className="mb-3">
-            A CONTRATANTE adere expressamente aos seguintes módulos adicionais:
+            A CONTRATANTE adere expressamente aos seguintes itens e serviços adicionais:
           </p>
 
           <table className="w-full text-xs border-collapse border border-slate-300 mb-6">
             <thead>
               <tr className="bg-[#1b4382] text-white print:bg-slate-200 print:text-black">
-                <th className="border border-slate-300 p-2 text-left">Módulo</th>
-                <th className="border border-slate-300 p-2 text-right">Valor Mensal Adicional</th>
+                <th className="border border-slate-300 p-2 text-left">
+                  Descrição do Item / Serviço
+                </th>
+                <th className="border border-slate-300 p-2 text-right w-48">
+                  Valor Mensal Adicional
+                </th>
               </tr>
             </thead>
             <tbody>
-              {modules && modules.length > 0 ? (
-                modules.map((m: any, idx: number) => (
+              {formattedModules.length > 0 ? (
+                formattedModules.map((m: any, idx: number) => (
                   <tr key={idx}>
-                    <td className="border border-slate-300 p-2">{m.name || m}</td>
+                    <td className="border border-slate-300 p-2 whitespace-pre-line">{m.name}</td>
                     <td className="border border-slate-300 p-2 text-right">
                       {m.price > 0 ? formatCurrency(m.price) : 'Incluso'}
                     </td>
@@ -465,16 +518,30 @@ export function AddendumDocument({
                     colSpan={2}
                     className="border border-slate-300 p-2 text-center text-slate-500 italic"
                   >
-                    Nenhum módulo detalhado.
+                    Especificação de serviços constará nos autos de histórico do contrato principal.
                   </td>
                 </tr>
               )}
             </tbody>
             <tfoot>
+              {valorAdicional > 0 && (
+                <tr className="bg-[#1b4382]/5 print:bg-slate-50 font-medium">
+                  <td className="border border-slate-300 p-2 text-right text-slate-600">
+                    Subtotal Adicionado
+                  </td>
+                  <td className="border border-slate-300 p-2 text-right text-slate-600">
+                    {formatCurrency(valorAdicional)}
+                  </td>
+                </tr>
+              )}
               <tr className="bg-[#1b4382]/10 print:bg-slate-100 font-bold">
-                <td className="border border-slate-300 p-2 text-right">Acréscimo na Mensalidade</td>
+                <td className="border border-slate-300 p-2 text-right">
+                  Acréscimo Total na Mensalidade
+                </td>
                 <td className="border border-slate-300 p-2 text-right text-emerald-700 print:text-black">
-                  {formatCurrency(valorAdicional || 0)}
+                  {formatCurrency(
+                    valorAdicional || formattedModules.reduce((acc, curr) => acc + curr.price, 0),
+                  )}
                 </td>
               </tr>
               <tr className="bg-[#1b4382]/20 print:bg-slate-200 font-bold">
