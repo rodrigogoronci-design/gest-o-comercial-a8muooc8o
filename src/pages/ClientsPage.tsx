@@ -2163,18 +2163,38 @@ Obrigada.`)
               <Button
                 variant="outline"
                 className="text-blue-700 border-blue-200 hover:bg-blue-50"
-                onClick={() => {
-                  const subject = encodeURIComponent(
-                    `Agendamento de Treinamento - ${viewingTrainingProposal.clientName}`,
-                  )
-                  const body = encodeURIComponent(
-                    `Gesualdo,\n\nPeço, por gentileza, que entre em contato com a cliente abaixo para realizar o agendamento de treinamento.\n\nCliente: ${viewingTrainingProposal.clientName}\nContato: ${viewingTrainingProposal.contato || 'Não informado'}\nMódulos: ${viewingTrainingProposal.modules.map((m: any) => m.name).join(', ')}\n\nAtenciosamente,`,
-                  )
-                  window.open(
-                    `mailto:gesualdo@servicelogic.com.br?subject=${subject}&body=${body}`,
-                    '_blank',
-                  )
-                  toast.success('Solicitação de implantação gerada.')
+                onClick={async () => {
+                  if (!viewingClient) return
+                  try {
+                    await createSolicitacao({
+                      cliente_id: viewingClient.id,
+                      tipo: 'Treinamento',
+                      descricao: `Solicitação de Agendamento/Implantação de Treinamento.\nMódulos: ${viewingTrainingProposal.modules.map((m: any) => m.name).join(', ')}`,
+                      status: 'Pendente',
+                    })
+                    await createHistorico({
+                      cliente_id: viewingClient.id,
+                      tipo: 'Notificação Enviada',
+                      observacoes:
+                        'Solicitação de agendamento de treinamento enviada à equipe de implantação.',
+                    })
+
+                    const subject = encodeURIComponent(
+                      `Agendamento de Treinamento - ${viewingTrainingProposal.clientName}`,
+                    )
+                    const body = encodeURIComponent(
+                      `Gesualdo,\n\nPeço, por gentileza, que entre em contato com a cliente abaixo para realizar o agendamento de treinamento.\n\nCliente: ${viewingTrainingProposal.clientName}\nContato: ${viewingTrainingProposal.contato || 'Não informado'}\nMódulos: ${viewingTrainingProposal.modules.map((m: any) => m.name).join(', ')}\n\nAtenciosamente,`,
+                    )
+                    window.open(
+                      `mailto:gesualdo@servicelogic.com.br?subject=${subject}&body=${body}`,
+                      '_blank',
+                    )
+
+                    toast.success('Solicitação de implantação gerada e salva no histórico.')
+                    loadSolicitacoes(viewingClient.id)
+                  } catch (e) {
+                    toast.error('Erro ao salvar a solicitação no sistema.')
+                  }
                 }}
               >
                 <Mail className="h-4 w-4 mr-2" /> Solicitar Implantação
@@ -2182,18 +2202,38 @@ Obrigada.`)
               <Button
                 variant="outline"
                 className="text-emerald-700 border-emerald-200 hover:bg-emerald-50"
-                onClick={() => {
-                  const subject = encodeURIComponent(
-                    `Faturamento de Treinamento - ${viewingTrainingProposal.clientName}`,
-                  )
-                  const body = encodeURIComponent(
-                    `Boa tarde, tudo bem?\n\nPeço por gentileza que seja realizada a cobrança referente ao serviço abaixo:\n\nCliente: ${viewingTrainingProposal.clientName}\nResponsável: ${viewingTrainingProposal.contato || 'Não informado'}\n\nServiço contratado: Treinamento dos módulos ${viewingTrainingProposal.modules.map((m: any) => m.name).join(', ')}\nValor: R$ ${viewingTrainingProposal.price.toFixed(2).replace('.', ',')}\n\nPeço por gentileza que sigam com o faturamento/cobrança junto ao cliente.\n\nObrigada.`,
-                  )
-                  window.open(
-                    `mailto:financeiro@servicelogic.com.br?subject=${subject}&body=${body}`,
-                    '_blank',
-                  )
-                  toast.success('Solicitação de cobrança gerada.')
+                onClick={async () => {
+                  if (!viewingClient) return
+                  try {
+                    await createSolicitacao({
+                      cliente_id: viewingClient.id,
+                      tipo: 'Outro',
+                      descricao: `Faturamento de Treinamento.\nMódulos: ${viewingTrainingProposal.modules.map((m: any) => m.name).join(', ')}`,
+                      valor: viewingTrainingProposal.price,
+                      status: 'Pendente',
+                    })
+                    await createHistorico({
+                      cliente_id: viewingClient.id,
+                      tipo: 'Notificação Enviada',
+                      observacoes: 'Solicitação de cobrança enviada ao departamento financeiro.',
+                    })
+
+                    const subject = encodeURIComponent(
+                      `Faturamento de Treinamento - ${viewingTrainingProposal.clientName}`,
+                    )
+                    const body = encodeURIComponent(
+                      `Boa tarde, tudo bem?\n\nPeço por gentileza que seja realizada a cobrança referente ao serviço abaixo:\n\nCliente: ${viewingTrainingProposal.clientName}\nResponsável: ${viewingTrainingProposal.contato || 'Não informado'}\n\nServiço contratado: Treinamento dos módulos ${viewingTrainingProposal.modules.map((m: any) => m.name).join(', ')}\nValor: R$ ${viewingTrainingProposal.price.toFixed(2).replace('.', ',')}\n\nPeço por gentileza que sigam com o faturamento/cobrança junto ao cliente.\n\nObrigada.`,
+                    )
+                    window.open(
+                      `mailto:financeiro@servicelogic.com.br?subject=${subject}&body=${body}`,
+                      '_blank',
+                    )
+
+                    toast.success('Solicitação de cobrança gerada e salva no histórico.')
+                    loadSolicitacoes(viewingClient.id)
+                  } catch (e) {
+                    toast.error('Erro ao salvar a solicitação de cobrança.')
+                  }
                 }}
               >
                 <Mail className="h-4 w-4 mr-2" /> Solicitar Cobrança
@@ -2232,6 +2272,59 @@ Obrigada.`)
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setViewingAddendum(null)}>
                 Fechar
+              </Button>
+              <Button
+                variant="outline"
+                className="text-blue-700 border-blue-200 hover:bg-blue-50"
+                onClick={async () => {
+                  if (!viewingClient || !viewingAddendum) return
+                  try {
+                    await createSolicitacao({
+                      cliente_id: viewingClient.id,
+                      tipo: 'Treinamento',
+                      descricao: `Solicitação de Implantação para Aditivo Contratual.\nMódulos: ${viewingAddendum.modules?.map((m: any) => (typeof m === 'string' ? m : m.name)).join(', ')}`,
+                      status: 'Pendente',
+                    })
+                    await createHistorico({
+                      cliente_id: viewingClient.id,
+                      tipo: 'Notificação Enviada',
+                      observacoes: 'Solicitação de implantação de aditivo enviada à equipe.',
+                    })
+                    toast.success('Solicitação de implantação gerada e salva no histórico.')
+                    loadSolicitacoes(viewingClient.id)
+                  } catch (e) {
+                    toast.error('Erro ao salvar a solicitação.')
+                  }
+                }}
+              >
+                <Mail className="h-4 w-4 mr-2" /> Solicitar Implantação
+              </Button>
+              <Button
+                variant="outline"
+                className="text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                onClick={async () => {
+                  if (!viewingClient || !viewingAddendum) return
+                  try {
+                    await createSolicitacao({
+                      cliente_id: viewingClient.id,
+                      tipo: 'Outro',
+                      descricao: `Faturamento de Aditivo Contratual.\nMódulos adicionados: ${viewingAddendum.modules?.map((m: any) => (typeof m === 'string' ? m : m.name)).join(', ')}`,
+                      valor: viewingAddendum.valorAdicional,
+                      status: 'Pendente',
+                    })
+                    await createHistorico({
+                      cliente_id: viewingClient.id,
+                      tipo: 'Notificação Enviada',
+                      observacoes: 'Solicitação de faturamento de aditivo enviada ao financeiro.',
+                    })
+                    toast.success('Solicitação de cobrança gerada e salva no histórico.')
+                    loadSolicitacoes(viewingClient.id)
+                  } catch (e) {
+                    toast.error('Erro ao salvar a solicitação.')
+                  }
+                }}
+              >
+                <Mail className="h-4 w-4 mr-2" /> Solicitar Cobrança
               </Button>
               <Button onClick={handlePrintAddendum} className="bg-indigo-600 hover:bg-indigo-700">
                 <Printer className="h-4 w-4 mr-2" /> Imprimir / Salvar PDF
