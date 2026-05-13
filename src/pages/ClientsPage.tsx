@@ -218,6 +218,7 @@ type FilialDetalhe = {
   cnpj: string
   dfe_incluso: boolean
   valor_mensalidade: number
+  valor_dfe?: number
 }
 
 type MergedClient = {
@@ -302,6 +303,7 @@ export default function ClientsPage() {
     cnpj: '',
     dfe_incluso: false,
     valor_mensalidade: 199.0,
+    valor_dfe: 49.9,
   })
 
   const [solicitacoes, setSolicitacoes] = useState<any[]>([])
@@ -796,14 +798,18 @@ Obrigada,`
         cnpj: filialForm.cnpj,
         dfe_incluso: filialForm.dfe_incluso,
         valor_mensalidade: filialForm.valor_mensalidade,
+        valor_dfe: filialForm.dfe_incluso ? filialForm.valor_dfe : 0,
       }
+
+      const valorTotalFilial =
+        novaFilial.valor_mensalidade + (novaFilial.dfe_incluso ? novaFilial.valor_dfe || 0 : 0)
 
       const updatedModulos = {
         ...currentModulosRaw,
         filiais_detalhes: [...currentFiliaisDet, novaFilial],
       }
 
-      const novoValorTotal = viewingClient.totalValue + filialForm.valor_mensalidade
+      const novoValorTotal = viewingClient.totalValue + valorTotalFilial
 
       await updateCliente(viewingClient.id, {
         modulos: updatedModulos,
@@ -814,14 +820,20 @@ Obrigada,`
         cliente_id: viewingClient.id,
         tipo: 'Aditivo de Filial',
         data_solicitacao: new Date().toISOString().split('T')[0],
-        observacoes: `Adição de Filial: ${novaFilial.nome} (CNPJ: ${novaFilial.cnpj}). DF-e: ${novaFilial.dfe_incluso ? 'Sim' : 'Não'}`,
-        valor_adicional: filialForm.valor_mensalidade,
+        observacoes: `Adição de Filial: ${novaFilial.nome} (CNPJ: ${novaFilial.cnpj}). DF-e: ${novaFilial.dfe_incluso ? `Sim (${formatCurrency(novaFilial.valor_dfe || 0)})` : 'Não'}`,
+        valor_adicional: valorTotalFilial,
         valor_total: novoValorTotal,
       })
 
       toast.success('Filial adicionada com sucesso e aditivo gerado!')
       setIsAddFilialOpen(false)
-      setFilialForm({ nome: '', cnpj: '', dfe_incluso: false, valor_mensalidade: 199.0 })
+      setFilialForm({
+        nome: '',
+        cnpj: '',
+        dfe_incluso: false,
+        valor_mensalidade: 199.0,
+        valor_dfe: 49.9,
+      })
 
       loadClientes()
       loadHistory(viewingClient.id)
@@ -1748,13 +1760,17 @@ Obrigada.`)
                                 variant="secondary"
                                 className="text-[10px] py-0 px-1.5 h-4 bg-indigo-50 text-indigo-700 border-indigo-200"
                               >
-                                DF-e Incluso
+                                DF-e Incluso ({formatCurrency(filial.valor_dfe || 49.9)})
                               </Badge>
                             )}
                           </span>
                         </div>
                         <span className="text-sm font-semibold text-slate-600">
-                          {formatCurrency(filial.valor_mensalidade)}/mês
+                          {formatCurrency(
+                            filial.valor_mensalidade +
+                              (filial.dfe_incluso ? filial.valor_dfe || 49.9 : 0),
+                          )}
+                          /mês
                         </span>
                       </div>
                     ))}
@@ -2252,13 +2268,9 @@ Obrigada.`)
                 id="dfe-incluso"
                 checked={filialForm.dfe_incluso}
                 onCheckedChange={(c) => {
-                  const checked = !!c
                   setFilialForm((prev) => ({
                     ...prev,
-                    dfe_incluso: checked,
-                    valor_mensalidade: checked
-                      ? prev.valor_mensalidade + 49.9
-                      : prev.valor_mensalidade - 49.9,
+                    dfe_incluso: !!c,
                   }))
                 }}
               />
@@ -2267,25 +2279,45 @@ Obrigada.`)
                   Incluir DF-e para esta Filial?
                 </Label>
                 <p className="text-xs text-slate-500">
-                  Adiciona o valor do DF-e na mensalidade da filial.
+                  Habilita o módulo de DF-e para esta unidade.
                 </p>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Valor da Mensalidade (Filial) - R$</Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                value={filialForm.valor_mensalidade}
-                onChange={(e) =>
-                  setFilialForm((prev) => ({
-                    ...prev,
-                    valor_mensalidade: parseFloat(e.target.value) || 0,
-                  }))
-                }
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Mensalidade (Filial) - R$</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={filialForm.valor_mensalidade}
+                  onChange={(e) =>
+                    setFilialForm((prev) => ({
+                      ...prev,
+                      valor_mensalidade: parseFloat(e.target.value) || 0,
+                    }))
+                  }
+                />
+              </div>
+
+              {filialForm.dfe_incluso && (
+                <div className="space-y-2">
+                  <Label>Valor do DF-e (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={filialForm.valor_dfe}
+                    onChange={(e) =>
+                      setFilialForm((prev) => ({
+                        ...prev,
+                        valor_dfe: parseFloat(e.target.value) || 0,
+                      }))
+                    }
+                  />
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
