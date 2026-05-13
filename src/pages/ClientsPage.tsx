@@ -2226,7 +2226,7 @@ Obrigada.`)
                 onClick={() => {
                   const subject = encodeURIComponent(`Proposta de Treinamento - Service Logic`)
                   const body = encodeURIComponent(
-                    `Olá ${viewingTrainingProposal.contato || 'Cliente'},\n\nSegue em anexo a proposta comercial para o treinamento dos módulos: ${viewingTrainingProposal.modules.map((m: any) => m.name).join(', ')}.\n\nFicamos à disposição para esclarecimentos.\n\nAtenciosamente,\nService Logic`,
+                    `Boa tarde, ${viewingTrainingProposal.contato || 'Cliente'}!\n\nConforme alinhado, segue em anexo a proposta referente ao treinamento do(s) Módulo(s) ${viewingTrainingProposal.modules.map((m: any) => m.name).join(', ')}.\n\nO treinamento será realizado de forma on-line, ao final, disponibilizaremos também a gravação do treinamento para consulta posterior da equipe.\n\nAssim que recebermos o aceite da proposta, nossa equipe de implantação entrará em contato para verificar a melhor data e horário para realização do treinamento e efetuar o agendamento.\n\nFico à disposição para quaisquer dúvidas.`,
                   )
                   window.open(
                     `mailto:${viewingTrainingProposal.email}?subject=${subject}&body=${body}`,
@@ -2962,7 +2962,7 @@ Obrigada.`)
                 className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4"
               >
                 <ScrollArea className="h-[calc(100vh-14rem)] pr-4">
-                  <div className="flex justify-between items-center mb-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <div>
                       <h3 className="text-lg font-semibold text-slate-800">
                         Solicitações de Serviço
@@ -2971,25 +2971,57 @@ Obrigada.`)
                         Registre treinamentos e visitas técnicas para {viewingClient.name}
                       </p>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => setIsSetupTrainingProposalOpen(true)}
-                        size="sm"
-                        variant="outline"
-                        className="bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100"
-                      >
-                        <FileText className="h-4 w-4 mr-2" /> Gerar Proposta
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          resetSolicitacaoForm()
-                          setIsAddSolicitacaoOpen(true)
-                        }}
-                        size="sm"
-                        className="bg-indigo-600 hover:bg-indigo-700"
-                      >
-                        <Plus className="h-4 w-4 mr-2" /> Nova Solicitação
-                      </Button>
+                    <div className="flex flex-col gap-2 w-full sm:w-auto">
+                      <div className="flex gap-2 w-full sm:justify-end">
+                        <Button
+                          onClick={() => setIsSetupTrainingProposalOpen(true)}
+                          size="sm"
+                          variant="outline"
+                          className="bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 flex-1 sm:flex-none"
+                        >
+                          <FileText className="h-4 w-4 mr-2" /> Gerar Proposta
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            resetSolicitacaoForm()
+                            setIsAddSolicitacaoOpen(true)
+                          }}
+                          size="sm"
+                          className="bg-indigo-600 hover:bg-indigo-700 flex-1 sm:flex-none"
+                        >
+                          <Plus className="h-4 w-4 mr-2" /> Nova Solicitação
+                        </Button>
+                      </div>
+                      <div className="flex gap-2 w-full sm:justify-end">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 flex-1 sm:flex-none"
+                          onClick={() => {
+                            resetSolicitacaoForm()
+                            setSolicitacaoTipo('Treinamento')
+                            setSolicitacaoDescricao(
+                              'Solicitação de Agendamento/Implantação de Treinamento',
+                            )
+                            setIsAddSolicitacaoOpen(true)
+                          }}
+                        >
+                          <Mail className="h-3 w-3 mr-1.5" /> Solicitar Implantação
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 flex-1 sm:flex-none"
+                          onClick={() => {
+                            resetSolicitacaoForm()
+                            setSolicitacaoTipo('Outro')
+                            setSolicitacaoDescricao('Faturamento de Serviço / Treinamento')
+                            setIsAddSolicitacaoOpen(true)
+                          }}
+                        >
+                          <Mail className="h-3 w-3 mr-1.5" /> Solicitar Cobrança
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
