@@ -31,30 +31,35 @@ Deno.serve(async (req: Request) => {
 
     if (action === 'create') {
       let authUser
+      let colabId
 
-      if (payload.sendInvite) {
-        const { data, error } = await supabase.auth.admin.inviteUserByEmail(payload.email, {
-          data: { name: payload.name },
-        })
-        if (error) throw error
-        authUser = data.user
+      if (payload.systemAccess !== false && payload.email) {
+        if (payload.sendInvite) {
+          const { data, error } = await supabase.auth.admin.inviteUserByEmail(payload.email, {
+            data: { name: payload.name },
+          })
+          if (error) throw error
+          authUser = data.user
+        } else {
+          const { data, error } = await supabase.auth.admin.createUser({
+            email: payload.email,
+            password: payload.password || 'Skip@Pass123!',
+            email_confirm: true,
+            user_metadata: { name: payload.name },
+          })
+          if (error) throw error
+          authUser = data.user
+        }
+        if (!authUser) throw new Error('Falha ao criar usuário')
+        colabId = authUser.id
       } else {
-        const { data, error } = await supabase.auth.admin.createUser({
-          email: payload.email,
-          password: payload.password || 'Skip@Pass123!',
-          email_confirm: true,
-          user_metadata: { name: payload.name },
-        })
-        if (error) throw error
-        authUser = data.user
+        colabId = crypto.randomUUID()
       }
 
-      if (!authUser) throw new Error('Falha ao criar usuário')
-
-      const { error: dbErr } = await supabase.from('colaboradores').insert({
-        id: authUser.id,
-        user_id: authUser.id,
-        email: payload.email,
+      const insertData: any = {
+        id: colabId,
+        user_id: authUser ? authUser.id : null,
+        email: payload.email || null,
         nome: payload.name,
         role: mapRole(payload.role),
         departamento: payload.departamento || null,
@@ -73,10 +78,15 @@ Deno.serve(async (req: Request) => {
         salario: payload.salario ? parseFloat(payload.salario) : null,
         tipo_contrato: payload.tipo_contrato || 'CLT',
         codigo_funcionario: payload.codigo_funcionario || null,
-      })
+      }
+
+      if (payload.chave_pix !== undefined) insertData.chave_pix = payload.chave_pix
+      if (payload.tipo_chave_pix !== undefined) insertData.tipo_chave_pix = payload.tipo_chave_pix
+
+      const { error: dbErr } = await supabase.from('colaboradores').insert(insertData)
       if (dbErr) throw dbErr
 
-      return new Response(JSON.stringify({ success: true, id: authUser.id }), {
+      return new Response(JSON.stringify({ success: true, id: colabId }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -113,7 +123,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === 'update') {
-      const { id, email, name, role, password, recebe_transporte } = payload
+      const { id, email, name, role, password, recebe_transporte, systemAccess } = payload
 
       const { data: colab } = await supabase
         .from('colaboradores')
@@ -121,70 +131,79 @@ Deno.serve(async (req: Request) => {
         .or(`id.eq.${id},user_id.eq.${id}`)
         .single()
 
-      const authUserId = colab?.user_id || id
+      const authUserId = colab?.user_id
       const colabId = colab?.id || id
 
-      const updateData: any = {
-        email,
-        user_metadata: { name },
-        email_confirm: true,
-      }
-
-      if (password) {
-        updateData.password = password
-      }
-
       if (authUserId) {
-        const { error: authErr } = await supabase.auth.admin.updateUserById(authUserId, updateData)
-        if (authErr) {
-          if (authErr.message.toLowerCase().includes('user not found')) {
-            if (password) {
-              const { data: newAuth, error: createErr } = await supabase.auth.admin.createUser({
-                email,
-                password,
-                email_confirm: true,
-                user_metadata: { name },
-              })
-              if (createErr) throw createErr
+        if (systemAccess === false) {
+          await supabase.auth.admin.deleteUser(authUserId)
+          await supabase.from('colaboradores').update({ user_id: null }).eq('id', colabId)
+        } else if (email) {
+          const updateData: any = {
+            email,
+            user_metadata: { name },
+            email_confirm: true,
+          }
+          if (password) updateData.password = password
 
-              await supabase
-                .from('colaboradores')
-                .update({ user_id: newAuth.user.id })
-                .eq('id', colabId)
+          const { error: authErr } = await supabase.auth.admin.updateUserById(authUserId, updateData)
+          if (authErr) {
+            if (authErr.message.toLowerCase().includes('user not found')) {
+              if (email) {
+                const { data: newAuth, error: createErr } = await supabase.auth.admin.createUser({
+                  email,
+                  password: password || 'Skip@Pass123!',
+                  email_confirm: true,
+                  user_metadata: { name },
+                })
+                if (!createErr) {
+                  await supabase.from('colaboradores').update({ user_id: newAuth.user.id }).eq('id', colabId)
+                }
+              }
+            } else {
+              throw authErr
             }
-          } else {
-            throw authErr
           }
         }
+      } else if (systemAccess !== false && email) {
+        const { data: newAuth, error: createErr } = await supabase.auth.admin.createUser({
+          email,
+          password: password || 'Skip@Pass123!',
+          email_confirm: true,
+          user_metadata: { name },
+        })
+        if (createErr) throw createErr
+
+        await supabase
+          .from('colaboradores')
+          .update({ user_id: newAuth.user.id })
+          .eq('id', colabId)
       }
 
       const receivesTransport =
         recebe_transporte === false || recebe_transporte === 'false' ? false : true
 
       const updateDataDb: any = {
-        email,
         nome: name,
         role: mapRole(role),
         departamento: payload.departamento || null,
         recebe_transporte: receivesTransport,
       }
+      if (email !== undefined) updateDataDb.email = email || null
 
-      if (payload.avatar_url !== undefined) {
-        updateDataDb.avatar_url = payload.avatar_url
-      }
+      if (payload.avatar_url !== undefined) updateDataDb.avatar_url = payload.avatar_url
       if (payload.cpf !== undefined) updateDataDb.cpf = payload.cpf
       if (payload.rg !== undefined) updateDataDb.rg = payload.rg
-      if (payload.data_nascimento !== undefined)
-        updateDataDb.data_nascimento = payload.data_nascimento
+      if (payload.data_nascimento !== undefined) updateDataDb.data_nascimento = payload.data_nascimento
       if (payload.endereco !== undefined) updateDataDb.endereco = payload.endereco
       if (payload.telefone !== undefined) updateDataDb.telefone = payload.telefone
       if (payload.cargo !== undefined) updateDataDb.cargo = payload.cargo
       if (payload.data_admissao !== undefined) updateDataDb.data_admissao = payload.data_admissao
-      if (payload.salario !== undefined)
-        updateDataDb.salario = payload.salario ? parseFloat(payload.salario) : null
+      if (payload.salario !== undefined) updateDataDb.salario = payload.salario ? parseFloat(payload.salario) : null
       if (payload.tipo_contrato !== undefined) updateDataDb.tipo_contrato = payload.tipo_contrato
-      if (payload.codigo_funcionario !== undefined)
-        updateDataDb.codigo_funcionario = payload.codigo_funcionario
+      if (payload.codigo_funcionario !== undefined) updateDataDb.codigo_funcionario = payload.codigo_funcionario
+      if (payload.chave_pix !== undefined) updateDataDb.chave_pix = payload.chave_pix
+      if (payload.tipo_chave_pix !== undefined) updateDataDb.tipo_chave_pix = payload.tipo_chave_pix
 
       const { error: dbErr } = await supabase
         .from('colaboradores')
