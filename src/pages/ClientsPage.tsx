@@ -307,6 +307,9 @@ export default function ClientsPage() {
   const [trainingPrice, setTrainingPrice] = useState<number>(0)
   const [viewingTrainingProposal, setViewingTrainingProposal] = useState<any>(null)
 
+  const [flagNotifyImplantacao, setFlagNotifyImplantacao] = useState(false)
+  const [flagNotifyFinanceiro, setFlagNotifyFinanceiro] = useState(false)
+
   const resetSolicitacaoForm = () => {
     setEditingSolicitacaoId(null)
     setSolicitacaoTipo('Treinamento')
@@ -876,15 +879,57 @@ Atenciosamente`)
         observacoes: `Proposta gerada para os módulos: ${selectedTrainingModules.join(', ')}. Valor: R$ ${trainingPrice.toFixed(2)}`,
         valor_total: viewingClient.totalValue,
       })
+
+      await createSolicitacao({
+        cliente_id: viewingClient.id,
+        tipo: 'Proposta de Treinamento',
+        descricao: `Proposta gerada para os módulos: ${selectedTrainingModules.join(', ')}`,
+        valor: trainingPrice,
+        status: 'Pendente',
+      })
+
+      if (flagNotifyImplantacao) {
+        await createSolicitacao({
+          cliente_id: viewingClient.id,
+          tipo: 'Treinamento',
+          descricao: `Agendamento automático via Proposta.\nMódulos: ${selectedTrainingModules.join(', ')}`,
+          status: 'Pendente',
+        })
+        await createHistorico({
+          cliente_id: viewingClient.id,
+          tipo: 'Notificação Enviada',
+          observacoes: 'Solicitação de agendamento de treinamento enviada automaticamente.',
+        })
+      }
+
+      if (flagNotifyFinanceiro) {
+        await createSolicitacao({
+          cliente_id: viewingClient.id,
+          tipo: 'Outro',
+          descricao: `Faturamento automático via Proposta.\nMódulos: ${selectedTrainingModules.join(', ')}`,
+          valor: trainingPrice,
+          status: 'Pendente',
+        })
+        await createHistorico({
+          cliente_id: viewingClient.id,
+          tipo: 'Notificação Enviada',
+          observacoes: 'Solicitação de faturamento enviada automaticamente ao financeiro.',
+        })
+      }
+
       loadHistory(viewingClient.id)
+      loadSolicitacoes(viewingClient.id)
+      toast.success('Proposta gerada com sucesso e ações executadas!')
     } catch (e) {
-      console.error('Erro ao salvar histórico de proposta', e)
+      console.error('Erro ao salvar histórico/solicitação de proposta', e)
     }
 
     setViewingTrainingProposal(data)
     setIsSetupTrainingProposalOpen(false)
     setSelectedTrainingModules([])
     setTrainingPrice(0)
+    setFlagNotifyImplantacao(false)
+    setFlagNotifyFinanceiro(false)
   }
 
   const handleEmailFinanceiro = (sol: any) => {
@@ -2117,8 +2162,40 @@ Obrigada.`)
                 Calculado automaticamente: R$ 250,00 por módulo. Pode ser ajustado manualmente.
               </p>
             </div>
+
+            <div className="bg-slate-50 p-3 rounded-md border border-slate-200 mt-4 space-y-3">
+              <Label className="text-slate-700 font-semibold block mb-1">
+                Ações Automáticas (Após gerar)
+              </Label>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="flag-impl"
+                  checked={flagNotifyImplantacao}
+                  onCheckedChange={(c) => setFlagNotifyImplantacao(!!c)}
+                />
+                <Label
+                  htmlFor="flag-impl"
+                  className="cursor-pointer font-normal text-sm text-slate-700"
+                >
+                  Criar solicitação para Implantação
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="flag-fin"
+                  checked={flagNotifyFinanceiro}
+                  onCheckedChange={(c) => setFlagNotifyFinanceiro(!!c)}
+                />
+                <Label
+                  htmlFor="flag-fin"
+                  className="cursor-pointer font-normal text-sm text-slate-700"
+                >
+                  Criar solicitação para Financeiro
+                </Label>
+              </div>
+            </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
             <Button variant="outline" onClick={() => setIsSetupTrainingProposalOpen(false)}>
               Cancelar
             </Button>
@@ -2127,7 +2204,7 @@ Obrigada.`)
               onClick={handleGenerateTrainingProposal}
               className="bg-indigo-600 hover:bg-indigo-700 text-white"
             >
-              Gerar Documento
+              Gerar Proposta
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2938,7 +3015,9 @@ Obrigada.`)
                                 className={
                                   sol.tipo === 'Treinamento'
                                     ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    : sol.tipo === 'Proposta de Treinamento'
+                                      ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                 }
                               >
                                 {sol.tipo}
