@@ -1,4 +1,5 @@
 import { formatCurrency } from '@/lib/formatters'
+import logoUrl from '@/assets/logomarca-service-ea011.png'
 
 interface QuoteDocumentProps {
   empresa: string
@@ -80,16 +81,8 @@ export function QuoteDocument({
 
         {/* Header */}
         <div className="flex items-center gap-6 mt-12 mb-32 relative z-10">
-          <div className="flex items-center justify-center w-20 h-20 bg-orange-500 rounded-full text-white font-bold text-5xl shrink-0">
-            S
-          </div>
+          <img src={logoUrl} alt="Service Logic" className="h-24 object-contain shrink-0" />
           <div>
-            <h2 className="text-3xl font-extrabold text-[#1e3a8a] tracking-tight leading-none mb-1">
-              SERVICE
-            </h2>
-            <h2 className="text-3xl font-extrabold text-[#1e3a8a] tracking-tight leading-none mb-2">
-              LOGIC
-            </h2>
             <div className="text-xs text-slate-600 leading-tight space-y-0.5 mt-2">
               <p>SERVICE LOGIC, CNPJ: 10.929.600/0001-92</p>
               <p>ENDEREÇO: Avenida Central, 1439 CEP: 29165-130, Serra-ES</p>
@@ -130,11 +123,8 @@ export function QuoteDocument({
           <h2 className="text-4xl font-bold text-[#1e3a8a]">
             Conheça + <br /> Funcionalidades
           </h2>
-          <div className="ml-auto text-[#1e3a8a] font-bold text-2xl flex items-center gap-2">
-            <span className="w-10 h-10 bg-orange-500 text-white rounded-full flex items-center justify-center">
-              S
-            </span>
-            SERVICE LOGIC
+          <div className="ml-auto flex items-center">
+            <img src={logoUrl} alt="Service Logic" className="h-10 object-contain" />
           </div>
         </div>
 
@@ -179,11 +169,8 @@ export function QuoteDocument({
         <div className="flex items-center gap-4 mb-12">
           <div className="w-2 h-12 bg-orange-500 rounded-full" />
           <h2 className="text-4xl font-bold text-[#1e3a8a]">Proposta Detalhada</h2>
-          <div className="ml-auto text-[#1e3a8a] font-bold text-2xl flex items-center gap-2">
-            <span className="w-10 h-10 bg-orange-500 text-white rounded-full flex items-center justify-center">
-              S
-            </span>
-            SERVICE LOGIC
+          <div className="ml-auto flex items-center">
+            <img src={logoUrl} alt="Service Logic" className="h-10 object-contain" />
           </div>
         </div>
 

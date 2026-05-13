@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
+import logoUrl from '@/assets/logomarca-service-ea011.png'
 import {
   Sidebar,
   SidebarContent,
@@ -41,16 +42,8 @@ export function AppSidebar() {
   return (
     <Sidebar variant="sidebar" className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="p-4 border-b border-sidebar-border/50">
-        <div className="flex items-center gap-2 px-2 text-sidebar-primary">
-          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm">
-            <Rocket className="size-5" />
-          </div>
-          <div className="flex flex-col gap-0.5 leading-none">
-            <span className="font-semibold text-base tracking-tight text-sidebar-foreground">
-              Gestão Comercial
-            </span>
-            <span className="text-xs text-sidebar-foreground/70">CRM & Contratos</span>
-          </div>
+        <div className="flex items-center justify-center px-2 py-2">
+          <img src={logoUrl} alt="Service Logic" className="h-10 object-contain" />
         </div>
       </SidebarHeader>
       <SidebarContent>

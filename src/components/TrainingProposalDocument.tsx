@@ -1,4 +1,5 @@
 import { formatCurrency, formatCNPJ } from '@/lib/formatters'
+import logoUrl from '@/assets/logomarca-service-ea011.png'
 
 export function TrainingProposalDocument({
   clientName,
@@ -27,16 +28,8 @@ export function TrainingProposalDocument({
             Treinamento de Módulos
           </h2>
         </div>
-        <div className="text-right">
-          <div className="flex items-center gap-2">
-            <div className="h-10 w-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-xl italic">
-              S
-            </div>
-            <div className="flex flex-col text-left leading-none">
-              <span className="font-bold text-xl tracking-tight text-blue-900">SERVICE</span>
-              <span className="font-bold text-xl tracking-tight text-blue-900">LOGIC</span>
-            </div>
-          </div>
+        <div className="text-right flex items-center justify-end">
+          <img src={logoUrl} alt="Service Logic" className="h-14 object-contain" />
         </div>
       </div>
 

@@ -15,7 +15,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 244 75% 59%; /* Indigo #4f46e5 */
+    --primary: 217 66% 31%; /* Service Logic Blue #1b4382 */
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -32,19 +32,19 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 244 75% 59%;
+    --ring: 217 66% 31%;
 
     --radius: 0.5rem;
 
     /* Sidebar - Navy Blue #1e293b */
     --sidebar-background: 217 33% 17%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 244 75% 59%;
+    --sidebar-primary: 23 90% 54%; /* Orange #f37021 */
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 217 33% 25%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217 33% 22%;
-    --sidebar-ring: 244 75% 59%;
+    --sidebar-ring: 217 66% 31%;
 
     --chart-1: 34 100% 44%;
     --chart-2: 189 100% 38%;
@@ -63,8 +63,8 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 244 75% 59%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 217 66% 31%;
+    --primary-foreground: 210 40% 98%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -80,7 +80,7 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 244 75% 59%;
+    --ring: 217 66% 31%;
   }
 
   section[aria-label='Notifications alt+T'] {

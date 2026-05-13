@@ -2,7 +2,7 @@ import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { PLANS, MODULES, BASE_IMPLEMENTATION_HOURS } from '@/constants/contracts'
 import { CONTRACT_TEXT } from '@/constants/contract-text'
-import logoUrl from '@/assets/logomarca-service-df337.png'
+import logoUrl from '@/assets/logomarca-service-ea011.png'
 
 export const Highlight = ({ value, fallback }: { value: string; fallback: string }) => (
   <strong
