@@ -107,6 +107,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { ContractDocument, AddendumDocument } from '@/components/ContractDocument'
+import { TrainingProposalDocument } from '@/components/TrainingProposalDocument'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { DiagnosticoOperacional } from '@/components/DiagnosticoOperacional'
@@ -135,6 +136,52 @@ export interface ClienteRecord {
 }
 
 type ModuleItem = { name: string; price: number }
+
+const TRAINING_FEATURES: Record<string, string[]> = {
+  Financeiro: [
+    'Controle de contas a pagar e receber',
+    'Conciliação bancária',
+    'Emissão de boletos com baixa automática',
+    'Fluxo de caixa',
+    'Plano de contas',
+    'DRE gerencial',
+    'Controle de cheques e recibos',
+    'Relatórios financeiros completos',
+  ],
+  Faturamento: [
+    'Cadastro de tabelas de faturamento',
+    'Faturamento em lote',
+    'Faturamento automático',
+    'Integração com o financeiro',
+    'Relatórios gerenciais',
+  ],
+  'Carga (Transporte)': [
+    'Emissão do CT-e Normal, Contingência e Complementar',
+    'Emissão de MDF-e e NFS-e',
+    'Importação do XML da NF-e externa',
+    'Averbação de Seguro',
+    'Emissão do Contrato de Frete/CIOT',
+    'Controle de Entregas Realizadas',
+  ],
+  Frota: [
+    'Cadastro de peças e produtos',
+    'Movimentação e controle de estoque (bomba interna)',
+    'Manutenção preventiva e corretiva',
+    'Cadastro e controle de vida do pneu',
+    'Abastecimento interno e externo',
+  ],
+  Comercial: [
+    'Criação, registro e controle de propostas comerciais',
+    'Envio automático em formato PDF',
+    'Controle de aprovação',
+  ],
+  Fiscal: [
+    'Geração de arquivos SPED (EFD contribuições / EFD fiscal)',
+    'Geração do Sintegra',
+    'Relatórios de livros fiscais',
+    'Emissão de NF-e e Apuração de ICMS-CIAP',
+  ],
+}
 
 type MergedClient = {
   id: string
@@ -225,6 +272,11 @@ export default function ClientsPage() {
   const [solicitacaoObservacoes, setSolicitacaoObservacoes] = useState('')
   const [isSubmittingSolicitacao, setIsSubmittingSolicitacao] = useState(false)
   const [editingSolicitacaoId, setEditingSolicitacaoId] = useState<string | null>(null)
+
+  const [isSetupTrainingProposalOpen, setIsSetupTrainingProposalOpen] = useState(false)
+  const [selectedTrainingModules, setSelectedTrainingModules] = useState<string[]>([])
+  const [trainingPrice, setTrainingPrice] = useState<number>(250)
+  const [viewingTrainingProposal, setViewingTrainingProposal] = useState<any>(null)
 
   const resetSolicitacaoForm = () => {
     setEditingSolicitacaoId(null)
@@ -769,6 +821,41 @@ ${sol.descricao}${sol.observacoes ? `\n\nObservações:\n${sol.observacoes}` : '
 Atenciosamente`)
 
     window.open(`mailto:gesualdo@servicelogic.com.br?subject=${subject}&body=${body}`, '_blank')
+  }
+
+  const handleGenerateTrainingProposal = async () => {
+    if (!viewingClient) return
+
+    const data = {
+      clientName: viewingClient.name,
+      cnpj: viewingClient.cnpj,
+      email: viewingClient.originalData?.email || '',
+      contato: viewingClient.rep_nome || '',
+      date: new Date().toISOString(),
+      price: trainingPrice,
+      modules: selectedTrainingModules.map((m) => ({
+        name: m,
+        features: TRAINING_FEATURES[m] || [],
+      })),
+    }
+
+    try {
+      await createHistorico({
+        cliente_id: viewingClient.id,
+        tipo: 'Proposta de Treinamento',
+        data_solicitacao: new Date().toISOString().split('T')[0],
+        observacoes: `Proposta gerada para os módulos: ${selectedTrainingModules.join(', ')}. Valor: R$ ${trainingPrice.toFixed(2)}`,
+        valor_total: viewingClient.totalValue,
+      })
+      loadHistory(viewingClient.id)
+    } catch (e) {
+      console.error('Erro ao salvar histórico de proposta', e)
+    }
+
+    setViewingTrainingProposal(data)
+    setIsSetupTrainingProposalOpen(false)
+    setSelectedTrainingModules([])
+    setTrainingPrice(250)
   }
 
   const handleEmailFinanceiro = (sol: any) => {
@@ -1938,6 +2025,126 @@ Obrigada.`)
       </Dialog>
 
       {/* Visualizar Aditivo Dialog */}
+      {/* Gerar Proposta de Treinamento Dialog */}
+      <Dialog open={isSetupTrainingProposalOpen} onOpenChange={setIsSetupTrainingProposalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Proposta de Treinamento</DialogTitle>
+            <DialogDescription>
+              Selecione os módulos para o treinamento e defina o valor do investimento para gerar o
+              documento da proposta.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Módulos do Treinamento</Label>
+              <ScrollArea className="h-48 border rounded-md p-3 bg-slate-50">
+                <div className="space-y-3">
+                  {Object.keys(TRAINING_FEATURES).map((mod) => (
+                    <div
+                      key={mod}
+                      className="flex items-center space-x-3 bg-white p-2 border rounded-md hover:bg-slate-50 transition-colors"
+                    >
+                      <Checkbox
+                        id={`train-mod-${mod}`}
+                        checked={selectedTrainingModules.includes(mod)}
+                        onCheckedChange={(checked) => {
+                          if (checked) setSelectedTrainingModules((prev) => [...prev, mod])
+                          else setSelectedTrainingModules((prev) => prev.filter((id) => id !== mod))
+                        }}
+                      />
+                      <Label
+                        htmlFor={`train-mod-${mod}`}
+                        className="flex-1 cursor-pointer font-medium text-sm"
+                      >
+                        {mod}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+            <div className="space-y-2">
+              <Label>Valor da Proposta (R$)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={trainingPrice}
+                onChange={(e) => setTrainingPrice(parseFloat(e.target.value) || 0)}
+              />
+              <p className="text-xs text-slate-500">
+                Valor padrão sugerido: R$ 250,00 (pagamento único)
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSetupTrainingProposalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={selectedTrainingModules.length === 0}
+              onClick={handleGenerateTrainingProposal}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              Gerar Documento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Visualizar Proposta de Treinamento Dialog */}
+      <Dialog
+        open={!!viewingTrainingProposal}
+        onOpenChange={(open) => !open && setViewingTrainingProposal(null)}
+      >
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden bg-slate-100">
+          <div className="flex justify-between items-center p-4 bg-white border-b shrink-0 print:hidden">
+            <h2 className="font-semibold text-lg text-slate-800">Visualização de Proposta</h2>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setViewingTrainingProposal(null)}>
+                Fechar
+              </Button>
+              <Button
+                onClick={() => {
+                  const subject = encodeURIComponent(`Proposta de Treinamento - Service Logic`)
+                  const body = encodeURIComponent(
+                    `Olá ${viewingTrainingProposal.contato || 'Cliente'},\n\nSegue em anexo a proposta comercial para o treinamento dos módulos: ${viewingTrainingProposal.modules.map((m: any) => m.name).join(', ')}.\n\nFicamos à disposição para esclarecimentos.\n\nAtenciosamente,\nService Logic`,
+                  )
+                  window.open(
+                    `mailto:${viewingTrainingProposal.email}?subject=${subject}&body=${body}`,
+                    '_blank',
+                  )
+                }}
+                className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
+              >
+                <Mail className="h-4 w-4 mr-2" /> Enviar por E-mail
+              </Button>
+              <Button
+                onClick={() => {
+                  const printContent = document.getElementById('training-proposal-print')
+                  if (printContent) {
+                    const originalContents = document.body.innerHTML
+                    document.body.innerHTML = printContent.innerHTML
+                    window.print()
+                    document.body.innerHTML = originalContents
+                    window.location.reload()
+                  }
+                }}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                <Printer className="h-4 w-4 mr-2" /> Imprimir / Salvar PDF
+              </Button>
+            </div>
+          </div>
+          <ScrollArea className="flex-1 p-4 sm:p-8 overflow-auto">
+            <div className="max-w-[800px] mx-auto shadow-xl">
+              {viewingTrainingProposal && <TrainingProposalDocument {...viewingTrainingProposal} />}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!viewingAddendum} onOpenChange={(open) => !open && setViewingAddendum(null)}>
         <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden bg-slate-100">
           <div className="flex justify-between items-center p-4 bg-white border-b shrink-0 print:hidden">
@@ -2516,16 +2723,26 @@ Obrigada.`)
                         Registre treinamentos e visitas técnicas para {viewingClient.name}
                       </p>
                     </div>
-                    <Button
-                      onClick={() => {
-                        resetSolicitacaoForm()
-                        setIsAddSolicitacaoOpen(true)
-                      }}
-                      size="sm"
-                      className="bg-indigo-600 hover:bg-indigo-700"
-                    >
-                      <Plus className="h-4 w-4 mr-2" /> Nova Solicitação
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => setIsSetupTrainingProposalOpen(true)}
+                        size="sm"
+                        variant="outline"
+                        className="bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100"
+                      >
+                        <FileText className="h-4 w-4 mr-2" /> Gerar Proposta
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          resetSolicitacaoForm()
+                          setIsAddSolicitacaoOpen(true)
+                        }}
+                        size="sm"
+                        className="bg-indigo-600 hover:bg-indigo-700"
+                      >
+                        <Plus className="h-4 w-4 mr-2" /> Nova Solicitação
+                      </Button>
+                    </div>
                   </div>
 
                   {isLoadingSolicitacoes ? (
