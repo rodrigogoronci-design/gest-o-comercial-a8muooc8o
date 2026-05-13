@@ -756,25 +756,19 @@ Obrigada,`
 
   const handleEmailImplantacao = (sol: any) => {
     const subject = encodeURIComponent(`Agendamento de ${sol.tipo} - ${viewingClient?.name}`)
-    const body = encodeURIComponent(`Boa tarde, tudo bem?
+    const body = encodeURIComponent(`Gesualdo,
 
-Peço por gentileza que a equipe de Implantação realize contato com o cliente abaixo para alinhamento e agendamento do treinamento/visita técnica:
-
+Peço, por gentileza, que entre em contato com a cliente abaixo para realizar o agendamento de treinamento módulo:
 Cliente: ${viewingClient?.name}
-Responsável: ${viewingClient?.rep_nome || 'Não informado'}
+Contato: ${viewingClient?.rep_nome || 'Não informado'}
 Telefone: ${viewingClient?.originalData?.telefone || 'Não informado'}
+Necessidade identificada:
+${sol.descricao}${sol.observacoes ? `\n\nObservações:\n${sol.observacoes}` : ''}
 
-Treinamento/Serviço solicitado:
-${sol.descricao}
 
-Observações:
-${sol.observacoes || 'Nenhuma'}
+Atenciosamente`)
 
-Assim que possível, peço por gentileza que realizem o contato para definição do melhor dia e horário junto ao cliente.
-
-Obrigada.`)
-
-    window.open(`mailto:implantacao@servicelogic.com.br?subject=${subject}&body=${body}`, '_blank')
+    window.open(`mailto:gesualdo@servicelogic.com.br?subject=${subject}&body=${body}`, '_blank')
   }
 
   const handleEmailFinanceiro = (sol: any) => {
