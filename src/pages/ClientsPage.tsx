@@ -804,9 +804,25 @@ Obrigada,`
       const valorTotalFilial =
         novaFilial.valor_mensalidade + (novaFilial.dfe_incluso ? novaFilial.valor_dfe || 0 : 0)
 
+      const novasAdicoes = [
+        {
+          name: `Filial: ${novaFilial.nome} (${formatCNPJ(novaFilial.cnpj)})`,
+          price: novaFilial.valor_mensalidade,
+        },
+      ]
+      if (novaFilial.dfe_incluso) {
+        novasAdicoes.push({
+          name: `DF-e (Filial: ${novaFilial.nome})`,
+          price: novaFilial.valor_dfe || 0,
+        })
+      }
+
+      const updatedAdicionais = [...(currentModulosRaw.adicionais || []), ...novasAdicoes]
+
       const updatedModulos = {
         ...currentModulosRaw,
         filiais_detalhes: [...currentFiliaisDet, novaFilial],
+        adicionais: updatedAdicionais,
       }
 
       const novoValorTotal = viewingClient.totalValue + valorTotalFilial
@@ -842,6 +858,7 @@ Obrigada,`
         prev
           ? {
               ...prev,
+              modules: [...prev.modules, ...novasAdicoes],
               totalValue: novoValorTotal,
               filiais_detalhes: [...(prev.filiais_detalhes || []), novaFilial],
               originalData: {
@@ -1568,7 +1585,12 @@ Obrigada.`)
           (x) => x.name.toLowerCase() === mName.toLowerCase() || x.id === mName,
         )
 
-        if (!modDef) return null
+        if (!modDef) {
+          if (mPrice !== undefined) {
+            return { name: mName, price: mPrice }
+          }
+          return null
+        }
 
         return {
           name: modDef.name,
@@ -1584,6 +1606,19 @@ Obrigada.`)
         plano_base = modObj.plano_base || ''
         filiais = modObj.filiais || 0
         filiais_detalhes = modObj.filiais_detalhes || []
+
+        // Auto-inject legacy filiais_detalhes into modules if they are not already there
+        filiais_detalhes.forEach((f) => {
+          const filialName = `Filial: ${f.nome} (${formatCNPJ(f.cnpj)})`
+          const dfeName = `DF-e (Filial: ${f.nome})`
+
+          if (!parsedModules.some((m) => m.name === filialName)) {
+            parsedModules.push({ name: filialName, price: f.valor_mensalidade })
+          }
+          if (f.dfe_incluso && !parsedModules.some((m) => m.name === dfeName)) {
+            parsedModules.push({ name: dfeName, price: f.valor_dfe || 0 })
+          }
+        })
       }
 
       return {
@@ -1708,19 +1743,29 @@ Obrigada.`)
               {client.modules.length > 0 && (
                 <div className="mt-2">
                   <span className="text-xs font-bold text-slate-400 uppercase mb-2 block">
-                    Módulos Adicionais
+                    Serviços e Módulos Detalhados
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {client.modules.map((mod) => (
+                    {client.modules.map((mod, idx) => (
                       <div
-                        key={mod.name}
+                        key={`${mod.name}-${idx}`}
                         className="flex justify-between items-center bg-white border border-slate-200 p-2.5 rounded-md"
                       >
-                        <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
-                          <span className="font-medium text-xs text-slate-700">{mod.name}</span>
+                        <div className="flex items-center gap-2 overflow-hidden mr-2">
+                          <div
+                            className={cn(
+                              'w-1.5 h-1.5 rounded-full shrink-0',
+                              mod.name.includes('Filial') ? 'bg-amber-400' : 'bg-emerald-400',
+                            )}
+                          ></div>
+                          <span
+                            className="font-medium text-xs text-slate-700 truncate"
+                            title={mod.name}
+                          >
+                            {mod.name}
+                          </span>
                         </div>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-slate-500 whitespace-nowrap shrink-0">
                           {mod.price > 0 ? formatCurrency(mod.price) : 'Incluso'}
                         </span>
                       </div>
@@ -1737,46 +1782,6 @@ Obrigada.`)
                     Nenhum plano ou módulo selecionado para este cliente.
                   </div>
                 )}
-
-              {client.filiais_detalhes && client.filiais_detalhes.length > 0 && (
-                <div className="mt-4">
-                  <span className="text-xs font-bold text-slate-400 uppercase mb-2 block">
-                    Filiais Detalhadas
-                  </span>
-                  <div className="space-y-2">
-                    {client.filiais_detalhes.map((filial, idx) => (
-                      <div
-                        key={idx}
-                        className="flex justify-between items-center bg-slate-50 border border-slate-200 p-3 rounded-md"
-                      >
-                        <div>
-                          <span className="font-medium text-sm text-slate-700 block">
-                            {filial.nome}
-                          </span>
-                          <span className="text-xs text-slate-500 font-mono flex items-center gap-2">
-                            {formatCNPJ(filial.cnpj)}
-                            {filial.dfe_incluso && (
-                              <Badge
-                                variant="secondary"
-                                className="text-[10px] py-0 px-1.5 h-4 bg-indigo-50 text-indigo-700 border-indigo-200"
-                              >
-                                DF-e Incluso ({formatCurrency(filial.valor_dfe || 49.9)})
-                              </Badge>
-                            )}
-                          </span>
-                        </div>
-                        <span className="text-sm font-semibold text-slate-600">
-                          {formatCurrency(
-                            filial.valor_mensalidade +
-                              (filial.dfe_incluso ? filial.valor_dfe || 49.9 : 0),
-                          )}
-                          /mês
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {client.cobrancas && client.cobrancas.length > 0 && (
                 <div className="mt-4">
@@ -3285,9 +3290,9 @@ Obrigada.`)
                             p.id === viewingClient.plano_base,
                         )?.id || 'tms-50'
                       }
-                      selectedModules={viewingClient.modules.map(
-                        (m) => MODULES.find((mod) => mod.name === m.name)?.id || '',
-                      )}
+                      selectedModules={viewingClient.modules
+                        .map((m) => MODULES.find((mod) => mod.name === m.name)?.id || '')
+                        .filter(Boolean)}
                       planData={PLANS.find(
                         (p) =>
                           p.name === viewingClient.plano_base || p.id === viewingClient.plano_base,
