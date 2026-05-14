@@ -491,9 +491,26 @@ export default function ContractGeneratorPage() {
         })
         if (error) throw error
 
+        try {
+          const clientData = clientes.find((c) => c.id === selectedClientId)
+          await supabase.functions.invoke('send-finance-email', {
+            body: {
+              to: 'financeiro@empresa.com',
+              clientName: clientData?.nome || 'Cliente',
+              moduleName: selectedModules
+                .map((id) => MODULES.find((m) => m.id === id)?.name)
+                .filter(Boolean)
+                .join(', '),
+              type: 'aditivo',
+            },
+          })
+        } catch (e) {
+          console.error('Erro ao enviar email automático', e)
+        }
+
         toast({
           title: 'Upsell salvo!',
-          description: 'A proposta foi registrada nas solicitações do cliente.',
+          description: 'A proposta foi registrada e o aditivo enviado por e-mail.',
           className: 'bg-emerald-600 text-white border-none',
         })
         navigate('/clientes')
@@ -592,9 +609,22 @@ export default function ContractGeneratorPage() {
           observacoes: `Contrato atualizado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}`,
         })
 
+        try {
+          await supabase.functions.invoke('send-finance-email', {
+            body: {
+              to: existingClient.email || 'financeiro@empresa.com',
+              clientName: existingClient.nome,
+              moduleName: adicionais.map((a: any) => a.name).join(', '),
+              type: 'aditivo',
+            },
+          })
+        } catch (e) {
+          console.error('Erro ao enviar email automático de aditivo', e)
+        }
+
         toast({
           title: 'Cliente Atualizado',
-          description: 'O contrato e os dados do cliente foram salvos.',
+          description: 'O contrato foi salvo e o aditivo enviado por e-mail.',
           className: 'bg-emerald-600 text-white border-none',
         })
       } else {
