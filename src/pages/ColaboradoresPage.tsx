@@ -75,7 +75,13 @@ export default function ColaboradoresPage() {
       setFormData({ name: '', email: '', password: '', role: 'Colaborador', systemAccess: true })
       fetchColaboradores()
     } catch (error: any) {
-      toast.error('Erro ao adicionar colaborador', { description: error.message })
+      let msg = error.message
+      if (msg?.includes('User already registered') || msg?.includes('already exists')) {
+        msg = 'Este e-mail já está cadastrado no sistema.'
+      } else if (msg?.includes('Password should be at least')) {
+        msg = 'A senha deve ter pelo menos 6 caracteres.'
+      }
+      toast.error('Erro ao adicionar colaborador', { description: msg })
     } finally {
       setIsSubmitting(false)
     }

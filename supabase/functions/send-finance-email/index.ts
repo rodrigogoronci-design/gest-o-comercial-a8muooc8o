@@ -12,7 +12,7 @@ Deno.serve(async (req: Request) => {
 
     let emailBody = ''
     let subject = 'Documento Solicitado'
-    
+
     if (type === 'proposta_treinamento') {
       subject = 'Proposta de Treinamento'
       emailBody = `Boa tarde, ${clientName || 'Cliente'}!
@@ -38,15 +38,15 @@ Qualquer dúvida técnica ou comercial, nossa equipe está à disposição.`
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           from: 'Comercial <onboarding@resend.dev>',
           to: [to || 'financeiro@empresa.com'],
           subject: subject,
-          html: `<div style="font-family: sans-serif; color: #333; line-height: 1.6;"><p>${emailBody.replace(/\n/g, '<br/>')}</p></div>`
-        })
+          html: `<div style="font-family: sans-serif; color: #333; line-height: 1.6;"><p>${emailBody.replace(/\n/g, '<br/>')}</p></div>`,
+        }),
       })
 
       if (!res.ok) {
@@ -57,18 +57,21 @@ Qualquer dúvida técnica ou comercial, nossa equipe está à disposição.`
       console.log('Simulando envio de e-mail (RESEND_API_KEY ausente):', {
         to,
         subject,
-        body: emailBody
+        body: emailBody,
       })
     }
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: 'Email enviado com sucesso',
-      preview: emailBody 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    })
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'Email enviado com sucesso',
+        preview: emailBody,
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      },
+    )
   } catch (error: any) {
     console.error('Erro ao enviar e-mail:', error)
     return new Response(JSON.stringify({ error: error.message }), {
