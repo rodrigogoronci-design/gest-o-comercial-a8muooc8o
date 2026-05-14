@@ -17,12 +17,14 @@ import {
   Briefcase,
   Tags,
   FileSignature,
-  Rocket,
   ListTodo,
   CircleDollarSign,
   PieChart,
   CalendarDays,
+  UserCog,
+  LogOut,
 } from 'lucide-react'
+import { useAuth } from '@/hooks/use-auth'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -34,13 +36,18 @@ const navigation = [
   { name: 'Gerador de Contratos', href: '/contratos', icon: FileSignature },
   { name: 'Acompanhamento de Recebimentos', href: '/recebimentos', icon: CircleDollarSign },
   { name: 'Relatórios', href: '/relatorios', icon: PieChart },
+  { name: 'Colaboradores', href: '/colaboradores', icon: UserCog },
 ]
 
 export function AppSidebar() {
   const location = useLocation()
+  const { signOut } = useAuth()
 
   return (
-    <Sidebar variant="sidebar" className="border-r border-sidebar-border bg-sidebar">
+    <Sidebar
+      variant="sidebar"
+      className="border-r border-sidebar-border bg-sidebar flex flex-col h-full"
+    >
       <SidebarHeader className="p-4 border-b border-sidebar-border/50">
         <div className="flex items-center justify-center px-2 py-2">
           <img src={logoUrl} alt="Service Logic" className="h-10 object-contain" />
@@ -69,6 +76,21 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 )
               })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="mt-auto border-t border-sidebar-border/50">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => signOut()} tooltip="Sair do Sistema">
+                  <div className="flex items-center gap-3 transition-all duration-200 text-red-500 hover:text-red-600">
+                    <LogOut className="size-4" />
+                    <span className="font-medium">Sair do Sistema</span>
+                  </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

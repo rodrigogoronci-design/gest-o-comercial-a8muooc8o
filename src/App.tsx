@@ -3,9 +3,26 @@ import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AppStoreProvider } from '@/stores/main'
-import { AuthProvider } from '@/hooks/use-auth'
+import { AuthProvider, useAuth } from '@/hooks/use-auth'
+import { Navigate } from 'react-router-dom'
 
 import Layout from './components/Layout'
+import LoginPage from './pages/LoginPage'
+import ColaboradoresPage from './pages/ColaboradoresPage'
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Carregando...</div>
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+
+  return <>{children}</>
+}
 import Index from './pages/Index'
 import CRMPage from './pages/CRMPage'
 import ClientsPage from './pages/ClientsPage'
@@ -25,8 +42,16 @@ const App = () => (
           <Toaster />
           <Sonner />
           <Routes>
-            <Route element={<Layout />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
               <Route path="/" element={<Index />} />
+              <Route path="/colaboradores" element={<ColaboradoresPage />} />
               <Route path="/crm" element={<CRMPage />} />
               <Route path="/clientes" element={<ClientsPage />} />
               <Route path="/atividades" element={<ActivitiesPage />} />
