@@ -76,6 +76,19 @@ export default function ContractGeneratorPage() {
   const [selectedProspectId, setSelectedProspectId] = useState<string>(initialProspectId)
   const [prospects, setProspects] = useState<any[]>([])
 
+  const [quoteTargetType, setQuoteTargetType] = useState<'prospect' | 'cliente'>('prospect')
+  const [selectedClientId, setSelectedClientId] = useState<string>('novo')
+  const [clientes, setClientes] = useState<any[]>([])
+  const [includeFranchise, setIncludeFranchise] = useState(true)
+
+  useEffect(() => {
+    const fetchClientes = async () => {
+      const { data } = await supabase.from('clientes').select('id, nome, rep_nome')
+      if (data) setClientes(data)
+    }
+    fetchClientes()
+  }, [])
+
   useEffect(() => {
     const fetchProspects = async () => {
       const { data } = await supabase.from('crm_prospects').select('id, empresa, contato_nome')
@@ -92,7 +105,7 @@ export default function ContractGeneratorPage() {
   }, [])
 
   const planData = useMemo(() => PLANS.find((p) => p.id === selectedPlan), [selectedPlan])
-  const planPrice = planData?.price || 0
+  const planPrice = selectedPlan === 'none' ? 0 : planData?.price || 0
   const modulesPrice = useMemo(
     () =>
       selectedModules.reduce((acc, id) => acc + (MODULES.find((m) => m.id === id)?.price || 0), 0),
@@ -152,7 +165,7 @@ export default function ContractGeneratorPage() {
       month: 'long',
       year: 'numeric',
     }),
-    planName: planData?.name || 'Plano Personalizado',
+    planName: selectedPlan === 'none' ? 'Nenhum' : planData?.name || 'Plano Personalizado',
     selectedModules: selectedModules
       .map((id) => MODULES.find((m) => m.id === id)?.name)
       .filter(Boolean) as string[],
@@ -163,6 +176,8 @@ export default function ContractGeneratorPage() {
     implRate,
     totalImplHours,
     implValue,
+    isUpsell: quoteTargetType === 'cliente',
+    includeFranchise,
   }
 
   const fetchCnpjData = async (cnpjValue: string) => {
@@ -408,41 +423,69 @@ export default function ContractGeneratorPage() {
       return
     }
     try {
-      let prospectId = selectedProspectId === 'novo' ? null : selectedProspectId
-      if (!prospectId) {
-        const { data, error } = await supabase
-          .from('crm_prospects')
-          .insert({
-            empresa: quoteEmpresa,
-            contato_nome: quoteContato,
-            status: 'Contato Inicial',
+      if (quoteTargetType === 'cliente') {
+        if (selectedClientId === 'novo' || !selectedClientId) {
+          toast({
+            title: 'Atenção',
+            description: 'Selecione um cliente para o Upsell.',
+            variant: 'destructive',
           })
-          .select()
-          .single()
+          return
+        }
+        const { error } = await supabase.from('solicitacoes_servico').insert({
+          cliente_id: selectedClientId,
+          tipo: 'Proposta de Upsell',
+          descricao: `Adição de Módulos/Serviços. Valor Mensal: ${formatCurrency(totalValue)}`,
+          valor: implValue,
+          observacoes: `Módulos: ${selectedModules.map((id) => MODULES.find((m) => m.id === id)?.name).join(', ')} | Implantação: ${implMode} - R$ ${implValue}`,
+          status: 'Pendente',
+          data_solicitacao: new Date().toISOString().split('T')[0],
+        })
         if (error) throw error
-        prospectId = data.id
+
+        toast({
+          title: 'Upsell salvo!',
+          description: 'A proposta foi registrada nas solicitações do cliente.',
+          className: 'bg-emerald-600 text-white border-none',
+        })
+        navigate('/clientes')
+      } else {
+        let prospectId = selectedProspectId === 'novo' ? null : selectedProspectId
+        if (!prospectId) {
+          const { data, error } = await supabase
+            .from('crm_prospects')
+            .insert({
+              empresa: quoteEmpresa,
+              contato_nome: quoteContato,
+              status: 'Contato Inicial',
+            })
+            .select()
+            .single()
+          if (error) throw error
+          prospectId = data.id
+        }
+
+        const { error } = await supabase.from('crm_propostas').insert({
+          prospect_id: prospectId,
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+          data_proposta: new Date().toISOString().split('T')[0],
+          aos_cuidados_de: quoteContato,
+          itens: selectedModules.map((id) => {
+            const m = MODULES.find((mod) => mod.id === id)
+            return { id, name: m?.name, price: m?.price }
+          }),
+          valor_mensalidade: totalValue,
+          valor_implantacao: implValue,
+        })
+        if (error) throw error
+
+        toast({
+          title: 'Cotação salva!',
+          description: 'A proposta foi registrada no CRM.',
+          className: 'bg-emerald-600 text-white border-none',
+        })
+        navigate('/crm')
       }
-
-      const { error } = await supabase.from('crm_propostas').insert({
-        prospect_id: prospectId,
-        user_id: (await supabase.auth.getUser()).data.user?.id,
-        data_proposta: new Date().toISOString().split('T')[0],
-        aos_cuidados_de: quoteContato,
-        itens: selectedModules.map((id) => {
-          const m = MODULES.find((mod) => mod.id === id)
-          return { id, name: m?.name, price: m?.price }
-        }),
-        valor_mensalidade: totalValue,
-        valor_implantacao: implValue,
-      })
-      if (error) throw error
-
-      toast({
-        title: 'Cotação salva!',
-        description: 'A proposta foi registrada no CRM.',
-        className: 'bg-emerald-600 text-white border-none',
-      })
-      navigate('/crm')
     } catch (err: any) {
       toast({ title: 'Erro ao salvar cotação', description: err.message, variant: 'destructive' })
     }
@@ -723,6 +766,7 @@ export default function ContractGeneratorPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">Nenhum (Somente Módulos / Upsell)</SelectItem>
                         {PLANS.map((p) => (
                           <SelectItem key={p.id} value={p.id}>
                             {p.name} - {formatCurrency(p.price)}
@@ -750,6 +794,21 @@ export default function ContractGeneratorPage() {
                           </Label>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                  <div className="space-y-3 mt-4">
+                    <div className="flex items-center space-x-2 border p-3 rounded-lg bg-slate-50">
+                      <Checkbox
+                        id="include-franchise-quote"
+                        checked={includeFranchise}
+                        onCheckedChange={(c) => setIncludeFranchise(c as boolean)}
+                      />
+                      <Label
+                        htmlFor="include-franchise-quote"
+                        className="font-medium cursor-pointer flex-1"
+                      >
+                        Incluir Franquia de Emissões (DF-e) na Cotação
+                      </Label>
                     </div>
                   </div>
                   <Separator />
@@ -821,37 +880,98 @@ export default function ContractGeneratorPage() {
                   <CardTitle>1. Dados do Prospect / Cliente</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Vincular a um Prospect (Opcional)</Label>
-                    <Select
-                      value={selectedProspectId}
-                      onValueChange={(val) => {
-                        setSelectedProspectId(val)
-                        if (val !== 'novo') {
-                          const p = prospects.find((p) => p.id === val)
-                          if (p) {
-                            setQuoteEmpresa(p.empresa)
-                            setQuoteContato(p.contato_nome)
-                          }
-                        } else {
-                          setQuoteEmpresa('')
-                          setQuoteContato('')
-                        }
+                  <div className="space-y-3">
+                    <Label className="text-sm font-bold">Tipo de Cotação</Label>
+                    <RadioGroup
+                      value={quoteTargetType}
+                      onValueChange={(v) => {
+                        setQuoteTargetType(v as 'prospect' | 'cliente')
+                        setSelectedProspectId('novo')
+                        setSelectedClientId('novo')
+                        setQuoteEmpresa('')
+                        setQuoteContato('')
                       }}
+                      className="flex gap-4"
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="novo">-- Novo Prospect --</SelectItem>
-                        {prospects.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.empresa}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="prospect" id="qt-prospect" />
+                        <Label htmlFor="qt-prospect">Novo Contrato (Prospect)</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="cliente" id="qt-cliente" />
+                        <Label htmlFor="qt-cliente">Upsell (Cliente Existente)</Label>
+                      </div>
+                    </RadioGroup>
                   </div>
+
+                  <Separator className="my-2" />
+
+                  {quoteTargetType === 'prospect' ? (
+                    <div className="space-y-2">
+                      <Label>Vincular a um Prospect (Opcional)</Label>
+                      <Select
+                        value={selectedProspectId}
+                        onValueChange={(val) => {
+                          setSelectedProspectId(val)
+                          if (val !== 'novo') {
+                            const p = prospects.find((p) => p.id === val)
+                            if (p) {
+                              setQuoteEmpresa(p.empresa)
+                              setQuoteContato(p.contato_nome)
+                            }
+                          } else {
+                            setQuoteEmpresa('')
+                            setQuoteContato('')
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="novo">-- Novo Prospect --</SelectItem>
+                          {prospects.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.empresa}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label>Vincular a um Cliente (Obrigatório para Upsell)</Label>
+                      <Select
+                        value={selectedClientId}
+                        onValueChange={(val) => {
+                          setSelectedClientId(val)
+                          if (val !== 'novo') {
+                            const c = clientes.find((c) => c.id === val)
+                            if (c) {
+                              setQuoteEmpresa(c.nome)
+                              setQuoteContato(c.rep_nome || '')
+                            }
+                          } else {
+                            setQuoteEmpresa('')
+                            setQuoteContato('')
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um cliente..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="novo">-- Selecione um Cliente --</SelectItem>
+                          {clientes.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label>Empresa (Razão Social)</Label>
                     <Input value={quoteEmpresa} onChange={(e) => setQuoteEmpresa(e.target.value)} />
@@ -876,6 +996,7 @@ export default function ContractGeneratorPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">Nenhum (Somente Módulos / Upsell)</SelectItem>
                         {PLANS.map((p) => (
                           <SelectItem key={p.id} value={p.id}>
                             {p.name} - {formatCurrency(p.price)}

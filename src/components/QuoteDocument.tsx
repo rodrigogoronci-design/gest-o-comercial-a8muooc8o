@@ -14,6 +14,8 @@ interface QuoteDocumentProps {
   implRate: number
   totalImplHours: number
   implValue: number
+  isUpsell?: boolean
+  includeFranchise?: boolean
 }
 
 const FEATURE_CATEGORIES = [
@@ -66,7 +68,12 @@ export function QuoteDocument({
   totalValue,
   implMode,
   implValue,
+  isUpsell,
+  includeFranchise,
 }: QuoteDocumentProps) {
+  const showBasePlan =
+    planName && planName !== 'Nenhum' && planName !== 'Nenhum (Somente Módulos / Upsell)'
+
   return (
     <div
       className="bg-white w-full max-w-[210mm] mx-auto p-4 md:p-6 print:m-0 print:p-4 text-slate-800 text-xs shadow-sm print:shadow-none font-sans"
@@ -89,9 +96,11 @@ export function QuoteDocument({
       <div className="flex justify-between items-end border-b-2 border-orange-500 pb-1.5 mb-3">
         <div>
           <h1 className="text-lg font-bold uppercase tracking-wider text-[#1e3a8a]">
-            Proposta Comercial
+            {isUpsell ? 'Proposta Comercial - Upsell' : 'Proposta Comercial'}
           </h1>
-          <p className="text-xs font-semibold text-slate-600 mt-0.5">{planName}</p>
+          <p className="text-xs font-semibold text-slate-600 mt-0.5">
+            {showBasePlan ? planName : 'Adição de Módulos e Serviços'}
+          </p>
         </div>
         <div className="text-right text-[10px]">
           <p>
@@ -112,32 +121,34 @@ export function QuoteDocument({
       </div>
 
       {/* Features */}
-      <div className="mb-4">
-        <h3 className="font-bold text-xs text-[#1e3a8a] mb-2 flex items-center gap-1.5">
-          <div className="w-1.5 h-3 bg-orange-500 rounded-full" />
-          Funcionalidades Inclusas no Plano
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-          {FEATURE_CATEGORIES.map((cat, i) => (
-            <div key={i} className="bg-white p-2 rounded border border-slate-200 shadow-sm">
-              <h4 className="font-bold text-slate-800 text-[10px] mb-1 pb-0.5 border-b border-slate-100">
-                {cat.title}
-              </h4>
-              <ul className="space-y-0.5">
-                {cat.items.map((item, j) => (
-                  <li
-                    key={j}
-                    className="flex items-start gap-1 text-[9px] text-slate-600 leading-tight"
-                  >
-                    <span className="text-emerald-500 font-bold shrink-0">✓</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+      {showBasePlan && (
+        <div className="mb-4">
+          <h3 className="font-bold text-xs text-[#1e3a8a] mb-2 flex items-center gap-1.5">
+            <div className="w-1.5 h-3 bg-orange-500 rounded-full" />
+            Funcionalidades Inclusas no Plano
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {FEATURE_CATEGORIES.map((cat, i) => (
+              <div key={i} className="bg-white p-2 rounded border border-slate-200 shadow-sm">
+                <h4 className="font-bold text-slate-800 text-[10px] mb-1 pb-0.5 border-b border-slate-100">
+                  {cat.title}
+                </h4>
+                <ul className="space-y-0.5">
+                  {cat.items.map((item, j) => (
+                    <li
+                      key={j}
+                      className="flex items-start gap-1 text-[9px] text-slate-600 leading-tight"
+                    >
+                      <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Investment Details */}
       <div className="mb-4">
@@ -157,18 +168,20 @@ export function QuoteDocument({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              <tr>
-                <td className="p-1.5">
-                  <span className="font-semibold text-slate-800">{planName}</span>
-                  <span className="text-[9px] block text-slate-500 mt-0.5">
-                    Administração, Básico, Carga, Faturamento e Financeiro
-                  </span>
-                </td>
-                <td className="p-1.5 text-center font-medium">1</td>
-                <td className="p-1.5 text-right">{formatCurrency(planPrice)}</td>
-                <td className="p-1.5 text-right font-medium">{formatCurrency(planPrice)}</td>
-                <td className="p-1.5 text-center text-slate-600">Mensalidade</td>
-              </tr>
+              {showBasePlan && (
+                <tr>
+                  <td className="p-1.5">
+                    <span className="font-semibold text-slate-800">{planName}</span>
+                    <span className="text-[9px] block text-slate-500 mt-0.5">
+                      Administração, Básico, Carga, Faturamento e Financeiro
+                    </span>
+                  </td>
+                  <td className="p-1.5 text-center font-medium">1</td>
+                  <td className="p-1.5 text-right">{formatCurrency(planPrice)}</td>
+                  <td className="p-1.5 text-right font-medium">{formatCurrency(planPrice)}</td>
+                  <td className="p-1.5 text-center text-slate-600">Mensalidade</td>
+                </tr>
+              )}
               {selectedModules.length > 0 && (
                 <tr>
                   <td className="p-1.5">
@@ -183,6 +196,22 @@ export function QuoteDocument({
                   <td className="p-1.5 text-center text-slate-600">Mensalidade</td>
                 </tr>
               )}
+              {includeFranchise && (
+                <tr>
+                  <td className="p-1.5">
+                    <span className="font-semibold text-slate-800">
+                      Franquia de Emissões (DF-e)
+                    </span>
+                    <span className="text-[9px] block text-slate-500 mt-0.5">
+                      Pacote de emissões eletrônicas
+                    </span>
+                  </td>
+                  <td className="p-1.5 text-center font-medium">1</td>
+                  <td className="p-1.5 text-right">Incluso</td>
+                  <td className="p-1.5 text-right font-medium">Incluso</td>
+                  <td className="p-1.5 text-center text-slate-600">-</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -195,10 +224,12 @@ export function QuoteDocument({
             Total Recorrente
           </h4>
           <div className="space-y-1.5 text-[10px]">
-            <div className="flex justify-between items-center text-slate-600">
-              <span>Plano Base</span>
-              <span className="font-medium">{formatCurrency(planPrice)}</span>
-            </div>
+            {showBasePlan && (
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Plano Base</span>
+                <span className="font-medium">{formatCurrency(planPrice)}</span>
+              </div>
+            )}
             <div className="flex justify-between items-center text-slate-600">
               <span>Módulos Adicionais</span>
               <span className="font-medium">{formatCurrency(modulesPrice)}</span>
