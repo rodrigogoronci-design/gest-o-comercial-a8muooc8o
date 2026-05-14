@@ -89,6 +89,44 @@ export default function ContractGeneratorPage() {
   const [prospectSearch, setProspectSearch] = useState('')
 
   useEffect(() => {
+    // Esconde a barra de pesquisa global do layout para limpar a interface
+    // e garante que o header/sidebar nunca saiam na impressão da proposta.
+    const style = document.createElement('style')
+    style.id = 'hide-layout-elements-for-proposal'
+    style.innerHTML = `
+      /* Esconde a busca do header apenas nesta rota */
+      header input[placeholder*="Buscar"],
+      header .relative:has(input[placeholder*="Buscar"]),
+      header form:has(input[placeholder*="Buscar"]) {
+        display: none !important;
+      }
+      
+      /* Oculta elementos de layout na impressão da proposta */
+      @media print {
+        header, aside, nav, [data-sidebar="sidebar"], .sidebar-container {
+          display: none !important;
+        }
+        body, html {
+          background-color: white !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        main {
+          margin: 0 !important;
+          padding: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+      }
+    `
+    document.head.appendChild(style)
+    return () => {
+      const el = document.getElementById('hide-layout-elements-for-proposal')
+      if (el) el.remove()
+    }
+  }, [])
+
+  useEffect(() => {
     const fetchClientes = async () => {
       const { data } = await supabase.from('clientes').select('id, nome, rep_nome').order('nome')
       if (data) setClientes(data)
