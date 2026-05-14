@@ -79,7 +79,7 @@ export default function ContractGeneratorPage() {
   const [quoteTargetType, setQuoteTargetType] = useState<'prospect' | 'cliente'>('prospect')
   const [selectedClientId, setSelectedClientId] = useState<string>('novo')
   const [clientes, setClientes] = useState<any[]>([])
-  const [includeFranchise, setIncludeFranchise] = useState(true)
+  const [includeFranchise, setIncludeFranchise] = useState(false)
 
   useEffect(() => {
     const fetchClientes = async () => {
@@ -1024,6 +1024,21 @@ export default function ContractGeneratorPage() {
                           </Label>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                  <div className="space-y-3 mt-4">
+                    <div className="flex items-center space-x-2 border p-3 rounded-lg bg-slate-50">
+                      <Checkbox
+                        id="quote-include-franchise"
+                        checked={includeFranchise}
+                        onCheckedChange={(c) => setIncludeFranchise(c as boolean)}
+                      />
+                      <Label
+                        htmlFor="quote-include-franchise"
+                        className="font-medium cursor-pointer flex-1"
+                      >
+                        Incluir Franquia de Emissões (DF-e) na Cotação
+                      </Label>
                     </div>
                   </div>
                   <Separator />
