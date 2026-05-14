@@ -3498,6 +3498,18 @@ Obrigada.`)
                     Gerar Novo Contrato
                   </Link>
                 </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  asChild
+                  className="bg-indigo-600 hover:bg-indigo-700"
+                >
+                  <Link
+                    to={`/contratos?tab=cotacao&quoteTargetType=cliente&clientId=${viewingClient?.id}&prospect=${encodeURIComponent(viewingClient?.name || '')}&contato=${encodeURIComponent(viewingClient?.rep_nome || '')}`}
+                  >
+                    Gerar Upsell
+                  </Link>
+                </Button>
               </div>
             </div>
           </SheetHeader>

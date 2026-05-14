@@ -50,6 +50,9 @@ export default function ContractGeneratorPage() {
   const initialCnpj = searchParams.get('cnpj') || ''
   const initialProspectId = searchParams.get('prospectId') || 'novo'
   const initialContato = searchParams.get('contato') || ''
+  const initialQuoteTargetType =
+    (searchParams.get('quoteTargetType') as 'prospect' | 'cliente') || 'prospect'
+  const initialClientId = searchParams.get('clientId') || 'novo'
 
   const [activeTab, setActiveTab] = useState(initialTab)
   const [name, setName] = useState(initialProspect)
@@ -76,8 +79,10 @@ export default function ContractGeneratorPage() {
   const [selectedProspectId, setSelectedProspectId] = useState<string>(initialProspectId)
   const [prospects, setProspects] = useState<any[]>([])
 
-  const [quoteTargetType, setQuoteTargetType] = useState<'prospect' | 'cliente'>('prospect')
-  const [selectedClientId, setSelectedClientId] = useState<string>('novo')
+  const [quoteTargetType, setQuoteTargetType] = useState<'prospect' | 'cliente'>(
+    initialQuoteTargetType,
+  )
+  const [selectedClientId, setSelectedClientId] = useState<string>(initialClientId)
   const [clientes, setClientes] = useState<any[]>([])
   const [includeFranchise, setIncludeFranchise] = useState(false)
   const [clientSearch, setClientSearch] = useState('')

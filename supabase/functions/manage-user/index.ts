@@ -146,7 +146,10 @@ Deno.serve(async (req: Request) => {
           }
           if (password) updateData.password = password
 
-          const { error: authErr } = await supabase.auth.admin.updateUserById(authUserId, updateData)
+          const { error: authErr } = await supabase.auth.admin.updateUserById(
+            authUserId,
+            updateData,
+          )
           if (authErr) {
             if (authErr.message.toLowerCase().includes('user not found')) {
               if (email) {
@@ -157,7 +160,10 @@ Deno.serve(async (req: Request) => {
                   user_metadata: { name },
                 })
                 if (!createErr) {
-                  await supabase.from('colaboradores').update({ user_id: newAuth.user.id }).eq('id', colabId)
+                  await supabase
+                    .from('colaboradores')
+                    .update({ user_id: newAuth.user.id })
+                    .eq('id', colabId)
                 }
               }
             } else {
@@ -174,10 +180,7 @@ Deno.serve(async (req: Request) => {
         })
         if (createErr) throw createErr
 
-        await supabase
-          .from('colaboradores')
-          .update({ user_id: newAuth.user.id })
-          .eq('id', colabId)
+        await supabase.from('colaboradores').update({ user_id: newAuth.user.id }).eq('id', colabId)
       }
 
       const receivesTransport =
@@ -194,14 +197,17 @@ Deno.serve(async (req: Request) => {
       if (payload.avatar_url !== undefined) updateDataDb.avatar_url = payload.avatar_url
       if (payload.cpf !== undefined) updateDataDb.cpf = payload.cpf
       if (payload.rg !== undefined) updateDataDb.rg = payload.rg
-      if (payload.data_nascimento !== undefined) updateDataDb.data_nascimento = payload.data_nascimento
+      if (payload.data_nascimento !== undefined)
+        updateDataDb.data_nascimento = payload.data_nascimento
       if (payload.endereco !== undefined) updateDataDb.endereco = payload.endereco
       if (payload.telefone !== undefined) updateDataDb.telefone = payload.telefone
       if (payload.cargo !== undefined) updateDataDb.cargo = payload.cargo
       if (payload.data_admissao !== undefined) updateDataDb.data_admissao = payload.data_admissao
-      if (payload.salario !== undefined) updateDataDb.salario = payload.salario ? parseFloat(payload.salario) : null
+      if (payload.salario !== undefined)
+        updateDataDb.salario = payload.salario ? parseFloat(payload.salario) : null
       if (payload.tipo_contrato !== undefined) updateDataDb.tipo_contrato = payload.tipo_contrato
-      if (payload.codigo_funcionario !== undefined) updateDataDb.codigo_funcionario = payload.codigo_funcionario
+      if (payload.codigo_funcionario !== undefined)
+        updateDataDb.codigo_funcionario = payload.codigo_funcionario
       if (payload.chave_pix !== undefined) updateDataDb.chave_pix = payload.chave_pix
       if (payload.tipo_chave_pix !== undefined) updateDataDb.tipo_chave_pix = payload.tipo_chave_pix
 
