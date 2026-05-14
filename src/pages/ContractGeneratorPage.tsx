@@ -436,8 +436,8 @@ export default function ContractGeneratorPage() {
           cliente_id: selectedClientId,
           tipo: 'Proposta de Upsell',
           descricao: `Adição de Módulos/Serviços. Valor Mensal: ${formatCurrency(totalValue)}`,
-          valor: implValue,
-          observacoes: `Módulos: ${selectedModules.map((id) => MODULES.find((m) => m.id === id)?.name).join(', ')} | Implantação: ${implMode} - R$ ${implValue}`,
+          valor: 0,
+          observacoes: `Módulos: ${selectedModules.map((id) => MODULES.find((m) => m.id === id)?.name).join(', ')}`,
           status: 'Pendente',
           data_solicitacao: new Date().toISOString().split('T')[0],
         })
@@ -1027,33 +1027,35 @@ export default function ContractGeneratorPage() {
                     </div>
                   </div>
                   <Separator />
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold">Implantação</Label>
-                    <RadioGroup
-                      value={implMode}
-                      onValueChange={(v) => setImplMode(v as 'remoto' | 'presencial')}
-                      className="flex flex-col sm:flex-row gap-4"
-                    >
-                      <div className="flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors">
-                        <RadioGroupItem value="remoto" id="quote-remoto" />
-                        <Label
-                          htmlFor="quote-remoto"
-                          className="cursor-pointer font-medium flex-1 h-full py-1"
-                        >
-                          Remoto (R$ 130/h)
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors">
-                        <RadioGroupItem value="presencial" id="quote-presencial" />
-                        <Label
-                          htmlFor="quote-presencial"
-                          className="cursor-pointer font-medium flex-1 h-full py-1"
-                        >
-                          Presencial (R$ 170/h)
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
+                  {quoteTargetType !== 'cliente' && (
+                    <div className="space-y-3">
+                      <Label className="text-sm font-bold">Implantação</Label>
+                      <RadioGroup
+                        value={implMode}
+                        onValueChange={(v) => setImplMode(v as 'remoto' | 'presencial')}
+                        className="flex flex-col sm:flex-row gap-4"
+                      >
+                        <div className="flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors">
+                          <RadioGroupItem value="remoto" id="quote-remoto" />
+                          <Label
+                            htmlFor="quote-remoto"
+                            className="cursor-pointer font-medium flex-1 h-full py-1"
+                          >
+                            Remoto (R$ 130/h)
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors">
+                          <RadioGroupItem value="presencial" id="quote-presencial" />
+                          <Label
+                            htmlFor="quote-presencial"
+                            className="cursor-pointer font-medium flex-1 h-full py-1"
+                          >
+                            Presencial (R$ 170/h)
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>

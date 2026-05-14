@@ -189,6 +189,14 @@ export function QuoteDocument({
                     <span className="text-[9px] block text-slate-500 mt-0.5">
                       {selectedModules.join(', ')}
                     </span>
+                    {selectedModules.some((m) => m.includes('EDI')) && (
+                      <span className="text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1">
+                        <strong>* EDI (Electronic Data Interchange):</strong> Inclusão de Layout
+                        padrão Proceda para integração (arquivos NOTFIS para emissão de CT-e, envios
+                        de CONEMB, DOCCOB e OCOREN) automatizando a troca de informações entre
+                        embarcador e transportadora.
+                      </span>
+                    )}
                   </td>
                   <td className="p-1.5 text-center font-medium">1</td>
                   <td className="p-1.5 text-right">{formatCurrency(modulesPrice)}</td>
@@ -250,13 +258,15 @@ export function QuoteDocument({
               <span>Serviços Únicos</span>
               <span className="font-medium">R$ 0,00</span>
             </div>
-            <div className="flex justify-between items-center text-slate-600">
-              <span>Implantação ({implMode})</span>
-              <span className="font-medium">{formatCurrency(implValue)}</span>
-            </div>
+            {!isUpsell && (
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Implantação ({implMode})</span>
+                <span className="font-medium">{formatCurrency(implValue)}</span>
+              </div>
+            )}
             <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
               <span>Total à Vista</span>
-              <span>{formatCurrency(implValue)}</span>
+              <span>{isUpsell ? formatCurrency(0) : formatCurrency(implValue)}</span>
             </div>
           </div>
         </div>
