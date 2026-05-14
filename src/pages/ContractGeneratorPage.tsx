@@ -80,10 +80,12 @@ export default function ContractGeneratorPage() {
   const [selectedClientId, setSelectedClientId] = useState<string>('novo')
   const [clientes, setClientes] = useState<any[]>([])
   const [includeFranchise, setIncludeFranchise] = useState(false)
+  const [clientSearch, setClientSearch] = useState('')
+  const [prospectSearch, setProspectSearch] = useState('')
 
   useEffect(() => {
     const fetchClientes = async () => {
-      const { data } = await supabase.from('clientes').select('id, nome, rep_nome')
+      const { data } = await supabase.from('clientes').select('id, nome, rep_nome').order('nome')
       if (data) setClientes(data)
     }
     fetchClientes()
@@ -91,7 +93,10 @@ export default function ContractGeneratorPage() {
 
   useEffect(() => {
     const fetchProspects = async () => {
-      const { data } = await supabase.from('crm_prospects').select('id, empresa, contato_nome')
+      const { data } = await supabase
+        .from('crm_prospects')
+        .select('id, empresa, contato_nome')
+        .order('empresa')
       if (data) setProspects(data)
     }
     fetchProspects()
@@ -929,12 +934,25 @@ export default function ContractGeneratorPage() {
                           <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
                         <SelectContent>
+                          <div className="p-2 border-b sticky top-0 bg-popover z-10">
+                            <Input
+                              placeholder="Pesquisar prospect..."
+                              value={prospectSearch}
+                              onChange={(e) => setProspectSearch(e.target.value)}
+                              onKeyDown={(e) => e.stopPropagation()}
+                              className="h-8"
+                            />
+                          </div>
                           <SelectItem value="novo">-- Novo Prospect --</SelectItem>
-                          {prospects.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>
-                              {p.empresa}
-                            </SelectItem>
-                          ))}
+                          {prospects
+                            .filter((p) =>
+                              p.empresa.toLowerCase().includes(prospectSearch.toLowerCase()),
+                            )
+                            .map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.empresa}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -961,12 +979,25 @@ export default function ContractGeneratorPage() {
                           <SelectValue placeholder="Selecione um cliente..." />
                         </SelectTrigger>
                         <SelectContent>
+                          <div className="p-2 border-b sticky top-0 bg-popover z-10">
+                            <Input
+                              placeholder="Pesquisar cliente..."
+                              value={clientSearch}
+                              onChange={(e) => setClientSearch(e.target.value)}
+                              onKeyDown={(e) => e.stopPropagation()}
+                              className="h-8"
+                            />
+                          </div>
                           <SelectItem value="novo">-- Selecione um Cliente --</SelectItem>
-                          {clientes.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {c.nome}
-                            </SelectItem>
-                          ))}
+                          {clientes
+                            .filter((c) =>
+                              c.nome.toLowerCase().includes(clientSearch.toLowerCase()),
+                            )
+                            .map((c) => (
+                              <SelectItem key={c.id} value={c.id}>
+                                {c.nome}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                     </div>
