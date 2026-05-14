@@ -436,10 +436,34 @@ export function AddendumDocument({
 
   // Fallback para observações do histórico se os módulos estiverem vazios
   if (formattedModules.length === 0 && (observacoes || tipo)) {
-    formattedModules.push({
-      name: observacoes || tipo || 'Adição de Serviços Contratuais',
-      price: Number(valorAdicional || 0),
-    })
+    if (
+      tipo === 'Aditivo de Filial' ||
+      (observacoes && observacoes.includes('Adição de Filial:'))
+    ) {
+      const cnpjMatch = observacoes?.match(/CNPJ:\s*([\d.\-/]+)/)
+      const dfeMatch = observacoes?.match(/DF-e:\s*Sim/)
+
+      const extractedCnpj = cnpjMatch ? cnpjMatch[1] : '[CNPJ]'
+      const total = Number(valorAdicional || 0)
+      const basePrice = dfeMatch && total > 49.9 ? total - 49.9 : total
+
+      formattedModules.push({
+        name: `inclusão de uma nova filial - CNPJ ${extractedCnpj}`,
+        price: basePrice > 0 ? basePrice : 199,
+      })
+
+      if (dfeMatch) {
+        formattedModules.push({
+          name: `inclusão do DF-e para a filial - CNPJ ${extractedCnpj}`,
+          price: 49.9,
+        })
+      }
+    } else {
+      formattedModules.push({
+        name: observacoes || tipo || 'Adição de Serviços Contratuais',
+        price: Number(valorAdicional || 0),
+      })
+    }
   }
 
   return (

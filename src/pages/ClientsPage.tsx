@@ -1082,6 +1082,19 @@ Obrigada,`
         valor_total: novoValorTotal,
       })
 
+      const modulosAditivo = [
+        {
+          name: `inclusão de uma nova filial - CNPJ ${formatCNPJ(novaFilial.cnpj)}`,
+          price: novaFilial.valor_mensalidade,
+        },
+      ]
+      if (novaFilial.dfe_incluso) {
+        modulosAditivo.push({
+          name: `inclusão do DF-e para a filial - CNPJ ${formatCNPJ(novaFilial.cnpj)}`,
+          price: novaFilial.valor_dfe || 0,
+        })
+      }
+
       await createHistorico({
         cliente_id: viewingClient.id,
         tipo: 'Aditivo de Filial',
@@ -1089,6 +1102,7 @@ Obrigada,`
         observacoes: `Adição de Filial: ${novaFilial.nome} (CNPJ: ${novaFilial.cnpj}). DF-e: ${novaFilial.dfe_incluso ? `Sim (${formatCurrency(novaFilial.valor_dfe || 0)})` : 'Não'}`,
         valor_adicional: valorTotalFilial,
         valor_total: novoValorTotal,
+        modulos: modulosAditivo,
       })
 
       toast.success('Filial adicionada com sucesso e aditivo gerado!')
