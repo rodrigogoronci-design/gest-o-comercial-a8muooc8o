@@ -1,6 +1,15 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Save, Sparkles, FileText, UploadCloud, Printer, Loader2, Upload } from 'lucide-react'
+import {
+  Save,
+  Sparkles,
+  FileText,
+  UploadCloud,
+  Printer,
+  Loader2,
+  Upload,
+  Trash,
+} from 'lucide-react'
 import {
   Card,
   CardContent,
@@ -90,6 +99,7 @@ export default function ContractGeneratorPage() {
   const [prospectSearch, setProspectSearch] = useState('')
   const [includeDiagnosticVisit, setIncludeDiagnosticVisit] = useState(false)
   const [diagnosticVisitValue, setDiagnosticVisitValue] = useState<string>('')
+  const [trainings, setTrainings] = useState<{ id: string; name: string; price: string }[]>([])
 
   useEffect(() => {
     // Esconde a barra de pesquisa global do layout para limpar a interface
@@ -195,8 +205,18 @@ export default function ContractGeneratorPage() {
     if (includeDiagnosticVisit) {
       value += diagValue
     }
+    const trainingsValue = trainings.reduce((acc, t) => acc + (parseFloat(t.price) || 0), 0)
+    value += trainingsValue
     return value
-  }, [totalImplHours, implRate, selectedModules, implMode, includeDiagnosticVisit, diagValue])
+  }, [
+    totalImplHours,
+    implRate,
+    selectedModules,
+    implMode,
+    includeDiagnosticVisit,
+    diagValue,
+    trainings,
+  ])
 
   const [manualImplValue, setManualImplValue] = useState<string>('')
   const implValue = manualImplValue !== '' ? parseFloat(manualImplValue) : calculatedImplValue
@@ -221,6 +241,9 @@ export default function ContractGeneratorPage() {
     implRate,
     totalImplHours,
     implValue,
+    trainings,
+    includeDiagnosticVisit,
+    diagnosticVisitValue,
   }
 
   const quoteProps = {
@@ -238,6 +261,9 @@ export default function ContractGeneratorPage() {
         .filter(Boolean) as string[]),
       ...(selectedDfe !== 'dfe-none' && dfeData ? [dfeData.name] : []),
       ...(includeDiagnosticVisit ? ['Visita Presencial de Diagnóstico'] : []),
+      ...trainings.map(
+        (t) => `Treinamento: ${t.name} (${formatCurrency(parseFloat(t.price) || 0)})`,
+      ),
     ],
     planPrice,
     modulesPrice,
@@ -510,17 +536,20 @@ export default function ContractGeneratorPage() {
           ...selectedModules.map((id) => MODULES.find((m) => m.id === id)?.name),
           selectedDfe !== 'dfe-none' && dfeData ? dfeData.name : null,
           includeDiagnosticVisit ? 'Visita Presencial de Diagnóstico' : null,
+          ...trainings.map((t) => `Treinamento: ${t.name}`),
         ].filter(Boolean)
 
-        const { error } = await supabase.from('solicitacoes_servico').insert({
-          cliente_id: selectedClientId,
-          tipo: 'Proposta de Upsell',
-          descricao: `Adição de Módulos/Serviços. Valor Mensal: ${formatCurrency(totalValue)}`,
-          valor: implValue,
-          observacoes: `Itens: ${modulosAdicionados.join(', ')}. Taxa de Implantação/Serviço: ${formatCurrency(implValue)}`,
-          status: 'Pendente',
-          data_solicitacao: new Date().toISOString().split('T')[0],
-        })
+        const { error } = await supabase
+          .from('solicitacoes_servico')
+          .insert({
+            cliente_id: selectedClientId,
+            tipo: 'Proposta de Upsell',
+            descricao: `Adição de Módulos/Serviços. Valor Mensal: ${formatCurrency(totalValue)}`,
+            valor: implValue,
+            observacoes: `Itens: ${modulosAdicionados.join(', ')}. Taxa de Implantação/Serviço: ${formatCurrency(implValue)}`,
+            status: 'Pendente',
+            data_solicitacao: new Date().toISOString().split('T')[0],
+          })
         if (error) throw error
 
         try {
@@ -575,6 +604,11 @@ export default function ContractGeneratorPage() {
             ...(includeDiagnosticVisit
               ? [{ id: 'diag', name: 'Visita Presencial de Diagnóstico', price: diagValue }]
               : []),
+            ...trainings.map((t) => ({
+              id: t.id,
+              name: `Treinamento: ${t.name}`,
+              price: parseFloat(t.price) || 0,
+            })),
           ],
           valor_mensalidade: totalValue,
           valor_implantacao: implValue,
@@ -974,11 +1008,71 @@ export default function ContractGeneratorPage() {
                         </span>
                       </div>
                     </div>
+
+                    <Separator className="my-4" />
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-bold">Treinamentos Adicionais</Label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() =>
+                            setTrainings([
+                              ...trainings,
+                              { id: crypto.randomUUID(), name: '', price: '' },
+                            ])
+                          }
+                        >
+                          + Treinamento
+                        </Button>
+                      </div>
+                      {trainings.length > 0 && (
+                        <div className="space-y-2 mt-2">
+                          {trainings.map((t, index) => (
+                            <div key={t.id} className="flex gap-2 items-center">
+                              <Input
+                                placeholder="Nome do Treinamento"
+                                value={t.name}
+                                onChange={(e) => {
+                                  const newTrainings = [...trainings]
+                                  newTrainings[index].name = e.target.value
+                                  setTrainings(newTrainings)
+                                }}
+                                className="flex-1 bg-white h-8 text-xs"
+                              />
+                              <Input
+                                type="number"
+                                placeholder="Valor (R$)"
+                                value={t.price}
+                                onChange={(e) => {
+                                  const newTrainings = [...trainings]
+                                  newTrainings[index].price = e.target.value
+                                  setTrainings(newTrainings)
+                                }}
+                                className="w-24 bg-white h-8 text-xs"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() =>
+                                  setTrainings(trainings.filter((tr) => tr.id !== t.id))
+                                }
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
-
             <div className="lg:col-span-7 sticky top-6 print:static print:block print:w-full print:m-0 print:p-0">
               <Card className="flex flex-col h-[calc(100vh-6rem)] min-h-[700px] shadow-xl border-slate-200 overflow-hidden bg-white print:h-auto print:min-h-0 print:shadow-none print:border-none">
                 <div className="flex-1 overflow-y-auto print:hidden p-1">
@@ -1250,6 +1344,67 @@ export default function ContractGeneratorPage() {
                           </span>
                         </div>
                       </div>
+
+                      <Separator className="my-4" />
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-bold">Treinamentos Adicionais</Label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() =>
+                              setTrainings([
+                                ...trainings,
+                                { id: crypto.randomUUID(), name: '', price: '' },
+                              ])
+                            }
+                          >
+                            + Treinamento
+                          </Button>
+                        </div>
+                        {trainings.length > 0 && (
+                          <div className="space-y-2 mt-2">
+                            {trainings.map((t, index) => (
+                              <div key={t.id} className="flex gap-2 items-center">
+                                <Input
+                                  placeholder="Nome do Treinamento"
+                                  value={t.name}
+                                  onChange={(e) => {
+                                    const newTrainings = [...trainings]
+                                    newTrainings[index].name = e.target.value
+                                    setTrainings(newTrainings)
+                                  }}
+                                  className="flex-1 bg-white h-8 text-xs"
+                                />
+                                <Input
+                                  type="number"
+                                  placeholder="Valor (R$)"
+                                  value={t.price}
+                                  onChange={(e) => {
+                                    const newTrainings = [...trainings]
+                                    newTrainings[index].price = e.target.value
+                                    setTrainings(newTrainings)
+                                  }}
+                                  className="w-24 bg-white h-8 text-xs"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() =>
+                                    setTrainings(trainings.filter((tr) => tr.id !== t.id))
+                                  }
+                                >
+                                  <Trash className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -1329,9 +1484,70 @@ export default function ContractGeneratorPage() {
                           </span>
                         </div>
                       </div>
+
+                      <Separator className="my-4" />
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-bold">Treinamentos Adicionais</Label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() =>
+                              setTrainings([
+                                ...trainings,
+                                { id: crypto.randomUUID(), name: '', price: '' },
+                              ])
+                            }
+                          >
+                            + Treinamento
+                          </Button>
+                        </div>
+                        {trainings.length > 0 && (
+                          <div className="space-y-2 mt-2">
+                            {trainings.map((t, index) => (
+                              <div key={t.id} className="flex gap-2 items-center">
+                                <Input
+                                  placeholder="Nome do Treinamento"
+                                  value={t.name}
+                                  onChange={(e) => {
+                                    const newTrainings = [...trainings]
+                                    newTrainings[index].name = e.target.value
+                                    setTrainings(newTrainings)
+                                  }}
+                                  className="flex-1 bg-white h-8 text-xs"
+                                />
+                                <Input
+                                  type="number"
+                                  placeholder="Valor (R$)"
+                                  value={t.price}
+                                  onChange={(e) => {
+                                    const newTrainings = [...trainings]
+                                    newTrainings[index].price = e.target.value
+                                    setTrainings(newTrainings)
+                                  }}
+                                  className="w-24 bg-white h-8 text-xs"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() =>
+                                    setTrainings(trainings.filter((tr) => tr.id !== t.id))
+                                  }
+                                >
+                                  <Trash className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
-                </CardContent>
+                </CardContent>{' '}
               </Card>
             </div>
 
