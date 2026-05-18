@@ -88892,7 +88892,7 @@ var MODULES = [
 	{
 		id: "mod-sltrack",
 		name: "SL-Track",
-		price: 0,
+		price: 299,
 		implHours: 5
 	},
 	{
@@ -107608,4 +107608,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, {
 }));
 //#endregion
 
-//# sourceMappingURL=index-Bonb1ed-.js.map
+//# sourceMappingURL=index-CUeVqoOj.js.map
