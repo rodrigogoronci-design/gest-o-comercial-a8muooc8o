@@ -131,6 +131,16 @@ export default function ContractGeneratorPage() {
       
       /* Oculta elementos de layout na impressão da proposta */
       @media print {
+        * {
+          scrollbar-width: none !important;
+          -ms-overflow-style: none !important;
+        }
+        *::-webkit-scrollbar {
+          display: none !important;
+        }
+        .overflow-auto, .overflow-x-auto, .overflow-y-auto, .overflow-hidden, .overflow-scroll {
+          overflow: visible !important;
+        }
         header, aside, nav, [data-sidebar="sidebar"], .sidebar-container {
           display: none !important;
         }
@@ -138,12 +148,14 @@ export default function ContractGeneratorPage() {
           background-color: white !important;
           margin: 0 !important;
           padding: 0 !important;
+          overflow: visible !important;
         }
         main {
           margin: 0 !important;
           padding: 0 !important;
           width: 100% !important;
           max-width: 100% !important;
+          overflow: visible !important;
         }
       }
     `
@@ -558,7 +570,12 @@ export default function ContractGeneratorPage() {
     setIsExtractingProposal(false)
   }
 
-  const handlePrint = () => window.print()
+  const handlePrint = () => {
+    const oldTitle = document.title
+    document.title = `Proposta_${(name || quoteEmpresa || 'Sem_Nome').replace(/\s+/g, '_')}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}`
+    window.print()
+    document.title = oldTitle
+  }
 
   const handleSaveQuote = async () => {
     if (!quoteEmpresa || !quoteContato) {
@@ -626,7 +643,10 @@ export default function ContractGeneratorPage() {
           className: 'bg-emerald-600 text-white border-none',
         })
         setTimeout(() => {
+          const oldTitle = document.title
+          document.title = `Proposta_${quoteEmpresa.replace(/\s+/g, '_')}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}`
           window.print()
+          document.title = oldTitle
           navigate('/clientes')
         }, 1000)
       } else {
@@ -681,7 +701,10 @@ export default function ContractGeneratorPage() {
           className: 'bg-emerald-600 text-white border-none',
         })
         setTimeout(() => {
+          const oldTitle = document.title
+          document.title = `Proposta_${quoteEmpresa.replace(/\s+/g, '_')}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}`
           window.print()
+          document.title = oldTitle
           navigate('/crm')
         }, 1000)
       }
@@ -822,7 +845,10 @@ export default function ContractGeneratorPage() {
       }
 
       setTimeout(() => {
+        const oldTitle = document.title
+        document.title = `Proposta_${name.replace(/\s+/g, '_')}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}`
         window.print()
+        document.title = oldTitle
         navigate('/clientes')
       }, 1000)
     } catch (err: any) {

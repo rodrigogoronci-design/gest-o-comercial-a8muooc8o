@@ -1996,6 +1996,10 @@ section[aria-label='Notifications alt+T'] {
   overflow: hidden;
 }
 
+.overflow-scroll{
+  overflow: scroll;
+}
+
 .overflow-x-auto{
   overflow-x: auto;
 }
