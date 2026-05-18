@@ -9,6 +9,8 @@ import {
   Loader2,
   Upload,
   Trash,
+  Rocket,
+  DollarSign,
 } from 'lucide-react'
 import {
   Card,
@@ -101,6 +103,9 @@ export default function ContractGeneratorPage() {
   const [includeDiagnosticVisit, setIncludeDiagnosticVisit] = useState(false)
   const [diagnosticVisitValue, setDiagnosticVisitValue] = useState<string>('')
   const [selectedTrainings, setSelectedTrainings] = useState<string[]>([])
+
+  const [sendToImplementation, setSendToImplementation] = useState(false)
+  const [sendToFinance, setSendToFinance] = useState(false)
 
   useEffect(() => {
     // Esconde a barra de pesquisa global do layout para limpar a interface
@@ -687,6 +692,11 @@ export default function ContractGeneratorPage() {
           modo_implantacao: implMode,
           modulos: modulosFormatados,
           valor_total: totalValue,
+          status: sendToFinance
+            ? 'Enviado p/ Financeiro'
+            : sendToImplementation
+              ? 'Enviado p/ Implantação'
+              : 'Ativo',
         })
 
         await createHistorico({
@@ -730,7 +740,11 @@ export default function ContractGeneratorPage() {
           modo_implantacao: implMode,
           modulos: modulosFormatados,
           valor_total: totalValue,
-          status: 'Ativo',
+          status: sendToFinance
+            ? 'Enviado p/ Financeiro'
+            : sendToImplementation
+              ? 'Enviado p/ Implantação'
+              : 'Ativo',
         })
 
         await createHistorico({
@@ -743,6 +757,21 @@ export default function ContractGeneratorPage() {
           valor_total: totalValue,
           observacoes: `Contrato gerado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}`,
         })
+
+        if (sendToFinance) {
+          try {
+            await supabase.functions.invoke('send-finance-email', {
+              body: {
+                to: 'financeiro@empresa.com',
+                clientName: name,
+                moduleName: planData?.name || selectedPlan,
+                type: 'novo_contrato',
+              },
+            })
+          } catch (e) {
+            console.error('Erro ao enviar email automático de novo contrato', e)
+          }
+        }
 
         toast({
           title: 'Contrato Gerado',
@@ -1067,6 +1096,41 @@ export default function ContractGeneratorPage() {
             </div>
             <div className="lg:col-span-7 sticky top-6 print:static print:block print:w-full print:m-0 print:p-0">
               <Card className="flex flex-col h-[calc(100vh-6rem)] min-h-[700px] shadow-xl border-slate-200 overflow-hidden bg-white print:h-auto print:min-h-0 print:shadow-none print:border-none">
+                <CardHeader className="bg-slate-50 border-b p-3 flex flex-col sm:flex-row sm:items-center justify-between print:hidden gap-3">
+                  <CardTitle className="text-sm font-bold text-slate-700">
+                    Ações do Contrato
+                  </CardTitle>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSendToImplementation(!sendToImplementation)}
+                      className={cn(
+                        'text-xs transition-colors',
+                        sendToImplementation
+                          ? 'bg-blue-50 border-blue-200 text-blue-700'
+                          : 'border-slate-200 text-slate-600 hover:bg-slate-100',
+                      )}
+                    >
+                      <Rocket className="w-3 h-3 mr-1" />
+                      Enviar p/ Implantação
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSendToFinance(!sendToFinance)}
+                      className={cn(
+                        'text-xs transition-colors',
+                        sendToFinance
+                          ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                          : 'border-slate-200 text-slate-600 hover:bg-slate-100',
+                      )}
+                    >
+                      <DollarSign className="w-3 h-3 mr-1" />
+                      Enviar p/ Financeiro
+                    </Button>
+                  </div>
+                </CardHeader>
                 <div className="flex-1 overflow-y-auto print:hidden p-1">
                   <ContractDocument {...contractProps} />
                 </div>

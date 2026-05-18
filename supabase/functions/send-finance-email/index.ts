@@ -12,7 +12,7 @@ Deno.serve(async (req: Request) => {
 
     let emailBody = ''
     let subject = 'Documento Solicitado'
-    
+
     if (type === 'proposta_treinamento') {
       subject = 'Proposta de Treinamento'
       emailBody = `Boa tarde, ${clientName || 'Cliente'}!
@@ -28,6 +28,17 @@ Segue o aditivo referente à sua solicitação de novos módulos ou serviços ($
 Por favor, analise as informações descritas e, estando de acordo, podemos seguir com a assinatura eletrônica.
 
 Qualquer dúvida técnica ou comercial, nossa equipe está à disposição.`
+    } else if (type === 'novo_contrato') {
+      subject = 'Novo Contrato Efetivado'
+      emailBody = `Olá Equipe Financeira,
+
+O novo contrato para o cliente **${clientName || 'Cliente'}** foi efetivado com sucesso.
+Plano/Módulos: ${moduleName || 'N/A'}.
+
+Por favor, procedam com o faturamento da implantação e configuração da cobrança recorrente.
+
+Att,
+Equipe Comercial`
     } else {
       emailBody = `Olá ${clientName || 'Cliente'}, segue o documento solicitado.`
     }
@@ -38,15 +49,15 @@ Qualquer dúvida técnica ou comercial, nossa equipe está à disposição.`
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           from: 'Comercial <onboarding@resend.dev>',
           to: [to || 'financeiro@empresa.com'],
           subject: subject,
-          html: `<div style="font-family: sans-serif; color: #333; line-height: 1.6;"><p>${emailBody.replace(/\n/g, '<br/>')}</p></div>`
-        })
+          html: `<div style="font-family: sans-serif; color: #333; line-height: 1.6;"><p>${emailBody.replace(/\n/g, '<br/>')}</p></div>`,
+        }),
       })
 
       if (!res.ok) {
@@ -57,18 +68,21 @@ Qualquer dúvida técnica ou comercial, nossa equipe está à disposição.`
       console.log('Simulando envio de e-mail (RESEND_API_KEY ausente):', {
         to,
         subject,
-        body: emailBody
+        body: emailBody,
       })
     }
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: 'Email enviado com sucesso',
-      preview: emailBody 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    })
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'Email enviado com sucesso',
+        preview: emailBody,
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      },
+    )
   } catch (error: any) {
     console.error('Erro ao enviar e-mail:', error)
     return new Response(JSON.stringify({ error: error.message }), {
