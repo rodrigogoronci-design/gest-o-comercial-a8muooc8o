@@ -329,8 +329,83 @@ export function ContractDocument({
               dia 01 do mês corrente até o último dia do mês corrente.
             </p>
             <p>
-              5.11) a 5.21) Demais condições de faturamento, reajuste pelo IPCA e cancelamento com
-              aviso prévio.
+              5.11) Os pagamentos serão realizados mediante quitação de boleto bancário enviado
+              antecipadamente para o endereço de e-mail fornecido pela CONTRATANTE.
+            </p>
+            <p>
+              5.12) A CONTRATANTE deverá informar antes da data de vencimento, a alteração do
+              endereço de e-mail, como também, comunicar o não recebimento do boleto bancário, e
+              solicitar segunda via para pagamento, antes da data do vencimento.
+            </p>
+            <p>
+              5.13) O presente contrato será reajustado de forma a preservar o equilíbrio econômico
+              financeiro de suas condições, sempre por meio de duas formas: o Reajuste de Preços ou
+              a Recomposição de Preços.
+            </p>
+            <p>
+              5.14) O Reajuste de Preço é um procedimento automático, aplicado ao valor mensal pago
+              a CONTRATADA, em decorrência da variação do IPCA (Índice Nacional de Preços ao
+              Consumidor Amplo) calculado pelo Instituto Brasileiro de Geografia e Estatística
+              (IBGE) referente aos 12 (doze) meses praticados no contrato.
+            </p>
+            <p>
+              5.15) A Recomposição de Preços é o procedimento destinado a avaliar a ocorrência de
+              eventos que afetam a equação econômico financeira do presente contrato e promove
+              adequação das cláusulas contratuais aos parâmetros necessários para recompor o
+              equilíbrio original.
+            </p>
+            <p>
+              5.16) Fica convencionado, que em caso de inadimplência do pagamento, ao valor do
+              principal, incidirão multa de 2% (dois por cento), e juros de mora de 1% (um por
+              cento) ao mês, a teor do art. 406 do Código Civil, e art. 52, parágrafo 2º do Código
+              de Defesa do Consumidor.
+            </p>
+            <p>
+              5.17) A mensalidade da CONTRATANTE não sofrerá interrupções, adiamentos ou suspensão,
+              durante o prazo de vigência do presente contrato, independentemente do uso ou não do
+              software devidamente implantado e em operação.
+            </p>
+            <p>
+              5.18) Em caso de inadimplência por parte do CONTRATANTE, por prazo superior à 10 dias
+              (Dez dias), contado da data do vencimento da obrigação, os serviços serão
+              imediatamente suspensos, sendo facultado a CONTRATADA efetuar a rescisão contratual,
+              prosseguindo em qualquer hipótese com a cobrança dos débitos em atraso, não se
+              responsabilizando a mesma, por qualquer outro dano que porventura venha a ocorrer em
+              virtude de tal suspensão e/ou rescisão, seja em relação ao CONTRATANTE, seja em
+              relação a clientes finais.
+            </p>
+            <p>
+              5.19) A CONTRATADA se reserva ao direito, em caso de inadimplência dos pagamentos
+              vencidos com datas superiores a 30 dias (trinta dias), por parte do CONTRATANTE, a
+              inserir seu nome nos Serviços de Proteção ao Crédito (SPC).
+            </p>
+            <p>
+              5.20) A CONTRATANTE poderá solicitar o cancelamento do contrato a qualquer momento,
+              desde que esteja adimplente com suas obrigações financeiras, considerando a concessão
+              de condições comerciais diferenciadas, especialmente: desconto mensal de R$ 460,00
+              (quatrocentos e sessenta reais) sobre o valor integral do plano, reduzindo-o de R$
+              2.460,00 (dois mil quatrocentos e sessenta reais) para R$ 2.000,00 (dois mil reais);
+              fica estabelecida a vigência mínima de 12 (doze) meses para manutenção das referidas
+              condições.
+              <br />
+              Em caso de cancelamento antecipado, antes do término do período de 12 (doze) meses, a
+              CONTRATANTE concorda com a cobrança proporcional dos valores referentes aos descontos
+              concedidos, considerando:
+              <br />I – a diferença mensal de R$ 460,00 (quatrocentos e sessenta reais),
+              multiplicada pelo número de meses restantes para o término do período de 12 (doze)
+              meses;
+              <br />
+              II – o valor integral do desconto concedido na taxa de implantação, no montante de R$
+              1.370,00 (mil trezentos e setenta reais), caso ainda não tenha sido integralmente
+              compensado pelo prazo contratual.
+            </p>
+            <p>
+              5.21) No caso da CONTRATANTE solicitar o cancelamento do contrato, a CONTRATADA
+              disponibilizará o sistema apenas para fins de consulta pelo período solicitado pela
+              CONTRATANTE. Pela responsabilidade jurídica sobre os dados armazenados, bem como o
+              custo de armazenamento dos dados em nosso Data Center, será cobrada uma taxa mensal
+              correspondente à 50% do valor referente à última mensalidade pelo período em que o
+              sistema ficar disponível para consulta.
             </p>
             <p>5.22) Valor Resumo:</p>
           </div>
