@@ -89592,33 +89592,48 @@ function ContractDocument({ name, cnpj, address, repName, repCpf, repRg, selecte
 												children: formatCurrency(modulesPrice)
 											})]
 										}),
+										selectedDfe && selectedDfe !== "dfe-none" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
+											"data-uid": "src/components/ContractDocument.tsx:333:19",
+											"data-prohibitions": "[editContent]",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+												"data-uid": "src/components/ContractDocument.tsx:334:21",
+												"data-prohibitions": "[editContent]",
+												className: "border border-slate-300 p-2 font-bold",
+												children: dfeData?.name || "Franquia DF-e"
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+												"data-uid": "src/components/ContractDocument.tsx:337:21",
+												"data-prohibitions": "[editContent]",
+												className: "border border-slate-300 p-2 text-right",
+												children: formatCurrency(dfePrice || 0)
+											})]
+										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
-											"data-uid": "src/components/ContractDocument.tsx:332:17",
+											"data-uid": "src/components/ContractDocument.tsx:342:17",
 											"data-prohibitions": "[editContent]",
 											className: "bg-[#1b4382]/5 print:bg-slate-200 text-[#1b4382] print:text-black",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-												"data-uid": "src/components/ContractDocument.tsx:333:19",
+												"data-uid": "src/components/ContractDocument.tsx:343:19",
 												"data-prohibitions": "[]",
 												className: "border border-slate-300 p-2 font-bold text-right",
 												children: "Total Mensal"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-												"data-uid": "src/components/ContractDocument.tsx:334:19",
+												"data-uid": "src/components/ContractDocument.tsx:344:19",
 												"data-prohibitions": "[editContent]",
 												className: "border border-slate-300 p-2 text-right font-bold",
 												children: formatCurrency(totalValue)
 											})]
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
-											"data-uid": "src/components/ContractDocument.tsx:338:17",
+											"data-uid": "src/components/ContractDocument.tsx:348:17",
 											"data-prohibitions": "[editContent]",
 											className: "bg-[#1b4382]/5 print:bg-slate-200 text-[#1b4382] print:text-black",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-												"data-uid": "src/components/ContractDocument.tsx:339:19",
+												"data-uid": "src/components/ContractDocument.tsx:349:19",
 												"data-prohibitions": "[]",
 												className: "border border-slate-300 p-2 font-bold text-right",
 												children: "Total Implantação"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-												"data-uid": "src/components/ContractDocument.tsx:342:19",
+												"data-uid": "src/components/ContractDocument.tsx:352:19",
 												"data-prohibitions": "[editContent]",
 												className: "border border-slate-300 p-2 text-right font-bold",
 												colSpan: 2,
@@ -89632,78 +89647,78 @@ function ContractDocument({ name, cnpj, address, repName, repCpf, repRg, selecte
 					]
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ClauseBlock, {
-					"data-uid": "src/components/ContractDocument.tsx:351:9",
+					"data-uid": "src/components/ContractDocument.tsx:361:9",
 					"data-prohibitions": "[editContent]",
 					title: "CLÁUSULA SEXTA - SERVIÇO DE IMPLANTAÇÃO/TREINAMENTO",
 					texts: CONTRACT_TEXT.CLAUSULA_6
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ClauseBlock, {
-					"data-uid": "src/components/ContractDocument.tsx:355:9",
+					"data-uid": "src/components/ContractDocument.tsx:365:9",
 					"data-prohibitions": "[editContent]",
 					title: "CLÁUSULA SÉTIMA – DA DIVULGAÇÃO",
 					texts: CONTRACT_TEXT.CLAUSULA_7
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ClauseBlock, {
-					"data-uid": "src/components/ContractDocument.tsx:356:9",
+					"data-uid": "src/components/ContractDocument.tsx:366:9",
 					"data-prohibitions": "[editContent]",
 					title: "CLÁUSULA OITAVA - DA GARANTIA E RESPONSABILIDADES",
 					texts: CONTRACT_TEXT.CLAUSULA_8
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ClauseBlock, {
-					"data-uid": "src/components/ContractDocument.tsx:360:9",
+					"data-uid": "src/components/ContractDocument.tsx:370:9",
 					"data-prohibitions": "[editContent]",
 					title: "CLÁUSULA NONA – LEI GERAL DE PROTEÇÃO DE DADOS ( LGPD )",
 					texts: CONTRACT_TEXT.CLAUSULA_9
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ClauseBlock, {
-					"data-uid": "src/components/ContractDocument.tsx:364:9",
+					"data-uid": "src/components/ContractDocument.tsx:374:9",
 					"data-prohibitions": "[editContent]",
 					title: "CLÁUSULA DÉCIMA - DO FORO",
 					texts: CONTRACT_TEXT.CLAUSULA_10
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/components/ContractDocument.tsx:366:9",
+					"data-uid": "src/components/ContractDocument.tsx:376:9",
 					"data-prohibitions": "[]",
 					className: "mt-16 text-center space-y-12",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-						"data-uid": "src/components/ContractDocument.tsx:367:11",
+						"data-uid": "src/components/ContractDocument.tsx:377:11",
 						"data-prohibitions": "[]",
 						children: "E por estarem justos e contratados, assinam eletronicamente."
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/components/ContractDocument.tsx:368:11",
+						"data-uid": "src/components/ContractDocument.tsx:378:11",
 						"data-prohibitions": "[]",
 						className: "grid grid-cols-2 gap-8 mt-12",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/components/ContractDocument.tsx:369:13",
+							"data-uid": "src/components/ContractDocument.tsx:379:13",
 							"data-prohibitions": "[]",
 							className: "border-t border-[#1b4382] pt-2 text-center print:border-black",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-								"data-uid": "src/components/ContractDocument.tsx:370:15",
+								"data-uid": "src/components/ContractDocument.tsx:380:15",
 								"data-prohibitions": "[]",
 								className: "font-bold text-[#1b4382] print:text-black",
 								children: "CONTACTO SOLUÇÕES EM TECNOLOGIA - LTDA"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-								"data-uid": "src/components/ContractDocument.tsx:373:15",
+								"data-uid": "src/components/ContractDocument.tsx:383:15",
 								"data-prohibitions": "[]",
 								className: "text-[11px] text-slate-500",
 								children: "CONTRATADA"
 							})]
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/components/ContractDocument.tsx:375:13",
+							"data-uid": "src/components/ContractDocument.tsx:385:13",
 							"data-prohibitions": "[]",
 							className: "border-t border-[#1b4382] pt-2 text-center print:border-black",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-								"data-uid": "src/components/ContractDocument.tsx:376:15",
+								"data-uid": "src/components/ContractDocument.tsx:386:15",
 								"data-prohibitions": "[]",
 								className: "font-bold uppercase text-[#1b4382] print:text-black",
 								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Highlight, {
-									"data-uid": "src/components/ContractDocument.tsx:377:17",
+									"data-uid": "src/components/ContractDocument.tsx:387:17",
 									"data-prohibitions": "[editContent]",
 									value: name,
 									fallback: "[NOME DA EMPRESA]"
 								})
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-								"data-uid": "src/components/ContractDocument.tsx:379:15",
+								"data-uid": "src/components/ContractDocument.tsx:389:15",
 								"data-prohibitions": "[]",
 								className: "text-[11px] text-slate-500",
 								children: "CONTRATANTE"
@@ -89766,70 +89781,70 @@ function AddendumDocument({ clientName, cnpj, dataSolicitacao, modules, valorAdi
 		price: Number(valorAdicional || 0)
 	});
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		"data-uid": "src/components/ContractDocument.tsx:470:5",
+		"data-uid": "src/components/ContractDocument.tsx:480:5",
 		"data-prohibitions": "[editContent]",
 		className: "p-8 sm:p-12 text-[12px] text-slate-800 font-serif leading-relaxed space-y-5 bg-white print:p-0 print:text-black",
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-			"data-uid": "src/components/ContractDocument.tsx:471:7",
+			"data-uid": "src/components/ContractDocument.tsx:481:7",
 			"data-prohibitions": "[]",
 			className: "flex flex-col items-center mb-8 border-b-2 border-[#f37021] print:border-black pb-6",
 			children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				"data-uid": "src/components/ContractDocument.tsx:472:9",
+				"data-uid": "src/components/ContractDocument.tsx:482:9",
 				"data-prohibitions": "[]",
 				className: "flex w-full justify-between items-center mb-6",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-					"data-uid": "src/components/ContractDocument.tsx:473:11",
+					"data-uid": "src/components/ContractDocument.tsx:483:11",
 					"data-prohibitions": "[editContent]",
 					src: logomarca_service_ea011_default,
 					alt: "Service Logic",
 					className: "h-16 object-contain"
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-					"data-uid": "src/components/ContractDocument.tsx:474:11",
+					"data-uid": "src/components/ContractDocument.tsx:484:11",
 					"data-prohibitions": "[]",
 					className: "text-sm font-bold uppercase w-2/3 text-right leading-tight text-[#1b4382] print:text-black",
 					children: "ADITIVO CONTRATUAL DE INCLUSÃO DE MÓDULOS"
 				})]
 			})
 		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			"data-uid": "src/components/ContractDocument.tsx:480:7",
+			"data-uid": "src/components/ContractDocument.tsx:490:7",
 			"data-prohibitions": "[editContent]",
 			className: "space-y-6 text-justify",
 			children: [
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-					"data-uid": "src/components/ContractDocument.tsx:481:9",
+					"data-uid": "src/components/ContractDocument.tsx:491:9",
 					"data-prohibitions": "[]",
 					children: "Pelo presente instrumento de aditamento ao contrato original de licença de uso e prestação de serviços, as partes abaixo qualificadas:"
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/components/ContractDocument.tsx:486:9",
+					"data-uid": "src/components/ContractDocument.tsx:496:9",
 					"data-prohibitions": "[editContent]",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-						"data-uid": "src/components/ContractDocument.tsx:487:11",
+						"data-uid": "src/components/ContractDocument.tsx:497:11",
 						"data-prohibitions": "[]",
 						className: "mb-2",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
-							"data-uid": "src/components/ContractDocument.tsx:488:13",
+							"data-uid": "src/components/ContractDocument.tsx:498:13",
 							"data-prohibitions": "[]",
 							children: "CONTRATADA:"
 						}), " CONTACTO SOLUÇÕES EM TECNOLOGIA - LTDA, pessoa jurídica de direito privado, inscrita no CNPJ sob o nº 27.751.577/0001-91, com sede na Rua Paulo de Vasconcelos, nº 429, Maria Ortiz, Vitoria-ES - CEP 29.070-364."]
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-						"data-uid": "src/components/ContractDocument.tsx:492:11",
+						"data-uid": "src/components/ContractDocument.tsx:502:11",
 						"data-prohibitions": "[editContent]",
 						children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
-								"data-uid": "src/components/ContractDocument.tsx:493:13",
+								"data-uid": "src/components/ContractDocument.tsx:503:13",
 								"data-prohibitions": "[]",
 								children: "CONTRATANTE:"
 							}),
 							" ",
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
-								"data-uid": "src/components/ContractDocument.tsx:493:43",
+								"data-uid": "src/components/ContractDocument.tsx:503:43",
 								"data-prohibitions": "[editContent]",
 								children: clientName || "[NOME DO CLIENTE]"
 							}),
 							", inscrita no CNPJ sob o nº ",
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
-								"data-uid": "src/components/ContractDocument.tsx:494:39",
+								"data-uid": "src/components/ContractDocument.tsx:504:39",
 								"data-prohibitions": "[editContent]",
 								children: cnpj ? formatCNPJ(cnpj) : "[CNPJ]"
 							}),
@@ -89838,22 +89853,22 @@ function AddendumDocument({ clientName, cnpj, dataSolicitacao, modules, valorAdi
 					})]
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/components/ContractDocument.tsx:498:9",
+					"data-uid": "src/components/ContractDocument.tsx:508:9",
 					"data-prohibitions": "[editContent]",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-						"data-uid": "src/components/ContractDocument.tsx:499:11",
+						"data-uid": "src/components/ContractDocument.tsx:509:11",
 						"data-prohibitions": "[]",
 						className: "font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800",
 						children: "1. DO OBJETO DO ADITIVO"
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-						"data-uid": "src/components/ContractDocument.tsx:502:11",
+						"data-uid": "src/components/ContractDocument.tsx:512:11",
 						"data-prohibitions": "[editContent]",
 						className: "mb-4",
 						children: [
 							"O presente aditivo tem por objeto formalizar a inclusão de novos módulos ao sistema TMS-SERVICE LOGIC, solicitados pela CONTRATANTE e efetivados no dia",
 							" ",
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
-								"data-uid": "src/components/ContractDocument.tsx:505:13",
+								"data-uid": "src/components/ContractDocument.tsx:515:13",
 								"data-prohibitions": "[editContent]",
 								children: dataSolicitacao ? formatDate$1(dataSolicitacao) : "[DATA]"
 							}),
@@ -89862,40 +89877,40 @@ function AddendumDocument({ clientName, cnpj, dataSolicitacao, modules, valorAdi
 					})]
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/components/ContractDocument.tsx:510:9",
+					"data-uid": "src/components/ContractDocument.tsx:520:9",
 					"data-prohibitions": "[editContent]",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-							"data-uid": "src/components/ContractDocument.tsx:511:11",
+							"data-uid": "src/components/ContractDocument.tsx:521:11",
 							"data-prohibitions": "[]",
 							className: "font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800",
 							children: "2. DOS SERVIÇOS E MÓDULOS ADICIONADOS"
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-							"data-uid": "src/components/ContractDocument.tsx:514:11",
+							"data-uid": "src/components/ContractDocument.tsx:524:11",
 							"data-prohibitions": "[]",
 							className: "mb-3",
 							children: "A CONTRATANTE adere expressamente aos seguintes itens e serviços adicionais:"
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("table", {
-							"data-uid": "src/components/ContractDocument.tsx:518:11",
+							"data-uid": "src/components/ContractDocument.tsx:528:11",
 							"data-prohibitions": "[editContent]",
 							className: "w-full text-xs border-collapse border border-slate-300 mb-6",
 							children: [
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("thead", {
-									"data-uid": "src/components/ContractDocument.tsx:519:13",
+									"data-uid": "src/components/ContractDocument.tsx:529:13",
 									"data-prohibitions": "[]",
 									children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
-										"data-uid": "src/components/ContractDocument.tsx:520:15",
+										"data-uid": "src/components/ContractDocument.tsx:530:15",
 										"data-prohibitions": "[]",
 										className: "bg-[#1b4382] text-white print:bg-slate-200 print:text-black",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
-											"data-uid": "src/components/ContractDocument.tsx:521:17",
+											"data-uid": "src/components/ContractDocument.tsx:531:17",
 											"data-prohibitions": "[]",
 											className: "border border-slate-300 p-2 text-left",
 											children: "Descrição do Item / Serviço"
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
-											"data-uid": "src/components/ContractDocument.tsx:524:17",
+											"data-uid": "src/components/ContractDocument.tsx:534:17",
 											"data-prohibitions": "[]",
 											className: "border border-slate-300 p-2 text-right w-48",
 											children: "Valor Mensal Adicional"
@@ -89903,27 +89918,27 @@ function AddendumDocument({ clientName, cnpj, dataSolicitacao, modules, valorAdi
 									})
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("tbody", {
-									"data-uid": "src/components/ContractDocument.tsx:529:13",
+									"data-uid": "src/components/ContractDocument.tsx:539:13",
 									"data-prohibitions": "[editContent]",
 									children: formattedModules.length > 0 ? formattedModules.map((m, idx) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
-										"data-uid": "src/components/ContractDocument.tsx:532:19",
+										"data-uid": "src/components/ContractDocument.tsx:542:19",
 										"data-prohibitions": "[editContent]",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/ContractDocument.tsx:533:21",
+											"data-uid": "src/components/ContractDocument.tsx:543:21",
 											"data-prohibitions": "[editContent]",
 											className: "border border-slate-300 p-2 whitespace-pre-line",
 											children: m.name
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/ContractDocument.tsx:534:21",
+											"data-uid": "src/components/ContractDocument.tsx:544:21",
 											"data-prohibitions": "[editContent]",
 											className: "border border-slate-300 p-2 text-right",
 											children: m.price > 0 ? formatCurrency(m.price) : "Incluso"
 										})]
 									}, idx)) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("tr", {
-										"data-uid": "src/components/ContractDocument.tsx:540:17",
+										"data-uid": "src/components/ContractDocument.tsx:550:17",
 										"data-prohibitions": "[]",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/ContractDocument.tsx:541:19",
+											"data-uid": "src/components/ContractDocument.tsx:551:19",
 											"data-prohibitions": "[]",
 											colSpan: 2,
 											className: "border border-slate-300 p-2 text-center text-slate-500 italic",
@@ -89932,52 +89947,52 @@ function AddendumDocument({ clientName, cnpj, dataSolicitacao, modules, valorAdi
 									})
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tfoot", {
-									"data-uid": "src/components/ContractDocument.tsx:550:13",
+									"data-uid": "src/components/ContractDocument.tsx:560:13",
 									"data-prohibitions": "[editContent]",
 									children: [
 										valorAdicional > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
-											"data-uid": "src/components/ContractDocument.tsx:552:17",
+											"data-uid": "src/components/ContractDocument.tsx:562:17",
 											"data-prohibitions": "[editContent]",
 											className: "bg-[#1b4382]/5 print:bg-slate-50 font-medium",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-												"data-uid": "src/components/ContractDocument.tsx:553:19",
+												"data-uid": "src/components/ContractDocument.tsx:563:19",
 												"data-prohibitions": "[]",
 												className: "border border-slate-300 p-2 text-right text-slate-600",
 												children: "Subtotal Adicionado"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-												"data-uid": "src/components/ContractDocument.tsx:556:19",
+												"data-uid": "src/components/ContractDocument.tsx:566:19",
 												"data-prohibitions": "[editContent]",
 												className: "border border-slate-300 p-2 text-right text-slate-600",
 												children: formatCurrency(valorAdicional)
 											})]
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
-											"data-uid": "src/components/ContractDocument.tsx:561:15",
+											"data-uid": "src/components/ContractDocument.tsx:571:15",
 											"data-prohibitions": "[editContent]",
 											className: "bg-[#1b4382]/10 print:bg-slate-100 font-bold",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-												"data-uid": "src/components/ContractDocument.tsx:562:17",
+												"data-uid": "src/components/ContractDocument.tsx:572:17",
 												"data-prohibitions": "[]",
 												className: "border border-slate-300 p-2 text-right",
 												children: "Acréscimo Total na Mensalidade"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-												"data-uid": "src/components/ContractDocument.tsx:565:17",
+												"data-uid": "src/components/ContractDocument.tsx:575:17",
 												"data-prohibitions": "[editContent]",
 												className: "border border-slate-300 p-2 text-right text-emerald-700 print:text-black",
 												children: formatCurrency(valorAdicional || formattedModules.reduce((acc, curr) => acc + curr.price, 0))
 											})]
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
-											"data-uid": "src/components/ContractDocument.tsx:571:15",
+											"data-uid": "src/components/ContractDocument.tsx:581:15",
 											"data-prohibitions": "[editContent]",
 											className: "bg-[#1b4382]/20 print:bg-slate-200 font-bold",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-												"data-uid": "src/components/ContractDocument.tsx:572:17",
+												"data-uid": "src/components/ContractDocument.tsx:582:17",
 												"data-prohibitions": "[]",
 												className: "border border-slate-300 p-2 text-right",
 												children: "Novo Valor Total do Contrato"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-												"data-uid": "src/components/ContractDocument.tsx:575:17",
+												"data-uid": "src/components/ContractDocument.tsx:585:17",
 												"data-prohibitions": "[editContent]",
 												className: "border border-slate-300 p-2 text-right text-[#1b4382] print:text-black",
 												children: formatCurrency(valorTotalAtual || 0)
@@ -89990,58 +90005,58 @@ function AddendumDocument({ clientName, cnpj, dataSolicitacao, modules, valorAdi
 					]
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/components/ContractDocument.tsx:583:9",
+					"data-uid": "src/components/ContractDocument.tsx:593:9",
 					"data-prohibitions": "[]",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-						"data-uid": "src/components/ContractDocument.tsx:584:11",
+						"data-uid": "src/components/ContractDocument.tsx:594:11",
 						"data-prohibitions": "[]",
 						className: "font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800",
 						children: "3. DISPOSIÇÕES GERAIS"
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-						"data-uid": "src/components/ContractDocument.tsx:587:11",
+						"data-uid": "src/components/ContractDocument.tsx:597:11",
 						"data-prohibitions": "[]",
 						className: "mb-4",
 						children: "Permanecem inalteradas e em pleno vigor as demais cláusulas e condições estabelecidas no Contrato Principal, que não tenham sido expressamente modificadas por este instrumento."
 					})]
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/components/ContractDocument.tsx:593:9",
+					"data-uid": "src/components/ContractDocument.tsx:603:9",
 					"data-prohibitions": "[editContent]",
 					className: "mt-20 text-center space-y-12",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-						"data-uid": "src/components/ContractDocument.tsx:594:11",
+						"data-uid": "src/components/ContractDocument.tsx:604:11",
 						"data-prohibitions": "[]",
 						children: "E por estarem justos e contratados, assinam eletronicamente o presente Aditivo."
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/components/ContractDocument.tsx:595:11",
+						"data-uid": "src/components/ContractDocument.tsx:605:11",
 						"data-prohibitions": "[editContent]",
 						className: "grid grid-cols-2 gap-8 mt-12",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/components/ContractDocument.tsx:596:13",
+							"data-uid": "src/components/ContractDocument.tsx:606:13",
 							"data-prohibitions": "[]",
 							className: "border-t border-[#1b4382] pt-2 text-center print:border-black",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-								"data-uid": "src/components/ContractDocument.tsx:597:15",
+								"data-uid": "src/components/ContractDocument.tsx:607:15",
 								"data-prohibitions": "[]",
 								className: "font-bold text-[#1b4382] print:text-black",
 								children: "CONTACTO SOLUÇÕES EM TECNOLOGIA - LTDA"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-								"data-uid": "src/components/ContractDocument.tsx:600:15",
+								"data-uid": "src/components/ContractDocument.tsx:610:15",
 								"data-prohibitions": "[]",
 								className: "text-[11px] text-slate-500",
 								children: "CONTRATADA"
 							})]
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/components/ContractDocument.tsx:602:13",
+							"data-uid": "src/components/ContractDocument.tsx:612:13",
 							"data-prohibitions": "[editContent]",
 							className: "border-t border-[#1b4382] pt-2 text-center print:border-black",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-								"data-uid": "src/components/ContractDocument.tsx:603:15",
+								"data-uid": "src/components/ContractDocument.tsx:613:15",
 								"data-prohibitions": "[editContent]",
 								className: "font-bold uppercase text-[#1b4382] print:text-black",
 								children: clientName || "[NOME DA EMPRESA]"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-								"data-uid": "src/components/ContractDocument.tsx:606:15",
+								"data-uid": "src/components/ContractDocument.tsx:616:15",
 								"data-prohibitions": "[]",
 								className: "text-[11px] text-slate-500",
 								children: "CONTRATANTE"
@@ -99047,51 +99062,51 @@ var FEATURE_CATEGORIES = [
 		]
 	}
 ];
-function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules, planPrice, modulesPrice, totalValue, implMode, implValue, isUpsell, includeFranchise }) {
+function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules, planPrice, modulesPrice, dfePrice, totalValue, implMode, implValue, isUpsell, includeFranchise }) {
 	const showBasePlan = planName && planName !== "Nenhum" && planName !== "Nenhum (Somente Módulos / Upsell)";
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		"data-uid": "src/components/QuoteDocument.tsx:78:5",
+		"data-uid": "src/components/QuoteDocument.tsx:80:5",
 		"data-prohibitions": "[editContent]",
 		className: "bg-white w-full max-w-[210mm] mx-auto p-4 md:p-6 print:m-0 print:p-4 text-slate-800 text-xs shadow-sm print:shadow-none font-sans",
 		id: "quote-proposal-print",
 		children: [
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				"data-uid": "src/components/QuoteDocument.tsx:83:7",
+				"data-uid": "src/components/QuoteDocument.tsx:85:7",
 				"data-prohibitions": "[]",
 				className: "flex items-center justify-between gap-4 mb-4",
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/components/QuoteDocument.tsx:84:9",
+					"data-uid": "src/components/QuoteDocument.tsx:86:9",
 					"data-prohibitions": "[]",
 					className: "flex items-center gap-3",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-						"data-uid": "src/components/QuoteDocument.tsx:85:11",
+						"data-uid": "src/components/QuoteDocument.tsx:87:11",
 						"data-prohibitions": "[editContent]",
 						src: logomarca_service_ea011_default,
 						alt: "Service Logic",
 						className: "h-10 object-contain shrink-0"
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/components/QuoteDocument.tsx:86:11",
+						"data-uid": "src/components/QuoteDocument.tsx:88:11",
 						"data-prohibitions": "[]",
 						className: "text-[9px] text-slate-500 leading-tight space-y-0.5 border-l border-slate-200 pl-3",
 						children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-								"data-uid": "src/components/QuoteDocument.tsx:87:13",
+								"data-uid": "src/components/QuoteDocument.tsx:89:13",
 								"data-prohibitions": "[]",
 								className: "font-semibold text-slate-700",
 								children: "SERVICE LOGIC SOLUÇÕES EM TECNOLOGIA"
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-								"data-uid": "src/components/QuoteDocument.tsx:88:13",
+								"data-uid": "src/components/QuoteDocument.tsx:90:13",
 								"data-prohibitions": "[]",
 								children: "CNPJ: 10.929.600/0001-92"
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-								"data-uid": "src/components/QuoteDocument.tsx:89:13",
+								"data-uid": "src/components/QuoteDocument.tsx:91:13",
 								"data-prohibitions": "[]",
 								children: "Avenida Central, 1439 CEP: 29165-130, Serra-ES"
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-								"data-uid": "src/components/QuoteDocument.tsx:90:13",
+								"data-uid": "src/components/QuoteDocument.tsx:92:13",
 								"data-prohibitions": "[]",
 								children: "(27) 2141-0107 / comercial@servicelogic.com.br"
 							})
@@ -99100,33 +99115,33 @@ function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules
 				})
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				"data-uid": "src/components/QuoteDocument.tsx:96:7",
+				"data-uid": "src/components/QuoteDocument.tsx:98:7",
 				"data-prohibitions": "[editContent]",
 				className: "flex justify-between items-end border-b-2 border-orange-500 pb-1.5 mb-3",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/components/QuoteDocument.tsx:97:9",
+					"data-uid": "src/components/QuoteDocument.tsx:99:9",
 					"data-prohibitions": "[editContent]",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-						"data-uid": "src/components/QuoteDocument.tsx:98:11",
+						"data-uid": "src/components/QuoteDocument.tsx:100:11",
 						"data-prohibitions": "[editContent]",
 						className: "text-lg font-bold uppercase tracking-wider text-[#1e3a8a]",
 						children: isUpsell ? "Proposta Comercial - Upsell" : "Proposta Comercial"
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-						"data-uid": "src/components/QuoteDocument.tsx:101:11",
+						"data-uid": "src/components/QuoteDocument.tsx:103:11",
 						"data-prohibitions": "[editContent]",
 						className: "text-xs font-semibold text-slate-600 mt-0.5",
 						children: showBasePlan ? planName : "Adição de Módulos e Serviços"
 					})]
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					"data-uid": "src/components/QuoteDocument.tsx:105:9",
+					"data-uid": "src/components/QuoteDocument.tsx:107:9",
 					"data-prohibitions": "[editContent]",
 					className: "text-right text-[10px]",
 					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-						"data-uid": "src/components/QuoteDocument.tsx:106:11",
+						"data-uid": "src/components/QuoteDocument.tsx:108:11",
 						"data-prohibitions": "[editContent]",
 						children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
-								"data-uid": "src/components/QuoteDocument.tsx:107:13",
+								"data-uid": "src/components/QuoteDocument.tsx:109:13",
 								"data-prohibitions": "[]",
 								children: "Data:"
 							}),
@@ -99137,35 +99152,35 @@ function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules
 				})]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				"data-uid": "src/components/QuoteDocument.tsx:112:7",
+				"data-uid": "src/components/QuoteDocument.tsx:114:7",
 				"data-prohibitions": "[editContent]",
 				className: "flex gap-3 mb-4 bg-slate-50 p-2 rounded border border-slate-200 text-[10px]",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/components/QuoteDocument.tsx:113:9",
+					"data-uid": "src/components/QuoteDocument.tsx:115:9",
 					"data-prohibitions": "[editContent]",
 					className: "flex-1",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-						"data-uid": "src/components/QuoteDocument.tsx:114:11",
+						"data-uid": "src/components/QuoteDocument.tsx:116:11",
 						"data-prohibitions": "[]",
 						className: "block text-slate-500 mb-0.5",
 						children: "Empresa"
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
-						"data-uid": "src/components/QuoteDocument.tsx:115:11",
+						"data-uid": "src/components/QuoteDocument.tsx:117:11",
 						"data-prohibitions": "[editContent]",
 						className: "text-slate-900 text-xs",
 						children: empresa || "Não informado"
 					})]
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/components/QuoteDocument.tsx:117:9",
+					"data-uid": "src/components/QuoteDocument.tsx:119:9",
 					"data-prohibitions": "[editContent]",
 					className: "flex-1",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-						"data-uid": "src/components/QuoteDocument.tsx:118:11",
+						"data-uid": "src/components/QuoteDocument.tsx:120:11",
 						"data-prohibitions": "[]",
 						className: "block text-slate-500 mb-0.5",
 						children: "Aos Cuidados de"
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
-						"data-uid": "src/components/QuoteDocument.tsx:119:11",
+						"data-uid": "src/components/QuoteDocument.tsx:121:11",
 						"data-prohibitions": "[editContent]",
 						className: "text-slate-900 text-xs",
 						children: aosCuidadosDe || "Não informado"
@@ -99173,41 +99188,41 @@ function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules
 				})]
 			}),
 			showBasePlan && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				"data-uid": "src/components/QuoteDocument.tsx:125:9",
+				"data-uid": "src/components/QuoteDocument.tsx:127:9",
 				"data-prohibitions": "[editContent]",
 				className: "mb-4",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
-					"data-uid": "src/components/QuoteDocument.tsx:126:11",
+					"data-uid": "src/components/QuoteDocument.tsx:128:11",
 					"data-prohibitions": "[]",
 					className: "font-bold text-xs text-[#1e3a8a] mb-2 flex items-center gap-1.5",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						"data-uid": "src/components/QuoteDocument.tsx:127:13",
+						"data-uid": "src/components/QuoteDocument.tsx:129:13",
 						"data-prohibitions": "[editContent]",
 						className: "w-1.5 h-3 bg-orange-500 rounded-full"
 					}), "Funcionalidades Inclusas no Plano"]
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					"data-uid": "src/components/QuoteDocument.tsx:130:11",
+					"data-uid": "src/components/QuoteDocument.tsx:132:11",
 					"data-prohibitions": "[editContent]",
 					className: "grid grid-cols-2 md:grid-cols-3 gap-2",
 					children: FEATURE_CATEGORIES.map((cat, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/components/QuoteDocument.tsx:132:15",
+						"data-uid": "src/components/QuoteDocument.tsx:134:15",
 						"data-prohibitions": "[editContent]",
 						className: "bg-white p-2 rounded border border-slate-200 shadow-sm",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
-							"data-uid": "src/components/QuoteDocument.tsx:133:17",
+							"data-uid": "src/components/QuoteDocument.tsx:135:17",
 							"data-prohibitions": "[editContent]",
 							className: "font-bold text-slate-800 text-[10px] mb-1 pb-0.5 border-b border-slate-100",
 							children: cat.title
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
-							"data-uid": "src/components/QuoteDocument.tsx:136:17",
+							"data-uid": "src/components/QuoteDocument.tsx:138:17",
 							"data-prohibitions": "[editContent]",
 							className: "space-y-0.5",
 							children: cat.items.map((item, j) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
-								"data-uid": "src/components/QuoteDocument.tsx:138:21",
+								"data-uid": "src/components/QuoteDocument.tsx:140:21",
 								"data-prohibitions": "[editContent]",
 								className: "flex items-start gap-1 text-[9px] text-slate-600 leading-tight",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:142:23",
+									"data-uid": "src/components/QuoteDocument.tsx:144:23",
 									"data-prohibitions": "[]",
 									className: "text-emerald-500 font-bold shrink-0",
 									children: "✓"
@@ -99218,60 +99233,60 @@ function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules
 				})]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				"data-uid": "src/components/QuoteDocument.tsx:154:7",
+				"data-uid": "src/components/QuoteDocument.tsx:156:7",
 				"data-prohibitions": "[editContent]",
 				className: "mb-4",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
-					"data-uid": "src/components/QuoteDocument.tsx:155:9",
+					"data-uid": "src/components/QuoteDocument.tsx:157:9",
 					"data-prohibitions": "[]",
 					className: "font-bold text-xs text-[#1e3a8a] mb-2 flex items-center gap-1.5",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						"data-uid": "src/components/QuoteDocument.tsx:156:11",
+						"data-uid": "src/components/QuoteDocument.tsx:158:11",
 						"data-prohibitions": "[editContent]",
 						className: "w-1.5 h-3 bg-orange-500 rounded-full"
 					}), "Investimento Detalhado"]
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					"data-uid": "src/components/QuoteDocument.tsx:159:9",
+					"data-uid": "src/components/QuoteDocument.tsx:161:9",
 					"data-prohibitions": "[editContent]",
 					className: "bg-white rounded overflow-hidden border border-slate-200 shadow-sm",
 					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("table", {
-						"data-uid": "src/components/QuoteDocument.tsx:160:11",
+						"data-uid": "src/components/QuoteDocument.tsx:162:11",
 						"data-prohibitions": "[editContent]",
 						className: "w-full text-left text-[10px]",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("thead", {
-							"data-uid": "src/components/QuoteDocument.tsx:161:13",
+							"data-uid": "src/components/QuoteDocument.tsx:163:13",
 							"data-prohibitions": "[]",
 							className: "bg-slate-50 text-slate-700 font-bold",
 							children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
-								"data-uid": "src/components/QuoteDocument.tsx:162:15",
+								"data-uid": "src/components/QuoteDocument.tsx:164:15",
 								"data-prohibitions": "[]",
 								children: [
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
-										"data-uid": "src/components/QuoteDocument.tsx:163:17",
+										"data-uid": "src/components/QuoteDocument.tsx:165:17",
 										"data-prohibitions": "[]",
 										className: "p-1.5 border-b border-slate-200",
 										children: "Descrição"
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
-										"data-uid": "src/components/QuoteDocument.tsx:164:17",
+										"data-uid": "src/components/QuoteDocument.tsx:166:17",
 										"data-prohibitions": "[]",
 										className: "p-1.5 border-b border-slate-200 text-center",
 										children: "Qtd"
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
-										"data-uid": "src/components/QuoteDocument.tsx:165:17",
+										"data-uid": "src/components/QuoteDocument.tsx:167:17",
 										"data-prohibitions": "[]",
 										className: "p-1.5 border-b border-slate-200 text-right",
 										children: "V. Unitário"
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
-										"data-uid": "src/components/QuoteDocument.tsx:166:17",
+										"data-uid": "src/components/QuoteDocument.tsx:168:17",
 										"data-prohibitions": "[]",
 										className: "p-1.5 border-b border-slate-200 text-right",
 										children: "V. Total"
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
-										"data-uid": "src/components/QuoteDocument.tsx:167:17",
+										"data-uid": "src/components/QuoteDocument.tsx:169:17",
 										"data-prohibitions": "[]",
 										className: "p-1.5 border-b border-slate-200 text-center",
 										children: "Pagamento"
@@ -99279,50 +99294,50 @@ function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules
 								]
 							})
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tbody", {
-							"data-uid": "src/components/QuoteDocument.tsx:170:13",
+							"data-uid": "src/components/QuoteDocument.tsx:172:13",
 							"data-prohibitions": "[editContent]",
 							className: "divide-y divide-slate-100",
 							children: [
 								showBasePlan && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
-									"data-uid": "src/components/QuoteDocument.tsx:172:17",
+									"data-uid": "src/components/QuoteDocument.tsx:174:17",
 									"data-prohibitions": "[editContent]",
 									children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:173:19",
+											"data-uid": "src/components/QuoteDocument.tsx:175:19",
 											"data-prohibitions": "[editContent]",
 											className: "p-1.5",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-												"data-uid": "src/components/QuoteDocument.tsx:174:21",
+												"data-uid": "src/components/QuoteDocument.tsx:176:21",
 												"data-prohibitions": "[editContent]",
 												className: "font-semibold text-slate-800",
 												children: planName
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-												"data-uid": "src/components/QuoteDocument.tsx:175:21",
+												"data-uid": "src/components/QuoteDocument.tsx:177:21",
 												"data-prohibitions": "[]",
 												className: "text-[9px] block text-slate-500 mt-0.5",
 												children: "Administração, Básico, Carga, Faturamento e Financeiro"
 											})]
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:179:19",
+											"data-uid": "src/components/QuoteDocument.tsx:181:19",
 											"data-prohibitions": "[]",
 											className: "p-1.5 text-center font-medium",
 											children: "1"
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:180:19",
+											"data-uid": "src/components/QuoteDocument.tsx:182:19",
 											"data-prohibitions": "[editContent]",
 											className: "p-1.5 text-right",
 											children: formatCurrency(planPrice)
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:181:19",
+											"data-uid": "src/components/QuoteDocument.tsx:183:19",
 											"data-prohibitions": "[editContent]",
 											className: "p-1.5 text-right font-medium",
 											children: formatCurrency(planPrice)
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:182:19",
+											"data-uid": "src/components/QuoteDocument.tsx:184:19",
 											"data-prohibitions": "[]",
 											className: "p-1.5 text-center text-slate-600",
 											children: "Mensalidade"
@@ -99330,32 +99345,32 @@ function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules
 									]
 								}),
 								selectedModules.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
-									"data-uid": "src/components/QuoteDocument.tsx:186:17",
+									"data-uid": "src/components/QuoteDocument.tsx:188:17",
 									"data-prohibitions": "[editContent]",
 									children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:187:19",
+											"data-uid": "src/components/QuoteDocument.tsx:189:19",
 											"data-prohibitions": "[editContent]",
 											className: "p-1.5",
 											children: [
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-													"data-uid": "src/components/QuoteDocument.tsx:188:21",
+													"data-uid": "src/components/QuoteDocument.tsx:190:21",
 													"data-prohibitions": "[]",
 													className: "font-semibold text-slate-800",
 													children: "Módulos Adicionais"
 												}),
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-													"data-uid": "src/components/QuoteDocument.tsx:189:21",
+													"data-uid": "src/components/QuoteDocument.tsx:191:21",
 													"data-prohibitions": "[editContent]",
 													className: "text-[9px] block text-slate-500 mt-0.5",
 													children: selectedModules.join(", ")
 												}),
 												selectedModules.some((m) => m.includes("EDI")) && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-													"data-uid": "src/components/QuoteDocument.tsx:193:23",
+													"data-uid": "src/components/QuoteDocument.tsx:195:23",
 													"data-prohibitions": "[]",
 													className: "text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1",
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
-														"data-uid": "src/components/QuoteDocument.tsx:194:25",
+														"data-uid": "src/components/QuoteDocument.tsx:196:25",
 														"data-prohibitions": "[]",
 														children: "* EDI (Electronic Data Interchange):"
 													}), " Inclusão de Layout padrão Proceda para integração (arquivos NOTFIS para emissão de CT-e, envios de CONEMB, DOCCOB e OCOREN) automatizando a troca de informações entre embarcador e transportadora."]
@@ -99363,25 +99378,25 @@ function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules
 											]
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:201:19",
+											"data-uid": "src/components/QuoteDocument.tsx:203:19",
 											"data-prohibitions": "[]",
 											className: "p-1.5 text-center font-medium",
 											children: "1"
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:202:19",
+											"data-uid": "src/components/QuoteDocument.tsx:204:19",
 											"data-prohibitions": "[editContent]",
 											className: "p-1.5 text-right",
 											children: formatCurrency(modulesPrice)
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:203:19",
+											"data-uid": "src/components/QuoteDocument.tsx:205:19",
 											"data-prohibitions": "[editContent]",
 											className: "p-1.5 text-right font-medium",
 											children: formatCurrency(modulesPrice)
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:204:19",
+											"data-uid": "src/components/QuoteDocument.tsx:206:19",
 											"data-prohibitions": "[]",
 											className: "p-1.5 text-center text-slate-600",
 											children: "Mensalidade"
@@ -99389,48 +99404,48 @@ function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules
 									]
 								}),
 								includeFranchise && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
-									"data-uid": "src/components/QuoteDocument.tsx:208:17",
-									"data-prohibitions": "[]",
+									"data-uid": "src/components/QuoteDocument.tsx:210:17",
+									"data-prohibitions": "[editContent]",
 									children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:209:19",
+											"data-uid": "src/components/QuoteDocument.tsx:211:19",
 											"data-prohibitions": "[]",
 											className: "p-1.5",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-												"data-uid": "src/components/QuoteDocument.tsx:210:21",
+												"data-uid": "src/components/QuoteDocument.tsx:212:21",
 												"data-prohibitions": "[]",
 												className: "font-semibold text-slate-800",
 												children: "Franquia de Emissões (DF-e)"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-												"data-uid": "src/components/QuoteDocument.tsx:213:21",
+												"data-uid": "src/components/QuoteDocument.tsx:215:21",
 												"data-prohibitions": "[]",
 												className: "text-[9px] block text-slate-500 mt-0.5",
 												children: "Pacote de emissões eletrônicas"
 											})]
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:217:19",
+											"data-uid": "src/components/QuoteDocument.tsx:219:19",
 											"data-prohibitions": "[]",
 											className: "p-1.5 text-center font-medium",
 											children: "1"
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:218:19",
-											"data-prohibitions": "[]",
-											className: "p-1.5 text-right",
-											children: "Incluso"
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:219:19",
-											"data-prohibitions": "[]",
-											className: "p-1.5 text-right font-medium",
-											children: "Incluso"
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
 											"data-uid": "src/components/QuoteDocument.tsx:220:19",
+											"data-prohibitions": "[editContent]",
+											className: "p-1.5 text-right",
+											children: dfePrice && dfePrice > 0 ? formatCurrency(dfePrice) : "Incluso"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+											"data-uid": "src/components/QuoteDocument.tsx:223:19",
+											"data-prohibitions": "[editContent]",
+											className: "p-1.5 text-right font-medium",
+											children: dfePrice && dfePrice > 0 ? formatCurrency(dfePrice) : "Incluso"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+											"data-uid": "src/components/QuoteDocument.tsx:226:19",
 											"data-prohibitions": "[]",
 											className: "p-1.5 text-center text-slate-600",
-											children: "-"
+											children: "Mensalidade"
 										})
 									]
 								})
@@ -99440,63 +99455,78 @@ function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules
 				})]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				"data-uid": "src/components/QuoteDocument.tsx:229:7",
+				"data-uid": "src/components/QuoteDocument.tsx:235:7",
 				"data-prohibitions": "[editContent]",
 				className: "grid grid-cols-2 gap-3",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/components/QuoteDocument.tsx:230:9",
+					"data-uid": "src/components/QuoteDocument.tsx:236:9",
 					"data-prohibitions": "[editContent]",
 					className: "bg-slate-50 p-3 rounded border border-slate-200",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
-						"data-uid": "src/components/QuoteDocument.tsx:231:11",
+						"data-uid": "src/components/QuoteDocument.tsx:237:11",
 						"data-prohibitions": "[]",
 						className: "font-bold text-slate-500 text-[9px] uppercase tracking-wider mb-2",
 						children: "Total Recorrente"
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/components/QuoteDocument.tsx:234:11",
+						"data-uid": "src/components/QuoteDocument.tsx:240:11",
 						"data-prohibitions": "[editContent]",
 						className: "space-y-1.5 text-[10px]",
 						children: [
 							showBasePlan && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/components/QuoteDocument.tsx:236:15",
+								"data-uid": "src/components/QuoteDocument.tsx:242:15",
 								"data-prohibitions": "[editContent]",
 								className: "flex justify-between items-center text-slate-600",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:237:17",
+									"data-uid": "src/components/QuoteDocument.tsx:243:17",
 									"data-prohibitions": "[]",
 									children: "Plano Base"
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:238:17",
+									"data-uid": "src/components/QuoteDocument.tsx:244:17",
 									"data-prohibitions": "[editContent]",
 									className: "font-medium",
 									children: formatCurrency(planPrice)
 								})]
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/components/QuoteDocument.tsx:241:13",
+								"data-uid": "src/components/QuoteDocument.tsx:247:13",
 								"data-prohibitions": "[editContent]",
 								className: "flex justify-between items-center text-slate-600",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:242:15",
+									"data-uid": "src/components/QuoteDocument.tsx:248:15",
 									"data-prohibitions": "[]",
 									children: "Módulos Adicionais"
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:243:15",
+									"data-uid": "src/components/QuoteDocument.tsx:249:15",
 									"data-prohibitions": "[editContent]",
 									className: "font-medium",
 									children: formatCurrency(modulesPrice)
 								})]
 							}),
+							includeFranchise && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								"data-uid": "src/components/QuoteDocument.tsx:252:15",
+								"data-prohibitions": "[editContent]",
+								className: "flex justify-between items-center text-slate-600",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									"data-uid": "src/components/QuoteDocument.tsx:253:17",
+									"data-prohibitions": "[]",
+									children: "Franquia DF-e"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									"data-uid": "src/components/QuoteDocument.tsx:254:17",
+									"data-prohibitions": "[editContent]",
+									className: "font-medium",
+									children: formatCurrency(dfePrice || 0)
+								})]
+							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/components/QuoteDocument.tsx:245:13",
+								"data-uid": "src/components/QuoteDocument.tsx:257:13",
 								"data-prohibitions": "[editContent]",
 								className: "pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:246:15",
+									"data-uid": "src/components/QuoteDocument.tsx:258:15",
 									"data-prohibitions": "[]",
 									children: "Total Mensal"
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:247:15",
+									"data-uid": "src/components/QuoteDocument.tsx:259:15",
 									"data-prohibitions": "[editContent]",
 									children: formatCurrency(totalValue)
 								})]
@@ -99504,40 +99534,40 @@ function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules
 						]
 					})]
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/components/QuoteDocument.tsx:252:9",
+					"data-uid": "src/components/QuoteDocument.tsx:264:9",
 					"data-prohibitions": "[editContent]",
 					className: "bg-slate-50 p-3 rounded border border-slate-200",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
-						"data-uid": "src/components/QuoteDocument.tsx:253:11",
+						"data-uid": "src/components/QuoteDocument.tsx:265:11",
 						"data-prohibitions": "[]",
 						className: "font-bold text-slate-500 text-[9px] uppercase tracking-wider mb-2",
 						children: "Total Parcela Única"
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/components/QuoteDocument.tsx:256:11",
+						"data-uid": "src/components/QuoteDocument.tsx:268:11",
 						"data-prohibitions": "[editContent]",
 						className: "space-y-1.5 text-[10px]",
 						children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/components/QuoteDocument.tsx:257:13",
+								"data-uid": "src/components/QuoteDocument.tsx:269:13",
 								"data-prohibitions": "[]",
 								className: "flex justify-between items-center text-slate-600",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:258:15",
+									"data-uid": "src/components/QuoteDocument.tsx:270:15",
 									"data-prohibitions": "[]",
 									children: "Serviços Únicos"
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:259:15",
+									"data-uid": "src/components/QuoteDocument.tsx:271:15",
 									"data-prohibitions": "[]",
 									className: "font-medium",
 									children: "R$ 0,00"
 								})]
 							}),
 							!isUpsell && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/components/QuoteDocument.tsx:262:15",
+								"data-uid": "src/components/QuoteDocument.tsx:274:15",
 								"data-prohibitions": "[editContent]",
 								className: "flex justify-between items-center text-slate-600",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:263:17",
+									"data-uid": "src/components/QuoteDocument.tsx:275:17",
 									"data-prohibitions": "[editContent]",
 									children: [
 										"Implantação (",
@@ -99545,22 +99575,22 @@ function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules
 										")"
 									]
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:264:17",
+									"data-uid": "src/components/QuoteDocument.tsx:276:17",
 									"data-prohibitions": "[editContent]",
 									className: "font-medium",
 									children: formatCurrency(implValue)
 								})]
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/components/QuoteDocument.tsx:267:13",
+								"data-uid": "src/components/QuoteDocument.tsx:279:13",
 								"data-prohibitions": "[editContent]",
 								className: "pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:268:15",
+									"data-uid": "src/components/QuoteDocument.tsx:280:15",
 									"data-prohibitions": "[]",
 									children: "Total à Vista"
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:269:15",
+									"data-uid": "src/components/QuoteDocument.tsx:281:15",
 									"data-prohibitions": "[editContent]",
 									children: isUpsell ? formatCurrency(0) : formatCurrency(implValue)
 								})]
@@ -99570,15 +99600,15 @@ function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules
 				})]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				"data-uid": "src/components/QuoteDocument.tsx:275:7",
+				"data-uid": "src/components/QuoteDocument.tsx:287:7",
 				"data-prohibitions": "[]",
 				className: "mt-6 pt-3 border-t border-slate-200 text-center text-[9px] text-slate-400",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-					"data-uid": "src/components/QuoteDocument.tsx:276:9",
+					"data-uid": "src/components/QuoteDocument.tsx:288:9",
 					"data-prohibitions": "[]",
 					children: "Validade desta proposta: 15 dias corridos."
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-					"data-uid": "src/components/QuoteDocument.tsx:277:9",
+					"data-uid": "src/components/QuoteDocument.tsx:289:9",
 					"data-prohibitions": "[]",
 					children: "Para dúvidas ou esclarecimentos, entre em contato conosco."
 				})]
@@ -99934,7 +99964,7 @@ function ContractGeneratorPage() {
 		});
 		return hours;
 	}, [selectedModules]);
-	const implValue = (0, import_react.useMemo)(() => {
+	const calculatedImplValue = (0, import_react.useMemo)(() => {
 		let value = totalImplHours * implRate;
 		selectedModules.forEach((id) => {
 			const mod = MODULES.find((m) => m.id === id);
@@ -99948,6 +99978,8 @@ function ContractGeneratorPage() {
 		selectedModules,
 		implMode
 	]);
+	const [manualImplValue, setManualImplValue] = (0, import_react.useState)("");
+	const implValue = manualImplValue !== "" ? parseFloat(manualImplValue) : calculatedImplValue;
 	const contractProps = {
 		name,
 		cnpj,
@@ -100377,50 +100409,50 @@ function ContractGeneratorPage() {
 	};
 	const inputHighlightClass = autoFilled ? "bg-yellow-50 border-yellow-300 transition-all duration-500" : "transition-all duration-500";
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		"data-uid": "src/pages/ContractGeneratorPage.tsx:696:5",
+		"data-uid": "src/pages/ContractGeneratorPage.tsx:699:5",
 		"data-prohibitions": "[editContent]",
 		className: "space-y-6 pb-12 print:pb-0 print:space-y-0",
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			"data-uid": "src/pages/ContractGeneratorPage.tsx:697:7",
+			"data-uid": "src/pages/ContractGeneratorPage.tsx:700:7",
 			"data-prohibitions": "[]",
 			className: "print:hidden",
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-				"data-uid": "src/pages/ContractGeneratorPage.tsx:698:9",
+				"data-uid": "src/pages/ContractGeneratorPage.tsx:701:9",
 				"data-prohibitions": "[]",
 				className: "text-3xl font-bold tracking-tight",
 				children: "Gestão de Contratos"
 			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-				"data-uid": "src/pages/ContractGeneratorPage.tsx:699:9",
+				"data-uid": "src/pages/ContractGeneratorPage.tsx:702:9",
 				"data-prohibitions": "[]",
 				className: "text-muted-foreground mt-1",
 				children: "Gere contratos manualmente ou importe documentos para preenchimento automático."
 			})]
 		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Tabs, {
-			"data-uid": "src/pages/ContractGeneratorPage.tsx:704:7",
+			"data-uid": "src/pages/ContractGeneratorPage.tsx:707:7",
 			"data-prohibitions": "[editContent]",
 			value: activeTab,
 			onValueChange: (val) => setActiveTab(val),
 			className: "space-y-6 print:space-y-0",
 			children: [
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(TabsList, {
-					"data-uid": "src/pages/ContractGeneratorPage.tsx:709:9",
+					"data-uid": "src/pages/ContractGeneratorPage.tsx:712:9",
 					"data-prohibitions": "[]",
 					className: "print:hidden",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsTrigger, {
-							"data-uid": "src/pages/ContractGeneratorPage.tsx:710:11",
+							"data-uid": "src/pages/ContractGeneratorPage.tsx:713:11",
 							"data-prohibitions": "[]",
 							value: "gerar",
 							children: "Gerar Contrato"
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsTrigger, {
-							"data-uid": "src/pages/ContractGeneratorPage.tsx:711:11",
+							"data-uid": "src/pages/ContractGeneratorPage.tsx:714:11",
 							"data-prohibitions": "[]",
 							value: "cotacao",
 							children: "Gerar Cotação"
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsTrigger, {
-							"data-uid": "src/pages/ContractGeneratorPage.tsx:712:11",
+							"data-uid": "src/pages/ContractGeneratorPage.tsx:715:11",
 							"data-prohibitions": "[]",
 							value: "importar",
 							children: "Importar PDFs Lote"
@@ -100428,55 +100460,55 @@ function ContractGeneratorPage() {
 					]
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsContent, {
-					"data-uid": "src/pages/ContractGeneratorPage.tsx:715:9",
+					"data-uid": "src/pages/ContractGeneratorPage.tsx:718:9",
 					"data-prohibitions": "[editContent]",
 					value: "gerar",
 					className: "print:m-0",
 					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/pages/ContractGeneratorPage.tsx:716:11",
+						"data-uid": "src/pages/ContractGeneratorPage.tsx:719:11",
 						"data-prohibitions": "[editContent]",
 						className: "grid lg:grid-cols-12 gap-6 items-start print:block print:w-full print:m-0 print:p-0",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/ContractGeneratorPage.tsx:717:13",
+							"data-uid": "src/pages/ContractGeneratorPage.tsx:720:13",
 							"data-prohibitions": "[editContent]",
 							className: "lg:col-span-5 space-y-6 print:hidden",
 							children: [
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
-									"data-uid": "src/pages/ContractGeneratorPage.tsx:718:15",
+									"data-uid": "src/pages/ContractGeneratorPage.tsx:721:15",
 									"data-prohibitions": "[editContent]",
 									className: "border-indigo-100 shadow-sm bg-indigo-50/30",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardHeader, {
-										"data-uid": "src/pages/ContractGeneratorPage.tsx:719:17",
+										"data-uid": "src/pages/ContractGeneratorPage.tsx:722:17",
 										"data-prohibitions": "[]",
 										className: "pb-3",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardTitle, {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:720:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:723:19",
 											"data-prohibitions": "[]",
 											className: "text-indigo-800 text-sm flex items-center gap-2",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sparkles, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:721:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:724:21",
 												"data-prohibitions": "[editContent]",
 												className: "w-4 h-4"
 											}), " Importação de Documentos (OCR)"]
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardDescription, {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:723:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:726:19",
 											"data-prohibitions": "[]",
 											className: "text-xs text-indigo-600/80",
 											children: "Arraste o Cartão CNPJ, Contrato Social e CNH para auto-preencher os dados."
 										})]
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardContent, {
-										"data-uid": "src/pages/ContractGeneratorPage.tsx:727:17",
+										"data-uid": "src/pages/ContractGeneratorPage.tsx:730:17",
 										"data-prohibitions": "[editContent]",
 										className: "space-y-4",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:728:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:731:19",
 											"data-prohibitions": "[editContent]",
 											onDragOver,
 											onDragLeave,
 											onDrop,
 											className: cn$1("relative border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center transition-colors", isDragging ? "border-indigo-500 bg-indigo-100/50" : "border-indigo-200 hover:border-indigo-300 bg-white"),
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:739:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:742:21",
 												"data-prohibitions": "[editContent]",
 												type: "file",
 												accept: ".pdf,image/*",
@@ -100485,23 +100517,23 @@ function ContractGeneratorPage() {
 												onChange: onFileInput,
 												disabled: isExtractingCompany
 											}), isExtractingCompany ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:748:23",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:751:23",
 												"data-prohibitions": "[]",
 												className: "flex flex-col items-center space-y-2 w-full",
 												children: [
 													/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:749:25",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:752:25",
 														"data-prohibitions": "[editContent]",
 														className: "w-8 h-8 text-indigo-600 animate-spin"
 													}),
 													/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:750:25",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:753:25",
 														"data-prohibitions": "[]",
 														className: "text-sm font-medium text-indigo-700",
 														children: "Processando documentos..."
 													}),
 													/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Progress, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:753:25",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:756:25",
 														"data-prohibitions": "[editContent]",
 														value: uploadProgress,
 														className: "w-3/4 h-2 mt-2"
@@ -100509,50 +100541,50 @@ function ContractGeneratorPage() {
 												]
 											}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:757:25",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:760:25",
 													"data-prohibitions": "[]",
 													className: "p-3 bg-indigo-100 text-indigo-600 rounded-full mb-3",
 													children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Upload, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:758:27",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:761:27",
 														"data-prohibitions": "[editContent]",
 														className: "w-6 h-6"
 													})
 												}),
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:760:25",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:763:25",
 													"data-prohibitions": "[]",
 													className: "text-sm font-medium text-slate-700",
 													children: "Clique ou arraste arquivos aqui"
 												}),
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:763:25",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:766:25",
 													"data-prohibitions": "[]",
 													className: "text-xs text-slate-500 mt-1",
 													children: "Suporta PDF, JPG, PNG"
 												})
 											] })]
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:768:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:771:19",
 											"data-prohibitions": "[editContent]",
 											className: "relative",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:769:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:772:21",
 												"data-prohibitions": "[editContent]",
 												type: "file",
 												accept: ".pdf",
 												className: "absolute inset-0 opacity-0 cursor-pointer z-10",
 												onChange: handleUploadProposal
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:775:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:778:21",
 												"data-prohibitions": "[editContent]",
 												variant: "outline",
 												className: "w-full bg-white border-indigo-200 text-indigo-700 pointer-events-none",
 												children: [isExtractingProposal ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:780:25",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:783:25",
 													"data-prohibitions": "[editContent]",
 													className: "w-4 h-4 mr-2 animate-spin"
 												}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CloudUpload, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:782:25",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:785:25",
 													"data-prohibitions": "[editContent]",
 													className: "w-4 h-4 mr-2"
 												}), "Importar Proposta (Opcional)"]
@@ -100561,32 +100593,32 @@ function ContractGeneratorPage() {
 									})]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
-									"data-uid": "src/pages/ContractGeneratorPage.tsx:790:15",
+									"data-uid": "src/pages/ContractGeneratorPage.tsx:793:15",
 									"data-prohibitions": "[editContent]",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardHeader, {
-										"data-uid": "src/pages/ContractGeneratorPage.tsx:791:17",
+										"data-uid": "src/pages/ContractGeneratorPage.tsx:794:17",
 										"data-prohibitions": "[]",
 										className: "pb-4",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:792:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:795:19",
 											"data-prohibitions": "[]",
 											children: "1. Dados da Contratante"
 										})
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardContent, {
-										"data-uid": "src/pages/ContractGeneratorPage.tsx:794:17",
+										"data-uid": "src/pages/ContractGeneratorPage.tsx:797:17",
 										"data-prohibitions": "[editContent]",
 										className: "space-y-4",
 										children: [
 											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:795:19",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:798:19",
 												"data-prohibitions": "[editContent]",
 												className: "space-y-2",
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:796:21",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:799:21",
 													"data-prohibitions": "[]",
 													children: "Razão Social"
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:797:21",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:800:21",
 													"data-prohibitions": "[editContent]",
 													value: name,
 													onChange: (e) => setName(e.target.value),
@@ -100594,24 +100626,24 @@ function ContractGeneratorPage() {
 												})]
 											}),
 											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:803:19",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:806:19",
 												"data-prohibitions": "[editContent]",
 												className: "space-y-2",
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:804:21",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:807:21",
 													"data-prohibitions": "[editContent]",
 													className: "flex items-center justify-between",
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:805:23",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:808:23",
 														"data-prohibitions": "[]",
 														children: "CNPJ"
 													}), isLoadingCnpj && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:807:25",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:810:25",
 														"data-prohibitions": "[editContent]",
 														className: "w-3 h-3 animate-spin text-indigo-600"
 													})]
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:810:21",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:813:21",
 													"data-prohibitions": "[editContent]",
 													value: cnpj,
 													onChange: handleCnpjChange,
@@ -100620,15 +100652,15 @@ function ContractGeneratorPage() {
 												})]
 											}),
 											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:817:19",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:820:19",
 												"data-prohibitions": "[editContent]",
 												className: "space-y-2",
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:818:21",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:821:21",
 													"data-prohibitions": "[]",
 													children: "Endereço Completo"
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:819:21",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:822:21",
 													"data-prohibitions": "[editContent]",
 													value: address,
 													onChange: (e) => setAddress(e.target.value),
@@ -100636,34 +100668,34 @@ function ContractGeneratorPage() {
 												})]
 											}),
 											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:825:19",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:828:19",
 												"data-prohibitions": "[editContent]",
 												className: "grid grid-cols-1 sm:grid-cols-2 gap-4",
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:826:21",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:829:21",
 													"data-prohibitions": "[editContent]",
 													className: "space-y-2",
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:827:23",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:830:23",
 														"data-prohibitions": "[]",
 														children: "Representante Legal"
 													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:828:23",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:831:23",
 														"data-prohibitions": "[editContent]",
 														value: repName,
 														onChange: (e) => setRepName(e.target.value),
 														className: inputHighlightClass
 													})]
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:834:21",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:837:21",
 													"data-prohibitions": "[editContent]",
 													className: "space-y-2",
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:835:23",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:838:23",
 														"data-prohibitions": "[]",
 														children: "CPF do Representante"
 													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:836:23",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:839:23",
 														"data-prohibitions": "[editContent]",
 														value: repCpf,
 														onChange: (e) => setRepCpf(e.target.value),
@@ -100672,19 +100704,19 @@ function ContractGeneratorPage() {
 												})]
 											}),
 											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:843:19",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:846:19",
 												"data-prohibitions": "[editContent]",
 												className: "grid grid-cols-1 sm:grid-cols-2 gap-4",
 												children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:844:21",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:847:21",
 													"data-prohibitions": "[editContent]",
 													className: "space-y-2",
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:845:23",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:848:23",
 														"data-prohibitions": "[]",
 														children: "RG do Representante"
 													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:846:23",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:849:23",
 														"data-prohibitions": "[editContent]",
 														value: repRg,
 														onChange: (e) => setRepRg(e.target.value),
@@ -100696,53 +100728,53 @@ function ContractGeneratorPage() {
 									})]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
-									"data-uid": "src/pages/ContractGeneratorPage.tsx:857:15",
+									"data-uid": "src/pages/ContractGeneratorPage.tsx:860:15",
 									"data-prohibitions": "[editContent]",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardHeader, {
-										"data-uid": "src/pages/ContractGeneratorPage.tsx:858:17",
+										"data-uid": "src/pages/ContractGeneratorPage.tsx:861:17",
 										"data-prohibitions": "[]",
 										className: "pb-4",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:859:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:862:19",
 											"data-prohibitions": "[]",
 											children: "2. Plano, Módulos e Implantação"
 										})
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardContent, {
-										"data-uid": "src/pages/ContractGeneratorPage.tsx:861:17",
+										"data-uid": "src/pages/ContractGeneratorPage.tsx:864:17",
 										"data-prohibitions": "[editContent]",
 										className: "space-y-6",
 										children: [
 											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:862:19",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:865:19",
 												"data-prohibitions": "[editContent]",
 												className: "space-y-3",
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:863:21",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:866:21",
 													"data-prohibitions": "[]",
 													className: "text-sm font-bold",
 													children: "Plano Base"
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:864:21",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:867:21",
 													"data-prohibitions": "[editContent]",
 													value: selectedPlan,
 													onValueChange: setSelectedPlan,
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:865:23",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:868:23",
 														"data-prohibitions": "[]",
 														children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, {
-															"data-uid": "src/pages/ContractGeneratorPage.tsx:866:25",
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:869:25",
 															"data-prohibitions": "[editContent]"
 														})
 													}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectContent, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:868:23",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:871:23",
 														"data-prohibitions": "[editContent]",
 														children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-															"data-uid": "src/pages/ContractGeneratorPage.tsx:869:25",
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:872:25",
 															"data-prohibitions": "[]",
 															value: "none",
 															children: "Nenhum (Somente Módulos / Upsell)"
 														}), PLANS.map((p) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectItem, {
-															"data-uid": "src/pages/ContractGeneratorPage.tsx:871:27",
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:874:27",
 															"data-prohibitions": "[editContent]",
 															value: p.id,
 															children: [
@@ -100755,34 +100787,34 @@ function ContractGeneratorPage() {
 												})]
 											}),
 											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Separator$2, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:878:19",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:881:19",
 												"data-prohibitions": "[editContent]"
 											}),
 											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:879:19",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:882:19",
 												"data-prohibitions": "[editContent]",
 												className: "space-y-3",
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:880:21",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:883:21",
 													"data-prohibitions": "[]",
 													className: "text-sm font-bold",
 													children: "Módulos Adicionais"
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:881:21",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:884:21",
 													"data-prohibitions": "[editContent]",
 													className: "grid grid-cols-2 gap-2",
 													children: MODULES.map((m) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:883:25",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:886:25",
 														"data-prohibitions": "[editContent]",
 														className: "flex items-center space-x-2 border p-2 rounded-lg",
 														children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Checkbox, {
-															"data-uid": "src/pages/ContractGeneratorPage.tsx:887:27",
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:890:27",
 															"data-prohibitions": "[editContent]",
 															id: m.id,
 															checked: selectedModules.includes(m.id),
 															onCheckedChange: (c) => handleToggleModule(m.id, c)
 														}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-															"data-uid": "src/pages/ContractGeneratorPage.tsx:892:27",
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:895:27",
 															"data-prohibitions": "[editContent]",
 															htmlFor: m.id,
 															className: "text-xs",
@@ -100792,33 +100824,33 @@ function ContractGeneratorPage() {
 												})]
 											}),
 											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:899:19",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:902:19",
 												"data-prohibitions": "[editContent]",
 												className: "space-y-3 mt-4",
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:900:21",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:903:21",
 													"data-prohibitions": "[]",
 													className: "text-sm font-bold",
 													children: "Franquia de Emissões (DF-e)"
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:901:21",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:904:21",
 													"data-prohibitions": "[editContent]",
 													value: selectedDfe,
 													onValueChange: setSelectedDfe,
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:902:23",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:905:23",
 														"data-prohibitions": "[]",
 														className: "bg-slate-50 border",
 														children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, {
-															"data-uid": "src/pages/ContractGeneratorPage.tsx:903:25",
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:906:25",
 															"data-prohibitions": "[editContent]",
 															placeholder: "Selecione um pacote DF-e..."
 														})
 													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectContent, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:905:23",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:908:23",
 														"data-prohibitions": "[editContent]",
 														children: DFE_TIERS.map((tier) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectItem, {
-															"data-uid": "src/pages/ContractGeneratorPage.tsx:907:27",
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:910:27",
 															"data-prohibitions": "[editContent]",
 															value: tier.id,
 															children: [
@@ -100831,115 +100863,147 @@ function ContractGeneratorPage() {
 												})]
 											}),
 											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Separator$2, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:914:19",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:917:19",
 												"data-prohibitions": "[editContent]"
 											}),
 											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:915:19",
-												"data-prohibitions": "[]",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:918:19",
+												"data-prohibitions": "[editContent]",
 												className: "space-y-3",
-												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:916:21",
-													"data-prohibitions": "[]",
-													className: "text-sm font-bold",
-													children: "Implantação"
-												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(RadioGroup, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:917:21",
-													"data-prohibitions": "[]",
-													value: implMode,
-													onValueChange: (v) => setImplMode(v),
-													className: "flex flex-col sm:flex-row gap-4",
-													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:922:23",
+												children: [
+													/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:919:21",
 														"data-prohibitions": "[]",
-														className: "flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors",
-														children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RadioGroupItem, {
-															"data-uid": "src/pages/ContractGeneratorPage.tsx:923:25",
-															"data-prohibitions": "[editContent]",
-															value: "remoto",
-															id: "remoto"
-														}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-															"data-uid": "src/pages/ContractGeneratorPage.tsx:924:25",
-															"data-prohibitions": "[]",
-															htmlFor: "remoto",
-															className: "cursor-pointer font-medium flex-1 h-full py-1",
-															children: "Remoto (R$ 130/h)"
-														})]
-													}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:931:23",
+														className: "text-sm font-bold",
+														children: "Implantação"
+													}),
+													/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(RadioGroup, {
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:920:21",
 														"data-prohibitions": "[]",
-														className: "flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors",
-														children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RadioGroupItem, {
-															"data-uid": "src/pages/ContractGeneratorPage.tsx:932:25",
-															"data-prohibitions": "[editContent]",
-															value: "presencial",
-															id: "presencial"
-														}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-															"data-uid": "src/pages/ContractGeneratorPage.tsx:933:25",
+														value: implMode,
+														onValueChange: (v) => setImplMode(v),
+														className: "flex flex-col sm:flex-row gap-4",
+														children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:925:23",
 															"data-prohibitions": "[]",
-															htmlFor: "presencial",
-															className: "cursor-pointer font-medium flex-1 h-full py-1",
-															children: "Presencial (R$ 170/h)"
+															className: "flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors",
+															children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RadioGroupItem, {
+																"data-uid": "src/pages/ContractGeneratorPage.tsx:926:25",
+																"data-prohibitions": "[editContent]",
+																value: "remoto",
+																id: "remoto"
+															}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
+																"data-uid": "src/pages/ContractGeneratorPage.tsx:927:25",
+																"data-prohibitions": "[]",
+																htmlFor: "remoto",
+																className: "cursor-pointer font-medium flex-1 h-full py-1",
+																children: "Remoto (R$ 130/h)"
+															})]
+														}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:934:23",
+															"data-prohibitions": "[]",
+															className: "flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors",
+															children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RadioGroupItem, {
+																"data-uid": "src/pages/ContractGeneratorPage.tsx:935:25",
+																"data-prohibitions": "[editContent]",
+																value: "presencial",
+																id: "presencial"
+															}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
+																"data-uid": "src/pages/ContractGeneratorPage.tsx:936:25",
+																"data-prohibitions": "[]",
+																htmlFor: "presencial",
+																className: "cursor-pointer font-medium flex-1 h-full py-1",
+																children: "Presencial (R$ 170/h)"
+															})]
 														})]
-													})]
-												})]
+													}),
+													/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:945:21",
+														"data-prohibitions": "[editContent]",
+														className: "mt-4 pt-2 border-t border-slate-100 space-y-2",
+														children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:946:23",
+															"data-prohibitions": "[]",
+															className: "text-xs",
+															children: "Valor da Implantação Personalizado (Opcional)"
+														}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:949:23",
+															"data-prohibitions": "[editContent]",
+															className: "flex gap-3 items-center",
+															children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+																"data-uid": "src/pages/ContractGeneratorPage.tsx:950:25",
+																"data-prohibitions": "[editContent]",
+																type: "number",
+																placeholder: "Ex: 1500",
+																value: manualImplValue,
+																onChange: (e) => setManualImplValue(e.target.value),
+																className: "w-1/2 bg-white"
+															}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+																"data-uid": "src/pages/ContractGeneratorPage.tsx:957:25",
+																"data-prohibitions": "[editContent]",
+																className: "text-xs text-slate-500",
+																children: ["Calculado: ", formatCurrency(calculatedImplValue)]
+															})]
+														})]
+													})
+												]
 											})
 										]
 									})]
 								})
 							]
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							"data-uid": "src/pages/ContractGeneratorPage.tsx:946:13",
+							"data-uid": "src/pages/ContractGeneratorPage.tsx:967:13",
 							"data-prohibitions": "[]",
 							className: "lg:col-span-7 sticky top-6 print:static print:block print:w-full print:m-0 print:p-0",
 							children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
-								"data-uid": "src/pages/ContractGeneratorPage.tsx:947:15",
+								"data-uid": "src/pages/ContractGeneratorPage.tsx:968:15",
 								"data-prohibitions": "[]",
 								className: "flex flex-col h-[calc(100vh-6rem)] min-h-[700px] shadow-xl border-slate-200 overflow-hidden bg-white print:h-auto print:min-h-0 print:shadow-none print:border-none",
 								children: [
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										"data-uid": "src/pages/ContractGeneratorPage.tsx:948:17",
+										"data-uid": "src/pages/ContractGeneratorPage.tsx:969:17",
 										"data-prohibitions": "[]",
 										className: "flex-1 overflow-y-auto print:hidden p-1",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ContractDocument, {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:949:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:970:19",
 											"data-prohibitions": "[editContent]",
 											...contractProps
 										})
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										"data-uid": "src/pages/ContractGeneratorPage.tsx:951:17",
+										"data-uid": "src/pages/ContractGeneratorPage.tsx:972:17",
 										"data-prohibitions": "[]",
 										className: "hidden print:block",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ContractDocument, {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:952:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:973:19",
 											"data-prohibitions": "[editContent]",
 											...contractProps
 										})
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardFooter, {
-										"data-uid": "src/pages/ContractGeneratorPage.tsx:954:17",
+										"data-uid": "src/pages/ContractGeneratorPage.tsx:975:17",
 										"data-prohibitions": "[]",
 										className: "bg-slate-50 border-t p-4 flex flex-col sm:flex-row gap-3 justify-end shrink-0 print:hidden",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:955:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:976:19",
 											"data-prohibitions": "[]",
 											variant: "outline",
 											onClick: handlePrint,
 											className: "w-full sm:w-auto",
 											disabled: !name || !cnpj,
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Printer, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:961:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:982:21",
 												"data-prohibitions": "[editContent]",
 												className: "mr-2 h-4 w-4"
 											}), " Imprimir / Salvar PDF"]
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:963:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:984:19",
 											"data-prohibitions": "[]",
 											onClick: handleSaveClient,
 											className: "w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Save, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:967:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:988:21",
 												"data-prohibitions": "[editContent]",
 												className: "mr-2 h-4 w-4"
 											}), " Efetivar Cliente"]
@@ -100951,46 +101015,46 @@ function ContractGeneratorPage() {
 					})
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsContent, {
-					"data-uid": "src/pages/ContractGeneratorPage.tsx:975:9",
+					"data-uid": "src/pages/ContractGeneratorPage.tsx:996:9",
 					"data-prohibitions": "[editContent]",
 					value: "cotacao",
 					className: "print:m-0",
 					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/pages/ContractGeneratorPage.tsx:976:11",
+						"data-uid": "src/pages/ContractGeneratorPage.tsx:997:11",
 						"data-prohibitions": "[editContent]",
 						className: "grid lg:grid-cols-12 gap-6 items-start print:block print:w-full print:m-0 print:p-0",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/ContractGeneratorPage.tsx:977:13",
+							"data-uid": "src/pages/ContractGeneratorPage.tsx:998:13",
 							"data-prohibitions": "[editContent]",
 							className: "lg:col-span-5 space-y-6 print:hidden",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
-								"data-uid": "src/pages/ContractGeneratorPage.tsx:978:15",
+								"data-uid": "src/pages/ContractGeneratorPage.tsx:999:15",
 								"data-prohibitions": "[editContent]",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardHeader, {
-									"data-uid": "src/pages/ContractGeneratorPage.tsx:979:17",
+									"data-uid": "src/pages/ContractGeneratorPage.tsx:1000:17",
 									"data-prohibitions": "[]",
 									className: "pb-4",
 									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, {
-										"data-uid": "src/pages/ContractGeneratorPage.tsx:980:19",
+										"data-uid": "src/pages/ContractGeneratorPage.tsx:1001:19",
 										"data-prohibitions": "[]",
 										children: "1. Dados do Prospect / Cliente"
 									})
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardContent, {
-									"data-uid": "src/pages/ContractGeneratorPage.tsx:982:17",
+									"data-uid": "src/pages/ContractGeneratorPage.tsx:1003:17",
 									"data-prohibitions": "[editContent]",
 									className: "space-y-4",
 									children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:983:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:1004:19",
 											"data-prohibitions": "[]",
 											className: "space-y-3",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:984:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:1005:21",
 												"data-prohibitions": "[]",
 												className: "text-sm font-bold",
 												children: "Tipo de Cotação"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(RadioGroup, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:985:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:1006:21",
 												"data-prohibitions": "[]",
 												value: quoteTargetType,
 												onValueChange: (v) => {
@@ -101002,31 +101066,31 @@ function ContractGeneratorPage() {
 												},
 												className: "flex gap-4",
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:996:23",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:1017:23",
 													"data-prohibitions": "[]",
 													className: "flex items-center space-x-2",
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RadioGroupItem, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:997:25",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:1018:25",
 														"data-prohibitions": "[editContent]",
 														value: "prospect",
 														id: "qt-prospect"
 													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:998:25",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:1019:25",
 														"data-prohibitions": "[]",
 														htmlFor: "qt-prospect",
 														children: "Novo Contrato (Prospect)"
 													})]
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:1000:23",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:1021:23",
 													"data-prohibitions": "[]",
 													className: "flex items-center space-x-2",
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RadioGroupItem, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:1001:25",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:1022:25",
 														"data-prohibitions": "[editContent]",
 														value: "cliente",
 														id: "qt-cliente"
 													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:1002:25",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:1023:25",
 														"data-prohibitions": "[]",
 														htmlFor: "qt-cliente",
 														children: "Upsell (Cliente Existente)"
@@ -101035,20 +101099,20 @@ function ContractGeneratorPage() {
 											})]
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Separator$2, {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:1007:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:1028:19",
 											"data-prohibitions": "[editContent]",
 											className: "my-2"
 										}),
 										quoteTargetType === "prospect" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:1010:21",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:1031:21",
 											"data-prohibitions": "[editContent]",
 											className: "space-y-2",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:1011:23",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:1032:23",
 												"data-prohibitions": "[]",
 												children: "Vincular a um Prospect (Opcional)"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:1012:23",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:1033:23",
 												"data-prohibitions": "[editContent]",
 												value: selectedProspectId,
 												onValueChange: (val) => {
@@ -101065,23 +101129,23 @@ function ContractGeneratorPage() {
 													}
 												},
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:1028:25",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:1049:25",
 													"data-prohibitions": "[]",
 													children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:1029:27",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:1050:27",
 														"data-prohibitions": "[editContent]",
 														placeholder: "Selecione..."
 													})
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectContent, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:1031:25",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:1052:25",
 													"data-prohibitions": "[editContent]",
 													children: [
 														/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-															"data-uid": "src/pages/ContractGeneratorPage.tsx:1032:27",
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:1053:27",
 															"data-prohibitions": "[]",
 															className: "p-2 border-b sticky top-0 bg-popover z-10",
 															children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-																"data-uid": "src/pages/ContractGeneratorPage.tsx:1033:29",
+																"data-uid": "src/pages/ContractGeneratorPage.tsx:1054:29",
 																"data-prohibitions": "[editContent]",
 																placeholder: "Pesquisar prospect...",
 																value: prospectSearch,
@@ -101091,13 +101155,13 @@ function ContractGeneratorPage() {
 															})
 														}),
 														/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-															"data-uid": "src/pages/ContractGeneratorPage.tsx:1041:27",
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:1062:27",
 															"data-prohibitions": "[]",
 															value: "novo",
 															children: "-- Novo Prospect --"
 														}),
 														prospects.filter((p) => p.empresa.toLowerCase().includes(prospectSearch.toLowerCase())).map((p) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-															"data-uid": "src/pages/ContractGeneratorPage.tsx:1047:31",
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:1068:31",
 															"data-prohibitions": "[editContent]",
 															value: p.id,
 															children: p.empresa
@@ -101106,15 +101170,15 @@ function ContractGeneratorPage() {
 												})]
 											})]
 										}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:1055:21",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:1076:21",
 											"data-prohibitions": "[editContent]",
 											className: "space-y-2",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:1056:23",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:1077:23",
 												"data-prohibitions": "[]",
 												children: "Vincular a um Cliente (Obrigatório para Upsell)"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:1057:23",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:1078:23",
 												"data-prohibitions": "[editContent]",
 												value: selectedClientId,
 												onValueChange: (val) => {
@@ -101131,23 +101195,23 @@ function ContractGeneratorPage() {
 													}
 												},
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:1073:25",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:1094:25",
 													"data-prohibitions": "[]",
 													children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:1074:27",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:1095:27",
 														"data-prohibitions": "[editContent]",
 														placeholder: "Selecione um cliente..."
 													})
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectContent, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:1076:25",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:1097:25",
 													"data-prohibitions": "[editContent]",
 													children: [
 														/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-															"data-uid": "src/pages/ContractGeneratorPage.tsx:1077:27",
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:1098:27",
 															"data-prohibitions": "[]",
 															className: "p-2 border-b sticky top-0 bg-popover z-10",
 															children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-																"data-uid": "src/pages/ContractGeneratorPage.tsx:1078:29",
+																"data-uid": "src/pages/ContractGeneratorPage.tsx:1099:29",
 																"data-prohibitions": "[editContent]",
 																placeholder: "Pesquisar cliente...",
 																value: clientSearch,
@@ -101157,13 +101221,13 @@ function ContractGeneratorPage() {
 															})
 														}),
 														/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-															"data-uid": "src/pages/ContractGeneratorPage.tsx:1086:27",
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:1107:27",
 															"data-prohibitions": "[]",
 															value: "novo",
 															children: "-- Selecione um Cliente --"
 														}),
 														clientes.filter((c) => c.nome.toLowerCase().includes(clientSearch.toLowerCase())).map((c) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-															"data-uid": "src/pages/ContractGeneratorPage.tsx:1092:31",
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:1113:31",
 															"data-prohibitions": "[editContent]",
 															value: c.id,
 															children: c.nome
@@ -101173,30 +101237,30 @@ function ContractGeneratorPage() {
 											})]
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:1101:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:1122:19",
 											"data-prohibitions": "[]",
 											className: "space-y-2",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:1102:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:1123:21",
 												"data-prohibitions": "[]",
 												children: "Empresa (Razão Social)"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:1103:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:1124:21",
 												"data-prohibitions": "[editContent]",
 												value: quoteEmpresa,
 												onChange: (e) => setQuoteEmpresa(e.target.value)
 											})]
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:1105:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:1126:19",
 											"data-prohibitions": "[]",
 											className: "space-y-2",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:1106:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:1127:21",
 												"data-prohibitions": "[]",
 												children: "Aos Cuidados de"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:1107:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:1128:21",
 												"data-prohibitions": "[editContent]",
 												value: quoteContato,
 												onChange: (e) => setQuoteContato(e.target.value)
@@ -101205,53 +101269,53 @@ function ContractGeneratorPage() {
 									]
 								})]
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
-								"data-uid": "src/pages/ContractGeneratorPage.tsx:1113:15",
+								"data-uid": "src/pages/ContractGeneratorPage.tsx:1134:15",
 								"data-prohibitions": "[editContent]",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardHeader, {
-									"data-uid": "src/pages/ContractGeneratorPage.tsx:1114:17",
+									"data-uid": "src/pages/ContractGeneratorPage.tsx:1135:17",
 									"data-prohibitions": "[]",
 									className: "pb-4",
 									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, {
-										"data-uid": "src/pages/ContractGeneratorPage.tsx:1115:19",
+										"data-uid": "src/pages/ContractGeneratorPage.tsx:1136:19",
 										"data-prohibitions": "[]",
 										children: "2. Plano, Módulos e Implantação"
 									})
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardContent, {
-									"data-uid": "src/pages/ContractGeneratorPage.tsx:1117:17",
+									"data-uid": "src/pages/ContractGeneratorPage.tsx:1138:17",
 									"data-prohibitions": "[editContent]",
 									className: "space-y-6",
 									children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:1118:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:1139:19",
 											"data-prohibitions": "[editContent]",
 											className: "space-y-3",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:1119:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:1140:21",
 												"data-prohibitions": "[]",
 												className: "text-sm font-bold",
 												children: "Plano Base"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:1120:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:1141:21",
 												"data-prohibitions": "[editContent]",
 												value: selectedPlan,
 												onValueChange: setSelectedPlan,
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:1121:23",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:1142:23",
 													"data-prohibitions": "[]",
 													children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:1122:25",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:1143:25",
 														"data-prohibitions": "[editContent]"
 													})
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectContent, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:1124:23",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:1145:23",
 													"data-prohibitions": "[editContent]",
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:1125:25",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:1146:25",
 														"data-prohibitions": "[]",
 														value: "none",
 														children: "Nenhum (Somente Módulos / Upsell)"
 													}), PLANS.map((p) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectItem, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:1127:27",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:1148:27",
 														"data-prohibitions": "[editContent]",
 														value: p.id,
 														children: [
@@ -101264,34 +101328,34 @@ function ContractGeneratorPage() {
 											})]
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Separator$2, {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:1134:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:1155:19",
 											"data-prohibitions": "[editContent]"
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:1135:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:1156:19",
 											"data-prohibitions": "[editContent]",
 											className: "space-y-3",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:1136:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:1157:21",
 												"data-prohibitions": "[]",
 												className: "text-sm font-bold",
 												children: "Módulos Adicionais"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:1137:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:1158:21",
 												"data-prohibitions": "[editContent]",
 												className: "grid grid-cols-2 gap-2",
 												children: MODULES.map((m) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:1139:25",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:1160:25",
 													"data-prohibitions": "[editContent]",
 													className: "flex items-center space-x-2 border p-2 rounded-lg",
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Checkbox, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:1143:27",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:1164:27",
 														"data-prohibitions": "[editContent]",
 														id: `quote-${m.id}`,
 														checked: selectedModules.includes(m.id),
 														onCheckedChange: (c) => handleToggleModule(m.id, c)
 													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:1148:27",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:1169:27",
 														"data-prohibitions": "[editContent]",
 														htmlFor: `quote-${m.id}`,
 														className: "text-xs",
@@ -101301,33 +101365,33 @@ function ContractGeneratorPage() {
 											})]
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:1155:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:1176:19",
 											"data-prohibitions": "[editContent]",
 											className: "space-y-3 mt-4",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:1156:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:1177:21",
 												"data-prohibitions": "[]",
 												className: "text-sm font-bold",
 												children: "Franquia de Emissões (DF-e)"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:1157:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:1178:21",
 												"data-prohibitions": "[editContent]",
 												value: selectedDfe,
 												onValueChange: setSelectedDfe,
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:1158:23",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:1179:23",
 													"data-prohibitions": "[]",
 													className: "bg-slate-50 border",
 													children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:1159:25",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:1180:25",
 														"data-prohibitions": "[editContent]",
 														placeholder: "Selecione um pacote DF-e..."
 													})
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectContent, {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:1161:23",
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:1182:23",
 													"data-prohibitions": "[editContent]",
 													children: DFE_TIERS.map((tier) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectItem, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:1163:27",
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:1184:27",
 														"data-prohibitions": "[editContent]",
 														value: tier.id,
 														children: [
@@ -101340,114 +101404,146 @@ function ContractGeneratorPage() {
 											})]
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Separator$2, {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:1170:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:1191:19",
 											"data-prohibitions": "[editContent]"
 										}),
 										quoteTargetType !== "cliente" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:1172:21",
-											"data-prohibitions": "[]",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:1193:21",
+											"data-prohibitions": "[editContent]",
 											className: "space-y-3",
-											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:1173:23",
-												"data-prohibitions": "[]",
-												className: "text-sm font-bold",
-												children: "Implantação"
-											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(RadioGroup, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:1174:23",
-												"data-prohibitions": "[]",
-												value: implMode,
-												onValueChange: (v) => setImplMode(v),
-												className: "flex flex-col sm:flex-row gap-4",
-												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:1179:25",
+											children: [
+												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:1194:23",
 													"data-prohibitions": "[]",
-													className: "flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors",
-													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RadioGroupItem, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:1180:27",
-														"data-prohibitions": "[editContent]",
-														value: "remoto",
-														id: "quote-remoto"
-													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:1181:27",
-														"data-prohibitions": "[]",
-														htmlFor: "quote-remoto",
-														className: "cursor-pointer font-medium flex-1 h-full py-1",
-														children: "Remoto (R$ 130/h)"
-													})]
-												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													"data-uid": "src/pages/ContractGeneratorPage.tsx:1188:25",
+													className: "text-sm font-bold",
+													children: "Implantação"
+												}),
+												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(RadioGroup, {
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:1195:23",
 													"data-prohibitions": "[]",
-													className: "flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors",
-													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RadioGroupItem, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:1189:27",
-														"data-prohibitions": "[editContent]",
-														value: "presencial",
-														id: "quote-presencial"
-													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-														"data-uid": "src/pages/ContractGeneratorPage.tsx:1190:27",
+													value: implMode,
+													onValueChange: (v) => setImplMode(v),
+													className: "flex flex-col sm:flex-row gap-4",
+													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:1200:25",
 														"data-prohibitions": "[]",
-														htmlFor: "quote-presencial",
-														className: "cursor-pointer font-medium flex-1 h-full py-1",
-														children: "Presencial (R$ 170/h)"
+														className: "flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors",
+														children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RadioGroupItem, {
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:1201:27",
+															"data-prohibitions": "[editContent]",
+															value: "remoto",
+															id: "quote-remoto"
+														}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:1202:27",
+															"data-prohibitions": "[]",
+															htmlFor: "quote-remoto",
+															className: "cursor-pointer font-medium flex-1 h-full py-1",
+															children: "Remoto (R$ 130/h)"
+														})]
+													}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:1209:25",
+														"data-prohibitions": "[]",
+														className: "flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors",
+														children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RadioGroupItem, {
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:1210:27",
+															"data-prohibitions": "[editContent]",
+															value: "presencial",
+															id: "quote-presencial"
+														}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:1211:27",
+															"data-prohibitions": "[]",
+															htmlFor: "quote-presencial",
+															className: "cursor-pointer font-medium flex-1 h-full py-1",
+															children: "Presencial (R$ 170/h)"
+														})]
 													})]
-												})]
-											})]
+												}),
+												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+													"data-uid": "src/pages/ContractGeneratorPage.tsx:1220:23",
+													"data-prohibitions": "[editContent]",
+													className: "mt-4 pt-2 border-t border-slate-100 space-y-2",
+													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:1221:25",
+														"data-prohibitions": "[]",
+														className: "text-xs",
+														children: "Valor da Implantação Personalizado (Opcional)"
+													}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+														"data-uid": "src/pages/ContractGeneratorPage.tsx:1224:25",
+														"data-prohibitions": "[editContent]",
+														className: "flex gap-3 items-center",
+														children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:1225:27",
+															"data-prohibitions": "[editContent]",
+															type: "number",
+															placeholder: "Ex: 1500",
+															value: manualImplValue,
+															onChange: (e) => setManualImplValue(e.target.value),
+															className: "w-1/2 bg-white"
+														}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+															"data-uid": "src/pages/ContractGeneratorPage.tsx:1232:27",
+															"data-prohibitions": "[editContent]",
+															className: "text-xs text-slate-500",
+															children: ["Calculado: ", formatCurrency(calculatedImplValue)]
+														})]
+													})]
+												})
+											]
 										})
 									]
 								})]
 							})]
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							"data-uid": "src/pages/ContractGeneratorPage.tsx:1204:13",
+							"data-uid": "src/pages/ContractGeneratorPage.tsx:1243:13",
 							"data-prohibitions": "[]",
 							className: "lg:col-span-7 sticky top-6 print:static print:block print:w-full print:m-0 print:p-0",
 							children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
-								"data-uid": "src/pages/ContractGeneratorPage.tsx:1205:15",
+								"data-uid": "src/pages/ContractGeneratorPage.tsx:1244:15",
 								"data-prohibitions": "[]",
 								className: "flex flex-col h-[calc(100vh-6rem)] min-h-[700px] shadow-xl border-slate-200 overflow-hidden bg-white print:h-auto print:min-h-0 print:shadow-none print:border-none",
 								children: [
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										"data-uid": "src/pages/ContractGeneratorPage.tsx:1206:17",
+										"data-uid": "src/pages/ContractGeneratorPage.tsx:1245:17",
 										"data-prohibitions": "[]",
 										className: "flex-1 overflow-y-auto print:hidden p-1 bg-slate-100/50",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(QuoteDocument, {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:1207:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:1246:19",
 											"data-prohibitions": "[editContent]",
 											...quoteProps
 										})
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										"data-uid": "src/pages/ContractGeneratorPage.tsx:1209:17",
+										"data-uid": "src/pages/ContractGeneratorPage.tsx:1248:17",
 										"data-prohibitions": "[]",
 										className: "hidden print:block",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(QuoteDocument, {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:1210:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:1249:19",
 											"data-prohibitions": "[editContent]",
 											...quoteProps
 										})
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardFooter, {
-										"data-uid": "src/pages/ContractGeneratorPage.tsx:1212:17",
+										"data-uid": "src/pages/ContractGeneratorPage.tsx:1251:17",
 										"data-prohibitions": "[]",
 										className: "bg-slate-50 border-t p-4 flex flex-col sm:flex-row gap-3 justify-end shrink-0 print:hidden",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:1213:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:1252:19",
 											"data-prohibitions": "[]",
 											variant: "outline",
 											onClick: handlePrint,
 											className: "w-full sm:w-auto",
 											disabled: !quoteEmpresa || !quoteContato,
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Printer, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:1219:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:1258:21",
 												"data-prohibitions": "[editContent]",
 												className: "mr-2 h-4 w-4"
 											}), " Imprimir / PDF"]
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-											"data-uid": "src/pages/ContractGeneratorPage.tsx:1221:19",
+											"data-uid": "src/pages/ContractGeneratorPage.tsx:1260:19",
 											"data-prohibitions": "[]",
 											onClick: handleSaveQuote,
 											className: "w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Save, {
-												"data-uid": "src/pages/ContractGeneratorPage.tsx:1225:21",
+												"data-uid": "src/pages/ContractGeneratorPage.tsx:1264:21",
 												"data-prohibitions": "[editContent]",
 												className: "mr-2 h-4 w-4"
 											}), " Salvar Cotação"]
@@ -101459,11 +101555,11 @@ function ContractGeneratorPage() {
 					})
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsContent, {
-					"data-uid": "src/pages/ContractGeneratorPage.tsx:1233:9",
+					"data-uid": "src/pages/ContractGeneratorPage.tsx:1272:9",
 					"data-prohibitions": "[]",
 					value: "importar",
 					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ImportContracts, {
-						"data-uid": "src/pages/ContractGeneratorPage.tsx:1234:11",
+						"data-uid": "src/pages/ContractGeneratorPage.tsx:1273:11",
 						"data-prohibitions": "[editContent]"
 					})
 				})
@@ -106959,4 +107055,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, {
 }));
 //#endregion
 
-//# sourceMappingURL=index-BvH-s54L.js.map
+//# sourceMappingURL=index-BNtJZbRf.js.map

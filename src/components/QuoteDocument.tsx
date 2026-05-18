@@ -9,6 +9,7 @@ interface QuoteDocumentProps {
   selectedModules: string[]
   planPrice: number
   modulesPrice: number
+  dfePrice?: number
   totalValue: number
   implMode: string
   implRate: number
@@ -65,6 +66,7 @@ export function QuoteDocument({
   selectedModules,
   planPrice,
   modulesPrice,
+  dfePrice,
   totalValue,
   implMode,
   implValue,
@@ -215,9 +217,13 @@ export function QuoteDocument({
                     </span>
                   </td>
                   <td className="p-1.5 text-center font-medium">1</td>
-                  <td className="p-1.5 text-right">Incluso</td>
-                  <td className="p-1.5 text-right font-medium">Incluso</td>
-                  <td className="p-1.5 text-center text-slate-600">-</td>
+                  <td className="p-1.5 text-right">
+                    {dfePrice && dfePrice > 0 ? formatCurrency(dfePrice) : 'Incluso'}
+                  </td>
+                  <td className="p-1.5 text-right font-medium">
+                    {dfePrice && dfePrice > 0 ? formatCurrency(dfePrice) : 'Incluso'}
+                  </td>
+                  <td className="p-1.5 text-center text-slate-600">Mensalidade</td>
                 </tr>
               )}
             </tbody>
@@ -242,6 +248,12 @@ export function QuoteDocument({
               <span>Módulos Adicionais</span>
               <span className="font-medium">{formatCurrency(modulesPrice)}</span>
             </div>
+            {includeFranchise && (
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Franquia DF-e</span>
+                <span className="font-medium">{formatCurrency(dfePrice || 0)}</span>
+              </div>
+            )}
             <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
               <span>Total Mensal</span>
               <span>{formatCurrency(totalValue)}</span>

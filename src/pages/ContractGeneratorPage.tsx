@@ -174,7 +174,7 @@ export default function ContractGeneratorPage() {
     })
     return hours
   }, [selectedModules])
-  const implValue = useMemo(() => {
+  const calculatedImplValue = useMemo(() => {
     let value = totalImplHours * implRate
     selectedModules.forEach((id) => {
       const mod = MODULES.find((m) => m.id === id) as any
@@ -188,6 +188,9 @@ export default function ContractGeneratorPage() {
     })
     return value
   }, [totalImplHours, implRate, selectedModules, implMode])
+
+  const [manualImplValue, setManualImplValue] = useState<string>('')
+  const implValue = manualImplValue !== '' ? parseFloat(manualImplValue) : calculatedImplValue
 
   const contractProps = {
     name,
@@ -938,6 +941,24 @@ export default function ContractGeneratorPage() {
                         </Label>
                       </div>
                     </RadioGroup>
+
+                    <div className="mt-4 pt-2 border-t border-slate-100 space-y-2">
+                      <Label className="text-xs">
+                        Valor da Implantação Personalizado (Opcional)
+                      </Label>
+                      <div className="flex gap-3 items-center">
+                        <Input
+                          type="number"
+                          placeholder="Ex: 1500"
+                          value={manualImplValue}
+                          onChange={(e) => setManualImplValue(e.target.value)}
+                          className="w-1/2 bg-white"
+                        />
+                        <span className="text-xs text-slate-500">
+                          Calculado: {formatCurrency(calculatedImplValue)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -1195,6 +1216,24 @@ export default function ContractGeneratorPage() {
                           </Label>
                         </div>
                       </RadioGroup>
+
+                      <div className="mt-4 pt-2 border-t border-slate-100 space-y-2">
+                        <Label className="text-xs">
+                          Valor da Implantação Personalizado (Opcional)
+                        </Label>
+                        <div className="flex gap-3 items-center">
+                          <Input
+                            type="number"
+                            placeholder="Ex: 1500"
+                            value={manualImplValue}
+                            onChange={(e) => setManualImplValue(e.target.value)}
+                            className="w-1/2 bg-white"
+                          />
+                          <span className="text-xs text-slate-500">
+                            Calculado: {formatCurrency(calculatedImplValue)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </CardContent>

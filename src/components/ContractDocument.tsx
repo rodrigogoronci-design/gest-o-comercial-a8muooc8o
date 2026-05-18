@@ -329,6 +329,16 @@ export function ContractDocument({
                     {formatCurrency(modulesPrice)}
                   </td>
                 </tr>
+                {selectedDfe && selectedDfe !== 'dfe-none' && (
+                  <tr>
+                    <td className="border border-slate-300 p-2 font-bold">
+                      {dfeData?.name || 'Franquia DF-e'}
+                    </td>
+                    <td className="border border-slate-300 p-2 text-right">
+                      {formatCurrency(dfePrice || 0)}
+                    </td>
+                  </tr>
+                )}
                 <tr className="bg-[#1b4382]/5 print:bg-slate-200 text-[#1b4382] print:text-black">
                   <td className="border border-slate-300 p-2 font-bold text-right">Total Mensal</td>
                   <td className="border border-slate-300 p-2 text-right font-bold">
