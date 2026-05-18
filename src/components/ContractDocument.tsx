@@ -54,6 +54,7 @@ export function ContractDocument({
   includeDiagnosticVisit,
   diagnosticVisitValue,
   diagnosticVisitDate,
+  diagnosticVisits = [],
 }: any) {
   return (
     <div className="p-8 sm:p-12 text-[12px] text-slate-800 font-serif leading-relaxed space-y-5 print:p-0 print:text-black">
@@ -283,23 +284,44 @@ export function ContractDocument({
                     </td>
                   </tr>
                 ))}
-                {includeDiagnosticVisit && (
-                  <tr className="bg-[#1b4382]/10 print:bg-transparent print:font-bold">
-                    <td className="border border-slate-300 p-1.5">
-                      Visita Presencial de Diagnóstico
-                      {diagnosticVisitDate
-                        ? ` - Data: ${new Date(diagnosticVisitDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}`
-                        : ''}
-                    </td>
-                    <td className="border border-slate-300 p-1.5 text-right">-</td>
-                    <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
-                      X
-                    </td>
-                    <td className="border border-slate-300 p-1.5 text-center">
-                      {formatCurrency(Number(diagnosticVisitValue) || 0)}
-                    </td>
-                  </tr>
-                )}
+                {includeDiagnosticVisit && diagnosticVisits.length > 0
+                  ? diagnosticVisits.map((v: any, index: number) => (
+                      <tr
+                        key={`diag-${index}`}
+                        className="bg-[#1b4382]/10 print:bg-transparent print:font-bold"
+                      >
+                        <td className="border border-slate-300 p-1.5">
+                          Visita Presencial de Diagnóstico
+                          {v.date
+                            ? ` - Data: ${new Date(v.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}`
+                            : ''}
+                        </td>
+                        <td className="border border-slate-300 p-1.5 text-right">-</td>
+                        <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
+                          X
+                        </td>
+                        <td className="border border-slate-300 p-1.5 text-center">
+                          {formatCurrency(Number(v.value) || 0)}
+                        </td>
+                      </tr>
+                    ))
+                  : includeDiagnosticVisit && (
+                      <tr className="bg-[#1b4382]/10 print:bg-transparent print:font-bold">
+                        <td className="border border-slate-300 p-1.5">
+                          Visita Presencial de Diagnóstico
+                          {diagnosticVisitDate
+                            ? ` - Data: ${new Date(diagnosticVisitDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}`
+                            : ''}
+                        </td>
+                        <td className="border border-slate-300 p-1.5 text-right">-</td>
+                        <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
+                          X
+                        </td>
+                        <td className="border border-slate-300 p-1.5 text-center">
+                          {formatCurrency(Number(diagnosticVisitValue) || 0)}
+                        </td>
+                      </tr>
+                    )}
                 {trainings &&
                   trainings.map((t: any) => (
                     <tr key={t.id} className="bg-[#1b4382]/10 print:bg-transparent print:font-bold">

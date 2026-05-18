@@ -101,8 +101,9 @@ export default function ContractGeneratorPage() {
   const [clientSearch, setClientSearch] = useState('')
   const [prospectSearch, setProspectSearch] = useState('')
   const [includeDiagnosticVisit, setIncludeDiagnosticVisit] = useState(false)
-  const [diagnosticVisitValue, setDiagnosticVisitValue] = useState<string>('')
-  const [diagnosticVisitDate, setDiagnosticVisitDate] = useState<string>('')
+  const [diagnosticVisits, setDiagnosticVisits] = useState<
+    { id: string; date: string; value: string }[]
+  >([{ id: '1', date: '', value: '' }])
   const [selectedTrainings, setSelectedTrainings] = useState<string[]>([])
 
   const [sendToImplementation, setSendToImplementation] = useState(false)
@@ -201,7 +202,7 @@ export default function ContractGeneratorPage() {
     return hours
   }, [selectedModules, activeTab])
 
-  const diagValue = diagnosticVisitValue !== '' ? parseFloat(diagnosticVisitValue) : 0
+  const diagValue = diagnosticVisits.reduce((acc, visit) => acc + (parseFloat(visit.value) || 0), 0)
 
   const calculatedImplValue = useMemo(() => {
     let value = totalImplHours * implRate
@@ -276,8 +277,9 @@ export default function ContractGeneratorPage() {
       return { id, name: t?.name, price: t?.price }
     }),
     includeDiagnosticVisit,
-    diagnosticVisitValue,
-    diagnosticVisitDate,
+    diagnosticVisits,
+    diagnosticVisitValue: diagnosticVisits[0]?.value || '',
+    diagnosticVisitDate: diagnosticVisits[0]?.date || '',
   }
 
   const quoteProps = {
@@ -312,8 +314,9 @@ export default function ContractGeneratorPage() {
     isUpsell: quoteTargetType === 'cliente',
     includeFranchise: selectedDfe !== 'dfe-none',
     includeDiagnosticVisit,
-    diagnosticVisitValue,
-    diagnosticVisitDate,
+    diagnosticVisits,
+    diagnosticVisitValue: diagnosticVisits[0]?.value || '',
+    diagnosticVisitDate: diagnosticVisits[0]?.date || '',
     currentClientValue,
   }
 
@@ -572,9 +575,12 @@ export default function ContractGeneratorPage() {
         const modulosAdicionados = [
           ...selectedModules.map((id) => MODULES.find((m) => m.id === id)?.name),
           selectedDfe !== 'dfe-none' && dfeData ? dfeData.name : null,
-          includeDiagnosticVisit
-            ? `Visita Presencial de Diagnóstico${diagnosticVisitDate ? ` (Data: ${new Date(diagnosticVisitDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })})` : ''}`
-            : null,
+          ...(includeDiagnosticVisit
+            ? diagnosticVisits.map(
+                (v) =>
+                  `Visita Presencial de Diagnóstico${v.date ? ` (Data: ${new Date(v.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })})` : ''}`,
+              )
+            : []),
           ...selectedTrainings.map((id) => {
             const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
             return t ? `Treinamento: ${t.name}` : null
@@ -642,13 +648,11 @@ export default function ContractGeneratorPage() {
               ? [{ id: dfeData.id, name: dfeData.name, price: dfeData.price }]
               : []),
             ...(includeDiagnosticVisit
-              ? [
-                  {
-                    id: 'diag',
-                    name: `Visita Presencial de Diagnóstico${diagnosticVisitDate ? ` (Data: ${new Date(diagnosticVisitDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })})` : ''}`,
-                    price: diagValue,
-                  },
-                ]
+              ? diagnosticVisits.map((v) => ({
+                  id: `diag-${v.id}`,
+                  name: `Visita Presencial de Diagnóstico${v.date ? ` (Data: ${new Date(v.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })})` : ''}`,
+                  price: parseFloat(v.value) || 0,
+                }))
               : []),
             ...selectedTrainings.map((id) => {
               const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
@@ -1401,25 +1405,69 @@ export default function ContractGeneratorPage() {
                           </Label>
                         </div>
                         {includeDiagnosticVisit && (
-                          <div className="pl-6 pt-2 flex flex-col sm:flex-row gap-4">
-                            <div className="flex-1">
-                              <Label className="text-xs text-slate-600">Valor da Visita</Label>
-                              <Input
-                                type="number"
-                                placeholder="Ex: 1500"
-                                value={diagnosticVisitValue}
-                                onChange={(e) => setDiagnosticVisitValue(e.target.value)}
-                                className="w-full bg-white mt-1 h-8 text-xs"
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <Label className="text-xs text-slate-600">Data da Visita</Label>
-                              <Input
-                                type="date"
-                                value={diagnosticVisitDate}
-                                onChange={(e) => setDiagnosticVisitDate(e.target.value)}
-                                className="w-full bg-white mt-1 h-8 text-xs"
-                              />
+                          <div className="space-y-3 pt-2">
+                            {diagnosticVisits.map((visit, index) => (
+                              <div
+                                key={visit.id}
+                                className="pl-6 flex flex-col sm:flex-row gap-4 items-end"
+                              >
+                                <div className="flex-1">
+                                  <Label className="text-xs text-slate-600">Valor da Visita</Label>
+                                  <Input
+                                    type="number"
+                                    placeholder="Ex: 1500"
+                                    value={visit.value}
+                                    onChange={(e) => {
+                                      const newVisits = [...diagnosticVisits]
+                                      newVisits[index].value = e.target.value
+                                      setDiagnosticVisits(newVisits)
+                                    }}
+                                    className="w-full bg-white mt-1 text-sm h-10"
+                                  />
+                                </div>
+                                <div className="flex-1">
+                                  <Label className="text-xs text-slate-600">Data da Visita</Label>
+                                  <Input
+                                    type="date"
+                                    value={visit.date}
+                                    onChange={(e) => {
+                                      const newVisits = [...diagnosticVisits]
+                                      newVisits[index].date = e.target.value
+                                      setDiagnosticVisits(newVisits)
+                                    }}
+                                    className="w-full bg-white mt-1 text-sm h-10"
+                                  />
+                                </div>
+                                {diagnosticVisits.length > 1 && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-10 w-10 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => {
+                                      setDiagnosticVisits(
+                                        diagnosticVisits.filter((v) => v.id !== visit.id),
+                                      )
+                                    }}
+                                  >
+                                    <Trash className="w-4 h-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            ))}
+                            <div className="pl-6">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs mt-2"
+                                onClick={() => {
+                                  setDiagnosticVisits([
+                                    ...diagnosticVisits,
+                                    { id: Math.random().toString(), date: '', value: '' },
+                                  ])
+                                }}
+                              >
+                                + Adicionar Outra Visita
+                              </Button>
                             </div>
                           </div>
                         )}
@@ -1479,25 +1527,71 @@ export default function ContractGeneratorPage() {
                             </Label>
                           </div>
                           {includeDiagnosticVisit && (
-                            <div className="pl-6 pt-2 flex flex-col sm:flex-row gap-4">
-                              <div className="flex-1">
-                                <Label className="text-xs text-slate-600">Valor da Visita</Label>
-                                <Input
-                                  type="number"
-                                  placeholder="Ex: 1500"
-                                  value={diagnosticVisitValue}
-                                  onChange={(e) => setDiagnosticVisitValue(e.target.value)}
-                                  className="w-full bg-white mt-1 h-8 text-xs"
-                                />
-                              </div>
-                              <div className="flex-1">
-                                <Label className="text-xs text-slate-600">Data da Visita</Label>
-                                <Input
-                                  type="date"
-                                  value={diagnosticVisitDate}
-                                  onChange={(e) => setDiagnosticVisitDate(e.target.value)}
-                                  className="w-full bg-white mt-1 h-8 text-xs"
-                                />
+                            <div className="space-y-3 pt-2">
+                              {diagnosticVisits.map((visit, index) => (
+                                <div
+                                  key={visit.id}
+                                  className="pl-6 flex flex-col sm:flex-row gap-4 items-end"
+                                >
+                                  <div className="flex-1">
+                                    <Label className="text-xs text-slate-600">
+                                      Valor da Visita
+                                    </Label>
+                                    <Input
+                                      type="number"
+                                      placeholder="Ex: 1500"
+                                      value={visit.value}
+                                      onChange={(e) => {
+                                        const newVisits = [...diagnosticVisits]
+                                        newVisits[index].value = e.target.value
+                                        setDiagnosticVisits(newVisits)
+                                      }}
+                                      className="w-full bg-white mt-1 text-sm h-10"
+                                    />
+                                  </div>
+                                  <div className="flex-1">
+                                    <Label className="text-xs text-slate-600">Data da Visita</Label>
+                                    <Input
+                                      type="date"
+                                      value={visit.date}
+                                      onChange={(e) => {
+                                        const newVisits = [...diagnosticVisits]
+                                        newVisits[index].date = e.target.value
+                                        setDiagnosticVisits(newVisits)
+                                      }}
+                                      className="w-full bg-white mt-1 text-sm h-10"
+                                    />
+                                  </div>
+                                  {diagnosticVisits.length > 1 && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-10 w-10 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                      onClick={() => {
+                                        setDiagnosticVisits(
+                                          diagnosticVisits.filter((v) => v.id !== visit.id),
+                                        )
+                                      }}
+                                    >
+                                      <Trash className="w-4 h-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                              <div className="pl-6">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-xs mt-2"
+                                  onClick={() => {
+                                    setDiagnosticVisits([
+                                      ...diagnosticVisits,
+                                      { id: Math.random().toString(), date: '', value: '' },
+                                    ])
+                                  }}
+                                >
+                                  + Adicionar Outra Visita
+                                </Button>
                               </div>
                             </div>
                           )}
