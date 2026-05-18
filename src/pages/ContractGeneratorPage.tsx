@@ -1412,7 +1412,9 @@ export default function ContractGeneratorPage() {
                                 className="pl-6 flex flex-col sm:flex-row gap-4 items-end"
                               >
                                 <div className="flex-1">
-                                  <Label className="text-xs text-slate-600">Valor da Visita</Label>
+                                  <Label className="text-sm font-semibold text-slate-700">
+                                    Valor da Visita
+                                  </Label>
                                   <Input
                                     type="number"
                                     placeholder="Ex: 1500"
@@ -1422,11 +1424,13 @@ export default function ContractGeneratorPage() {
                                       newVisits[index].value = e.target.value
                                       setDiagnosticVisits(newVisits)
                                     }}
-                                    className="w-full bg-white mt-1 text-sm h-10"
+                                    className="w-full bg-white mt-1 text-base font-medium h-12 border-slate-300"
                                   />
                                 </div>
                                 <div className="flex-1">
-                                  <Label className="text-xs text-slate-600">Data da Visita</Label>
+                                  <Label className="text-sm font-semibold text-slate-700">
+                                    Data da Visita
+                                  </Label>
                                   <Input
                                     type="date"
                                     value={visit.date}
@@ -1435,14 +1439,14 @@ export default function ContractGeneratorPage() {
                                       newVisits[index].date = e.target.value
                                       setDiagnosticVisits(newVisits)
                                     }}
-                                    className="w-full bg-white mt-1 text-sm h-10"
+                                    className="w-full bg-white mt-1 text-base font-medium h-12 border-slate-300"
                                   />
                                 </div>
                                 {diagnosticVisits.length > 1 && (
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-10 w-10 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                    className="h-12 w-12 text-red-500 hover:text-red-700 hover:bg-red-50"
                                     onClick={() => {
                                       setDiagnosticVisits(
                                         diagnosticVisits.filter((v) => v.id !== visit.id),
@@ -1534,7 +1538,7 @@ export default function ContractGeneratorPage() {
                                   className="pl-6 flex flex-col sm:flex-row gap-4 items-end"
                                 >
                                   <div className="flex-1">
-                                    <Label className="text-xs text-slate-600">
+                                    <Label className="text-sm font-semibold text-slate-700">
                                       Valor da Visita
                                     </Label>
                                     <Input
@@ -1546,11 +1550,13 @@ export default function ContractGeneratorPage() {
                                         newVisits[index].value = e.target.value
                                         setDiagnosticVisits(newVisits)
                                       }}
-                                      className="w-full bg-white mt-1 text-sm h-10"
+                                      className="w-full bg-white mt-1 text-base font-medium h-12 border-slate-300"
                                     />
                                   </div>
                                   <div className="flex-1">
-                                    <Label className="text-xs text-slate-600">Data da Visita</Label>
+                                    <Label className="text-sm font-semibold text-slate-700">
+                                      Data da Visita
+                                    </Label>
                                     <Input
                                       type="date"
                                       value={visit.date}
@@ -1559,14 +1565,14 @@ export default function ContractGeneratorPage() {
                                         newVisits[index].date = e.target.value
                                         setDiagnosticVisits(newVisits)
                                       }}
-                                      className="w-full bg-white mt-1 text-sm h-10"
+                                      className="w-full bg-white mt-1 text-base font-medium h-12 border-slate-300"
                                     />
                                   </div>
                                   {diagnosticVisits.length > 1 && (
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-10 w-10 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                      className="h-12 w-12 text-red-500 hover:text-red-700 hover:bg-red-50"
                                       onClick={() => {
                                         setDiagnosticVisits(
                                           diagnosticVisits.filter((v) => v.id !== visit.id),
