@@ -92316,6 +92316,8 @@ function ClientsPage() {
 	};
 	const [implementationEmailClient, setImplementationEmailClient] = (0, import_react.useState)(null);
 	const [emailBody, setEmailBody] = (0, import_react.useState)("");
+	const [financeiroEmailClient, setFinanceiroEmailClient] = (0, import_react.useState)(null);
+	const [isSendingFinanceEmail, setIsSendingFinanceEmail] = (0, import_react.useState)(false);
 	const handleRemoveModule = async (moduleToRemove) => {
 		if (!viewingClient) return;
 		if (!confirm("Tem certeza que deseja remover \"" + moduleToRemove.name + "\"?")) return;
@@ -92752,6 +92754,37 @@ function ClientsPage() {
 		} catch (err) {
 			console.error(err);
 			toast.error("Erro ao remover documento");
+		}
+	};
+	const handleOpenFinanceiroEmail = (client) => {
+		setFinanceiroEmailClient(client);
+	};
+	const handleSendToFinanceiro = async () => {
+		if (!financeiroEmailClient) return;
+		setIsSendingFinanceEmail(true);
+		try {
+			await updateCliente(financeiroEmailClient.id, { status: "Faturamento" });
+			await supabase.functions.invoke("send-finance-email", { body: {
+				to: "financeiro@servicelogic.com.br",
+				clientName: financeiroEmailClient.name,
+				moduleName: financeiroEmailClient.plano_base || "Plano Básico",
+				type: "novo_contrato"
+			} });
+			toast.success("Notificação enviada ao financeiro e status atualizado para Faturamento!");
+			if (viewingClient && viewingClient.id === financeiroEmailClient.id) setViewingClient({
+				...viewingClient,
+				originalData: {
+					...viewingClient.originalData,
+					status: "Faturamento"
+				}
+			});
+			setFinanceiroEmailClient(null);
+			loadClientes();
+		} catch (e) {
+			console.error(e);
+			toast.error("Erro ao notificar o financeiro.");
+		} finally {
+			setIsSendingFinanceEmail(false);
 		}
 	};
 	const handleOpenImplementationEmail = (client) => {
@@ -93513,28 +93546,28 @@ Obrigada.`);
 	const ClientDetailsPanel = ({ client }) => {
 		const plan = PLANS.find((p) => p.id === client.plano_base || p.name === client.plano_base);
 		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			"data-uid": "src/pages/ClientsPage.tsx:1940:7",
+			"data-uid": "src/pages/ClientsPage.tsx:1980:7",
 			"data-prohibitions": "[editContent]",
 			className: "mt-6 space-y-8",
 			children: [
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/pages/ClientsPage.tsx:1942:9",
+					"data-uid": "src/pages/ClientsPage.tsx:1982:9",
 					"data-prohibitions": "[editContent]",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/pages/ClientsPage.tsx:1943:11",
+						"data-uid": "src/pages/ClientsPage.tsx:1983:11",
 						"data-prohibitions": "[editContent]",
 						className: "flex justify-between items-center mb-4",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h4", {
-							"data-uid": "src/pages/ClientsPage.tsx:1944:13",
+							"data-uid": "src/pages/ClientsPage.tsx:1984:13",
 							"data-prohibitions": "[]",
 							className: "text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheckBig, {
-								"data-uid": "src/pages/ClientsPage.tsx:1945:15",
+								"data-uid": "src/pages/ClientsPage.tsx:1985:15",
 								"data-prohibitions": "[editContent]",
 								className: "h-4 w-4 text-emerald-500"
 							}), " Pacote Contratado Vigente"]
 						}), client.stats && client.stats.relevantTitulos > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Badge, {
-							"data-uid": "src/pages/ClientsPage.tsx:1948:15",
+							"data-uid": "src/pages/ClientsPage.tsx:1988:15",
 							"data-prohibitions": "[editContent]",
 							variant: "outline",
 							className: `${client.stats.color}`,
@@ -93546,111 +93579,111 @@ Obrigada.`);
 							]
 						})]
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/pages/ClientsPage.tsx:1954:11",
+						"data-uid": "src/pages/ClientsPage.tsx:1994:11",
 						"data-prohibitions": "[editContent]",
 						className: "bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:1955:13",
+							"data-uid": "src/pages/ClientsPage.tsx:1995:13",
 							"data-prohibitions": "[editContent]",
 							className: "p-4 bg-slate-50 border-b border-slate-100 flex flex-wrap gap-4 justify-between items-center",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/pages/ClientsPage.tsx:1956:15",
+								"data-uid": "src/pages/ClientsPage.tsx:1996:15",
 								"data-prohibitions": "[editContent]",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/pages/ClientsPage.tsx:1957:17",
+									"data-uid": "src/pages/ClientsPage.tsx:1997:17",
 									"data-prohibitions": "[]",
 									className: "text-xs text-slate-500 block mb-1",
 									children: "Cliente desde"
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-									"data-uid": "src/pages/ClientsPage.tsx:1958:17",
+									"data-uid": "src/pages/ClientsPage.tsx:1998:17",
 									"data-prohibitions": "[editContent]",
 									className: "font-medium text-slate-900 flex items-center gap-1.5",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Calendar, {
-										"data-uid": "src/pages/ClientsPage.tsx:1959:19",
+										"data-uid": "src/pages/ClientsPage.tsx:1999:19",
 										"data-prohibitions": "[editContent]",
 										className: "h-3.5 w-3.5 text-slate-400"
 									}), formatDate$1(client.createdAt)]
 								})]
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/pages/ClientsPage.tsx:1963:15",
+								"data-uid": "src/pages/ClientsPage.tsx:2003:15",
 								"data-prohibitions": "[editContent]",
 								className: "text-right",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/pages/ClientsPage.tsx:1964:17",
+									"data-uid": "src/pages/ClientsPage.tsx:2004:17",
 									"data-prohibitions": "[]",
 									className: "text-xs text-slate-500 block mb-1",
 									children: "Valor Total Mensal"
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/pages/ClientsPage.tsx:1965:17",
+									"data-uid": "src/pages/ClientsPage.tsx:2005:17",
 									"data-prohibitions": "[editContent]",
 									className: "text-lg font-bold text-emerald-700",
 									children: formatCurrency(client.totalValue)
 								})]
 							})]
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:1971:13",
+							"data-uid": "src/pages/ClientsPage.tsx:2011:13",
 							"data-prohibitions": "[editContent]",
 							className: "p-4 space-y-4",
 							children: [
 								plan && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:1973:17",
+									"data-uid": "src/pages/ClientsPage.tsx:2013:17",
 									"data-prohibitions": "[editContent]",
 									className: "flex justify-between items-center bg-indigo-50/50 border border-indigo-100 p-3 rounded-md",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:1974:19",
+										"data-uid": "src/pages/ClientsPage.tsx:2014:19",
 										"data-prohibitions": "[editContent]",
 										className: "flex items-center gap-3",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:1975:21",
+											"data-uid": "src/pages/ClientsPage.tsx:2015:21",
 											"data-prohibitions": "[]",
 											className: "h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center",
 											children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-												"data-uid": "src/pages/ClientsPage.tsx:1976:23",
+												"data-uid": "src/pages/ClientsPage.tsx:2016:23",
 												"data-prohibitions": "[]",
 												className: "text-indigo-600 font-bold text-xs",
 												children: "TMS"
 											})
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:1978:21",
+											"data-uid": "src/pages/ClientsPage.tsx:2018:21",
 											"data-prohibitions": "[editContent]",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-												"data-uid": "src/pages/ClientsPage.tsx:1979:23",
+												"data-uid": "src/pages/ClientsPage.tsx:2019:23",
 												"data-prohibitions": "[editContent]",
 												className: "font-medium text-indigo-900 block leading-tight",
 												children: ["Plano Base: ", plan.name]
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-												"data-uid": "src/pages/ClientsPage.tsx:1982:23",
+												"data-uid": "src/pages/ClientsPage.tsx:2022:23",
 												"data-prohibitions": "[]",
 												className: "text-xs text-indigo-600/80",
 												children: "Limites e recursos padrão"
 											})]
 										})]
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-										"data-uid": "src/pages/ClientsPage.tsx:1985:19",
+										"data-uid": "src/pages/ClientsPage.tsx:2025:19",
 										"data-prohibitions": "[editContent]",
 										className: "text-sm font-semibold text-indigo-700",
 										children: [formatCurrency(plan.price), "/mês"]
 									})]
 								}),
 								client.filiais && client.filiais > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:1992:17",
+									"data-uid": "src/pages/ClientsPage.tsx:2032:17",
 									"data-prohibitions": "[editContent]",
 									className: "flex justify-between items-center bg-slate-50 border border-slate-200 p-3 rounded-md",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:1993:19",
+										"data-uid": "src/pages/ClientsPage.tsx:2033:19",
 										"data-prohibitions": "[editContent]",
 										className: "flex items-center gap-3",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:1994:21",
+											"data-uid": "src/pages/ClientsPage.tsx:2034:21",
 											"data-prohibitions": "[]",
 											className: "h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center",
 											children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Building2, {
-												"data-uid": "src/pages/ClientsPage.tsx:1995:23",
+												"data-uid": "src/pages/ClientsPage.tsx:2035:23",
 												"data-prohibitions": "[editContent]",
 												className: "h-4 w-4 text-slate-500"
 											})
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-											"data-uid": "src/pages/ClientsPage.tsx:1997:21",
+											"data-uid": "src/pages/ClientsPage.tsx:2037:21",
 											"data-prohibitions": "[editContent]",
 											className: "font-medium text-sm text-slate-700",
 											children: [
@@ -93660,55 +93693,55 @@ Obrigada.`);
 											]
 										})]
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-										"data-uid": "src/pages/ClientsPage.tsx:2001:19",
+										"data-uid": "src/pages/ClientsPage.tsx:2041:19",
 										"data-prohibitions": "[editContent]",
 										className: "text-sm font-semibold text-slate-600",
 										children: [formatCurrency(client.filiais * 199), "/mês"]
 									})]
 								}) : null,
 								client.modules.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2008:17",
+									"data-uid": "src/pages/ClientsPage.tsx:2048:17",
 									"data-prohibitions": "[editContent]",
 									className: "mt-2",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										"data-uid": "src/pages/ClientsPage.tsx:2009:19",
+										"data-uid": "src/pages/ClientsPage.tsx:2049:19",
 										"data-prohibitions": "[]",
 										className: "text-xs font-bold text-slate-400 uppercase mb-2 block",
 										children: "Serviços e Módulos Detalhados"
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:2012:19",
+										"data-uid": "src/pages/ClientsPage.tsx:2052:19",
 										"data-prohibitions": "[editContent]",
 										className: "grid grid-cols-1 sm:grid-cols-2 gap-2",
 										children: client.modules.map((mod, idx) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:2014:23",
+											"data-uid": "src/pages/ClientsPage.tsx:2054:23",
 											"data-prohibitions": "[editContent]",
 											className: "flex justify-between items-center bg-white border border-slate-200 p-2.5 rounded-md group/mod",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ClientsPage.tsx:2018:25",
+												"data-uid": "src/pages/ClientsPage.tsx:2058:25",
 												"data-prohibitions": "[editContent]",
 												className: "flex items-center gap-2 overflow-hidden mr-2",
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-													"data-uid": "src/pages/ClientsPage.tsx:2019:27",
+													"data-uid": "src/pages/ClientsPage.tsx:2059:27",
 													"data-prohibitions": "[editContent]",
 													className: cn$1("w-1.5 h-1.5 rounded-full shrink-0", mod.name.includes("Filial") ? "bg-amber-400" : "bg-emerald-400")
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-													"data-uid": "src/pages/ClientsPage.tsx:2025:27",
+													"data-uid": "src/pages/ClientsPage.tsx:2065:27",
 													"data-prohibitions": "[editContent]",
 													className: "font-medium text-xs text-slate-700 truncate",
 													title: mod.name,
 													children: mod.name
 												})]
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ClientsPage.tsx:2032:25",
+												"data-uid": "src/pages/ClientsPage.tsx:2072:25",
 												"data-prohibitions": "[editContent]",
 												className: "flex items-center gap-1",
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-													"data-uid": "src/pages/ClientsPage.tsx:2033:27",
+													"data-uid": "src/pages/ClientsPage.tsx:2073:27",
 													"data-prohibitions": "[editContent]",
 													className: "text-xs text-slate-500 whitespace-nowrap shrink-0",
 													children: mod.price > 0 ? formatCurrency(mod.price) : "Incluso"
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-													"data-uid": "src/pages/ClientsPage.tsx:2036:27",
+													"data-uid": "src/pages/ClientsPage.tsx:2076:27",
 													"data-prohibitions": "[]",
 													variant: "ghost",
 													size: "icon",
@@ -93716,7 +93749,7 @@ Obrigada.`);
 													onClick: () => handleRemoveModule(mod),
 													title: "Remover Item",
 													children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, {
-														"data-uid": "src/pages/ClientsPage.tsx:2043:29",
+														"data-uid": "src/pages/ClientsPage.tsx:2083:29",
 														"data-prohibitions": "[editContent]",
 														className: "h-3 w-3"
 													})
@@ -93726,38 +93759,38 @@ Obrigada.`);
 									})]
 								}),
 								!plan && (!client.filiais || client.filiais === 0) && client.modules.length === 0 && (!client.cobrancas || client.cobrancas.length === 0) && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2056:19",
+									"data-uid": "src/pages/ClientsPage.tsx:2096:19",
 									"data-prohibitions": "[]",
 									className: "text-sm text-slate-500 text-center py-6 bg-slate-50 rounded-md border border-dashed border-slate-200",
 									children: "Nenhum plano ou módulo selecionado para este cliente."
 								}),
 								client.cobrancas && client.cobrancas.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2062:17",
+									"data-uid": "src/pages/ClientsPage.tsx:2102:17",
 									"data-prohibitions": "[editContent]",
 									className: "mt-4",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										"data-uid": "src/pages/ClientsPage.tsx:2063:19",
+										"data-uid": "src/pages/ClientsPage.tsx:2103:19",
 										"data-prohibitions": "[]",
 										className: "text-xs font-bold text-slate-400 uppercase mb-2 block",
 										children: "Mensalidades / Cobranças Programadas"
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:2066:19",
+										"data-uid": "src/pages/ClientsPage.tsx:2106:19",
 										"data-prohibitions": "[editContent]",
 										className: "space-y-2",
 										children: [client.cobrancas.map((cob, idx) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:2068:23",
+											"data-uid": "src/pages/ClientsPage.tsx:2108:23",
 											"data-prohibitions": "[editContent]",
 											className: "flex justify-between items-center bg-white border border-slate-200 p-2.5 rounded-md shadow-sm",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ClientsPage.tsx:2072:25",
+												"data-uid": "src/pages/ClientsPage.tsx:2112:25",
 												"data-prohibitions": "[editContent]",
 												className: "flex items-center gap-2",
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-													"data-uid": "src/pages/ClientsPage.tsx:2073:27",
+													"data-uid": "src/pages/ClientsPage.tsx:2113:27",
 													"data-prohibitions": "[]",
 													className: "w-1.5 h-1.5 rounded-full bg-blue-400"
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-													"data-uid": "src/pages/ClientsPage.tsx:2074:27",
+													"data-uid": "src/pages/ClientsPage.tsx:2114:27",
 													"data-prohibitions": "[editContent]",
 													className: "font-medium text-xs text-slate-700",
 													children: [
@@ -93767,22 +93800,22 @@ Obrigada.`);
 													]
 												})]
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-												"data-uid": "src/pages/ClientsPage.tsx:2081:25",
+												"data-uid": "src/pages/ClientsPage.tsx:2121:25",
 												"data-prohibitions": "[editContent]",
 												className: "text-xs font-bold text-slate-700",
 												children: formatCurrency(cob.valor)
 											})]
 										}, idx)), client.cobrancas.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:2087:23",
+											"data-uid": "src/pages/ClientsPage.tsx:2127:23",
 											"data-prohibitions": "[editContent]",
 											className: "flex justify-between items-center bg-emerald-50 border border-emerald-100 p-2.5 rounded-md mt-2",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-												"data-uid": "src/pages/ClientsPage.tsx:2088:25",
+												"data-uid": "src/pages/ClientsPage.tsx:2128:25",
 												"data-prohibitions": "[]",
 												className: "font-bold text-xs text-emerald-800",
 												children: "Total Somado"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-												"data-uid": "src/pages/ClientsPage.tsx:2089:25",
+												"data-uid": "src/pages/ClientsPage.tsx:2129:25",
 												"data-prohibitions": "[editContent]",
 												className: "text-sm font-bold text-emerald-700",
 												children: formatCurrency(client.cobrancas.reduce((acc, c) => acc + c.valor, 0))
@@ -93795,133 +93828,133 @@ Obrigada.`);
 					})]
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/pages/ClientsPage.tsx:2102:9",
+					"data-uid": "src/pages/ClientsPage.tsx:2142:9",
 					"data-prohibitions": "[editContent]",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/pages/ClientsPage.tsx:2103:11",
+						"data-uid": "src/pages/ClientsPage.tsx:2143:11",
 						"data-prohibitions": "[]",
 						className: "flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
-							"data-uid": "src/pages/ClientsPage.tsx:2104:13",
+							"data-uid": "src/pages/ClientsPage.tsx:2144:13",
 							"data-prohibitions": "[]",
 							className: "text-sm font-bold text-slate-700 uppercase tracking-wider",
 							children: "Histórico & Aditivos"
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:2107:13",
+							"data-uid": "src/pages/ClientsPage.tsx:2147:13",
 							"data-prohibitions": "[]",
 							className: "flex gap-2",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-								"data-uid": "src/pages/ClientsPage.tsx:2108:15",
+								"data-uid": "src/pages/ClientsPage.tsx:2148:15",
 								"data-prohibitions": "[]",
 								size: "sm",
 								variant: "outline",
 								onClick: () => setIsAddFilialOpen(true),
 								className: "bg-white hover:bg-slate-50 shadow-sm",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Building2, {
-									"data-uid": "src/pages/ClientsPage.tsx:2114:17",
+									"data-uid": "src/pages/ClientsPage.tsx:2154:17",
 									"data-prohibitions": "[editContent]",
 									className: "h-4 w-4 mr-1.5"
 								}), " Adicionar Filial"]
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-								"data-uid": "src/pages/ClientsPage.tsx:2116:15",
+								"data-uid": "src/pages/ClientsPage.tsx:2156:15",
 								"data-prohibitions": "[]",
 								size: "sm",
 								onClick: () => setIsAddModuleOpen(true),
 								className: "bg-indigo-600 hover:bg-indigo-700 shadow-sm",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, {
-									"data-uid": "src/pages/ClientsPage.tsx:2121:17",
+									"data-uid": "src/pages/ClientsPage.tsx:2161:17",
 									"data-prohibitions": "[editContent]",
 									className: "h-4 w-4 mr-1.5"
 								}), " Adicionar Módulo"]
 							})]
 						})]
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						"data-uid": "src/pages/ClientsPage.tsx:2126:11",
+						"data-uid": "src/pages/ClientsPage.tsx:2166:11",
 						"data-prohibitions": "[editContent]",
 						className: "bg-white rounded-lg border border-slate-200 p-5 shadow-sm",
 						children: isLoadingHistory ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:2128:15",
+							"data-uid": "src/pages/ClientsPage.tsx:2168:15",
 							"data-prohibitions": "[]",
 							className: "flex items-center justify-center py-8 text-slate-500",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
-								"data-uid": "src/pages/ClientsPage.tsx:2129:17",
+								"data-uid": "src/pages/ClientsPage.tsx:2169:17",
 								"data-prohibitions": "[editContent]",
 								className: "h-6 w-6 animate-spin mr-2"
 							}), " Carregando histórico..."]
 						}) : clientHistory.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:2132:15",
+							"data-uid": "src/pages/ClientsPage.tsx:2172:15",
 							"data-prohibitions": "[]",
 							className: "text-sm text-slate-500 text-center py-6 border border-dashed rounded-md border-slate-200",
 							children: "Nenhum histórico registrado para este cliente."
 						}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:2136:15",
+							"data-uid": "src/pages/ClientsPage.tsx:2176:15",
 							"data-prohibitions": "[editContent]",
 							className: "space-y-6 border-l-2 border-slate-100 ml-3 pl-6 relative",
 							children: clientHistory.map((h, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/pages/ClientsPage.tsx:2138:19",
+								"data-uid": "src/pages/ClientsPage.tsx:2178:19",
 								"data-prohibitions": "[editContent]",
 								className: "relative group",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2139:21",
+									"data-uid": "src/pages/ClientsPage.tsx:2179:21",
 									"data-prohibitions": "[editContent]",
 									className: cn$1("absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 bg-white", h.tipo === "Contrato Inicial" ? "border-slate-300" : "border-indigo-500")
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2146:21",
+									"data-uid": "src/pages/ClientsPage.tsx:2186:21",
 									"data-prohibitions": "[editContent]",
 									className: "bg-white border border-slate-100 rounded-md p-4 shadow-sm hover:border-indigo-100 transition-colors",
 									children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:2147:23",
+											"data-uid": "src/pages/ClientsPage.tsx:2187:23",
 											"data-prohibitions": "[editContent]",
 											className: "flex justify-between items-start mb-3",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												"data-uid": "src/pages/ClientsPage.tsx:2148:25",
+												"data-uid": "src/pages/ClientsPage.tsx:2188:25",
 												"data-prohibitions": "[editContent]",
 												children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													"data-uid": "src/pages/ClientsPage.tsx:2149:27",
+													"data-uid": "src/pages/ClientsPage.tsx:2189:27",
 													"data-prohibitions": "[editContent]",
 													className: "flex items-center gap-2 mb-1",
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, {
-														"data-uid": "src/pages/ClientsPage.tsx:2150:29",
+														"data-uid": "src/pages/ClientsPage.tsx:2190:29",
 														"data-prohibitions": "[editContent]",
 														variant: "outline",
 														className: cn$1("text-[10px] uppercase font-bold", h.tipo === "Contrato Inicial" ? "text-slate-600 bg-slate-50 border-slate-200" : h.tipo?.startsWith("Solicitação") ? "text-amber-700 bg-amber-50 border-amber-200" : "text-indigo-700 bg-indigo-50 border-indigo-200"),
 														children: h.tipo
 													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-														"data-uid": "src/pages/ClientsPage.tsx:2163:29",
+														"data-uid": "src/pages/ClientsPage.tsx:2203:29",
 														"data-prohibitions": "[editContent]",
 														className: "text-xs text-slate-400 font-medium",
 														children: formatDate$1(h.data_solicitacao)
 													})]
 												})
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ClientsPage.tsx:2168:25",
+												"data-uid": "src/pages/ClientsPage.tsx:2208:25",
 												"data-prohibitions": "[editContent]",
 												className: "text-right flex flex-col items-end gap-1",
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													"data-uid": "src/pages/ClientsPage.tsx:2169:27",
+													"data-uid": "src/pages/ClientsPage.tsx:2209:27",
 													"data-prohibitions": "[]",
 													className: "flex items-center gap-2",
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-														"data-uid": "src/pages/ClientsPage.tsx:2170:29",
+														"data-uid": "src/pages/ClientsPage.tsx:2210:29",
 														"data-prohibitions": "[]",
 														className: "text-xs text-slate-400 block",
 														children: "Mensalidade (Ref.)"
 													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-														"data-uid": "src/pages/ClientsPage.tsx:2171:29",
+														"data-uid": "src/pages/ClientsPage.tsx:2211:29",
 														"data-prohibitions": "[]",
 														variant: "ghost",
 														size: "icon",
 														className: "h-6 w-6 text-slate-400 hover:text-red-600",
 														onClick: () => handleDeleteHistory(h.id),
 														children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, {
-															"data-uid": "src/pages/ClientsPage.tsx:2177:31",
+															"data-uid": "src/pages/ClientsPage.tsx:2217:31",
 															"data-prohibitions": "[editContent]",
 															className: "h-3 w-3"
 														})
 													})]
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-													"data-uid": "src/pages/ClientsPage.tsx:2180:27",
+													"data-uid": "src/pages/ClientsPage.tsx:2220:27",
 													"data-prohibitions": "[editContent]",
 													className: "font-bold text-slate-700",
 													children: formatCurrency(h.valor_total)
@@ -93929,17 +93962,17 @@ Obrigada.`);
 											})]
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:2186:23",
+											"data-uid": "src/pages/ClientsPage.tsx:2226:23",
 											"data-prohibitions": "[editContent]",
 											className: "text-sm text-slate-600 bg-slate-50 p-3 rounded border border-slate-100",
 											children: [
 												h.plano && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													"data-uid": "src/pages/ClientsPage.tsx:2188:27",
+													"data-uid": "src/pages/ClientsPage.tsx:2228:27",
 													"data-prohibitions": "[editContent]",
 													className: "mb-1",
 													children: [
 														/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-															"data-uid": "src/pages/ClientsPage.tsx:2189:29",
+															"data-uid": "src/pages/ClientsPage.tsx:2229:29",
 															"data-prohibitions": "[]",
 															className: "font-medium text-slate-800",
 															children: "Plano Base:"
@@ -93949,36 +93982,36 @@ Obrigada.`);
 													]
 												}),
 												h.modulos && h.modulos.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													"data-uid": "src/pages/ClientsPage.tsx:2194:27",
+													"data-uid": "src/pages/ClientsPage.tsx:2234:27",
 													"data-prohibitions": "[editContent]",
 													className: "mt-2",
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-														"data-uid": "src/pages/ClientsPage.tsx:2195:29",
+														"data-uid": "src/pages/ClientsPage.tsx:2235:29",
 														"data-prohibitions": "[editContent]",
 														className: "font-medium text-slate-800 block mb-1",
 														children: h.tipo === "Contrato Inicial" ? "Módulos Inclusos:" : "Módulos Adicionados:"
 													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
-														"data-uid": "src/pages/ClientsPage.tsx:2200:29",
+														"data-uid": "src/pages/ClientsPage.tsx:2240:29",
 														"data-prohibitions": "[editContent]",
 														className: "grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs",
 														children: h.modulos.map((m, idx) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
-															"data-uid": "src/pages/ClientsPage.tsx:2202:33",
+															"data-uid": "src/pages/ClientsPage.tsx:2242:33",
 															"data-prohibitions": "[editContent]",
 															className: "flex items-center gap-1.5",
 															children: [
 																/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-																	"data-uid": "src/pages/ClientsPage.tsx:2203:35",
+																	"data-uid": "src/pages/ClientsPage.tsx:2243:35",
 																	"data-prohibitions": "[editContent]",
 																	className: "h-1 w-1 rounded-full bg-slate-400"
 																}),
 																/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-																	"data-uid": "src/pages/ClientsPage.tsx:2204:35",
+																	"data-uid": "src/pages/ClientsPage.tsx:2244:35",
 																	"data-prohibitions": "[editContent]",
 																	className: "truncate",
 																	children: m.name || m
 																}),
 																/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-																	"data-uid": "src/pages/ClientsPage.tsx:2205:35",
+																	"data-uid": "src/pages/ClientsPage.tsx:2245:35",
 																	"data-prohibitions": "[editContent]",
 																	className: "text-slate-400 ml-auto",
 																	children: m.price ? formatCurrency(m.price) : ""
@@ -93988,12 +94021,12 @@ Obrigada.`);
 													})]
 												}),
 												h.observacoes && h.tipo?.startsWith("Solicitação") && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													"data-uid": "src/pages/ClientsPage.tsx:2214:27",
+													"data-uid": "src/pages/ClientsPage.tsx:2254:27",
 													"data-prohibitions": "[editContent]",
 													className: "mb-2 whitespace-pre-wrap",
 													children: [
 														/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-															"data-uid": "src/pages/ClientsPage.tsx:2215:29",
+															"data-uid": "src/pages/ClientsPage.tsx:2255:29",
 															"data-prohibitions": "[]",
 															className: "font-medium text-slate-800",
 															children: "Detalhes:"
@@ -94003,7 +94036,7 @@ Obrigada.`);
 													]
 												}),
 												h.valor_adicional > 0 && !h.tipo?.startsWith("Solicitação") && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													"data-uid": "src/pages/ClientsPage.tsx:2220:27",
+													"data-uid": "src/pages/ClientsPage.tsx:2260:27",
 													"data-prohibitions": "[editContent]",
 													className: "mt-3 pt-2 border-t border-slate-200 text-xs font-medium text-emerald-700",
 													children: [
@@ -94013,7 +94046,7 @@ Obrigada.`);
 													]
 												}),
 												h.valor_adicional > 0 && h.tipo?.startsWith("Solicitação") && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													"data-uid": "src/pages/ClientsPage.tsx:2225:27",
+													"data-uid": "src/pages/ClientsPage.tsx:2265:27",
 													"data-prohibitions": "[editContent]",
 													className: "mt-3 pt-2 border-t border-slate-200 text-xs font-medium text-amber-700",
 													children: [
@@ -94025,11 +94058,11 @@ Obrigada.`);
 											]
 										}),
 										h.tipo !== "Contrato Inicial" && !h.tipo?.startsWith("Solicitação") && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:2232:25",
+											"data-uid": "src/pages/ClientsPage.tsx:2272:25",
 											"data-prohibitions": "[]",
 											className: "mt-3 flex justify-end",
 											children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-												"data-uid": "src/pages/ClientsPage.tsx:2233:27",
+												"data-uid": "src/pages/ClientsPage.tsx:2273:27",
 												"data-prohibitions": "[]",
 												variant: "outline",
 												size: "sm",
@@ -94043,7 +94076,7 @@ Obrigada.`);
 													valorTotalAtual: h.valor_total
 												}),
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Printer, {
-													"data-uid": "src/pages/ClientsPage.tsx:2248:29",
+													"data-uid": "src/pages/ClientsPage.tsx:2288:29",
 													"data-prohibitions": "[editContent]",
 													className: "h-3 w-3 mr-1.5"
 												}), " Ver Aditivo"]
@@ -94056,22 +94089,22 @@ Obrigada.`);
 					})]
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/pages/ClientsPage.tsx:2261:9",
+					"data-uid": "src/pages/ClientsPage.tsx:2301:9",
 					"data-prohibitions": "[editContent]",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/pages/ClientsPage.tsx:2262:11",
+						"data-uid": "src/pages/ClientsPage.tsx:2302:11",
 						"data-prohibitions": "[editContent]",
 						className: "flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
-							"data-uid": "src/pages/ClientsPage.tsx:2263:13",
+							"data-uid": "src/pages/ClientsPage.tsx:2303:13",
 							"data-prohibitions": "[]",
 							className: "text-sm font-bold text-slate-700 uppercase tracking-wider",
 							children: "Repositório de Documentos"
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:2266:13",
+							"data-uid": "src/pages/ClientsPage.tsx:2306:13",
 							"data-prohibitions": "[editContent]",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-								"data-uid": "src/pages/ClientsPage.tsx:2267:15",
+								"data-uid": "src/pages/ClientsPage.tsx:2307:15",
 								"data-prohibitions": "[editContent]",
 								type: "file",
 								multiple: true,
@@ -94079,64 +94112,64 @@ Obrigada.`);
 								id: `upload-doc-${client.id}`,
 								onChange: (e) => handleUploadDocs(e, client.id)
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-								"data-uid": "src/pages/ClientsPage.tsx:2274:15",
+								"data-uid": "src/pages/ClientsPage.tsx:2314:15",
 								"data-prohibitions": "[editContent]",
 								variant: "outline",
 								size: "sm",
 								onClick: () => document.getElementById(`upload-doc-${client.id}`)?.click(),
 								disabled: isUploadingDocs,
 								children: [isUploadingDocs ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
-									"data-uid": "src/pages/ClientsPage.tsx:2281:19",
+									"data-uid": "src/pages/ClientsPage.tsx:2321:19",
 									"data-prohibitions": "[editContent]",
 									className: "h-4 w-4 animate-spin mr-2"
 								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Upload, {
-									"data-uid": "src/pages/ClientsPage.tsx:2283:19",
+									"data-uid": "src/pages/ClientsPage.tsx:2323:19",
 									"data-prohibitions": "[editContent]",
 									className: "h-4 w-4 mr-2"
 								}), "Anexar Documentos"]
 							})]
 						})]
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/pages/ClientsPage.tsx:2289:11",
+						"data-uid": "src/pages/ClientsPage.tsx:2329:11",
 						"data-prohibitions": "[editContent]",
 						className: "grid grid-cols-1 sm:grid-cols-2 gap-3",
 						children: [
 							client.contratoUrl && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/pages/ClientsPage.tsx:2291:15",
+								"data-uid": "src/pages/ClientsPage.tsx:2331:15",
 								"data-prohibitions": "[]",
 								className: "flex items-center justify-between bg-white border border-slate-200 p-3 rounded-md shadow-sm hover:border-indigo-200 transition-colors",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2292:17",
+									"data-uid": "src/pages/ClientsPage.tsx:2332:17",
 									"data-prohibitions": "[]",
 									className: "flex items-center gap-3 overflow-hidden",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:2293:19",
+										"data-uid": "src/pages/ClientsPage.tsx:2333:19",
 										"data-prohibitions": "[]",
 										className: "p-2 bg-indigo-50 rounded text-indigo-600 shrink-0",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileText, {
-											"data-uid": "src/pages/ClientsPage.tsx:2294:21",
+											"data-uid": "src/pages/ClientsPage.tsx:2334:21",
 											"data-prohibitions": "[editContent]",
 											className: "h-5 w-5"
 										})
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:2296:19",
+										"data-uid": "src/pages/ClientsPage.tsx:2336:19",
 										"data-prohibitions": "[]",
 										className: "overflow-hidden",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											"data-uid": "src/pages/ClientsPage.tsx:2297:21",
+											"data-uid": "src/pages/ClientsPage.tsx:2337:21",
 											"data-prohibitions": "[]",
 											className: "font-medium text-sm text-slate-800 block truncate",
 											title: "Contrato Inicial",
 											children: "Contrato Inicial"
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											"data-uid": "src/pages/ClientsPage.tsx:2303:21",
+											"data-uid": "src/pages/ClientsPage.tsx:2343:21",
 											"data-prohibitions": "[]",
 											className: "text-xs text-slate-400",
 											children: "Documento Assinado"
 										})]
 									})]
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-									"data-uid": "src/pages/ClientsPage.tsx:2306:17",
+									"data-uid": "src/pages/ClientsPage.tsx:2346:17",
 									"data-prohibitions": "[]",
 									variant: "ghost",
 									size: "sm",
@@ -94146,45 +94179,45 @@ Obrigada.`);
 								})]
 							}),
 							client.originalData?.documentos_urls?.map((doc, idx) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/pages/ClientsPage.tsx:2318:15",
+								"data-uid": "src/pages/ClientsPage.tsx:2358:15",
 								"data-prohibitions": "[editContent]",
 								className: "flex items-center justify-between bg-white border border-slate-200 p-3 rounded-md shadow-sm hover:border-slate-300 transition-colors",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2322:17",
+									"data-uid": "src/pages/ClientsPage.tsx:2362:17",
 									"data-prohibitions": "[editContent]",
 									className: "flex items-center gap-3 overflow-hidden",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:2323:19",
+										"data-uid": "src/pages/ClientsPage.tsx:2363:19",
 										"data-prohibitions": "[]",
 										className: "p-2 bg-slate-50 rounded text-slate-500 shrink-0",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileText, {
-											"data-uid": "src/pages/ClientsPage.tsx:2324:21",
+											"data-uid": "src/pages/ClientsPage.tsx:2364:21",
 											"data-prohibitions": "[editContent]",
 											className: "h-5 w-5"
 										})
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:2326:19",
+										"data-uid": "src/pages/ClientsPage.tsx:2366:19",
 										"data-prohibitions": "[editContent]",
 										className: "overflow-hidden",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											"data-uid": "src/pages/ClientsPage.tsx:2327:21",
+											"data-uid": "src/pages/ClientsPage.tsx:2367:21",
 											"data-prohibitions": "[editContent]",
 											className: "font-medium text-sm text-slate-800 block truncate",
 											title: doc.name,
 											children: doc.name
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											"data-uid": "src/pages/ClientsPage.tsx:2333:21",
+											"data-uid": "src/pages/ClientsPage.tsx:2373:21",
 											"data-prohibitions": "[]",
 											className: "text-xs text-slate-400",
 											children: "Anexo Cadastral"
 										})]
 									})]
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2336:17",
+									"data-uid": "src/pages/ClientsPage.tsx:2376:17",
 									"data-prohibitions": "[]",
 									className: "flex items-center gap-1 shrink-0",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-										"data-uid": "src/pages/ClientsPage.tsx:2337:19",
+										"data-uid": "src/pages/ClientsPage.tsx:2377:19",
 										"data-prohibitions": "[]",
 										variant: "ghost",
 										size: "icon",
@@ -94192,12 +94225,12 @@ Obrigada.`);
 										onClick: () => window.open(doc.url, "_blank"),
 										title: "Abrir Documento",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Eye, {
-											"data-uid": "src/pages/ClientsPage.tsx:2344:21",
+											"data-uid": "src/pages/ClientsPage.tsx:2384:21",
 											"data-prohibitions": "[editContent]",
 											className: "h-4 w-4"
 										})
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-										"data-uid": "src/pages/ClientsPage.tsx:2346:19",
+										"data-uid": "src/pages/ClientsPage.tsx:2386:19",
 										"data-prohibitions": "[]",
 										variant: "ghost",
 										size: "icon",
@@ -94205,7 +94238,7 @@ Obrigada.`);
 										onClick: () => handleDeleteDoc(client.id, doc.url),
 										title: "Remover Documento",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, {
-											"data-uid": "src/pages/ClientsPage.tsx:2353:21",
+											"data-uid": "src/pages/ClientsPage.tsx:2393:21",
 											"data-prohibitions": "[editContent]",
 											className: "h-4 w-4"
 										})
@@ -94213,19 +94246,19 @@ Obrigada.`);
 								})]
 							}, idx)),
 							!client.contratoUrl && (!client.originalData?.documentos_urls || client.originalData.documentos_urls.length === 0) && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-								"data-uid": "src/pages/ClientsPage.tsx:2362:17",
+								"data-uid": "src/pages/ClientsPage.tsx:2402:17",
 								"data-prohibitions": "[]",
 								className: "col-span-1 sm:col-span-2 flex items-center justify-center bg-slate-50 border border-dashed border-slate-200 p-6 rounded-md",
 								children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2363:19",
+									"data-uid": "src/pages/ClientsPage.tsx:2403:19",
 									"data-prohibitions": "[]",
 									className: "flex flex-col items-center gap-2 text-slate-400",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileText, {
-										"data-uid": "src/pages/ClientsPage.tsx:2364:21",
+										"data-uid": "src/pages/ClientsPage.tsx:2404:21",
 										"data-prohibitions": "[editContent]",
 										className: "h-8 w-8"
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										"data-uid": "src/pages/ClientsPage.tsx:2365:21",
+										"data-uid": "src/pages/ClientsPage.tsx:2405:21",
 										"data-prohibitions": "[]",
 										className: "text-sm",
 										children: "Nenhum documento anexado a este cliente"
@@ -94239,35 +94272,35 @@ Obrigada.`);
 		});
 	};
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		"data-uid": "src/pages/ClientsPage.tsx:2376:5",
+		"data-uid": "src/pages/ClientsPage.tsx:2416:5",
 		"data-prohibitions": "[editContent]",
 		className: "space-y-6",
 		children: [
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				"data-uid": "src/pages/ClientsPage.tsx:2377:7",
+				"data-uid": "src/pages/ClientsPage.tsx:2417:7",
 				"data-prohibitions": "[editContent]",
 				className: "flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/pages/ClientsPage.tsx:2378:9",
+					"data-uid": "src/pages/ClientsPage.tsx:2418:9",
 					"data-prohibitions": "[]",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-						"data-uid": "src/pages/ClientsPage.tsx:2379:11",
+						"data-uid": "src/pages/ClientsPage.tsx:2419:11",
 						"data-prohibitions": "[]",
 						className: "text-3xl font-bold tracking-tight",
 						children: "Gestão de Clientes e Contratos"
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-						"data-uid": "src/pages/ClientsPage.tsx:2380:11",
+						"data-uid": "src/pages/ClientsPage.tsx:2420:11",
 						"data-prohibitions": "[]",
 						className: "text-muted-foreground mt-1",
 						children: "Gerencie carteira ativa, histórico de planos, upsell de módulos e contratos."
 					})]
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/pages/ClientsPage.tsx:2385:9",
+					"data-uid": "src/pages/ClientsPage.tsx:2425:9",
 					"data-prohibitions": "[editContent]",
 					className: "flex gap-3",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-							"data-uid": "src/pages/ClientsPage.tsx:2386:11",
+							"data-uid": "src/pages/ClientsPage.tsx:2426:11",
 							"data-prohibitions": "[editContent]",
 							type: "file",
 							accept: ".xlsx, .xls, .csv",
@@ -94276,28 +94309,28 @@ Obrigada.`);
 							onChange: handleImportExcel
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-							"data-uid": "src/pages/ClientsPage.tsx:2393:11",
+							"data-uid": "src/pages/ClientsPage.tsx:2433:11",
 							"data-prohibitions": "[editContent]",
 							variant: "outline",
 							onClick: () => fileInputRef.current?.click(),
 							disabled: isImporting,
 							children: [isImporting ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
-								"data-uid": "src/pages/ClientsPage.tsx:2399:15",
+								"data-uid": "src/pages/ClientsPage.tsx:2439:15",
 								"data-prohibitions": "[editContent]",
 								className: "mr-2 h-4 w-4 animate-spin"
 							}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Upload, {
-								"data-uid": "src/pages/ClientsPage.tsx:2401:15",
+								"data-uid": "src/pages/ClientsPage.tsx:2441:15",
 								"data-prohibitions": "[editContent]",
 								className: "mr-2 h-4 w-4"
 							}), "Importar Base"]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-							"data-uid": "src/pages/ClientsPage.tsx:2406:11",
+							"data-uid": "src/pages/ClientsPage.tsx:2446:11",
 							"data-prohibitions": "[]",
 							onClick: handleOpenAdd,
 							className: "bg-indigo-600 hover:bg-indigo-700",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, {
-								"data-uid": "src/pages/ClientsPage.tsx:2407:13",
+								"data-uid": "src/pages/ClientsPage.tsx:2447:13",
 								"data-prohibitions": "[editContent]",
 								className: "mr-2 h-4 w-4"
 							}), "Novo Cliente"]
@@ -94306,43 +94339,43 @@ Obrigada.`);
 				})]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Dialog, {
-				"data-uid": "src/pages/ClientsPage.tsx:2414:7",
+				"data-uid": "src/pages/ClientsPage.tsx:2454:7",
 				"data-prohibitions": "[editContent]",
 				open: isAddModuleOpen,
 				onOpenChange: setIsAddModuleOpen,
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogContent, {
-					"data-uid": "src/pages/ClientsPage.tsx:2415:9",
+					"data-uid": "src/pages/ClientsPage.tsx:2455:9",
 					"data-prohibitions": "[editContent]",
 					className: "sm:max-w-lg",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogHeader, {
-							"data-uid": "src/pages/ClientsPage.tsx:2416:11",
+							"data-uid": "src/pages/ClientsPage.tsx:2456:11",
 							"data-prohibitions": "[]",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogTitle, {
-								"data-uid": "src/pages/ClientsPage.tsx:2417:13",
+								"data-uid": "src/pages/ClientsPage.tsx:2457:13",
 								"data-prohibitions": "[]",
 								children: "Adicionar Módulos (Upsell)"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogDescription, {
-								"data-uid": "src/pages/ClientsPage.tsx:2418:13",
+								"data-uid": "src/pages/ClientsPage.tsx:2458:13",
 								"data-prohibitions": "[]",
 								children: "Selecione os novos módulos que o cliente contratou. Um Aditivo será gerado no histórico do cliente."
 							})]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:2423:11",
+							"data-uid": "src/pages/ClientsPage.tsx:2463:11",
 							"data-prohibitions": "[editContent]",
 							className: "space-y-4 py-4",
 							children: [
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2424:13",
+									"data-uid": "src/pages/ClientsPage.tsx:2464:13",
 									"data-prohibitions": "[]",
 									className: "space-y-2",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-										"data-uid": "src/pages/ClientsPage.tsx:2425:15",
+										"data-uid": "src/pages/ClientsPage.tsx:2465:15",
 										"data-prohibitions": "[]",
 										children: "Data da Solicitação / Adesão"
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-										"data-uid": "src/pages/ClientsPage.tsx:2426:15",
+										"data-uid": "src/pages/ClientsPage.tsx:2466:15",
 										"data-prohibitions": "[editContent]",
 										type: "date",
 										value: aditivoDate,
@@ -94350,32 +94383,32 @@ Obrigada.`);
 									})]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2433:13",
+									"data-uid": "src/pages/ClientsPage.tsx:2473:13",
 									"data-prohibitions": "[editContent]",
 									className: "space-y-2",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-										"data-uid": "src/pages/ClientsPage.tsx:2434:15",
+										"data-uid": "src/pages/ClientsPage.tsx:2474:15",
 										"data-prohibitions": "[]",
 										children: "Módulos Disponíveis"
 									}), availableModulesForAddendum.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:2436:17",
+										"data-uid": "src/pages/ClientsPage.tsx:2476:17",
 										"data-prohibitions": "[]",
 										className: "text-sm text-slate-500 bg-slate-50 p-3 rounded border",
 										children: "O cliente já possui todos os módulos disponíveis."
 									}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollArea, {
-										"data-uid": "src/pages/ClientsPage.tsx:2440:17",
+										"data-uid": "src/pages/ClientsPage.tsx:2480:17",
 										"data-prohibitions": "[editContent]",
 										className: "h-64 border rounded-md p-3",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:2441:19",
+											"data-uid": "src/pages/ClientsPage.tsx:2481:19",
 											"data-prohibitions": "[editContent]",
 											className: "space-y-3",
 											children: availableModulesForAddendum.map((m) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ClientsPage.tsx:2443:23",
+												"data-uid": "src/pages/ClientsPage.tsx:2483:23",
 												"data-prohibitions": "[editContent]",
 												className: "flex items-center space-x-3 bg-white p-2 hover:bg-slate-50 rounded",
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Checkbox, {
-													"data-uid": "src/pages/ClientsPage.tsx:2447:25",
+													"data-uid": "src/pages/ClientsPage.tsx:2487:25",
 													"data-prohibitions": "[editContent]",
 													id: `new-mod-${m.id}`,
 													checked: selectedNewModules.includes(m.id),
@@ -94384,16 +94417,16 @@ Obrigada.`);
 														else setSelectedNewModules((prev) => prev.filter((id) => id !== m.id));
 													}
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Label$3, {
-													"data-uid": "src/pages/ClientsPage.tsx:2455:25",
+													"data-uid": "src/pages/ClientsPage.tsx:2495:25",
 													"data-prohibitions": "[editContent]",
 													htmlFor: `new-mod-${m.id}`,
 													className: "flex-1 cursor-pointer font-normal text-sm flex justify-between",
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-														"data-uid": "src/pages/ClientsPage.tsx:2459:27",
+														"data-uid": "src/pages/ClientsPage.tsx:2499:27",
 														"data-prohibitions": "[editContent]",
 														children: m.name
 													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-														"data-uid": "src/pages/ClientsPage.tsx:2460:27",
+														"data-uid": "src/pages/ClientsPage.tsx:2500:27",
 														"data-prohibitions": "[editContent]",
 														className: "text-slate-500",
 														children: m.price > 0 ? formatCurrency(m.price) : "Incluso"
@@ -94404,19 +94437,19 @@ Obrigada.`);
 									})]
 								}),
 								selectedNewModules.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2472:15",
+									"data-uid": "src/pages/ClientsPage.tsx:2512:15",
 									"data-prohibitions": "[editContent]",
 									className: "bg-emerald-50 border border-emerald-100 p-3 rounded-md",
 									children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:2473:17",
+										"data-uid": "src/pages/ClientsPage.tsx:2513:17",
 										"data-prohibitions": "[editContent]",
 										className: "text-sm text-emerald-800 flex justify-between font-medium",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											"data-uid": "src/pages/ClientsPage.tsx:2474:19",
+											"data-uid": "src/pages/ClientsPage.tsx:2514:19",
 											"data-prohibitions": "[]",
 											children: "Valor Adicional (Mensal):"
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											"data-uid": "src/pages/ClientsPage.tsx:2475:19",
+											"data-uid": "src/pages/ClientsPage.tsx:2515:19",
 											"data-prohibitions": "[editContent]",
 											children: formatCurrency(selectedNewModules.map((id) => MODULES.find((m) => m.id === id)?.price || 0).reduce((a, b) => a + b, 0))
 										})]
@@ -94425,22 +94458,22 @@ Obrigada.`);
 							]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogFooter, {
-							"data-uid": "src/pages/ClientsPage.tsx:2486:11",
+							"data-uid": "src/pages/ClientsPage.tsx:2526:11",
 							"data-prohibitions": "[editContent]",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-								"data-uid": "src/pages/ClientsPage.tsx:2487:13",
+								"data-uid": "src/pages/ClientsPage.tsx:2527:13",
 								"data-prohibitions": "[]",
 								variant: "outline",
 								onClick: () => setIsAddModuleOpen(false),
 								children: "Cancelar"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-								"data-uid": "src/pages/ClientsPage.tsx:2490:13",
+								"data-uid": "src/pages/ClientsPage.tsx:2530:13",
 								"data-prohibitions": "[editContent]",
 								onClick: handleSaveAditivo,
 								disabled: selectedNewModules.length === 0 || isSubmittingAditivo,
 								className: "bg-indigo-600 hover:bg-indigo-700 text-white",
 								children: [isSubmittingAditivo ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
-									"data-uid": "src/pages/ClientsPage.tsx:2495:38",
+									"data-uid": "src/pages/ClientsPage.tsx:2535:38",
 									"data-prohibitions": "[editContent]",
 									className: "h-4 w-4 animate-spin mr-2"
 								}) : null, "Confirmar Aditivo"]
@@ -94450,43 +94483,43 @@ Obrigada.`);
 				})
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Dialog, {
-				"data-uid": "src/pages/ClientsPage.tsx:2503:7",
+				"data-uid": "src/pages/ClientsPage.tsx:2543:7",
 				"data-prohibitions": "[editContent]",
 				open: isAddFilialOpen,
 				onOpenChange: setIsAddFilialOpen,
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogContent, {
-					"data-uid": "src/pages/ClientsPage.tsx:2504:9",
+					"data-uid": "src/pages/ClientsPage.tsx:2544:9",
 					"data-prohibitions": "[editContent]",
 					className: "sm:max-w-lg",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogHeader, {
-							"data-uid": "src/pages/ClientsPage.tsx:2505:11",
+							"data-uid": "src/pages/ClientsPage.tsx:2545:11",
 							"data-prohibitions": "[]",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogTitle, {
-								"data-uid": "src/pages/ClientsPage.tsx:2506:13",
+								"data-uid": "src/pages/ClientsPage.tsx:2546:13",
 								"data-prohibitions": "[]",
 								children: "Adicionar Nova Filial"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogDescription, {
-								"data-uid": "src/pages/ClientsPage.tsx:2507:13",
+								"data-uid": "src/pages/ClientsPage.tsx:2547:13",
 								"data-prohibitions": "[]",
 								children: "Cadastre uma nova filial para este cliente e configure a cobrança, incluindo DF-e se necessário. Um Aditivo será gerado."
 							})]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:2512:11",
+							"data-uid": "src/pages/ClientsPage.tsx:2552:11",
 							"data-prohibitions": "[editContent]",
 							className: "space-y-4 py-4",
 							children: [
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2513:13",
+									"data-uid": "src/pages/ClientsPage.tsx:2553:13",
 									"data-prohibitions": "[]",
 									className: "space-y-2",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-										"data-uid": "src/pages/ClientsPage.tsx:2514:15",
+										"data-uid": "src/pages/ClientsPage.tsx:2554:15",
 										"data-prohibitions": "[]",
 										children: "CNPJ da Filial"
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-										"data-uid": "src/pages/ClientsPage.tsx:2515:15",
+										"data-uid": "src/pages/ClientsPage.tsx:2555:15",
 										"data-prohibitions": "[editContent]",
 										placeholder: "00.000.000/0000-00",
 										value: filialForm.cnpj,
@@ -94510,15 +94543,15 @@ Obrigada.`);
 									})]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2537:13",
+									"data-uid": "src/pages/ClientsPage.tsx:2577:13",
 									"data-prohibitions": "[]",
 									className: "space-y-2",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-										"data-uid": "src/pages/ClientsPage.tsx:2538:15",
+										"data-uid": "src/pages/ClientsPage.tsx:2578:15",
 										"data-prohibitions": "[]",
 										children: "Razão Social / Nome da Filial"
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-										"data-uid": "src/pages/ClientsPage.tsx:2539:15",
+										"data-uid": "src/pages/ClientsPage.tsx:2579:15",
 										"data-prohibitions": "[editContent]",
 										placeholder: "Nome da Filial",
 										value: filialForm.nome,
@@ -94529,11 +94562,11 @@ Obrigada.`);
 									})]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2546:13",
+									"data-uid": "src/pages/ClientsPage.tsx:2586:13",
 									"data-prohibitions": "[]",
 									className: "flex items-center space-x-3 bg-slate-50 p-3 rounded-md border border-slate-200",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Checkbox, {
-										"data-uid": "src/pages/ClientsPage.tsx:2547:15",
+										"data-uid": "src/pages/ClientsPage.tsx:2587:15",
 										"data-prohibitions": "[editContent]",
 										id: "dfe-incluso",
 										checked: filialForm.dfe_incluso,
@@ -94544,17 +94577,17 @@ Obrigada.`);
 											}));
 										}
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:2557:15",
+										"data-uid": "src/pages/ClientsPage.tsx:2597:15",
 										"data-prohibitions": "[]",
 										className: "flex-1",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-											"data-uid": "src/pages/ClientsPage.tsx:2558:17",
+											"data-uid": "src/pages/ClientsPage.tsx:2598:17",
 											"data-prohibitions": "[]",
 											htmlFor: "dfe-incluso",
 											className: "font-medium cursor-pointer",
 											children: "Incluir DF-e para esta Filial?"
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-											"data-uid": "src/pages/ClientsPage.tsx:2561:17",
+											"data-uid": "src/pages/ClientsPage.tsx:2601:17",
 											"data-prohibitions": "[]",
 											className: "text-xs text-slate-500",
 											children: "Habilita o módulo de DF-e para esta unidade."
@@ -94562,19 +94595,19 @@ Obrigada.`);
 									})]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2567:13",
+									"data-uid": "src/pages/ClientsPage.tsx:2607:13",
 									"data-prohibitions": "[editContent]",
 									className: "grid grid-cols-2 gap-4",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:2568:15",
+										"data-uid": "src/pages/ClientsPage.tsx:2608:15",
 										"data-prohibitions": "[]",
 										className: "space-y-2",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-											"data-uid": "src/pages/ClientsPage.tsx:2569:17",
+											"data-uid": "src/pages/ClientsPage.tsx:2609:17",
 											"data-prohibitions": "[]",
 											children: "Mensalidade (Filial) - R$"
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-											"data-uid": "src/pages/ClientsPage.tsx:2570:17",
+											"data-uid": "src/pages/ClientsPage.tsx:2610:17",
 											"data-prohibitions": "[editContent]",
 											type: "number",
 											step: "0.01",
@@ -94586,15 +94619,15 @@ Obrigada.`);
 											}))
 										})]
 									}), filialForm.dfe_incluso && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:2585:17",
+										"data-uid": "src/pages/ClientsPage.tsx:2625:17",
 										"data-prohibitions": "[]",
 										className: "space-y-2",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-											"data-uid": "src/pages/ClientsPage.tsx:2586:19",
+											"data-uid": "src/pages/ClientsPage.tsx:2626:19",
 											"data-prohibitions": "[]",
 											children: "Valor do DF-e (R$)"
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-											"data-uid": "src/pages/ClientsPage.tsx:2587:19",
+											"data-uid": "src/pages/ClientsPage.tsx:2627:19",
 											"data-prohibitions": "[editContent]",
 											type: "number",
 											step: "0.01",
@@ -94610,22 +94643,22 @@ Obrigada.`);
 							]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogFooter, {
-							"data-uid": "src/pages/ClientsPage.tsx:2603:11",
+							"data-uid": "src/pages/ClientsPage.tsx:2643:11",
 							"data-prohibitions": "[editContent]",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-								"data-uid": "src/pages/ClientsPage.tsx:2604:13",
+								"data-uid": "src/pages/ClientsPage.tsx:2644:13",
 								"data-prohibitions": "[]",
 								variant: "outline",
 								onClick: () => setIsAddFilialOpen(false),
 								children: "Cancelar"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-								"data-uid": "src/pages/ClientsPage.tsx:2607:13",
+								"data-uid": "src/pages/ClientsPage.tsx:2647:13",
 								"data-prohibitions": "[editContent]",
 								onClick: handleSaveFilial,
 								disabled: !filialForm.cnpj || !filialForm.nome || isSubmittingAditivo,
 								className: "bg-indigo-600 hover:bg-indigo-700 text-white",
 								children: [isSubmittingAditivo ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
-									"data-uid": "src/pages/ClientsPage.tsx:2612:38",
+									"data-uid": "src/pages/ClientsPage.tsx:2652:38",
 									"data-prohibitions": "[editContent]",
 									className: "h-4 w-4 animate-spin mr-2"
 								}) : null, "Confirmar e Gerar Aditivo"]
@@ -94635,7 +94668,7 @@ Obrigada.`);
 				})
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Dialog, {
-				"data-uid": "src/pages/ClientsPage.tsx:2620:7",
+				"data-uid": "src/pages/ClientsPage.tsx:2660:7",
 				"data-prohibitions": "[editContent]",
 				open: isAddSolicitacaoOpen,
 				onOpenChange: (open) => {
@@ -94643,71 +94676,71 @@ Obrigada.`);
 					if (!open) resetSolicitacaoForm();
 				},
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogContent, {
-					"data-uid": "src/pages/ClientsPage.tsx:2627:9",
+					"data-uid": "src/pages/ClientsPage.tsx:2667:9",
 					"data-prohibitions": "[editContent]",
 					className: "sm:max-w-lg",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogHeader, {
-							"data-uid": "src/pages/ClientsPage.tsx:2628:11",
+							"data-uid": "src/pages/ClientsPage.tsx:2668:11",
 							"data-prohibitions": "[editContent]",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogTitle, {
-								"data-uid": "src/pages/ClientsPage.tsx:2629:13",
+								"data-uid": "src/pages/ClientsPage.tsx:2669:13",
 								"data-prohibitions": "[editContent]",
 								children: editingSolicitacaoId ? "Editar Solicitação de Serviço" : "Nova Solicitação de Serviço"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogDescription, {
-								"data-uid": "src/pages/ClientsPage.tsx:2634:13",
+								"data-uid": "src/pages/ClientsPage.tsx:2674:13",
 								"data-prohibitions": "[editContent]",
 								children: editingSolicitacaoId ? "Atualize os detalhes da solicitação de serviço." : "Registre um treinamento ou visita técnica e defina os detalhes de cobrança."
 							})]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:2640:11",
+							"data-uid": "src/pages/ClientsPage.tsx:2680:11",
 							"data-prohibitions": "[]",
 							className: "space-y-4 py-4",
 							children: [
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2641:13",
+									"data-uid": "src/pages/ClientsPage.tsx:2681:13",
 									"data-prohibitions": "[]",
 									className: "grid grid-cols-2 gap-4",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:2642:15",
+										"data-uid": "src/pages/ClientsPage.tsx:2682:15",
 										"data-prohibitions": "[]",
 										className: "space-y-2",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-											"data-uid": "src/pages/ClientsPage.tsx:2643:17",
+											"data-uid": "src/pages/ClientsPage.tsx:2683:17",
 											"data-prohibitions": "[]",
 											children: "Tipo de Serviço"
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
-											"data-uid": "src/pages/ClientsPage.tsx:2644:17",
+											"data-uid": "src/pages/ClientsPage.tsx:2684:17",
 											"data-prohibitions": "[]",
 											value: solicitacaoTipo,
 											onValueChange: setSolicitacaoTipo,
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, {
-												"data-uid": "src/pages/ClientsPage.tsx:2645:19",
+												"data-uid": "src/pages/ClientsPage.tsx:2685:19",
 												"data-prohibitions": "[]",
 												children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, {
-													"data-uid": "src/pages/ClientsPage.tsx:2646:21",
+													"data-uid": "src/pages/ClientsPage.tsx:2686:21",
 													"data-prohibitions": "[editContent]",
 													placeholder: "Selecione"
 												})
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectContent, {
-												"data-uid": "src/pages/ClientsPage.tsx:2648:19",
+												"data-uid": "src/pages/ClientsPage.tsx:2688:19",
 												"data-prohibitions": "[]",
 												children: [
 													/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-														"data-uid": "src/pages/ClientsPage.tsx:2649:21",
+														"data-uid": "src/pages/ClientsPage.tsx:2689:21",
 														"data-prohibitions": "[]",
 														value: "Treinamento",
 														children: "Treinamento"
 													}),
 													/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-														"data-uid": "src/pages/ClientsPage.tsx:2650:21",
+														"data-uid": "src/pages/ClientsPage.tsx:2690:21",
 														"data-prohibitions": "[]",
 														value: "Visita Técnica",
 														children: "Visita Técnica"
 													}),
 													/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-														"data-uid": "src/pages/ClientsPage.tsx:2651:21",
+														"data-uid": "src/pages/ClientsPage.tsx:2691:21",
 														"data-prohibitions": "[]",
 														value: "Outro",
 														children: "Outro"
@@ -94716,15 +94749,15 @@ Obrigada.`);
 											})]
 										})]
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:2655:15",
+										"data-uid": "src/pages/ClientsPage.tsx:2695:15",
 										"data-prohibitions": "[]",
 										className: "space-y-2",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-											"data-uid": "src/pages/ClientsPage.tsx:2656:17",
+											"data-uid": "src/pages/ClientsPage.tsx:2696:17",
 											"data-prohibitions": "[]",
 											children: "Data da Solicitação"
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-											"data-uid": "src/pages/ClientsPage.tsx:2657:17",
+											"data-uid": "src/pages/ClientsPage.tsx:2697:17",
 											"data-prohibitions": "[editContent]",
 											type: "date",
 											value: solicitacaoData,
@@ -94733,15 +94766,15 @@ Obrigada.`);
 									})]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2665:13",
+									"data-uid": "src/pages/ClientsPage.tsx:2705:13",
 									"data-prohibitions": "[]",
 									className: "space-y-2",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-										"data-uid": "src/pages/ClientsPage.tsx:2666:15",
+										"data-uid": "src/pages/ClientsPage.tsx:2706:15",
 										"data-prohibitions": "[]",
 										children: "Descrição do Serviço / Módulos"
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Textarea, {
-										"data-uid": "src/pages/ClientsPage.tsx:2667:15",
+										"data-uid": "src/pages/ClientsPage.tsx:2707:15",
 										"data-prohibitions": "[editContent]",
 										placeholder: "Ex: Treinamento do módulo financeiro...",
 										value: solicitacaoDescricao,
@@ -94749,20 +94782,20 @@ Obrigada.`);
 									})]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2674:13",
+									"data-uid": "src/pages/ClientsPage.tsx:2714:13",
 									"data-prohibitions": "[]",
 									className: "grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-md border border-slate-100",
 									children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:2675:15",
+											"data-uid": "src/pages/ClientsPage.tsx:2715:15",
 											"data-prohibitions": "[]",
 											className: "space-y-2",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-												"data-uid": "src/pages/ClientsPage.tsx:2676:17",
+												"data-uid": "src/pages/ClientsPage.tsx:2716:17",
 												"data-prohibitions": "[]",
 												children: "Valor Acordado (R$)"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-												"data-uid": "src/pages/ClientsPage.tsx:2677:17",
+												"data-uid": "src/pages/ClientsPage.tsx:2717:17",
 												"data-prohibitions": "[editContent]",
 												type: "number",
 												step: "0.01",
@@ -94773,50 +94806,50 @@ Obrigada.`);
 											})]
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:2688:15",
+											"data-uid": "src/pages/ClientsPage.tsx:2728:15",
 											"data-prohibitions": "[]",
 											className: "space-y-2",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-												"data-uid": "src/pages/ClientsPage.tsx:2689:17",
+												"data-uid": "src/pages/ClientsPage.tsx:2729:17",
 												"data-prohibitions": "[]",
 												children: "Forma de Pagamento"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
-												"data-uid": "src/pages/ClientsPage.tsx:2690:17",
+												"data-uid": "src/pages/ClientsPage.tsx:2730:17",
 												"data-prohibitions": "[]",
 												value: solicitacaoFormaPagamento,
 												onValueChange: setSolicitacaoFormaPagamento,
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, {
-													"data-uid": "src/pages/ClientsPage.tsx:2694:19",
+													"data-uid": "src/pages/ClientsPage.tsx:2734:19",
 													"data-prohibitions": "[]",
 													children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, {
-														"data-uid": "src/pages/ClientsPage.tsx:2695:21",
+														"data-uid": "src/pages/ClientsPage.tsx:2735:21",
 														"data-prohibitions": "[editContent]",
 														placeholder: "Selecione"
 													})
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectContent, {
-													"data-uid": "src/pages/ClientsPage.tsx:2697:19",
+													"data-uid": "src/pages/ClientsPage.tsx:2737:19",
 													"data-prohibitions": "[]",
 													children: [
 														/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-															"data-uid": "src/pages/ClientsPage.tsx:2698:21",
+															"data-uid": "src/pages/ClientsPage.tsx:2738:21",
 															"data-prohibitions": "[]",
 															value: "Boleto",
 															children: "Boleto"
 														}),
 														/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-															"data-uid": "src/pages/ClientsPage.tsx:2699:21",
+															"data-uid": "src/pages/ClientsPage.tsx:2739:21",
 															"data-prohibitions": "[]",
 															value: "PIX",
 															children: "PIX"
 														}),
 														/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-															"data-uid": "src/pages/ClientsPage.tsx:2700:21",
+															"data-uid": "src/pages/ClientsPage.tsx:2740:21",
 															"data-prohibitions": "[]",
 															value: "Cartão",
 															children: "Cartão"
 														}),
 														/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-															"data-uid": "src/pages/ClientsPage.tsx:2701:21",
+															"data-uid": "src/pages/ClientsPage.tsx:2741:21",
 															"data-prohibitions": "[]",
 															value: "Outro",
 															children: "Outro"
@@ -94826,15 +94859,15 @@ Obrigada.`);
 											})]
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:2705:15",
+											"data-uid": "src/pages/ClientsPage.tsx:2745:15",
 											"data-prohibitions": "[]",
 											className: "space-y-2 col-span-2",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-												"data-uid": "src/pages/ClientsPage.tsx:2706:17",
+												"data-uid": "src/pages/ClientsPage.tsx:2746:17",
 												"data-prohibitions": "[]",
 												children: "Data de Vencimento"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-												"data-uid": "src/pages/ClientsPage.tsx:2707:17",
+												"data-uid": "src/pages/ClientsPage.tsx:2747:17",
 												"data-prohibitions": "[editContent]",
 												type: "date",
 												value: solicitacaoDataVencimento,
@@ -94844,15 +94877,15 @@ Obrigada.`);
 									]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2715:13",
+									"data-uid": "src/pages/ClientsPage.tsx:2755:13",
 									"data-prohibitions": "[]",
 									className: "space-y-2",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-										"data-uid": "src/pages/ClientsPage.tsx:2716:15",
+										"data-uid": "src/pages/ClientsPage.tsx:2756:15",
 										"data-prohibitions": "[]",
 										children: "Observações"
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Textarea, {
-										"data-uid": "src/pages/ClientsPage.tsx:2717:15",
+										"data-uid": "src/pages/ClientsPage.tsx:2757:15",
 										"data-prohibitions": "[editContent]",
 										placeholder: "Informações adicionais...",
 										value: solicitacaoObservacoes,
@@ -94862,22 +94895,22 @@ Obrigada.`);
 							]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogFooter, {
-							"data-uid": "src/pages/ClientsPage.tsx:2724:11",
+							"data-uid": "src/pages/ClientsPage.tsx:2764:11",
 							"data-prohibitions": "[editContent]",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-								"data-uid": "src/pages/ClientsPage.tsx:2725:13",
+								"data-uid": "src/pages/ClientsPage.tsx:2765:13",
 								"data-prohibitions": "[]",
 								variant: "outline",
 								onClick: () => setIsAddSolicitacaoOpen(false),
 								children: "Cancelar"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-								"data-uid": "src/pages/ClientsPage.tsx:2728:13",
+								"data-uid": "src/pages/ClientsPage.tsx:2768:13",
 								"data-prohibitions": "[editContent]",
 								onClick: handleSaveSolicitacao,
 								disabled: !solicitacaoDescricao || isSubmittingSolicitacao,
 								className: "bg-indigo-600 hover:bg-indigo-700 text-white",
 								children: [isSubmittingSolicitacao ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
-									"data-uid": "src/pages/ClientsPage.tsx:2733:42",
+									"data-uid": "src/pages/ClientsPage.tsx:2773:42",
 									"data-prohibitions": "[editContent]",
 									className: "h-4 w-4 animate-spin mr-2"
 								}) : null, editingSolicitacaoId ? "Atualizar Solicitação" : "Salvar Solicitação"]
@@ -94887,55 +94920,55 @@ Obrigada.`);
 				})
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Dialog, {
-				"data-uid": "src/pages/ClientsPage.tsx:2742:7",
+				"data-uid": "src/pages/ClientsPage.tsx:2782:7",
 				"data-prohibitions": "[editContent]",
 				open: isSetupTrainingProposalOpen,
 				onOpenChange: setIsSetupTrainingProposalOpen,
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogContent, {
-					"data-uid": "src/pages/ClientsPage.tsx:2743:9",
+					"data-uid": "src/pages/ClientsPage.tsx:2783:9",
 					"data-prohibitions": "[editContent]",
 					className: "sm:max-w-md",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogHeader, {
-							"data-uid": "src/pages/ClientsPage.tsx:2744:11",
+							"data-uid": "src/pages/ClientsPage.tsx:2784:11",
 							"data-prohibitions": "[]",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogTitle, {
-								"data-uid": "src/pages/ClientsPage.tsx:2745:13",
+								"data-uid": "src/pages/ClientsPage.tsx:2785:13",
 								"data-prohibitions": "[]",
 								children: "Proposta de Treinamento"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogDescription, {
-								"data-uid": "src/pages/ClientsPage.tsx:2746:13",
+								"data-uid": "src/pages/ClientsPage.tsx:2786:13",
 								"data-prohibitions": "[]",
 								children: "Selecione os módulos para o treinamento e defina o valor do investimento para gerar o documento da proposta."
 							})]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:2751:11",
+							"data-uid": "src/pages/ClientsPage.tsx:2791:11",
 							"data-prohibitions": "[editContent]",
 							className: "space-y-4 py-4",
 							children: [
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2752:13",
+									"data-uid": "src/pages/ClientsPage.tsx:2792:13",
 									"data-prohibitions": "[editContent]",
 									className: "space-y-2",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-										"data-uid": "src/pages/ClientsPage.tsx:2753:15",
+										"data-uid": "src/pages/ClientsPage.tsx:2793:15",
 										"data-prohibitions": "[]",
 										children: "Módulos do Treinamento"
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollArea, {
-										"data-uid": "src/pages/ClientsPage.tsx:2754:15",
+										"data-uid": "src/pages/ClientsPage.tsx:2794:15",
 										"data-prohibitions": "[editContent]",
 										className: "h-48 border rounded-md p-3 bg-slate-50",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:2755:17",
+											"data-uid": "src/pages/ClientsPage.tsx:2795:17",
 											"data-prohibitions": "[editContent]",
 											className: "space-y-3",
 											children: Object.keys(TRAINING_FEATURES).map((mod) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ClientsPage.tsx:2757:21",
+												"data-uid": "src/pages/ClientsPage.tsx:2797:21",
 												"data-prohibitions": "[editContent]",
 												className: "flex items-center space-x-3 bg-white p-2 border rounded-md hover:bg-slate-50 transition-colors",
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Checkbox, {
-													"data-uid": "src/pages/ClientsPage.tsx:2761:23",
+													"data-uid": "src/pages/ClientsPage.tsx:2801:23",
 													"data-prohibitions": "[editContent]",
 													id: `train-mod-${mod}`,
 													checked: selectedTrainingModules.includes(mod),
@@ -94952,7 +94985,7 @@ Obrigada.`);
 														});
 													}
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-													"data-uid": "src/pages/ClientsPage.tsx:2780:23",
+													"data-uid": "src/pages/ClientsPage.tsx:2820:23",
 													"data-prohibitions": "[editContent]",
 													htmlFor: `train-mod-${mod}`,
 													className: "flex-1 cursor-pointer font-medium text-sm",
@@ -94963,17 +94996,17 @@ Obrigada.`);
 									})]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2791:13",
+									"data-uid": "src/pages/ClientsPage.tsx:2831:13",
 									"data-prohibitions": "[]",
 									className: "space-y-2",
 									children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-											"data-uid": "src/pages/ClientsPage.tsx:2792:15",
+											"data-uid": "src/pages/ClientsPage.tsx:2832:15",
 											"data-prohibitions": "[]",
 											children: "Valor da Proposta (R$)"
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-											"data-uid": "src/pages/ClientsPage.tsx:2793:15",
+											"data-uid": "src/pages/ClientsPage.tsx:2833:15",
 											"data-prohibitions": "[editContent]",
 											type: "number",
 											step: "0.01",
@@ -94982,7 +95015,7 @@ Obrigada.`);
 											onChange: (e) => setTrainingPrice(parseFloat(e.target.value) || 0)
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-											"data-uid": "src/pages/ClientsPage.tsx:2800:15",
+											"data-uid": "src/pages/ClientsPage.tsx:2840:15",
 											"data-prohibitions": "[]",
 											className: "text-xs text-slate-500",
 											children: "Calculado automaticamente: R$ 250,00 por módulo. Pode ser ajustado manualmente."
@@ -94990,28 +95023,28 @@ Obrigada.`);
 									]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:2805:13",
+									"data-uid": "src/pages/ClientsPage.tsx:2845:13",
 									"data-prohibitions": "[]",
 									className: "bg-slate-50 p-3 rounded-md border border-slate-200 mt-4 space-y-3",
 									children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-											"data-uid": "src/pages/ClientsPage.tsx:2806:15",
+											"data-uid": "src/pages/ClientsPage.tsx:2846:15",
 											"data-prohibitions": "[]",
 											className: "text-slate-700 font-semibold block mb-1",
 											children: "Ações Automáticas (Após gerar)"
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:2809:15",
+											"data-uid": "src/pages/ClientsPage.tsx:2849:15",
 											"data-prohibitions": "[]",
 											className: "flex items-center space-x-2",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Checkbox, {
-												"data-uid": "src/pages/ClientsPage.tsx:2810:17",
+												"data-uid": "src/pages/ClientsPage.tsx:2850:17",
 												"data-prohibitions": "[editContent]",
 												id: "flag-impl",
 												checked: flagNotifyImplantacao,
 												onCheckedChange: (c) => setFlagNotifyImplantacao(!!c)
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-												"data-uid": "src/pages/ClientsPage.tsx:2815:17",
+												"data-uid": "src/pages/ClientsPage.tsx:2855:17",
 												"data-prohibitions": "[]",
 												htmlFor: "flag-impl",
 												className: "cursor-pointer font-normal text-sm text-slate-700",
@@ -95019,17 +95052,17 @@ Obrigada.`);
 											})]
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:2822:15",
+											"data-uid": "src/pages/ClientsPage.tsx:2862:15",
 											"data-prohibitions": "[]",
 											className: "flex items-center space-x-2",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Checkbox, {
-												"data-uid": "src/pages/ClientsPage.tsx:2823:17",
+												"data-uid": "src/pages/ClientsPage.tsx:2863:17",
 												"data-prohibitions": "[editContent]",
 												id: "flag-fin",
 												checked: flagNotifyFinanceiro,
 												onCheckedChange: (c) => setFlagNotifyFinanceiro(!!c)
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-												"data-uid": "src/pages/ClientsPage.tsx:2828:17",
+												"data-uid": "src/pages/ClientsPage.tsx:2868:17",
 												"data-prohibitions": "[]",
 												htmlFor: "flag-fin",
 												className: "cursor-pointer font-normal text-sm text-slate-700",
@@ -95041,17 +95074,17 @@ Obrigada.`);
 							]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogFooter, {
-							"data-uid": "src/pages/ClientsPage.tsx:2837:11",
+							"data-uid": "src/pages/ClientsPage.tsx:2877:11",
 							"data-prohibitions": "[]",
 							className: "flex-col gap-2 sm:flex-row",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-								"data-uid": "src/pages/ClientsPage.tsx:2838:13",
+								"data-uid": "src/pages/ClientsPage.tsx:2878:13",
 								"data-prohibitions": "[]",
 								variant: "outline",
 								onClick: () => setIsSetupTrainingProposalOpen(false),
 								children: "Cancelar"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-								"data-uid": "src/pages/ClientsPage.tsx:2841:13",
+								"data-uid": "src/pages/ClientsPage.tsx:2881:13",
 								"data-prohibitions": "[]",
 								disabled: selectedTrainingModules.length === 0,
 								onClick: handleGenerateTrainingProposal,
@@ -95063,37 +95096,37 @@ Obrigada.`);
 				})
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Dialog, {
-				"data-uid": "src/pages/ClientsPage.tsx:2853:7",
+				"data-uid": "src/pages/ClientsPage.tsx:2893:7",
 				"data-prohibitions": "[editContent]",
 				open: !!viewingTrainingProposal,
 				onOpenChange: (open) => !open && setViewingTrainingProposal(null),
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogContent, {
-					"data-uid": "src/pages/ClientsPage.tsx:2857:9",
+					"data-uid": "src/pages/ClientsPage.tsx:2897:9",
 					"data-prohibitions": "[editContent]",
 					className: "max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden bg-slate-100",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/pages/ClientsPage.tsx:2858:11",
+						"data-uid": "src/pages/ClientsPage.tsx:2898:11",
 						"data-prohibitions": "[]",
 						className: "flex justify-between items-center p-4 bg-white border-b shrink-0 print:hidden",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
-							"data-uid": "src/pages/ClientsPage.tsx:2859:13",
+							"data-uid": "src/pages/ClientsPage.tsx:2899:13",
 							"data-prohibitions": "[]",
 							className: "font-semibold text-lg text-slate-800",
 							children: "Visualização de Proposta"
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:2860:13",
+							"data-uid": "src/pages/ClientsPage.tsx:2900:13",
 							"data-prohibitions": "[]",
 							className: "flex gap-2",
 							children: [
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-									"data-uid": "src/pages/ClientsPage.tsx:2861:15",
+									"data-uid": "src/pages/ClientsPage.tsx:2901:15",
 									"data-prohibitions": "[]",
 									variant: "outline",
 									onClick: () => setViewingTrainingProposal(null),
 									children: "Fechar"
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-									"data-uid": "src/pages/ClientsPage.tsx:2864:15",
+									"data-uid": "src/pages/ClientsPage.tsx:2904:15",
 									"data-prohibitions": "[]",
 									onClick: () => {
 										const subject = encodeURIComponent(`Proposta de Treinamento - Service Logic`);
@@ -95102,13 +95135,13 @@ Obrigada.`);
 									},
 									className: "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, {
-										"data-uid": "src/pages/ClientsPage.tsx:2877:17",
+										"data-uid": "src/pages/ClientsPage.tsx:2917:17",
 										"data-prohibitions": "[editContent]",
 										className: "h-4 w-4 mr-2"
 									}), " E-mail Cliente"]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-									"data-uid": "src/pages/ClientsPage.tsx:2879:15",
+									"data-uid": "src/pages/ClientsPage.tsx:2919:15",
 									"data-prohibitions": "[]",
 									variant: "outline",
 									className: "text-blue-700 border-blue-200 hover:bg-blue-50",
@@ -95136,13 +95169,13 @@ Obrigada.`);
 										}
 									},
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, {
-										"data-uid": "src/pages/ClientsPage.tsx:2916:17",
+										"data-uid": "src/pages/ClientsPage.tsx:2956:17",
 										"data-prohibitions": "[editContent]",
 										className: "h-4 w-4 mr-2"
 									}), " Solicitar Implantação"]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-									"data-uid": "src/pages/ClientsPage.tsx:2918:15",
+									"data-uid": "src/pages/ClientsPage.tsx:2958:15",
 									"data-prohibitions": "[]",
 									variant: "outline",
 									className: "text-emerald-700 border-emerald-200 hover:bg-emerald-50",
@@ -95171,13 +95204,13 @@ Obrigada.`);
 										}
 									},
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, {
-										"data-uid": "src/pages/ClientsPage.tsx:2955:17",
+										"data-uid": "src/pages/ClientsPage.tsx:2995:17",
 										"data-prohibitions": "[editContent]",
 										className: "h-4 w-4 mr-2"
 									}), " Solicitar Cobrança"]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-									"data-uid": "src/pages/ClientsPage.tsx:2957:15",
+									"data-uid": "src/pages/ClientsPage.tsx:2997:15",
 									"data-prohibitions": "[]",
 									onClick: () => {
 										const printContent = document.getElementById("training-proposal-print");
@@ -95191,7 +95224,7 @@ Obrigada.`);
 									},
 									className: "bg-indigo-600 hover:bg-indigo-700",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Printer, {
-										"data-uid": "src/pages/ClientsPage.tsx:2970:17",
+										"data-uid": "src/pages/ClientsPage.tsx:3010:17",
 										"data-prohibitions": "[editContent]",
 										className: "h-4 w-4 mr-2"
 									}), " Imprimir / PDF"]
@@ -95199,15 +95232,15 @@ Obrigada.`);
 							]
 						})]
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollArea, {
-						"data-uid": "src/pages/ClientsPage.tsx:2974:11",
+						"data-uid": "src/pages/ClientsPage.tsx:3014:11",
 						"data-prohibitions": "[editContent]",
 						className: "flex-1 p-4 sm:p-8 overflow-auto",
 						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:2975:13",
+							"data-uid": "src/pages/ClientsPage.tsx:3015:13",
 							"data-prohibitions": "[editContent]",
 							className: "max-w-[800px] mx-auto shadow-xl",
 							children: viewingTrainingProposal && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TrainingProposalDocument, {
-								"data-uid": "src/pages/ClientsPage.tsx:2976:43",
+								"data-uid": "src/pages/ClientsPage.tsx:3016:43",
 								"data-prohibitions": "[editContent]",
 								...viewingTrainingProposal
 							})
@@ -95216,37 +95249,37 @@ Obrigada.`);
 				})
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Dialog, {
-				"data-uid": "src/pages/ClientsPage.tsx:2982:7",
+				"data-uid": "src/pages/ClientsPage.tsx:3022:7",
 				"data-prohibitions": "[editContent]",
 				open: !!viewingAddendum,
 				onOpenChange: (open) => !open && setViewingAddendum(null),
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogContent, {
-					"data-uid": "src/pages/ClientsPage.tsx:2983:9",
+					"data-uid": "src/pages/ClientsPage.tsx:3023:9",
 					"data-prohibitions": "[editContent]",
 					className: "max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden bg-slate-100",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/pages/ClientsPage.tsx:2984:11",
+						"data-uid": "src/pages/ClientsPage.tsx:3024:11",
 						"data-prohibitions": "[]",
 						className: "flex justify-between items-center p-4 bg-white border-b shrink-0 print:hidden",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
-							"data-uid": "src/pages/ClientsPage.tsx:2985:13",
+							"data-uid": "src/pages/ClientsPage.tsx:3025:13",
 							"data-prohibitions": "[]",
 							className: "font-semibold text-lg text-slate-800",
 							children: "Visualização de Aditivo Contratual"
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:2988:13",
+							"data-uid": "src/pages/ClientsPage.tsx:3028:13",
 							"data-prohibitions": "[]",
 							className: "flex gap-2",
 							children: [
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-									"data-uid": "src/pages/ClientsPage.tsx:2989:15",
+									"data-uid": "src/pages/ClientsPage.tsx:3029:15",
 									"data-prohibitions": "[]",
 									variant: "outline",
 									onClick: () => setViewingAddendum(null),
 									children: "Fechar"
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-									"data-uid": "src/pages/ClientsPage.tsx:2992:15",
+									"data-uid": "src/pages/ClientsPage.tsx:3032:15",
 									"data-prohibitions": "[]",
 									variant: "outline",
 									className: "text-blue-700 border-blue-200 hover:bg-blue-50",
@@ -95271,13 +95304,13 @@ Obrigada.`);
 										}
 									},
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, {
-										"data-uid": "src/pages/ClientsPage.tsx:3016:17",
+										"data-uid": "src/pages/ClientsPage.tsx:3056:17",
 										"data-prohibitions": "[editContent]",
 										className: "h-4 w-4 mr-2"
 									}), " Solicitar Implantação"]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-									"data-uid": "src/pages/ClientsPage.tsx:3018:15",
+									"data-uid": "src/pages/ClientsPage.tsx:3058:15",
 									"data-prohibitions": "[]",
 									variant: "outline",
 									className: "text-emerald-700 border-emerald-200 hover:bg-emerald-50",
@@ -95303,18 +95336,18 @@ Obrigada.`);
 										}
 									},
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, {
-										"data-uid": "src/pages/ClientsPage.tsx:3043:17",
+										"data-uid": "src/pages/ClientsPage.tsx:3083:17",
 										"data-prohibitions": "[editContent]",
 										className: "h-4 w-4 mr-2"
 									}), " Solicitar Cobrança"]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-									"data-uid": "src/pages/ClientsPage.tsx:3045:15",
+									"data-uid": "src/pages/ClientsPage.tsx:3085:15",
 									"data-prohibitions": "[]",
 									onClick: handlePrintAddendum,
 									className: "bg-indigo-600 hover:bg-indigo-700",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Printer, {
-										"data-uid": "src/pages/ClientsPage.tsx:3046:17",
+										"data-uid": "src/pages/ClientsPage.tsx:3086:17",
 										"data-prohibitions": "[editContent]",
 										className: "h-4 w-4 mr-2"
 									}), " Imprimir / Salvar PDF"]
@@ -95322,16 +95355,16 @@ Obrigada.`);
 							]
 						})]
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollArea, {
-						"data-uid": "src/pages/ClientsPage.tsx:3050:11",
+						"data-uid": "src/pages/ClientsPage.tsx:3090:11",
 						"data-prohibitions": "[editContent]",
 						className: "flex-1 p-4 sm:p-8 overflow-auto",
 						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:3051:13",
+							"data-uid": "src/pages/ClientsPage.tsx:3091:13",
 							"data-prohibitions": "[editContent]",
 							className: "max-w-[800px] mx-auto bg-white shadow-xl",
 							id: "addendum-print-area",
 							children: viewingAddendum && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AddendumDocument, {
-								"data-uid": "src/pages/ClientsPage.tsx:3052:35",
+								"data-uid": "src/pages/ClientsPage.tsx:3092:35",
 								"data-prohibitions": "[editContent]",
 								...viewingAddendum
 							})
@@ -95340,7 +95373,7 @@ Obrigada.`);
 				})
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sheet, {
-				"data-uid": "src/pages/ClientsPage.tsx:3058:7",
+				"data-uid": "src/pages/ClientsPage.tsx:3098:7",
 				"data-prohibitions": "[editContent]",
 				open: isSheetOpen,
 				onOpenChange: (open) => {
@@ -95348,77 +95381,77 @@ Obrigada.`);
 					if (!open) setEditingClient(null);
 				},
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SheetContent, {
-					"data-uid": "src/pages/ClientsPage.tsx:3065:9",
+					"data-uid": "src/pages/ClientsPage.tsx:3105:9",
 					"data-prohibitions": "[editContent]",
 					className: "sm:max-w-2xl w-[90vw] flex flex-col h-full",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SheetHeader, {
-						"data-uid": "src/pages/ClientsPage.tsx:3066:11",
+						"data-uid": "src/pages/ClientsPage.tsx:3106:11",
 						"data-prohibitions": "[editContent]",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SheetTitle, {
-							"data-uid": "src/pages/ClientsPage.tsx:3067:13",
+							"data-uid": "src/pages/ClientsPage.tsx:3107:13",
 							"data-prohibitions": "[editContent]",
 							children: editingClient ? "Editar Cliente" : "Adicionar Novo Cliente"
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SheetDescription, {
-							"data-uid": "src/pages/ClientsPage.tsx:3068:13",
+							"data-uid": "src/pages/ClientsPage.tsx:3108:13",
 							"data-prohibitions": "[editContent]",
 							children: editingClient ? "Atualize os dados básicos da empresa." : "Preencha os dados abaixo para cadastrar um novo cliente na base."
 						})]
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollArea, {
-						"data-uid": "src/pages/ClientsPage.tsx:3075:11",
+						"data-uid": "src/pages/ClientsPage.tsx:3115:11",
 						"data-prohibitions": "[editContent]",
 						className: "flex-1 -mx-6 px-6 mt-4",
 						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Form, {
-							"data-uid": "src/pages/ClientsPage.tsx:3076:13",
+							"data-uid": "src/pages/ClientsPage.tsx:3116:13",
 							"data-prohibitions": "[editContent]",
 							...form,
 							children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
-								"data-uid": "src/pages/ClientsPage.tsx:3077:15",
+								"data-uid": "src/pages/ClientsPage.tsx:3117:15",
 								"data-prohibitions": "[editContent]",
 								onSubmit: form.handleSubmit(onSubmit),
 								className: "space-y-6 pb-6",
 								children: [
 									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:3078:17",
+										"data-uid": "src/pages/ClientsPage.tsx:3118:17",
 										"data-prohibitions": "[]",
 										className: "space-y-4",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
-											"data-uid": "src/pages/ClientsPage.tsx:3079:19",
+											"data-uid": "src/pages/ClientsPage.tsx:3119:19",
 											"data-prohibitions": "[]",
 											className: "text-sm font-medium text-slate-500 uppercase tracking-wider border-b pb-2",
 											children: "Dados da Empresa"
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:3083:19",
+											"data-uid": "src/pages/ClientsPage.tsx:3123:19",
 											"data-prohibitions": "[]",
 											className: "grid grid-cols-1 sm:grid-cols-2 gap-4",
 											children: [
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-													"data-uid": "src/pages/ClientsPage.tsx:3084:21",
+													"data-uid": "src/pages/ClientsPage.tsx:3124:21",
 													"data-prohibitions": "[editContent]",
 													control: form.control,
 													name: "nome",
 													render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
-														"data-uid": "src/pages/ClientsPage.tsx:3088:25",
+														"data-uid": "src/pages/ClientsPage.tsx:3128:25",
 														"data-prohibitions": "[]",
 														className: "sm:col-span-2",
 														children: [
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-																"data-uid": "src/pages/ClientsPage.tsx:3089:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3129:27",
 																"data-prohibitions": "[]",
 																children: "Razão Social"
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, {
-																"data-uid": "src/pages/ClientsPage.tsx:3090:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3130:27",
 																"data-prohibitions": "[]",
 																children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-																	"data-uid": "src/pages/ClientsPage.tsx:3091:29",
+																	"data-uid": "src/pages/ClientsPage.tsx:3131:29",
 																	"data-prohibitions": "[]",
 																	className: "relative",
 																	children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Building2, {
-																		"data-uid": "src/pages/ClientsPage.tsx:3092:31",
+																		"data-uid": "src/pages/ClientsPage.tsx:3132:31",
 																		"data-prohibitions": "[editContent]",
 																		className: "absolute left-3 top-2.5 h-4 w-4 text-slate-400"
 																	}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-																		"data-uid": "src/pages/ClientsPage.tsx:3093:31",
+																		"data-uid": "src/pages/ClientsPage.tsx:3133:31",
 																		"data-prohibitions": "[editContent]",
 																		placeholder: "Ex: Transporte Rápido LTDA",
 																		className: "pl-9",
@@ -95427,42 +95460,42 @@ Obrigada.`);
 																})
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {
-																"data-uid": "src/pages/ClientsPage.tsx:3100:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3140:27",
 																"data-prohibitions": "[editContent]"
 															})
 														]
 													})
 												}),
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-													"data-uid": "src/pages/ClientsPage.tsx:3105:21",
+													"data-uid": "src/pages/ClientsPage.tsx:3145:21",
 													"data-prohibitions": "[editContent]",
 													control: form.control,
 													name: "cnpj",
 													render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
-														"data-uid": "src/pages/ClientsPage.tsx:3109:25",
+														"data-uid": "src/pages/ClientsPage.tsx:3149:25",
 														"data-prohibitions": "[editContent]",
 														className: "sm:col-span-2",
 														children: [
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-																"data-uid": "src/pages/ClientsPage.tsx:3110:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3150:27",
 																"data-prohibitions": "[]",
 																children: "CNPJ"
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, {
-																"data-uid": "src/pages/ClientsPage.tsx:3111:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3151:27",
 																"data-prohibitions": "[editContent]",
 																children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-																	"data-uid": "src/pages/ClientsPage.tsx:3112:29",
+																	"data-uid": "src/pages/ClientsPage.tsx:3152:29",
 																	"data-prohibitions": "[editContent]",
 																	className: "relative",
 																	children: [
 																		/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Hash, {
-																			"data-uid": "src/pages/ClientsPage.tsx:3113:31",
+																			"data-uid": "src/pages/ClientsPage.tsx:3153:31",
 																			"data-prohibitions": "[editContent]",
 																			className: "absolute left-3 top-2.5 h-4 w-4 text-slate-400"
 																		}),
 																		/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-																			"data-uid": "src/pages/ClientsPage.tsx:3114:31",
+																			"data-uid": "src/pages/ClientsPage.tsx:3154:31",
 																			"data-prohibitions": "[editContent]",
 																			placeholder: "00.000.000/0001-00",
 																			className: "pl-9",
@@ -95473,7 +95506,7 @@ Obrigada.`);
 																			}
 																		}),
 																		isLoadingCnpj && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
-																			"data-uid": "src/pages/ClientsPage.tsx:3124:33",
+																			"data-uid": "src/pages/ClientsPage.tsx:3164:33",
 																			"data-prohibitions": "[editContent]",
 																			className: "absolute right-3 top-2.5 h-4 w-4 animate-spin text-slate-400"
 																		})
@@ -95481,39 +95514,39 @@ Obrigada.`);
 																})
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {
-																"data-uid": "src/pages/ClientsPage.tsx:3128:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3168:27",
 																"data-prohibitions": "[editContent]"
 															})
 														]
 													})
 												}),
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-													"data-uid": "src/pages/ClientsPage.tsx:3133:21",
+													"data-uid": "src/pages/ClientsPage.tsx:3173:21",
 													"data-prohibitions": "[editContent]",
 													control: form.control,
 													name: "email",
 													render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
-														"data-uid": "src/pages/ClientsPage.tsx:3137:25",
+														"data-uid": "src/pages/ClientsPage.tsx:3177:25",
 														"data-prohibitions": "[]",
 														children: [
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-																"data-uid": "src/pages/ClientsPage.tsx:3138:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3178:27",
 																"data-prohibitions": "[]",
 																children: "E-mail (Opcional)"
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, {
-																"data-uid": "src/pages/ClientsPage.tsx:3139:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3179:27",
 																"data-prohibitions": "[]",
 																children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-																	"data-uid": "src/pages/ClientsPage.tsx:3140:29",
+																	"data-uid": "src/pages/ClientsPage.tsx:3180:29",
 																	"data-prohibitions": "[]",
 																	className: "relative",
 																	children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, {
-																		"data-uid": "src/pages/ClientsPage.tsx:3141:31",
+																		"data-uid": "src/pages/ClientsPage.tsx:3181:31",
 																		"data-prohibitions": "[editContent]",
 																		className: "absolute left-3 top-2.5 h-4 w-4 text-slate-400"
 																	}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-																		"data-uid": "src/pages/ClientsPage.tsx:3142:31",
+																		"data-uid": "src/pages/ClientsPage.tsx:3182:31",
 																		"data-prohibitions": "[editContent]",
 																		type: "email",
 																		placeholder: "contato@empresa.com",
@@ -95523,39 +95556,39 @@ Obrigada.`);
 																})
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {
-																"data-uid": "src/pages/ClientsPage.tsx:3150:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3190:27",
 																"data-prohibitions": "[editContent]"
 															})
 														]
 													})
 												}),
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-													"data-uid": "src/pages/ClientsPage.tsx:3154:21",
+													"data-uid": "src/pages/ClientsPage.tsx:3194:21",
 													"data-prohibitions": "[editContent]",
 													control: form.control,
 													name: "telefone",
 													render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
-														"data-uid": "src/pages/ClientsPage.tsx:3158:25",
+														"data-uid": "src/pages/ClientsPage.tsx:3198:25",
 														"data-prohibitions": "[]",
 														children: [
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-																"data-uid": "src/pages/ClientsPage.tsx:3159:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3199:27",
 																"data-prohibitions": "[]",
 																children: "Telefone (Opcional)"
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, {
-																"data-uid": "src/pages/ClientsPage.tsx:3160:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3200:27",
 																"data-prohibitions": "[]",
 																children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-																	"data-uid": "src/pages/ClientsPage.tsx:3161:29",
+																	"data-uid": "src/pages/ClientsPage.tsx:3201:29",
 																	"data-prohibitions": "[]",
 																	className: "relative",
 																	children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Phone, {
-																		"data-uid": "src/pages/ClientsPage.tsx:3162:31",
+																		"data-uid": "src/pages/ClientsPage.tsx:3202:31",
 																		"data-prohibitions": "[editContent]",
 																		className: "absolute left-3 top-2.5 h-4 w-4 text-slate-400"
 																	}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-																		"data-uid": "src/pages/ClientsPage.tsx:3163:31",
+																		"data-uid": "src/pages/ClientsPage.tsx:3203:31",
 																		"data-prohibitions": "[editContent]",
 																		placeholder: "(00) 0000-0000",
 																		className: "pl-9",
@@ -95564,133 +95597,133 @@ Obrigada.`);
 																})
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {
-																"data-uid": "src/pages/ClientsPage.tsx:3166:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3206:27",
 																"data-prohibitions": "[editContent]"
 															})
 														]
 													})
 												}),
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-													"data-uid": "src/pages/ClientsPage.tsx:3170:21",
+													"data-uid": "src/pages/ClientsPage.tsx:3210:21",
 													"data-prohibitions": "[editContent]",
 													control: form.control,
 													name: "endereco",
 													render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
-														"data-uid": "src/pages/ClientsPage.tsx:3174:25",
+														"data-uid": "src/pages/ClientsPage.tsx:3214:25",
 														"data-prohibitions": "[]",
 														className: "sm:col-span-2",
 														children: [
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-																"data-uid": "src/pages/ClientsPage.tsx:3175:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3215:27",
 																"data-prohibitions": "[]",
 																children: "Endereço Completo"
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, {
-																"data-uid": "src/pages/ClientsPage.tsx:3176:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3216:27",
 																"data-prohibitions": "[]",
 																children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-																	"data-uid": "src/pages/ClientsPage.tsx:3177:29",
+																	"data-uid": "src/pages/ClientsPage.tsx:3217:29",
 																	"data-prohibitions": "[editContent]",
 																	placeholder: "Av. Paulista, 1000 - SP",
 																	...field
 																})
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {
-																"data-uid": "src/pages/ClientsPage.tsx:3179:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3219:27",
 																"data-prohibitions": "[editContent]"
 															})
 														]
 													})
 												}),
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-													"data-uid": "src/pages/ClientsPage.tsx:3183:21",
+													"data-uid": "src/pages/ClientsPage.tsx:3223:21",
 													"data-prohibitions": "[editContent]",
 													control: form.control,
 													name: "rep_nome",
 													render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
-														"data-uid": "src/pages/ClientsPage.tsx:3187:25",
+														"data-uid": "src/pages/ClientsPage.tsx:3227:25",
 														"data-prohibitions": "[]",
 														className: "sm:col-span-2",
 														children: [
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-																"data-uid": "src/pages/ClientsPage.tsx:3188:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3228:27",
 																"data-prohibitions": "[]",
 																children: "Representante Legal"
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, {
-																"data-uid": "src/pages/ClientsPage.tsx:3189:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3229:27",
 																"data-prohibitions": "[]",
 																children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-																	"data-uid": "src/pages/ClientsPage.tsx:3190:29",
+																	"data-uid": "src/pages/ClientsPage.tsx:3230:29",
 																	"data-prohibitions": "[editContent]",
 																	placeholder: "Nome Completo do Representante",
 																	...field
 																})
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {
-																"data-uid": "src/pages/ClientsPage.tsx:3192:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3232:27",
 																"data-prohibitions": "[editContent]"
 															})
 														]
 													})
 												}),
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-													"data-uid": "src/pages/ClientsPage.tsx:3196:21",
+													"data-uid": "src/pages/ClientsPage.tsx:3236:21",
 													"data-prohibitions": "[editContent]",
 													control: form.control,
 													name: "rep_cpf",
 													render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
-														"data-uid": "src/pages/ClientsPage.tsx:3200:25",
+														"data-uid": "src/pages/ClientsPage.tsx:3240:25",
 														"data-prohibitions": "[]",
 														children: [
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-																"data-uid": "src/pages/ClientsPage.tsx:3201:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3241:27",
 																"data-prohibitions": "[]",
 																children: "CPF do Rep."
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, {
-																"data-uid": "src/pages/ClientsPage.tsx:3202:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3242:27",
 																"data-prohibitions": "[]",
 																children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-																	"data-uid": "src/pages/ClientsPage.tsx:3203:29",
+																	"data-uid": "src/pages/ClientsPage.tsx:3243:29",
 																	"data-prohibitions": "[editContent]",
 																	placeholder: "000.000.000-00",
 																	...field
 																})
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {
-																"data-uid": "src/pages/ClientsPage.tsx:3205:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3245:27",
 																"data-prohibitions": "[editContent]"
 															})
 														]
 													})
 												}),
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-													"data-uid": "src/pages/ClientsPage.tsx:3209:21",
+													"data-uid": "src/pages/ClientsPage.tsx:3249:21",
 													"data-prohibitions": "[editContent]",
 													control: form.control,
 													name: "rep_rg",
 													render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
-														"data-uid": "src/pages/ClientsPage.tsx:3213:25",
+														"data-uid": "src/pages/ClientsPage.tsx:3253:25",
 														"data-prohibitions": "[]",
 														children: [
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-																"data-uid": "src/pages/ClientsPage.tsx:3214:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3254:27",
 																"data-prohibitions": "[]",
 																children: "RG do Rep."
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, {
-																"data-uid": "src/pages/ClientsPage.tsx:3215:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3255:27",
 																"data-prohibitions": "[]",
 																children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-																	"data-uid": "src/pages/ClientsPage.tsx:3216:29",
+																	"data-uid": "src/pages/ClientsPage.tsx:3256:29",
 																	"data-prohibitions": "[editContent]",
 																	placeholder: "00.000.000-0",
 																	...field
 																})
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {
-																"data-uid": "src/pages/ClientsPage.tsx:3218:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3258:27",
 																"data-prohibitions": "[editContent]"
 															})
 														]
@@ -95700,67 +95733,67 @@ Obrigada.`);
 										})]
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:3225:17",
+										"data-uid": "src/pages/ClientsPage.tsx:3265:17",
 										"data-prohibitions": "[]",
 										className: "space-y-4 pt-2",
 										children: [
 											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
-												"data-uid": "src/pages/ClientsPage.tsx:3226:19",
+												"data-uid": "src/pages/ClientsPage.tsx:3266:19",
 												"data-prohibitions": "[]",
 												className: "text-sm font-medium text-slate-500 uppercase tracking-wider border-b pb-2",
 												children: "Composição do Contrato"
 											}),
 											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ClientsPage.tsx:3230:19",
+												"data-uid": "src/pages/ClientsPage.tsx:3270:19",
 												"data-prohibitions": "[]",
 												className: "grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-100",
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-													"data-uid": "src/pages/ClientsPage.tsx:3231:21",
+													"data-uid": "src/pages/ClientsPage.tsx:3271:21",
 													"data-prohibitions": "[editContent]",
 													control: form.control,
 													name: "plano_base",
 													render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
-														"data-uid": "src/pages/ClientsPage.tsx:3235:25",
+														"data-uid": "src/pages/ClientsPage.tsx:3275:25",
 														"data-prohibitions": "[editContent]",
 														children: [
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-																"data-uid": "src/pages/ClientsPage.tsx:3236:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3276:27",
 																"data-prohibitions": "[]",
 																children: "Plano Base / Emissões"
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, {
-																"data-uid": "src/pages/ClientsPage.tsx:3237:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3277:27",
 																"data-prohibitions": "[editContent]",
 																children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-																	"data-uid": "src/pages/ClientsPage.tsx:3238:29",
+																	"data-uid": "src/pages/ClientsPage.tsx:3278:29",
 																	"data-prohibitions": "[editContent]",
 																	className: "flex gap-2",
 																	children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-																		"data-uid": "src/pages/ClientsPage.tsx:3239:31",
+																		"data-uid": "src/pages/ClientsPage.tsx:3279:31",
 																		"data-prohibitions": "[editContent]",
 																		placeholder: "Ex: TMS 30 ou selecione...",
 																		value: field.value || "",
 																		onChange: field.onChange,
 																		className: "bg-white flex-1"
 																	}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
-																		"data-uid": "src/pages/ClientsPage.tsx:3245:31",
+																		"data-uid": "src/pages/ClientsPage.tsx:3285:31",
 																		"data-prohibitions": "[editContent]",
 																		onValueChange: field.onChange,
 																		value: PLANS.some((p) => p.name === field.value) ? field.value : void 0,
 																		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, {
-																			"data-uid": "src/pages/ClientsPage.tsx:3253:33",
+																			"data-uid": "src/pages/ClientsPage.tsx:3293:33",
 																			"data-prohibitions": "[]",
 																			className: "w-12 bg-white flex justify-center px-0",
 																			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronDown, {
-																				"data-uid": "src/pages/ClientsPage.tsx:3254:35",
+																				"data-uid": "src/pages/ClientsPage.tsx:3294:35",
 																				"data-prohibitions": "[editContent]",
 																				className: "h-4 w-4 opacity-50"
 																			})
 																		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectContent, {
-																			"data-uid": "src/pages/ClientsPage.tsx:3256:33",
+																			"data-uid": "src/pages/ClientsPage.tsx:3296:33",
 																			"data-prohibitions": "[editContent]",
 																			children: PLANS.map((plan) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectItem, {
-																				"data-uid": "src/pages/ClientsPage.tsx:3258:37",
+																				"data-uid": "src/pages/ClientsPage.tsx:3298:37",
 																				"data-prohibitions": "[editContent]",
 																				value: plan.name,
 																				children: [
@@ -95774,30 +95807,30 @@ Obrigada.`);
 																})
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {
-																"data-uid": "src/pages/ClientsPage.tsx:3266:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3306:27",
 																"data-prohibitions": "[editContent]"
 															})
 														]
 													})
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-													"data-uid": "src/pages/ClientsPage.tsx:3271:21",
+													"data-uid": "src/pages/ClientsPage.tsx:3311:21",
 													"data-prohibitions": "[editContent]",
 													control: form.control,
 													name: "filiais",
 													render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
-														"data-uid": "src/pages/ClientsPage.tsx:3275:25",
+														"data-uid": "src/pages/ClientsPage.tsx:3315:25",
 														"data-prohibitions": "[]",
 														children: [
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-																"data-uid": "src/pages/ClientsPage.tsx:3276:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3316:27",
 																"data-prohibitions": "[]",
 																children: "Nº Filiais Adicionais"
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, {
-																"data-uid": "src/pages/ClientsPage.tsx:3277:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3317:27",
 																"data-prohibitions": "[]",
 																children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-																	"data-uid": "src/pages/ClientsPage.tsx:3278:29",
+																	"data-uid": "src/pages/ClientsPage.tsx:3318:29",
 																	"data-prohibitions": "[editContent]",
 																	type: "number",
 																	min: 0,
@@ -95807,13 +95840,13 @@ Obrigada.`);
 																})
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-																"data-uid": "src/pages/ClientsPage.tsx:3286:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3326:27",
 																"data-prohibitions": "[]",
 																className: "text-xs text-slate-500",
 																children: "R$ 199,00 por filial"
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {
-																"data-uid": "src/pages/ClientsPage.tsx:3287:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3327:27",
 																"data-prohibitions": "[editContent]"
 															})
 														]
@@ -95821,7 +95854,7 @@ Obrigada.`);
 												})]
 											}),
 											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-												"data-uid": "src/pages/ClientsPage.tsx:3293:19",
+												"data-uid": "src/pages/ClientsPage.tsx:3333:19",
 												"data-prohibitions": "[editContent]",
 												control: form.control,
 												name: "modulos",
@@ -95831,24 +95864,24 @@ Obrigada.`);
 														const selectedModule = form.watch("modulos")?.find((m) => typeof m === "string" ? m === module.name : m.name === module.name);
 														const currentPrice = selectedModule && typeof selectedModule !== "string" ? selectedModule.price : module.price;
 														return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-															"data-uid": "src/pages/ClientsPage.tsx:3314:27",
+															"data-uid": "src/pages/ClientsPage.tsx:3354:27",
 															"data-prohibitions": "[editContent]",
 															control: form.control,
 															name: "modulos",
 															render: ({ field }) => {
 																return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-																	"data-uid": "src/pages/ClientsPage.tsx:3320:33",
+																	"data-uid": "src/pages/ClientsPage.tsx:3360:33",
 																	"data-prohibitions": "[editContent]",
 																	className: "flex flex-col rounded-md border bg-white hover:bg-slate-50 transition-colors overflow-hidden",
 																	children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
-																		"data-uid": "src/pages/ClientsPage.tsx:3321:35",
+																		"data-uid": "src/pages/ClientsPage.tsx:3361:35",
 																		"data-prohibitions": "[editContent]",
 																		className: "flex flex-row items-center space-x-3 space-y-0 p-3",
 																		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, {
-																			"data-uid": "src/pages/ClientsPage.tsx:3322:37",
+																			"data-uid": "src/pages/ClientsPage.tsx:3362:37",
 																			"data-prohibitions": "[]",
 																			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Checkbox, {
-																				"data-uid": "src/pages/ClientsPage.tsx:3323:39",
+																				"data-uid": "src/pages/ClientsPage.tsx:3363:39",
 																				"data-prohibitions": "[editContent]",
 																				checked: isSelected,
 																				onCheckedChange: (checked) => {
@@ -95861,41 +95894,41 @@ Obrigada.`);
 																				}
 																			})
 																		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-																			"data-uid": "src/pages/ClientsPage.tsx:3344:37",
+																			"data-uid": "src/pages/ClientsPage.tsx:3384:37",
 																			"data-prohibitions": "[editContent]",
 																			className: "flex-1 flex justify-between items-center",
 																			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-																				"data-uid": "src/pages/ClientsPage.tsx:3345:39",
+																				"data-uid": "src/pages/ClientsPage.tsx:3385:39",
 																				"data-prohibitions": "[editContent]",
 																				className: "font-medium cursor-pointer w-full h-full text-sm leading-none",
 																				children: module.name
 																			}), !isSelected && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-																				"data-uid": "src/pages/ClientsPage.tsx:3349:41",
+																				"data-uid": "src/pages/ClientsPage.tsx:3389:41",
 																				"data-prohibitions": "[editContent]",
 																				className: "text-xs text-slate-500 whitespace-nowrap ml-2 font-mono",
 																				children: module.price > 0 ? formatCurrency(module.price) : "Incluso"
 																			})]
 																		})]
 																	}), isSelected && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-																		"data-uid": "src/pages/ClientsPage.tsx:3359:37",
+																		"data-uid": "src/pages/ClientsPage.tsx:3399:37",
 																		"data-prohibitions": "[editContent]",
 																		className: "flex items-center gap-2 px-3 pb-3 pt-1 bg-slate-50/50 border-t border-slate-100",
 																		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-																			"data-uid": "src/pages/ClientsPage.tsx:3360:39",
+																			"data-uid": "src/pages/ClientsPage.tsx:3400:39",
 																			"data-prohibitions": "[editContent]",
 																			className: "text-xs text-slate-500 font-medium",
 																			children: module.isBasic ? "Valor (Desconto se negativo):" : "Valor Mensal:"
 																		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-																			"data-uid": "src/pages/ClientsPage.tsx:3365:39",
+																			"data-uid": "src/pages/ClientsPage.tsx:3405:39",
 																			"data-prohibitions": "[]",
 																			className: "relative flex-1",
 																			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-																				"data-uid": "src/pages/ClientsPage.tsx:3366:41",
+																				"data-uid": "src/pages/ClientsPage.tsx:3406:41",
 																				"data-prohibitions": "[]",
 																				className: "absolute left-2.5 top-1.5 text-xs text-slate-400",
 																				children: "R$"
 																			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-																				"data-uid": "src/pages/ClientsPage.tsx:3369:41",
+																				"data-uid": "src/pages/ClientsPage.tsx:3409:41",
 																				"data-prohibitions": "[editContent]",
 																				type: "number",
 																				step: "0.01",
@@ -95920,35 +95953,35 @@ Obrigada.`);
 														}, module.id);
 													};
 													return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
-														"data-uid": "src/pages/ClientsPage.tsx:3398:25",
+														"data-uid": "src/pages/ClientsPage.tsx:3438:25",
 														"data-prohibitions": "[editContent]",
 														children: [
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-																"data-uid": "src/pages/ClientsPage.tsx:3399:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3439:27",
 																"data-prohibitions": "[]",
 																className: "text-base text-slate-700 block mb-2",
 																children: "Módulos do Plano Básico"
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-																"data-uid": "src/pages/ClientsPage.tsx:3402:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3442:27",
 																"data-prohibitions": "[editContent]",
 																className: "space-y-2 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:space-y-0",
 																children: MODULES.filter((m) => m.isBasic).map(renderModule)
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-																"data-uid": "src/pages/ClientsPage.tsx:3406:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3446:27",
 																"data-prohibitions": "[]",
 																className: "text-base text-slate-700 block mt-6 mb-2",
 																children: "Módulos Adicionais"
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-																"data-uid": "src/pages/ClientsPage.tsx:3409:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3449:27",
 																"data-prohibitions": "[editContent]",
 																className: "space-y-2 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:space-y-0",
 																children: MODULES.filter((m) => !m.isBasic).map(renderModule)
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {
-																"data-uid": "src/pages/ClientsPage.tsx:3412:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3452:27",
 																"data-prohibitions": "[editContent]"
 															})
 														]
@@ -95956,29 +95989,29 @@ Obrigada.`);
 												}
 											}),
 											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												"data-uid": "src/pages/ClientsPage.tsx:3418:19",
+												"data-uid": "src/pages/ClientsPage.tsx:3458:19",
 												"data-prohibitions": "[]",
 												className: "bg-emerald-50 p-4 rounded-lg border border-emerald-100 mt-6 space-y-3",
 												children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-													"data-uid": "src/pages/ClientsPage.tsx:3419:21",
+													"data-uid": "src/pages/ClientsPage.tsx:3459:21",
 													"data-prohibitions": "[editContent]",
 													control: form.control,
 													name: "valor_total",
 													render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
-														"data-uid": "src/pages/ClientsPage.tsx:3423:25",
+														"data-uid": "src/pages/ClientsPage.tsx:3463:25",
 														"data-prohibitions": "[]",
 														children: [
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-																"data-uid": "src/pages/ClientsPage.tsx:3424:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3464:27",
 																"data-prohibitions": "[]",
 																className: "text-emerald-900 font-semibold text-sm",
 																children: "Valor Total do Contrato (R$)"
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, {
-																"data-uid": "src/pages/ClientsPage.tsx:3427:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3467:27",
 																"data-prohibitions": "[]",
 																children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-																	"data-uid": "src/pages/ClientsPage.tsx:3428:29",
+																	"data-uid": "src/pages/ClientsPage.tsx:3468:29",
 																	"data-prohibitions": "[editContent]",
 																	type: "number",
 																	step: "0.01",
@@ -95988,13 +96021,13 @@ Obrigada.`);
 																})
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-																"data-uid": "src/pages/ClientsPage.tsx:3436:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3476:27",
 																"data-prohibitions": "[]",
 																className: "text-xs text-emerald-600/80 mt-1",
 																children: "Calculado automaticamente. Você pode alterar manualmente se necessário."
 															}),
 															/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {
-																"data-uid": "src/pages/ClientsPage.tsx:3439:27",
+																"data-uid": "src/pages/ClientsPage.tsx:3479:27",
 																"data-prohibitions": "[editContent]"
 															})
 														]
@@ -96004,18 +96037,18 @@ Obrigada.`);
 										]
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:3446:17",
+										"data-uid": "src/pages/ClientsPage.tsx:3486:17",
 										"data-prohibitions": "[editContent]",
 										className: "pt-6 flex justify-end gap-3",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-											"data-uid": "src/pages/ClientsPage.tsx:3447:19",
+											"data-uid": "src/pages/ClientsPage.tsx:3487:19",
 											"data-prohibitions": "[]",
 											variant: "outline",
 											type: "button",
 											onClick: () => setIsSheetOpen(false),
 											children: "Cancelar"
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-											"data-uid": "src/pages/ClientsPage.tsx:3450:19",
+											"data-uid": "src/pages/ClientsPage.tsx:3490:19",
 											"data-prohibitions": "[editContent]",
 											type: "submit",
 											className: "bg-indigo-600 hover:bg-indigo-700",
@@ -96030,46 +96063,46 @@ Obrigada.`);
 				})
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sheet, {
-				"data-uid": "src/pages/ClientsPage.tsx:3468:7",
+				"data-uid": "src/pages/ClientsPage.tsx:3508:7",
 				"data-prohibitions": "[editContent]",
 				open: isViewSheetOpen,
 				onOpenChange: setIsViewSheetOpen,
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SheetContent, {
-					"data-uid": "src/pages/ClientsPage.tsx:3469:9",
+					"data-uid": "src/pages/ClientsPage.tsx:3509:9",
 					"data-prohibitions": "[editContent]",
 					className: "sm:max-w-[700px] w-[95vw] flex flex-col bg-slate-50/50",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SheetHeader, {
-						"data-uid": "src/pages/ClientsPage.tsx:3470:11",
+						"data-uid": "src/pages/ClientsPage.tsx:3510:11",
 						"data-prohibitions": "[editContent]",
 						className: "bg-white p-6 -mx-6 -mt-6 border-b border-slate-200 shadow-sm z-10 relative",
 						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:3471:13",
+							"data-uid": "src/pages/ClientsPage.tsx:3511:13",
 							"data-prohibitions": "[editContent]",
 							className: "flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 pr-8",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/pages/ClientsPage.tsx:3472:15",
+								"data-uid": "src/pages/ClientsPage.tsx:3512:15",
 								"data-prohibitions": "[editContent]",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SheetTitle, {
-									"data-uid": "src/pages/ClientsPage.tsx:3473:17",
+									"data-uid": "src/pages/ClientsPage.tsx:3513:17",
 									"data-prohibitions": "[editContent]",
 									className: "text-2xl text-slate-800",
 									children: viewingClient?.name
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ClientsPage.tsx:3474:17",
+									"data-uid": "src/pages/ClientsPage.tsx:3514:17",
 									"data-prohibitions": "[editContent]",
 									className: "flex items-center gap-3 mt-2 text-sm text-slate-500",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										"data-uid": "src/pages/ClientsPage.tsx:3475:19",
+										"data-uid": "src/pages/ClientsPage.tsx:3515:19",
 										"data-prohibitions": "[editContent]",
 										className: "font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-200",
 										children: viewingClient?.cnpj ? formatCNPJ(viewingClient.cnpj) : ""
 									}), viewingClient?.originalData?.email && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-										"data-uid": "src/pages/ClientsPage.tsx:3479:21",
+										"data-uid": "src/pages/ClientsPage.tsx:3519:21",
 										"data-prohibitions": "[editContent]",
 										className: "flex items-center gap-1",
 										children: [
 											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, {
-												"data-uid": "src/pages/ClientsPage.tsx:3480:23",
+												"data-uid": "src/pages/ClientsPage.tsx:3520:23",
 												"data-prohibitions": "[editContent]",
 												className: "h-3 w-3"
 											}),
@@ -96079,46 +96112,59 @@ Obrigada.`);
 									})]
 								})]
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/pages/ClientsPage.tsx:3485:15",
+								"data-uid": "src/pages/ClientsPage.tsx:3525:15",
 								"data-prohibitions": "[]",
 								className: "flex flex-wrap gap-2 shrink-0",
 								children: [
 									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-										"data-uid": "src/pages/ClientsPage.tsx:3486:17",
+										"data-uid": "src/pages/ClientsPage.tsx:3526:17",
 										"data-prohibitions": "[]",
 										variant: "outline",
 										size: "sm",
 										onClick: () => viewingClient && handleOpenImplementationEmail(viewingClient),
 										className: "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, {
-											"data-uid": "src/pages/ClientsPage.tsx:3492:19",
+											"data-uid": "src/pages/ClientsPage.tsx:3532:19",
 											"data-prohibitions": "[editContent]",
 											className: "h-4 w-4 mr-2"
 										}), " Enviar p/ Implantação"]
 									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+										"data-uid": "src/pages/ClientsPage.tsx:3534:17",
+										"data-prohibitions": "[]",
+										variant: "outline",
+										size: "sm",
+										onClick: () => viewingClient && handleOpenFinanceiroEmail(viewingClient),
+										className: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, {
+											"data-uid": "src/pages/ClientsPage.tsx:3540:19",
+											"data-prohibitions": "[editContent]",
+											className: "h-4 w-4 mr-2"
+										}), " Enviar p/ Financeiro"]
+									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-										"data-uid": "src/pages/ClientsPage.tsx:3494:17",
+										"data-uid": "src/pages/ClientsPage.tsx:3542:17",
 										"data-prohibitions": "[]",
 										variant: "outline",
 										size: "sm",
 										asChild: true,
 										className: "bg-white",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
-											"data-uid": "src/pages/ClientsPage.tsx:3495:19",
+											"data-uid": "src/pages/ClientsPage.tsx:3543:19",
 											"data-prohibitions": "[]",
 											to: `/contratos?prospect=${encodeURIComponent(viewingClient?.name || "")}&cnpj=${viewingClient?.cnpj?.replace(/\D/g, "")}`,
 											children: "Gerar Novo Contrato"
 										})
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-										"data-uid": "src/pages/ClientsPage.tsx:3501:17",
+										"data-uid": "src/pages/ClientsPage.tsx:3549:17",
 										"data-prohibitions": "[]",
 										variant: "default",
 										size: "sm",
 										asChild: true,
 										className: "bg-indigo-600 hover:bg-indigo-700",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
-											"data-uid": "src/pages/ClientsPage.tsx:3507:19",
+											"data-uid": "src/pages/ClientsPage.tsx:3555:19",
 											"data-prohibitions": "[]",
 											to: `/contratos?tab=cotacao&quoteTargetType=cliente&clientId=${viewingClient?.id}&prospect=${encodeURIComponent(viewingClient?.name || "")}&contato=${encodeURIComponent(viewingClient?.rep_nome || "")}`,
 											children: "Gerar Upsell"
@@ -96128,36 +96174,36 @@ Obrigada.`);
 							})]
 						})
 					}), viewingClient && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Tabs, {
-						"data-uid": "src/pages/ClientsPage.tsx:3518:13",
+						"data-uid": "src/pages/ClientsPage.tsx:3566:13",
 						"data-prohibitions": "[editContent]",
 						defaultValue: "resumo",
 						className: "mt-6 w-full h-full flex flex-col",
 						children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(TabsList, {
-								"data-uid": "src/pages/ClientsPage.tsx:3519:15",
+								"data-uid": "src/pages/ClientsPage.tsx:3567:15",
 								"data-prohibitions": "[]",
 								className: "grid w-full max-w-2xl grid-cols-4 bg-white border border-slate-200",
 								children: [
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsTrigger, {
-										"data-uid": "src/pages/ClientsPage.tsx:3520:17",
+										"data-uid": "src/pages/ClientsPage.tsx:3568:17",
 										"data-prohibitions": "[]",
 										value: "resumo",
 										children: "Resumo & Gestão"
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsTrigger, {
-										"data-uid": "src/pages/ClientsPage.tsx:3521:17",
+										"data-uid": "src/pages/ClientsPage.tsx:3569:17",
 										"data-prohibitions": "[]",
 										value: "diagnostico",
 										children: "Diagnóstico"
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsTrigger, {
-										"data-uid": "src/pages/ClientsPage.tsx:3522:17",
+										"data-uid": "src/pages/ClientsPage.tsx:3570:17",
 										"data-prohibitions": "[]",
 										value: "contrato",
 										children: "Contrato Inicial"
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsTrigger, {
-										"data-uid": "src/pages/ClientsPage.tsx:3523:17",
+										"data-uid": "src/pages/ClientsPage.tsx:3571:17",
 										"data-prohibitions": "[]",
 										value: "solicitacoes",
 										children: "Treinamentos / Visitas"
@@ -96165,32 +96211,32 @@ Obrigada.`);
 								]
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsContent, {
-								"data-uid": "src/pages/ClientsPage.tsx:3526:15",
+								"data-uid": "src/pages/ClientsPage.tsx:3574:15",
 								"data-prohibitions": "[]",
 								value: "resumo",
 								className: "mt-4 flex-1",
 								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollArea, {
-									"data-uid": "src/pages/ClientsPage.tsx:3527:17",
+									"data-uid": "src/pages/ClientsPage.tsx:3575:17",
 									"data-prohibitions": "[]",
 									className: "h-[calc(100vh-14rem)] pr-4",
 									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ClientDetailsPanel, {
-										"data-uid": "src/pages/ClientsPage.tsx:3528:19",
+										"data-uid": "src/pages/ClientsPage.tsx:3576:19",
 										"data-prohibitions": "[editContent]",
 										client: viewingClient
 									})
 								})
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsContent, {
-								"data-uid": "src/pages/ClientsPage.tsx:3532:15",
+								"data-uid": "src/pages/ClientsPage.tsx:3580:15",
 								"data-prohibitions": "[]",
 								value: "diagnostico",
 								className: "mt-4 flex-1 bg-white border rounded-md shadow-sm p-4",
 								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollArea, {
-									"data-uid": "src/pages/ClientsPage.tsx:3536:17",
+									"data-uid": "src/pages/ClientsPage.tsx:3584:17",
 									"data-prohibitions": "[]",
 									className: "h-[calc(100vh-14rem)] pr-4",
 									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DiagnosticoOperacional, {
-										"data-uid": "src/pages/ClientsPage.tsx:3537:19",
+										"data-uid": "src/pages/ClientsPage.tsx:3585:19",
 										"data-prohibitions": "[editContent]",
 										clientId: viewingClient.id,
 										initialData: viewingClient.originalData?.diagnostico,
@@ -96210,20 +96256,20 @@ Obrigada.`);
 								})
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsContent, {
-								"data-uid": "src/pages/ClientsPage.tsx:3560:15",
+								"data-uid": "src/pages/ClientsPage.tsx:3608:15",
 								"data-prohibitions": "[]",
 								value: "contrato",
 								className: "mt-4 flex-1 bg-white border rounded-md shadow-sm",
 								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollArea, {
-									"data-uid": "src/pages/ClientsPage.tsx:3564:17",
+									"data-uid": "src/pages/ClientsPage.tsx:3612:17",
 									"data-prohibitions": "[]",
 									className: "h-[calc(100vh-14rem)]",
 									children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:3565:19",
+										"data-uid": "src/pages/ClientsPage.tsx:3613:19",
 										"data-prohibitions": "[]",
 										className: "min-w-[600px] bg-white",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ContractDocument, {
-											"data-uid": "src/pages/ClientsPage.tsx:3566:21",
+											"data-uid": "src/pages/ClientsPage.tsx:3614:21",
 											"data-prohibitions": "[editContent]",
 											name: viewingClient.name,
 											cnpj: viewingClient.cnpj,
@@ -96248,54 +96294,54 @@ Obrigada.`);
 								})
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsContent, {
-								"data-uid": "src/pages/ClientsPage.tsx:3622:15",
+								"data-uid": "src/pages/ClientsPage.tsx:3670:15",
 								"data-prohibitions": "[editContent]",
 								value: "solicitacoes",
 								className: "mt-4 flex-1 bg-white border rounded-md shadow-sm p-4",
 								children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(ScrollArea, {
-									"data-uid": "src/pages/ClientsPage.tsx:3626:17",
+									"data-uid": "src/pages/ClientsPage.tsx:3674:17",
 									"data-prohibitions": "[editContent]",
 									className: "h-[calc(100vh-14rem)] pr-4",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:3627:19",
+										"data-uid": "src/pages/ClientsPage.tsx:3675:19",
 										"data-prohibitions": "[editContent]",
 										className: "flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:3628:21",
+											"data-uid": "src/pages/ClientsPage.tsx:3676:21",
 											"data-prohibitions": "[editContent]",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-												"data-uid": "src/pages/ClientsPage.tsx:3629:23",
+												"data-uid": "src/pages/ClientsPage.tsx:3677:23",
 												"data-prohibitions": "[]",
 												className: "text-lg font-semibold text-slate-800",
 												children: "Solicitações de Serviço"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-												"data-uid": "src/pages/ClientsPage.tsx:3632:23",
+												"data-uid": "src/pages/ClientsPage.tsx:3680:23",
 												"data-prohibitions": "[editContent]",
 												className: "text-sm text-slate-500",
 												children: ["Registre treinamentos e visitas técnicas para ", viewingClient.name]
 											})]
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:3636:21",
+											"data-uid": "src/pages/ClientsPage.tsx:3684:21",
 											"data-prohibitions": "[]",
 											className: "flex flex-col gap-2 w-full sm:w-auto",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ClientsPage.tsx:3637:23",
+												"data-uid": "src/pages/ClientsPage.tsx:3685:23",
 												"data-prohibitions": "[]",
 												className: "flex gap-2 w-full sm:justify-end",
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-													"data-uid": "src/pages/ClientsPage.tsx:3638:25",
+													"data-uid": "src/pages/ClientsPage.tsx:3686:25",
 													"data-prohibitions": "[]",
 													onClick: () => setIsSetupTrainingProposalOpen(true),
 													size: "sm",
 													variant: "outline",
 													className: "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 flex-1 sm:flex-none",
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileText, {
-														"data-uid": "src/pages/ClientsPage.tsx:3644:27",
+														"data-uid": "src/pages/ClientsPage.tsx:3692:27",
 														"data-prohibitions": "[editContent]",
 														className: "h-4 w-4 mr-2"
 													}), " Gerar Proposta"]
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-													"data-uid": "src/pages/ClientsPage.tsx:3646:25",
+													"data-uid": "src/pages/ClientsPage.tsx:3694:25",
 													"data-prohibitions": "[]",
 													onClick: () => {
 														resetSolicitacaoForm();
@@ -96304,17 +96350,17 @@ Obrigada.`);
 													size: "sm",
 													className: "bg-indigo-600 hover:bg-indigo-700 flex-1 sm:flex-none",
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, {
-														"data-uid": "src/pages/ClientsPage.tsx:3654:27",
+														"data-uid": "src/pages/ClientsPage.tsx:3702:27",
 														"data-prohibitions": "[editContent]",
 														className: "h-4 w-4 mr-2"
 													}), " Nova Solicitação"]
 												})]
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ClientsPage.tsx:3657:23",
+												"data-uid": "src/pages/ClientsPage.tsx:3705:23",
 												"data-prohibitions": "[]",
 												className: "flex gap-2 w-full sm:justify-end",
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-													"data-uid": "src/pages/ClientsPage.tsx:3658:25",
+													"data-uid": "src/pages/ClientsPage.tsx:3706:25",
 													"data-prohibitions": "[]",
 													size: "sm",
 													variant: "outline",
@@ -96326,12 +96372,12 @@ Obrigada.`);
 														setIsAddSolicitacaoOpen(true);
 													},
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, {
-														"data-uid": "src/pages/ClientsPage.tsx:3671:27",
+														"data-uid": "src/pages/ClientsPage.tsx:3719:27",
 														"data-prohibitions": "[editContent]",
 														className: "h-3 w-3 mr-1.5"
 													}), " Solicitar Implantação"]
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-													"data-uid": "src/pages/ClientsPage.tsx:3673:25",
+													"data-uid": "src/pages/ClientsPage.tsx:3721:25",
 													"data-prohibitions": "[]",
 													size: "sm",
 													variant: "outline",
@@ -96343,7 +96389,7 @@ Obrigada.`);
 														setIsAddSolicitacaoOpen(true);
 													},
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, {
-														"data-uid": "src/pages/ClientsPage.tsx:3684:27",
+														"data-uid": "src/pages/ClientsPage.tsx:3732:27",
 														"data-prohibitions": "[editContent]",
 														className: "h-3 w-3 mr-1.5"
 													}), " Solicitar Cobrança"]
@@ -96351,48 +96397,48 @@ Obrigada.`);
 											})]
 										})]
 									}), isLoadingSolicitacoes ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:3691:21",
+										"data-uid": "src/pages/ClientsPage.tsx:3739:21",
 										"data-prohibitions": "[]",
 										className: "flex justify-center items-center py-12 text-slate-500",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
-											"data-uid": "src/pages/ClientsPage.tsx:3692:23",
+											"data-uid": "src/pages/ClientsPage.tsx:3740:23",
 											"data-prohibitions": "[editContent]",
 											className: "h-6 w-6 animate-spin mr-2"
 										}), " Carregando..."]
 									}) : solicitacoes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:3695:21",
+										"data-uid": "src/pages/ClientsPage.tsx:3743:21",
 										"data-prohibitions": "[]",
 										className: "text-center py-12 bg-slate-50 border border-dashed border-slate-200 rounded-lg",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-											"data-uid": "src/pages/ClientsPage.tsx:3696:23",
+											"data-uid": "src/pages/ClientsPage.tsx:3744:23",
 											"data-prohibitions": "[]",
 											className: "text-slate-500 text-sm",
 											children: "Nenhuma solicitação registrada."
 										})
 									}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										"data-uid": "src/pages/ClientsPage.tsx:3699:21",
+										"data-uid": "src/pages/ClientsPage.tsx:3747:21",
 										"data-prohibitions": "[editContent]",
 										className: "space-y-4",
 										children: solicitacoes.map((sol) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:3701:25",
+											"data-uid": "src/pages/ClientsPage.tsx:3749:25",
 											"data-prohibitions": "[editContent]",
 											className: "border border-slate-200 rounded-lg overflow-hidden shadow-sm",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ClientsPage.tsx:3705:27",
+												"data-uid": "src/pages/ClientsPage.tsx:3753:27",
 												"data-prohibitions": "[editContent]",
 												className: "flex justify-between items-center bg-slate-50 p-3 border-b border-slate-200",
 												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													"data-uid": "src/pages/ClientsPage.tsx:3706:29",
+													"data-uid": "src/pages/ClientsPage.tsx:3754:29",
 													"data-prohibitions": "[editContent]",
 													className: "flex items-center gap-2",
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, {
-														"data-uid": "src/pages/ClientsPage.tsx:3707:31",
+														"data-uid": "src/pages/ClientsPage.tsx:3755:31",
 														"data-prohibitions": "[editContent]",
 														variant: "outline",
 														className: sol.tipo === "Treinamento" ? "bg-blue-50 text-blue-700 border-blue-200" : sol.tipo === "Proposta de Treinamento" ? "bg-purple-50 text-purple-700 border-purple-200" : "bg-emerald-50 text-emerald-700 border-emerald-200",
 														children: sol.tipo
 													}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-														"data-uid": "src/pages/ClientsPage.tsx:3719:31",
+														"data-uid": "src/pages/ClientsPage.tsx:3767:31",
 														"data-prohibitions": "[editContent]",
 														className: "text-xs text-slate-500 font-medium",
 														children: [
@@ -96402,97 +96448,97 @@ Obrigada.`);
 														]
 													})]
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													"data-uid": "src/pages/ClientsPage.tsx:3724:29",
+													"data-uid": "src/pages/ClientsPage.tsx:3772:29",
 													"data-prohibitions": "[]",
 													className: "flex items-center",
 													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-														"data-uid": "src/pages/ClientsPage.tsx:3725:31",
+														"data-uid": "src/pages/ClientsPage.tsx:3773:31",
 														"data-prohibitions": "[]",
 														variant: "ghost",
 														size: "icon",
 														className: "h-8 w-8 text-slate-400 hover:text-blue-600",
 														onClick: () => handleOpenEditSolicitacao(sol),
 														children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SquarePen, {
-															"data-uid": "src/pages/ClientsPage.tsx:3731:33",
+															"data-uid": "src/pages/ClientsPage.tsx:3779:33",
 															"data-prohibitions": "[editContent]",
 															className: "h-4 w-4"
 														})
 													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-														"data-uid": "src/pages/ClientsPage.tsx:3733:31",
+														"data-uid": "src/pages/ClientsPage.tsx:3781:31",
 														"data-prohibitions": "[]",
 														variant: "ghost",
 														size: "icon",
 														className: "h-8 w-8 text-slate-400 hover:text-red-600",
 														onClick: () => handleDeleteSolicitacao(sol.id),
 														children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, {
-															"data-uid": "src/pages/ClientsPage.tsx:3739:33",
+															"data-uid": "src/pages/ClientsPage.tsx:3787:33",
 															"data-prohibitions": "[editContent]",
 															className: "h-4 w-4"
 														})
 													})]
 												})]
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ClientsPage.tsx:3744:27",
+												"data-uid": "src/pages/ClientsPage.tsx:3792:27",
 												"data-prohibitions": "[editContent]",
 												className: "p-4",
 												children: [
 													/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-														"data-uid": "src/pages/ClientsPage.tsx:3745:29",
+														"data-uid": "src/pages/ClientsPage.tsx:3793:29",
 														"data-prohibitions": "[]",
 														className: "text-sm text-slate-800 font-medium mb-1",
 														children: "Descrição"
 													}),
 													/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-														"data-uid": "src/pages/ClientsPage.tsx:3746:29",
+														"data-uid": "src/pages/ClientsPage.tsx:3794:29",
 														"data-prohibitions": "[editContent]",
 														className: "text-sm text-slate-600 mb-4 whitespace-pre-wrap",
 														children: sol.descricao
 													}),
 													(sol.valor > 0 || sol.forma_pagamento || sol.data_vencimento) && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-														"data-uid": "src/pages/ClientsPage.tsx:3751:31",
+														"data-uid": "src/pages/ClientsPage.tsx:3799:31",
 														"data-prohibitions": "[editContent]",
 														className: "bg-slate-50 rounded p-3 mb-4 flex flex-wrap gap-4 border border-slate-100",
 														children: [
 															sol.valor > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-																"data-uid": "src/pages/ClientsPage.tsx:3753:35",
+																"data-uid": "src/pages/ClientsPage.tsx:3801:35",
 																"data-prohibitions": "[editContent]",
 																children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-																	"data-uid": "src/pages/ClientsPage.tsx:3754:37",
+																	"data-uid": "src/pages/ClientsPage.tsx:3802:37",
 																	"data-prohibitions": "[]",
 																	className: "text-xs text-slate-500 block",
 																	children: "Valor Acordado"
 																}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-																	"data-uid": "src/pages/ClientsPage.tsx:3757:37",
+																	"data-uid": "src/pages/ClientsPage.tsx:3805:37",
 																	"data-prohibitions": "[editContent]",
 																	className: "text-sm font-semibold text-slate-800",
 																	children: formatCurrency(sol.valor)
 																})]
 															}),
 															sol.forma_pagamento && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-																"data-uid": "src/pages/ClientsPage.tsx:3763:35",
+																"data-uid": "src/pages/ClientsPage.tsx:3811:35",
 																"data-prohibitions": "[editContent]",
 																children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-																	"data-uid": "src/pages/ClientsPage.tsx:3764:37",
+																	"data-uid": "src/pages/ClientsPage.tsx:3812:37",
 																	"data-prohibitions": "[]",
 																	className: "text-xs text-slate-500 block",
 																	children: "Forma de Pagamento"
 																}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-																	"data-uid": "src/pages/ClientsPage.tsx:3767:37",
+																	"data-uid": "src/pages/ClientsPage.tsx:3815:37",
 																	"data-prohibitions": "[editContent]",
 																	className: "text-sm font-medium text-slate-700",
 																	children: sol.forma_pagamento
 																})]
 															}),
 															sol.data_vencimento && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-																"data-uid": "src/pages/ClientsPage.tsx:3773:35",
+																"data-uid": "src/pages/ClientsPage.tsx:3821:35",
 																"data-prohibitions": "[editContent]",
 																children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-																	"data-uid": "src/pages/ClientsPage.tsx:3774:37",
+																	"data-uid": "src/pages/ClientsPage.tsx:3822:37",
 																	"data-prohibitions": "[]",
 																	className: "text-xs text-slate-500 block",
 																	children: "Vencimento"
 																}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-																	"data-uid": "src/pages/ClientsPage.tsx:3775:37",
+																	"data-uid": "src/pages/ClientsPage.tsx:3823:37",
 																	"data-prohibitions": "[editContent]",
 																	className: "text-sm font-medium text-slate-700",
 																	children: formatDate$1(sol.data_vencimento)
@@ -96501,46 +96547,46 @@ Obrigada.`);
 														]
 													}),
 													sol.observacoes && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-														"data-uid": "src/pages/ClientsPage.tsx:3784:31",
+														"data-uid": "src/pages/ClientsPage.tsx:3832:31",
 														"data-prohibitions": "[editContent]",
 														className: "mb-4",
 														children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-															"data-uid": "src/pages/ClientsPage.tsx:3785:33",
+															"data-uid": "src/pages/ClientsPage.tsx:3833:33",
 															"data-prohibitions": "[]",
 															className: "text-xs text-slate-500 font-medium mb-1",
 															children: "Observações"
 														}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-															"data-uid": "src/pages/ClientsPage.tsx:3788:33",
+															"data-uid": "src/pages/ClientsPage.tsx:3836:33",
 															"data-prohibitions": "[editContent]",
 															className: "text-sm text-slate-600 italic",
 															children: sol.observacoes
 														})]
 													}),
 													/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-														"data-uid": "src/pages/ClientsPage.tsx:3792:29",
+														"data-uid": "src/pages/ClientsPage.tsx:3840:29",
 														"data-prohibitions": "[]",
 														className: "flex gap-2 pt-2 border-t border-slate-100",
 														children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-															"data-uid": "src/pages/ClientsPage.tsx:3793:31",
+															"data-uid": "src/pages/ClientsPage.tsx:3841:31",
 															"data-prohibitions": "[]",
 															variant: "outline",
 															size: "sm",
 															className: "w-full text-xs",
 															onClick: () => handleEmailImplantacao(sol),
 															children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, {
-																"data-uid": "src/pages/ClientsPage.tsx:3799:33",
+																"data-uid": "src/pages/ClientsPage.tsx:3847:33",
 																"data-prohibitions": "[editContent]",
 																className: "h-3.5 w-3.5 mr-1.5"
 															}), " Enviar p/ Implantação"]
 														}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-															"data-uid": "src/pages/ClientsPage.tsx:3801:31",
+															"data-uid": "src/pages/ClientsPage.tsx:3849:31",
 															"data-prohibitions": "[]",
 															variant: "outline",
 															size: "sm",
 															className: "w-full text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50",
 															onClick: () => handleEmailFinanceiro(sol),
 															children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, {
-																"data-uid": "src/pages/ClientsPage.tsx:3807:33",
+																"data-uid": "src/pages/ClientsPage.tsx:3855:33",
 																"data-prohibitions": "[editContent]",
 																className: "h-3.5 w-3.5 mr-1.5"
 															}), " Enviar p/ Financeiro"]
@@ -96556,35 +96602,86 @@ Obrigada.`);
 					})]
 				})
 			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(AlertDialog, {
+				"data-uid": "src/pages/ClientsPage.tsx:3870:7",
+				"data-prohibitions": "[editContent]",
+				open: !!financeiroEmailClient,
+				onOpenChange: (open) => !open && setFinanceiroEmailClient(null),
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(AlertDialogContent, {
+					"data-uid": "src/pages/ClientsPage.tsx:3874:9",
+					"data-prohibitions": "[editContent]",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(AlertDialogHeader, {
+						"data-uid": "src/pages/ClientsPage.tsx:3875:11",
+						"data-prohibitions": "[editContent]",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(AlertDialogTitle, {
+							"data-uid": "src/pages/ClientsPage.tsx:3876:13",
+							"data-prohibitions": "[]",
+							children: "Enviar para o Financeiro?"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(AlertDialogDescription, {
+							"data-uid": "src/pages/ClientsPage.tsx:3877:13",
+							"data-prohibitions": "[editContent]",
+							children: [
+								"Isso irá atualizar o status do cliente ",
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
+									"data-uid": "src/pages/ClientsPage.tsx:3878:54",
+									"data-prohibitions": "[editContent]",
+									children: financeiroEmailClient?.name
+								}),
+								" ",
+								"para \"Faturamento\" e enviará um e-mail de notificação automático para a equipe financeira."
+							]
+						})]
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(AlertDialogFooter, {
+						"data-uid": "src/pages/ClientsPage.tsx:3883:11",
+						"data-prohibitions": "[editContent]",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(AlertDialogCancel, {
+							"data-uid": "src/pages/ClientsPage.tsx:3884:13",
+							"data-prohibitions": "[]",
+							children: "Cancelar"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(AlertDialogAction, {
+							"data-uid": "src/pages/ClientsPage.tsx:3885:13",
+							"data-prohibitions": "[editContent]",
+							onClick: handleSendToFinanceiro,
+							disabled: isSendingFinanceEmail,
+							className: "bg-emerald-600 hover:bg-emerald-700 text-white",
+							children: [isSendingFinanceEmail ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+								"data-uid": "src/pages/ClientsPage.tsx:3890:40",
+								"data-prohibitions": "[editContent]",
+								className: "h-4 w-4 animate-spin mr-2"
+							}) : null, "Sim, Enviar Notificação"]
+						})]
+					})]
+				})
+			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Dialog, {
-				"data-uid": "src/pages/ClientsPage.tsx:3822:7",
+				"data-uid": "src/pages/ClientsPage.tsx:3897:7",
 				"data-prohibitions": "[]",
 				open: !!implementationEmailClient,
 				onOpenChange: (open) => !open && setImplementationEmailClient(null),
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogContent, {
-					"data-uid": "src/pages/ClientsPage.tsx:3826:9",
+					"data-uid": "src/pages/ClientsPage.tsx:3901:9",
 					"data-prohibitions": "[]",
 					className: "sm:max-w-2xl h-[85vh] flex flex-col",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogHeader, {
-							"data-uid": "src/pages/ClientsPage.tsx:3827:11",
+							"data-uid": "src/pages/ClientsPage.tsx:3902:11",
 							"data-prohibitions": "[]",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogTitle, {
-								"data-uid": "src/pages/ClientsPage.tsx:3828:13",
+								"data-uid": "src/pages/ClientsPage.tsx:3903:13",
 								"data-prohibitions": "[]",
 								children: "Enviar para Implantação"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogDescription, {
-								"data-uid": "src/pages/ClientsPage.tsx:3829:13",
+								"data-uid": "src/pages/ClientsPage.tsx:3904:13",
 								"data-prohibitions": "[]",
 								children: "Revise os dados abaixo e envie o e-mail de introdução para a equipe de implantação."
 							})]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:3833:11",
+							"data-uid": "src/pages/ClientsPage.tsx:3908:11",
 							"data-prohibitions": "[]",
 							className: "flex-1 py-4 flex flex-col min-h-0",
 							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Textarea, {
-								"data-uid": "src/pages/ClientsPage.tsx:3834:13",
+								"data-uid": "src/pages/ClientsPage.tsx:3909:13",
 								"data-prohibitions": "[editContent]",
 								className: "flex-1 resize-none h-full font-mono text-sm p-4 bg-slate-50 border-slate-200",
 								value: emailBody,
@@ -96592,18 +96689,18 @@ Obrigada.`);
 							})
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogFooter, {
-							"data-uid": "src/pages/ClientsPage.tsx:3840:11",
+							"data-uid": "src/pages/ClientsPage.tsx:3915:11",
 							"data-prohibitions": "[]",
 							children: [
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-									"data-uid": "src/pages/ClientsPage.tsx:3841:13",
+									"data-uid": "src/pages/ClientsPage.tsx:3916:13",
 									"data-prohibitions": "[]",
 									variant: "outline",
 									onClick: () => setImplementationEmailClient(null),
 									children: "Cancelar"
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-									"data-uid": "src/pages/ClientsPage.tsx:3844:13",
+									"data-uid": "src/pages/ClientsPage.tsx:3919:13",
 									"data-prohibitions": "[]",
 									variant: "secondary",
 									onClick: () => {
@@ -96613,7 +96710,7 @@ Obrigada.`);
 									children: "Copiar Texto"
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-									"data-uid": "src/pages/ClientsPage.tsx:3853:13",
+									"data-uid": "src/pages/ClientsPage.tsx:3928:13",
 									"data-prohibitions": "[]",
 									onClick: async () => {
 										const subject = encodeURIComponent(`Novo Cliente para Implantação - ${implementationEmailClient?.name}`);
@@ -96631,7 +96728,7 @@ Obrigada.`);
 									},
 									className: "bg-indigo-600 hover:bg-indigo-700",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, {
-										"data-uid": "src/pages/ClientsPage.tsx:3878:15",
+										"data-uid": "src/pages/ClientsPage.tsx:3953:15",
 										"data-prohibitions": "[editContent]",
 										className: "h-4 w-4 mr-2"
 									}), " Enviar via E-mail"]
@@ -96642,28 +96739,28 @@ Obrigada.`);
 				})
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(AlertDialog, {
-				"data-uid": "src/pages/ClientsPage.tsx:3884:7",
+				"data-uid": "src/pages/ClientsPage.tsx:3959:7",
 				"data-prohibitions": "[editContent]",
 				open: !!clientToDelete,
 				onOpenChange: (open) => !open && setClientToDelete(null),
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(AlertDialogContent, {
-					"data-uid": "src/pages/ClientsPage.tsx:3888:9",
+					"data-uid": "src/pages/ClientsPage.tsx:3963:9",
 					"data-prohibitions": "[editContent]",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(AlertDialogHeader, {
-						"data-uid": "src/pages/ClientsPage.tsx:3889:11",
+						"data-uid": "src/pages/ClientsPage.tsx:3964:11",
 						"data-prohibitions": "[editContent]",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(AlertDialogTitle, {
-							"data-uid": "src/pages/ClientsPage.tsx:3890:13",
+							"data-uid": "src/pages/ClientsPage.tsx:3965:13",
 							"data-prohibitions": "[]",
 							children: "Excluir Cliente"
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(AlertDialogDescription, {
-							"data-uid": "src/pages/ClientsPage.tsx:3891:13",
+							"data-uid": "src/pages/ClientsPage.tsx:3966:13",
 							"data-prohibitions": "[editContent]",
 							children: [
 								"Tem certeza que deseja excluir o cliente",
 								" ",
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
-									"data-uid": "src/pages/ClientsPage.tsx:3893:15",
+									"data-uid": "src/pages/ClientsPage.tsx:3968:15",
 									"data-prohibitions": "[editContent]",
 									className: "text-slate-900",
 									children: clientToDelete?.name
@@ -96672,14 +96769,14 @@ Obrigada.`);
 							]
 						})]
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(AlertDialogFooter, {
-						"data-uid": "src/pages/ClientsPage.tsx:3898:11",
+						"data-uid": "src/pages/ClientsPage.tsx:3973:11",
 						"data-prohibitions": "[]",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(AlertDialogCancel, {
-							"data-uid": "src/pages/ClientsPage.tsx:3899:13",
+							"data-uid": "src/pages/ClientsPage.tsx:3974:13",
 							"data-prohibitions": "[]",
 							children: "Cancelar"
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AlertDialogAction, {
-							"data-uid": "src/pages/ClientsPage.tsx:3900:13",
+							"data-uid": "src/pages/ClientsPage.tsx:3975:13",
 							"data-prohibitions": "[]",
 							onClick: handleDelete,
 							className: "bg-red-600 hover:bg-red-700 text-white",
@@ -96689,44 +96786,44 @@ Obrigada.`);
 				})
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
-				"data-uid": "src/pages/ClientsPage.tsx:3910:7",
+				"data-uid": "src/pages/ClientsPage.tsx:3985:7",
 				"data-prohibitions": "[editContent]",
 				className: "border-slate-200/60 shadow-sm",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardHeader, {
-					"data-uid": "src/pages/ClientsPage.tsx:3911:9",
+					"data-uid": "src/pages/ClientsPage.tsx:3986:9",
 					"data-prohibitions": "[editContent]",
 					className: "pb-3 border-b border-slate-100 mb-2",
 					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/pages/ClientsPage.tsx:3912:11",
+						"data-uid": "src/pages/ClientsPage.tsx:3987:11",
 						"data-prohibitions": "[editContent]",
 						className: "flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:3913:13",
+							"data-uid": "src/pages/ClientsPage.tsx:3988:13",
 							"data-prohibitions": "[editContent]",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, {
-								"data-uid": "src/pages/ClientsPage.tsx:3914:15",
+								"data-uid": "src/pages/ClientsPage.tsx:3989:15",
 								"data-prohibitions": "[]",
 								className: "text-lg",
 								children: "Carteira Ativa"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardDescription, {
-								"data-uid": "src/pages/ClientsPage.tsx:3915:15",
+								"data-uid": "src/pages/ClientsPage.tsx:3990:15",
 								"data-prohibitions": "[editContent]",
 								children: [mergedClients.length, " empresas com contratos vigentes."]
 							})]
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/ClientsPage.tsx:3919:13",
+							"data-uid": "src/pages/ClientsPage.tsx:3994:13",
 							"data-prohibitions": "[]",
 							className: "flex gap-2 w-full sm:w-auto",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/pages/ClientsPage.tsx:3920:15",
+								"data-uid": "src/pages/ClientsPage.tsx:3995:15",
 								"data-prohibitions": "[]",
 								className: "relative flex-1 sm:w-64",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Search, {
-									"data-uid": "src/pages/ClientsPage.tsx:3921:17",
+									"data-uid": "src/pages/ClientsPage.tsx:3996:17",
 									"data-prohibitions": "[editContent]",
 									className: "absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-									"data-uid": "src/pages/ClientsPage.tsx:3922:17",
+									"data-uid": "src/pages/ClientsPage.tsx:3997:17",
 									"data-prohibitions": "[editContent]",
 									placeholder: "Buscar por nome ou CNPJ...",
 									className: "pl-9 h-9 bg-slate-50",
@@ -96734,57 +96831,57 @@ Obrigada.`);
 									onChange: (e) => setSearchTerm(e.target.value)
 								})]
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DropdownMenu, {
-								"data-uid": "src/pages/ClientsPage.tsx:3929:15",
+								"data-uid": "src/pages/ClientsPage.tsx:4004:15",
 								"data-prohibitions": "[]",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DropdownMenuTrigger, {
-									"data-uid": "src/pages/ClientsPage.tsx:3930:17",
+									"data-uid": "src/pages/ClientsPage.tsx:4005:17",
 									"data-prohibitions": "[]",
 									asChild: true,
 									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-										"data-uid": "src/pages/ClientsPage.tsx:3931:19",
+										"data-uid": "src/pages/ClientsPage.tsx:4006:19",
 										"data-prohibitions": "[]",
 										variant: "outline",
 										size: "icon",
 										className: "h-9 w-9",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Funnel, {
-											"data-uid": "src/pages/ClientsPage.tsx:3932:21",
+											"data-uid": "src/pages/ClientsPage.tsx:4007:21",
 											"data-prohibitions": "[editContent]",
 											className: "h-4 w-4"
 										})
 									})
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DropdownMenuContent, {
-									"data-uid": "src/pages/ClientsPage.tsx:3935:17",
+									"data-uid": "src/pages/ClientsPage.tsx:4010:17",
 									"data-prohibitions": "[]",
 									align: "end",
 									className: "w-56",
 									children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DropdownMenuLabel, {
-											"data-uid": "src/pages/ClientsPage.tsx:3936:19",
+											"data-uid": "src/pages/ClientsPage.tsx:4011:19",
 											"data-prohibitions": "[]",
 											children: "Filtrar por Status"
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DropdownMenuRadioGroup, {
-											"data-uid": "src/pages/ClientsPage.tsx:3937:19",
+											"data-uid": "src/pages/ClientsPage.tsx:4012:19",
 											"data-prohibitions": "[]",
 											value: filterType,
 											onValueChange: (val) => setFilterType(val),
 											children: [
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DropdownMenuRadioItem, {
-													"data-uid": "src/pages/ClientsPage.tsx:3941:21",
+													"data-uid": "src/pages/ClientsPage.tsx:4016:21",
 													"data-prohibitions": "[]",
 													value: "all",
 													className: "cursor-pointer",
 													children: "Todos os clientes"
 												}),
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DropdownMenuRadioItem, {
-													"data-uid": "src/pages/ClientsPage.tsx:3944:21",
+													"data-uid": "src/pages/ClientsPage.tsx:4019:21",
 													"data-prohibitions": "[]",
 													value: "with_contract",
 													className: "cursor-pointer",
 													children: "Com contrato ativo"
 												}),
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DropdownMenuRadioItem, {
-													"data-uid": "src/pages/ClientsPage.tsx:3947:21",
+													"data-uid": "src/pages/ClientsPage.tsx:4022:21",
 													"data-prohibitions": "[]",
 													value: "without_contract",
 													className: "cursor-pointer",
@@ -96793,27 +96890,27 @@ Obrigada.`);
 											]
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DropdownMenuSeparator, {
-											"data-uid": "src/pages/ClientsPage.tsx:3951:19",
+											"data-uid": "src/pages/ClientsPage.tsx:4026:19",
 											"data-prohibitions": "[editContent]"
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DropdownMenuLabel, {
-											"data-uid": "src/pages/ClientsPage.tsx:3952:19",
+											"data-uid": "src/pages/ClientsPage.tsx:4027:19",
 											"data-prohibitions": "[]",
 											children: "Ordenar Alfabeticamente"
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DropdownMenuRadioGroup, {
-											"data-uid": "src/pages/ClientsPage.tsx:3953:19",
+											"data-uid": "src/pages/ClientsPage.tsx:4028:19",
 											"data-prohibitions": "[]",
 											value: sortOrder,
 											onValueChange: (val) => setSortOrder(val),
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DropdownMenuRadioItem, {
-												"data-uid": "src/pages/ClientsPage.tsx:3957:21",
+												"data-uid": "src/pages/ClientsPage.tsx:4032:21",
 												"data-prohibitions": "[]",
 												value: "asc",
 												className: "cursor-pointer",
 												children: "A - Z (Crescente)"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DropdownMenuRadioItem, {
-												"data-uid": "src/pages/ClientsPage.tsx:3960:21",
+												"data-uid": "src/pages/ClientsPage.tsx:4035:21",
 												"data-prohibitions": "[]",
 												value: "desc",
 												className: "cursor-pointer",
@@ -96826,37 +96923,37 @@ Obrigada.`);
 						})]
 					})
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardContent, {
-					"data-uid": "src/pages/ClientsPage.tsx:3969:9",
+					"data-uid": "src/pages/ClientsPage.tsx:4044:9",
 					"data-prohibitions": "[editContent]",
 					className: "p-0",
 					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Table, {
-						"data-uid": "src/pages/ClientsPage.tsx:3970:11",
+						"data-uid": "src/pages/ClientsPage.tsx:4045:11",
 						"data-prohibitions": "[editContent]",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableHeader, {
-							"data-uid": "src/pages/ClientsPage.tsx:3971:13",
+							"data-uid": "src/pages/ClientsPage.tsx:4046:13",
 							"data-prohibitions": "[]",
 							className: "bg-slate-50/50",
 							children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(TableRow, {
-								"data-uid": "src/pages/ClientsPage.tsx:3972:15",
+								"data-uid": "src/pages/ClientsPage.tsx:4047:15",
 								"data-prohibitions": "[]",
 								children: [
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableHead, {
-										"data-uid": "src/pages/ClientsPage.tsx:3973:17",
+										"data-uid": "src/pages/ClientsPage.tsx:4048:17",
 										"data-prohibitions": "[]",
 										children: "Empresa / CNPJ"
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableHead, {
-										"data-uid": "src/pages/ClientsPage.tsx:3974:17",
+										"data-uid": "src/pages/ClientsPage.tsx:4049:17",
 										"data-prohibitions": "[]",
 										children: "Módulos Contratados"
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableHead, {
-										"data-uid": "src/pages/ClientsPage.tsx:3975:17",
+										"data-uid": "src/pages/ClientsPage.tsx:4050:17",
 										"data-prohibitions": "[]",
 										children: "Mensalidade"
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableHead, {
-										"data-uid": "src/pages/ClientsPage.tsx:3976:17",
+										"data-uid": "src/pages/ClientsPage.tsx:4051:17",
 										"data-prohibitions": "[]",
 										className: "text-right",
 										children: "Ações"
@@ -96864,63 +96961,70 @@ Obrigada.`);
 								]
 							})
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableBody, {
-							"data-uid": "src/pages/ClientsPage.tsx:3979:13",
+							"data-uid": "src/pages/ClientsPage.tsx:4054:13",
 							"data-prohibitions": "[editContent]",
 							children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableRow, {
-								"data-uid": "src/pages/ClientsPage.tsx:3981:17",
+								"data-uid": "src/pages/ClientsPage.tsx:4056:17",
 								"data-prohibitions": "[]",
 								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableCell, {
-									"data-uid": "src/pages/ClientsPage.tsx:3982:19",
+									"data-uid": "src/pages/ClientsPage.tsx:4057:19",
 									"data-prohibitions": "[]",
 									colSpan: 4,
 									className: "h-24 text-center text-muted-foreground",
 									children: "Carregando clientes..."
 								})
 							}) : filteredClients.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableRow, {
-								"data-uid": "src/pages/ClientsPage.tsx:3987:17",
+								"data-uid": "src/pages/ClientsPage.tsx:4062:17",
 								"data-prohibitions": "[]",
 								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableCell, {
-									"data-uid": "src/pages/ClientsPage.tsx:3988:19",
+									"data-uid": "src/pages/ClientsPage.tsx:4063:19",
 									"data-prohibitions": "[]",
 									colSpan: 4,
 									className: "h-24 text-center text-muted-foreground",
 									children: "Nenhum cliente encontrado."
 								})
 							}) : filteredClients.map((client) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(TableRow, {
-								"data-uid": "src/pages/ClientsPage.tsx:3994:19",
+								"data-uid": "src/pages/ClientsPage.tsx:4069:19",
 								"data-prohibitions": "[editContent]",
 								className: "group hover:bg-slate-50/80 transition-colors",
 								children: [
 									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(TableCell, {
-										"data-uid": "src/pages/ClientsPage.tsx:3998:21",
+										"data-uid": "src/pages/ClientsPage.tsx:4073:21",
 										"data-prohibitions": "[editContent]",
 										children: [
 											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												"data-uid": "src/pages/ClientsPage.tsx:3999:23",
+												"data-uid": "src/pages/ClientsPage.tsx:4074:23",
 												"data-prohibitions": "[editContent]",
 												className: "font-medium text-slate-900",
 												children: client.name
 											}),
 											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ClientsPage.tsx:4000:23",
+												"data-uid": "src/pages/ClientsPage.tsx:4075:23",
 												"data-prohibitions": "[editContent]",
 												className: "flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-1",
 												children: [
 													/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-														"data-uid": "src/pages/ClientsPage.tsx:4001:25",
+														"data-uid": "src/pages/ClientsPage.tsx:4076:25",
 														"data-prohibitions": "[editContent]",
 														className: "text-xs text-slate-500 font-mono",
 														children: formatCNPJ(client.cnpj)
 													}),
 													client.originalData?.status === "Em Implantação" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, {
-														"data-uid": "src/pages/ClientsPage.tsx:4005:27",
+														"data-uid": "src/pages/ClientsPage.tsx:4080:27",
 														"data-prohibitions": "[]",
 														variant: "outline",
 														className: "w-fit text-[10px] px-1.5 py-0 h-4 leading-none text-blue-600 bg-blue-50 border-blue-200",
 														children: "Em Implantação"
 													}),
+													client.originalData?.status === "Faturamento" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, {
+														"data-uid": "src/pages/ClientsPage.tsx:4088:27",
+														"data-prohibitions": "[]",
+														variant: "outline",
+														className: "w-fit text-[10px] px-1.5 py-0 h-4 leading-none text-emerald-600 bg-emerald-50 border-emerald-200",
+														children: "Faturamento"
+													}),
 													client.stats && client.stats.relevantTitulos > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, {
-														"data-uid": "src/pages/ClientsPage.tsx:4013:27",
+														"data-uid": "src/pages/ClientsPage.tsx:4096:27",
 														"data-prohibitions": "[editContent]",
 														variant: "outline",
 														className: `w-fit text-[10px] px-1.5 py-0 h-4 leading-none ${client.stats.color}`,
@@ -96929,17 +97033,17 @@ Obrigada.`);
 												]
 											}),
 											client.tags && client.tags.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												"data-uid": "src/pages/ClientsPage.tsx:4022:25",
+												"data-uid": "src/pages/ClientsPage.tsx:4105:25",
 												"data-prohibitions": "[editContent]",
 												className: "flex flex-wrap gap-1 mt-2",
 												children: [client.tags.slice(0, 3).map((tag, idx) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, {
-													"data-uid": "src/pages/ClientsPage.tsx:4024:29",
+													"data-uid": "src/pages/ClientsPage.tsx:4107:29",
 													"data-prohibitions": "[editContent]",
 													variant: "secondary",
 													className: "text-[9px] px-1.5 py-0 h-4 font-normal bg-purple-50 text-purple-700 border-purple-200",
 													children: tag
 												}, idx)), client.tags.length > 3 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-													"data-uid": "src/pages/ClientsPage.tsx:4033:29",
+													"data-uid": "src/pages/ClientsPage.tsx:4116:29",
 													"data-prohibitions": "[editContent]",
 													className: "text-[10px] text-slate-400",
 													children: ["+", client.tags.length - 3]
@@ -96948,30 +97052,30 @@ Obrigada.`);
 										]
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableCell, {
-										"data-uid": "src/pages/ClientsPage.tsx:4040:21",
+										"data-uid": "src/pages/ClientsPage.tsx:4123:21",
 										"data-prohibitions": "[editContent]",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:4041:23",
+											"data-uid": "src/pages/ClientsPage.tsx:4124:23",
 											"data-prohibitions": "[editContent]",
 											className: "flex flex-col gap-1.5",
 											children: [client.plano_base && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, {
-												"data-uid": "src/pages/ClientsPage.tsx:4043:27",
+												"data-uid": "src/pages/ClientsPage.tsx:4126:27",
 												"data-prohibitions": "[editContent]",
 												variant: "outline",
 												className: "w-fit bg-indigo-50 text-indigo-700 border-indigo-100 font-medium text-[10px] uppercase",
 												children: client.plano_base
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												"data-uid": "src/pages/ClientsPage.tsx:4050:25",
+												"data-uid": "src/pages/ClientsPage.tsx:4133:25",
 												"data-prohibitions": "[editContent]",
 												className: "flex flex-wrap gap-1 max-w-[250px]",
 												children: client.modules.length > 0 ? client.modules.map((mod) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, {
-													"data-uid": "src/pages/ClientsPage.tsx:4053:33",
+													"data-uid": "src/pages/ClientsPage.tsx:4136:33",
 													"data-prohibitions": "[editContent]",
 													variant: "secondary",
 													className: "bg-slate-100 text-slate-700 border-slate-200 font-normal text-xs",
 													children: mod.name
 												}, mod.name)) : !client.plano_base && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-													"data-uid": "src/pages/ClientsPage.tsx:4062:33",
+													"data-uid": "src/pages/ClientsPage.tsx:4145:33",
 													"data-prohibitions": "[]",
 													className: "text-xs text-slate-400 italic",
 													children: "Sem módulos"
@@ -96980,31 +97084,31 @@ Obrigada.`);
 										})
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableCell, {
-										"data-uid": "src/pages/ClientsPage.tsx:4067:21",
+										"data-uid": "src/pages/ClientsPage.tsx:4150:21",
 										"data-prohibitions": "[editContent]",
 										children: client.totalValue > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											"data-uid": "src/pages/ClientsPage.tsx:4069:25",
+											"data-uid": "src/pages/ClientsPage.tsx:4152:25",
 											"data-prohibitions": "[editContent]",
 											className: "font-medium text-emerald-600",
 											children: formatCurrency(client.totalValue)
 										}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											"data-uid": "src/pages/ClientsPage.tsx:4073:25",
+											"data-uid": "src/pages/ClientsPage.tsx:4156:25",
 											"data-prohibitions": "[]",
 											className: "text-amber-600 font-medium text-sm bg-amber-50 px-2 py-1 rounded border border-amber-100",
 											children: "Pendente"
 										})
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableCell, {
-										"data-uid": "src/pages/ClientsPage.tsx:4078:21",
+										"data-uid": "src/pages/ClientsPage.tsx:4161:21",
 										"data-prohibitions": "[editContent]",
 										className: "text-right",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/ClientsPage.tsx:4079:23",
+											"data-uid": "src/pages/ClientsPage.tsx:4162:23",
 											"data-prohibitions": "[editContent]",
 											className: "flex justify-end gap-1",
 											children: [
 												client.contratoUrl && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-													"data-uid": "src/pages/ClientsPage.tsx:4081:27",
+													"data-uid": "src/pages/ClientsPage.tsx:4164:27",
 													"data-prohibitions": "[]",
 													variant: "ghost",
 													size: "icon",
@@ -97012,13 +97116,13 @@ Obrigada.`);
 													title: "Ver Contrato Original",
 													onClick: () => window.open(client.contratoUrl, "_blank"),
 													children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileText, {
-														"data-uid": "src/pages/ClientsPage.tsx:4088:29",
+														"data-uid": "src/pages/ClientsPage.tsx:4171:29",
 														"data-prohibitions": "[editContent]",
 														className: "h-4 w-4"
 													})
 												}),
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-													"data-uid": "src/pages/ClientsPage.tsx:4091:25",
+													"data-uid": "src/pages/ClientsPage.tsx:4174:25",
 													"data-prohibitions": "[]",
 													variant: "ghost",
 													size: "icon",
@@ -97026,13 +97130,13 @@ Obrigada.`);
 													title: "Visualizar Gestão/Aditivos",
 													onClick: () => handleOpenView(client),
 													children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Eye, {
-														"data-uid": "src/pages/ClientsPage.tsx:4098:27",
+														"data-uid": "src/pages/ClientsPage.tsx:4181:27",
 														"data-prohibitions": "[editContent]",
 														className: "h-4 w-4"
 													})
 												}),
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-													"data-uid": "src/pages/ClientsPage.tsx:4100:25",
+													"data-uid": "src/pages/ClientsPage.tsx:4183:25",
 													"data-prohibitions": "[]",
 													variant: "ghost",
 													size: "icon",
@@ -97040,13 +97144,13 @@ Obrigada.`);
 													title: "Editar Cliente",
 													onClick: () => handleOpenEdit(client),
 													children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SquarePen, {
-														"data-uid": "src/pages/ClientsPage.tsx:4107:27",
+														"data-uid": "src/pages/ClientsPage.tsx:4190:27",
 														"data-prohibitions": "[editContent]",
 														className: "h-4 w-4"
 													})
 												}),
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-													"data-uid": "src/pages/ClientsPage.tsx:4109:25",
+													"data-uid": "src/pages/ClientsPage.tsx:4192:25",
 													"data-prohibitions": "[]",
 													variant: "ghost",
 													size: "icon",
@@ -97054,7 +97158,7 @@ Obrigada.`);
 													title: "Excluir Cliente",
 													onClick: () => setClientToDelete(client),
 													children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, {
-														"data-uid": "src/pages/ClientsPage.tsx:4116:27",
+														"data-uid": "src/pages/ClientsPage.tsx:4199:27",
 														"data-prohibitions": "[editContent]",
 														className: "h-4 w-4"
 													})
@@ -107732,4 +107836,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, {
 }));
 //#endregion
 
-//# sourceMappingURL=index-Cs1RTbKv.js.map
+//# sourceMappingURL=index-KWhGV_Ov.js.map

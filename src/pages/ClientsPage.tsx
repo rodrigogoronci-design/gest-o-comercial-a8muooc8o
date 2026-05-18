@@ -344,6 +344,8 @@ export default function ClientsPage() {
     null,
   )
   const [emailBody, setEmailBody] = useState('')
+  const [financeiroEmailClient, setFinanceiroEmailClient] = useState<MergedClient | null>(null)
+  const [isSendingFinanceEmail, setIsSendingFinanceEmail] = useState(false)
 
   const handleRemoveModule = async (moduleToRemove: ModuleItem) => {
     if (!viewingClient) return
@@ -906,6 +908,44 @@ export default function ClientsPage() {
     } catch (err) {
       console.error(err)
       toast.error('Erro ao remover documento')
+    }
+  }
+
+  const handleOpenFinanceiroEmail = (client: MergedClient) => {
+    setFinanceiroEmailClient(client)
+  }
+
+  const handleSendToFinanceiro = async () => {
+    if (!financeiroEmailClient) return
+    setIsSendingFinanceEmail(true)
+    try {
+      await updateCliente(financeiroEmailClient.id, { status: 'Faturamento' })
+
+      await supabase.functions.invoke('send-finance-email', {
+        body: {
+          to: 'financeiro@servicelogic.com.br',
+          clientName: financeiroEmailClient.name,
+          moduleName: financeiroEmailClient.plano_base || 'Plano Básico',
+          type: 'novo_contrato',
+        },
+      })
+
+      toast.success('Notificação enviada ao financeiro e status atualizado para Faturamento!')
+
+      if (viewingClient && viewingClient.id === financeiroEmailClient.id) {
+        setViewingClient({
+          ...viewingClient,
+          originalData: { ...viewingClient.originalData!, status: 'Faturamento' },
+        })
+      }
+
+      setFinanceiroEmailClient(null)
+      loadClientes()
+    } catch (e) {
+      console.error(e)
+      toast.error('Erro ao notificar o financeiro.')
+    } finally {
+      setIsSendingFinanceEmail(false)
     }
   }
 
@@ -3491,6 +3531,14 @@ Obrigada.`)
                 >
                   <Mail className="h-4 w-4 mr-2" /> Enviar p/ Implantação
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => viewingClient && handleOpenFinanceiroEmail(viewingClient)}
+                  className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                >
+                  <Mail className="h-4 w-4 mr-2" /> Enviar p/ Financeiro
+                </Button>
                 <Button variant="outline" size="sm" asChild className="bg-white">
                   <Link
                     to={`/contratos?prospect=${encodeURIComponent(viewingClient?.name || '')}&cnpj=${viewingClient?.cnpj?.replace(/\D/g, '')}`}
@@ -3819,6 +3867,33 @@ Obrigada.`)
         </SheetContent>
       </Sheet>
 
+      <AlertDialog
+        open={!!financeiroEmailClient}
+        onOpenChange={(open) => !open && setFinanceiroEmailClient(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Enviar para o Financeiro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Isso irá atualizar o status do cliente <strong>{financeiroEmailClient?.name}</strong>{' '}
+              para "Faturamento" e enviará um e-mail de notificação automático para a equipe
+              financeira.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSendToFinanceiro}
+              disabled={isSendingFinanceEmail}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {isSendingFinanceEmail ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Sim, Enviar Notificação
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog
         open={!!implementationEmailClient}
         onOpenChange={(open) => !open && setImplementationEmailClient(null)}
@@ -4007,6 +4082,14 @@ Obrigada.`)
                             className="w-fit text-[10px] px-1.5 py-0 h-4 leading-none text-blue-600 bg-blue-50 border-blue-200"
                           >
                             Em Implantação
+                          </Badge>
+                        )}
+                        {client.originalData?.status === 'Faturamento' && (
+                          <Badge
+                            variant="outline"
+                            className="w-fit text-[10px] px-1.5 py-0 h-4 leading-none text-emerald-600 bg-emerald-50 border-emerald-200"
+                          >
+                            Faturamento
                           </Badge>
                         )}
                         {client.stats && client.stats.relevantTitulos > 0 && (
