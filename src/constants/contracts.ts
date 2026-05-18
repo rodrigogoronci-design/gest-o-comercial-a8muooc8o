@@ -104,6 +104,7 @@ export const PREDEFINED_TRAININGS = [
   { id: 'train-ctrl-viagem', name: 'Controle de Viagem', price: 100.0 },
   { id: 'train-gerador-relatorio', name: 'Gerador de Relatório', price: 0.0 },
   { id: 'train-sl-track', name: 'SL Track', price: 100.0 },
+  { id: 'train-sl-trip', name: 'SL Trip', price: 100.0 },
   {
     id: 'train-encontro-duvidas',
     name: 'Encontro posterior para dúvidas (1 hora remoto)',

@@ -89009,6 +89009,11 @@ var PREDEFINED_TRAININGS = [
 		price: 100
 	},
 	{
+		id: "train-sl-trip",
+		name: "SL Trip",
+		price: 100
+	},
+	{
 		id: "train-encontro-duvidas",
 		name: "Encontro posterior para dúvidas (1 hora remoto)",
 		price: 100
@@ -108116,4 +108121,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, {
 }));
 //#endregion
 
-//# sourceMappingURL=index-DL3tJzKk.js.map
+//# sourceMappingURL=index-BW3DQ1xz.js.map
