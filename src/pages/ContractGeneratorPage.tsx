@@ -592,7 +592,7 @@ export default function ContractGeneratorPage() {
           tipo: 'Proposta de Upsell',
           descricao: `Adição de Módulos/Serviços. Valor Mensal: ${formatCurrency(totalValue)}`,
           valor: implValue,
-          observacoes: `Itens: ${modulosAdicionados.join(', ')}. Taxa de Implantação/Serviço: ${formatCurrency(implValue)}`,
+          observacoes: `Itens: ${modulosAdicionados.join(', ')}. Serviços de Implantação/Diagnóstico: ${formatCurrency(implValue)}`,
           status: 'Pendente',
           data_solicitacao: new Date().toISOString().split('T')[0],
         })

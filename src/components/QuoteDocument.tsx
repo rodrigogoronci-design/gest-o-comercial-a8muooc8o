@@ -22,6 +22,7 @@ interface QuoteDocumentProps {
   includeFranchise?: boolean
   includeDiagnosticVisit?: boolean
   diagnosticVisitValue?: string
+  diagnosticVisits?: { id: string; date: string; value: string }[]
   currentClientValue?: number
 }
 
@@ -82,6 +83,7 @@ export function QuoteDocument({
   includeFranchise,
   includeDiagnosticVisit,
   diagnosticVisitValue,
+  diagnosticVisits,
   currentClientValue,
 }: QuoteDocumentProps) {
   const showBasePlan =
@@ -258,50 +260,56 @@ export function QuoteDocument({
               {implValue > 0 &&
                 implValue -
                   trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) -
-                  (includeDiagnosticVisit ? Number(diagnosticVisitValue) || 0 : 0) >
+                  (includeDiagnosticVisit && diagnosticVisits
+                    ? diagnosticVisits.reduce((acc, v) => acc + (Number(v.value) || 0), 0)
+                    : 0) >
                   0 && (
                   <tr>
                     <td className="p-1.5">
-                      <span className="font-semibold text-slate-800">
-                        Taxa de Implantação / Serviços
-                      </span>
+                      <span className="font-semibold text-slate-800">Serviços de Implantação</span>
                     </td>
                     <td className="p-1.5 text-center font-medium">1</td>
                     <td className="p-1.5 text-right">
                       {formatCurrency(
                         implValue -
                           trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) -
-                          (includeDiagnosticVisit ? Number(diagnosticVisitValue) || 0 : 0),
+                          (includeDiagnosticVisit && diagnosticVisits
+                            ? diagnosticVisits.reduce((acc, v) => acc + (Number(v.value) || 0), 0)
+                            : 0),
                       )}
                     </td>
                     <td className="p-1.5 text-right font-medium">
                       {formatCurrency(
                         implValue -
                           trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) -
-                          (includeDiagnosticVisit ? Number(diagnosticVisitValue) || 0 : 0),
+                          (includeDiagnosticVisit && diagnosticVisits
+                            ? diagnosticVisits.reduce((acc, v) => acc + (Number(v.value) || 0), 0)
+                            : 0),
                       )}
                     </td>
                     <td className="p-1.5 text-center text-slate-600">Parcela Única</td>
                   </tr>
                 )}
 
-              {includeDiagnosticVisit && (
-                <tr>
-                  <td className="p-1.5">
-                    <span className="font-semibold text-slate-800">
-                      Visita Presencial de Diagnóstico
-                    </span>
-                  </td>
-                  <td className="p-1.5 text-center font-medium">1</td>
-                  <td className="p-1.5 text-right">
-                    {formatCurrency(Number(diagnosticVisitValue) || 0)}
-                  </td>
-                  <td className="p-1.5 text-right font-medium">
-                    {formatCurrency(Number(diagnosticVisitValue) || 0)}
-                  </td>
-                  <td className="p-1.5 text-center text-slate-600">Parcela Única</td>
-                </tr>
-              )}
+              {includeDiagnosticVisit &&
+                diagnosticVisits?.map((visit, index) => (
+                  <tr key={`diag-${index}`}>
+                    <td className="p-1.5">
+                      <span className="font-semibold text-slate-800">
+                        Visita Presencial de Diagnóstico
+                        {visit.date
+                          ? ` (Data: ${new Date(visit.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })})`
+                          : ''}
+                      </span>
+                    </td>
+                    <td className="p-1.5 text-center font-medium">1</td>
+                    <td className="p-1.5 text-right">{formatCurrency(Number(visit.value) || 0)}</td>
+                    <td className="p-1.5 text-right font-medium">
+                      {formatCurrency(Number(visit.value) || 0)}
+                    </td>
+                    <td className="p-1.5 text-center text-slate-600">Parcela Única</td>
+                  </tr>
+                ))}
 
               {trainings.map((t, idx) => (
                 <tr key={`tr-${idx}`}>
@@ -381,27 +389,38 @@ export function QuoteDocument({
             {implValue > 0 &&
               implValue -
                 trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) -
-                (includeDiagnosticVisit ? Number(diagnosticVisitValue) || 0 : 0) >
+                (includeDiagnosticVisit && diagnosticVisits
+                  ? diagnosticVisits.reduce((acc, v) => acc + (Number(v.value) || 0), 0)
+                  : 0) >
                 0 && (
                 <div className="flex justify-between items-center text-slate-600">
-                  <span>Taxa de Implantação / Serviços</span>
+                  <span>Serviços de Implantação</span>
                   <span className="font-medium">
                     {formatCurrency(
                       implValue -
                         trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) -
-                        (includeDiagnosticVisit ? Number(diagnosticVisitValue) || 0 : 0),
+                        (includeDiagnosticVisit && diagnosticVisits
+                          ? diagnosticVisits.reduce((acc, v) => acc + (Number(v.value) || 0), 0)
+                          : 0),
                     )}
                   </span>
                 </div>
               )}
-            {includeDiagnosticVisit && (
-              <div className="flex justify-between items-center text-slate-600">
-                <span>Visita Presencial de Diagnóstico</span>
-                <span className="font-medium">
-                  {formatCurrency(Number(diagnosticVisitValue) || 0)}
-                </span>
-              </div>
-            )}
+            {includeDiagnosticVisit &&
+              diagnosticVisits?.map((visit, index) => (
+                <div
+                  key={`diag-tot-${index}`}
+                  className="flex justify-between items-center text-slate-600"
+                >
+                  <span>
+                    Visita Presencial de Diagnóstico
+                    {visit.date
+                      ? ` (Data: ${new Date(visit.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })})`
+                      : ''}
+                  </span>
+                  <span className="font-medium">{formatCurrency(Number(visit.value) || 0)}</span>
+                </div>
+              ))}
             {trainings.map((t, idx) => (
               <div
                 key={`rec-tr-${idx}`}
