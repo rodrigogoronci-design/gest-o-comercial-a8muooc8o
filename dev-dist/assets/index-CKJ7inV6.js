@@ -99465,7 +99465,7 @@ function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules
 														children: "* EDI:"
 													}), " Inclusão de Layout padrão Proceda para integração (arquivos NOTFIS para emissão de CT-e, envios de CONEMB, DOCCOB e OCOREN)."]
 												}),
-												m.description && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+												m.description && !m.name?.toLowerCase().includes("torre de controle") && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 													"data-uid": "src/components/QuoteDocument.tsx:207:23",
 													"data-prohibitions": "[editContent]",
 													className: "text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1",
@@ -107634,4 +107634,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, {
 }));
 //#endregion
 
-//# sourceMappingURL=index-CbxH4giy.js.map
+//# sourceMappingURL=index-CKJ7inV6.js.map

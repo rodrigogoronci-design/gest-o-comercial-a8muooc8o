@@ -203,7 +203,7 @@ export function QuoteDocument({
                         (arquivos NOTFIS para emissão de CT-e, envios de CONEMB, DOCCOB e OCOREN).
                       </span>
                     )}
-                    {m.description && (
+                    {m.description && !m.name?.toLowerCase().includes('torre de controle') && (
                       <span className="text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1">
                         {m.description}
                       </span>
