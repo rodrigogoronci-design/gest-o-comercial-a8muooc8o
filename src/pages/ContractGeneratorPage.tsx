@@ -166,7 +166,10 @@ export default function ContractGeneratorPage() {
   }, [])
 
   const planData = useMemo(() => PLANS.find((p) => p.id === selectedPlan), [selectedPlan])
-  const planPrice = selectedPlan === 'none' ? 0 : planData?.price || 0
+  const planPrice =
+    selectedPlan === 'none' || (activeTab === 'cotacao' && quoteTargetType === 'cliente')
+      ? 0
+      : planData?.price || 0
   const dfeData = useMemo(() => DFE_TIERS.find((d) => d.id === selectedDfe), [selectedDfe])
   const dfePrice = dfeData?.price || 0
   const modulesPrice = useMemo(
@@ -254,7 +257,10 @@ export default function ContractGeneratorPage() {
       month: 'long',
       year: 'numeric',
     }),
-    planName: selectedPlan === 'none' ? 'Nenhum' : planData?.name || 'Plano Personalizado',
+    planName:
+      selectedPlan === 'none' || (activeTab === 'cotacao' && quoteTargetType === 'cliente')
+        ? 'Nenhum'
+        : planData?.name || 'Plano Personalizado',
     selectedModulesData: selectedModules
       .map((id) => MODULES.find((m) => m.id === id))
       .filter(Boolean),
@@ -904,23 +910,27 @@ export default function ContractGeneratorPage() {
                   <CardTitle>2. Plano, Módulos e Implantação</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold">Plano Base</Label>
-                    <Select value={selectedPlan} onValueChange={setSelectedPlan}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Nenhum (Somente Módulos / Upsell)</SelectItem>
-                        {PLANS.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.name} - {formatCurrency(p.price)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Separator />
+                  {quoteTargetType !== 'cliente' && (
+                    <>
+                      <div className="space-y-3">
+                        <Label className="text-sm font-bold">Plano Base</Label>
+                        <Select value={selectedPlan} onValueChange={setSelectedPlan}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nenhum (Somente Módulos / Upsell)</SelectItem>
+                            {PLANS.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.name} - {formatCurrency(p.price)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Separator />
+                    </>
+                  )}
                   <div className="space-y-3">
                     <Label className="text-sm font-bold">Módulos Adicionais</Label>
                     <div className="grid grid-cols-2 gap-2">

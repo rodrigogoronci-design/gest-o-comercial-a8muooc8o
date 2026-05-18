@@ -193,20 +193,6 @@ export function QuoteDocument({
                   <td className="p-1.5 text-center text-slate-600">Mensalidade</td>
                 </tr>
               )}
-              {showBasePlan && isUpsell && (
-                <tr>
-                  <td className="p-1.5">
-                    <span className="font-semibold text-slate-800">
-                      Upgrade de Plano: {planName}
-                    </span>
-                  </td>
-                  <td className="p-1.5 text-center font-medium">1</td>
-                  <td className="p-1.5 text-right">{formatCurrency(planPrice)}</td>
-                  <td className="p-1.5 text-right font-medium">{formatCurrency(planPrice)}</td>
-                  <td className="p-1.5 text-center text-slate-600">Mensalidade</td>
-                </tr>
-              )}
-
               {selectedModulesData.map((m, idx) => (
                 <tr key={`mod-${idx}`}>
                   <td className="p-1.5">
@@ -294,9 +280,9 @@ export function QuoteDocument({
             Total Recorrente
           </h4>
           <div className="space-y-1.5 text-[10px]">
-            {showBasePlan && (
+            {showBasePlan && !isUpsell && (
               <div className="flex justify-between items-center text-slate-600">
-                <span>{isUpsell ? 'Upgrade de Plano' : 'Plano Base'}</span>
+                <span>Plano Base</span>
                 <span className="font-medium">{formatCurrency(planPrice)}</span>
               </div>
             )}
