@@ -147,7 +147,10 @@ export default function ContractGeneratorPage() {
 
   useEffect(() => {
     const fetchClientes = async () => {
-      const { data } = await supabase.from('clientes').select('id, nome, rep_nome').order('nome')
+      const { data } = await supabase
+        .from('clientes')
+        .select('id, nome, rep_nome, valor_total')
+        .order('nome')
       if (data) setClientes(data)
     }
     fetchClientes()
@@ -239,6 +242,14 @@ export default function ContractGeneratorPage() {
       ? parseFloat(manualImplValue)
       : calculatedImplValue
 
+  const currentClientValue = useMemo(() => {
+    if (quoteTargetType === 'cliente' && selectedClientId !== 'novo') {
+      const c = clientes.find((client) => client.id === selectedClientId)
+      return c?.valor_total || 0
+    }
+    return 0
+  }, [quoteTargetType, selectedClientId, clientes])
+
   const contractProps = {
     name,
     cnpj,
@@ -300,6 +311,7 @@ export default function ContractGeneratorPage() {
     includeFranchise: selectedDfe !== 'dfe-none',
     includeDiagnosticVisit,
     diagnosticVisitValue,
+    currentClientValue,
   }
 
   const fetchCnpjData = async (cnpjValue: string) => {
@@ -1356,6 +1368,12 @@ export default function ContractGeneratorPage() {
                   <Separator />
                   {quoteTargetType === 'cliente' && (
                     <div className="space-y-3">
+                      <div className="mb-4 bg-blue-50 text-blue-800 p-3 rounded-md border border-blue-100 flex items-center justify-between">
+                        <span className="text-sm font-medium">Mensalidade Atual do Cliente</span>
+                        <span className="font-bold text-base">
+                          {formatCurrency(currentClientValue || 0)}
+                        </span>
+                      </div>
                       <Label className="text-sm font-bold">Serviços Adicionais (Upsell)</Label>
                       <div className="flex flex-col gap-2 border p-3 rounded-lg bg-slate-50">
                         <div className="flex items-center space-x-2">

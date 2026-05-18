@@ -22,6 +22,7 @@ interface QuoteDocumentProps {
   includeFranchise?: boolean
   includeDiagnosticVisit?: boolean
   diagnosticVisitValue?: string
+  currentClientValue?: number
 }
 
 const FEATURE_CATEGORIES = [
@@ -81,6 +82,7 @@ export function QuoteDocument({
   includeFranchise,
   includeDiagnosticVisit,
   diagnosticVisitValue,
+  currentClientValue,
 }: QuoteDocumentProps) {
   const showBasePlan =
     planName && planName !== 'Nenhum' && planName !== 'Nenhum (Somente Módulos / Upsell)'
@@ -191,6 +193,22 @@ export function QuoteDocument({
                   <td className="p-1.5 text-right">{formatCurrency(planPrice)}</td>
                   <td className="p-1.5 text-right font-medium">{formatCurrency(planPrice)}</td>
                   <td className="p-1.5 text-center text-slate-600">Mensalidade</td>
+                </tr>
+              )}
+              {isUpsell && (currentClientValue || 0) > 0 && (
+                <tr className="bg-slate-50/50">
+                  <td className="p-1.5">
+                    <span className="font-semibold text-slate-800">Mensalidade Atual</span>
+                    <span className="text-[9px] block text-slate-500 mt-0.5">
+                      Valor pago atualmente pelo cliente
+                    </span>
+                  </td>
+                  <td className="p-1.5 text-center font-medium">1</td>
+                  <td className="p-1.5 text-right">{formatCurrency(currentClientValue || 0)}</td>
+                  <td className="p-1.5 text-right font-medium">
+                    {formatCurrency(currentClientValue || 0)}
+                  </td>
+                  <td className="p-1.5 text-center text-slate-600">Mensalidade Atual</td>
                 </tr>
               )}
               {selectedModulesData.map((m, idx) => (
@@ -309,33 +327,50 @@ export function QuoteDocument({
           <h4 className="font-bold text-slate-500 text-[9px] uppercase tracking-wider mb-2">
             Total Recorrente
           </h4>
-          <div className="space-y-1.5 text-[10px]">
-            {showBasePlan && !isUpsell && (
+          {isUpsell ? (
+            <div className="space-y-1.5 text-[10px]">
               <div className="flex justify-between items-center text-slate-600">
-                <span>Plano Base</span>
-                <span className="font-medium">{formatCurrency(planPrice)}</span>
+                <span>Mensalidade Atual</span>
+                <span className="font-medium">{formatCurrency(currentClientValue || 0)}</span>
               </div>
-            )}
-            {selectedModulesData.map((m, idx) => (
-              <div
-                key={`rec-mod-${idx}`}
-                className="flex justify-between items-center text-slate-600"
-              >
-                <span>{m.name}</span>
-                <span className="font-medium">{formatCurrency(m.price)}</span>
-              </div>
-            ))}
-            {includeFranchise && dfeData && (
               <div className="flex justify-between items-center text-slate-600">
-                <span>{dfeData.name || 'Franquia DF-e'}</span>
-                <span className="font-medium">{formatCurrency(dfePrice || 0)}</span>
+                <span>Valor dos Adicionais (Upsell)</span>
+                <span className="font-medium">{formatCurrency(totalValue)}</span>
               </div>
-            )}
-            <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
-              <span>Total Mensal</span>
-              <span>{formatCurrency(totalValue)}</span>
+              <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
+                <span>Nova Mensalidade Total</span>
+                <span>{formatCurrency((currentClientValue || 0) + totalValue)}</span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-1.5 text-[10px]">
+              {showBasePlan && (
+                <div className="flex justify-between items-center text-slate-600">
+                  <span>Plano Base</span>
+                  <span className="font-medium">{formatCurrency(planPrice)}</span>
+                </div>
+              )}
+              {selectedModulesData.map((m, idx) => (
+                <div
+                  key={`rec-mod-${idx}`}
+                  className="flex justify-between items-center text-slate-600"
+                >
+                  <span>{m.name}</span>
+                  <span className="font-medium">{formatCurrency(m.price)}</span>
+                </div>
+              ))}
+              {includeFranchise && dfeData && (
+                <div className="flex justify-between items-center text-slate-600">
+                  <span>{dfeData.name || 'Franquia DF-e'}</span>
+                  <span className="font-medium">{formatCurrency(dfePrice || 0)}</span>
+                </div>
+              )}
+              <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
+                <span>Total Mensal</span>
+                <span>{formatCurrency(totalValue)}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="bg-slate-50 p-3 rounded border border-slate-200">
