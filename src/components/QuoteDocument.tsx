@@ -237,6 +237,36 @@ export function QuoteDocument({
                 </tr>
               )}
 
+              {implValue > 0 &&
+                implValue -
+                  trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) -
+                  (includeDiagnosticVisit ? Number(diagnosticVisitValue) || 0 : 0) >
+                  0 && (
+                  <tr>
+                    <td className="p-1.5">
+                      <span className="font-semibold text-slate-800">
+                        Taxa de Implantação / Serviços
+                      </span>
+                    </td>
+                    <td className="p-1.5 text-center font-medium">1</td>
+                    <td className="p-1.5 text-right">
+                      {formatCurrency(
+                        implValue -
+                          trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) -
+                          (includeDiagnosticVisit ? Number(diagnosticVisitValue) || 0 : 0),
+                      )}
+                    </td>
+                    <td className="p-1.5 text-right font-medium">
+                      {formatCurrency(
+                        implValue -
+                          trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) -
+                          (includeDiagnosticVisit ? Number(diagnosticVisitValue) || 0 : 0),
+                      )}
+                    </td>
+                    <td className="p-1.5 text-center text-slate-600">Parcela Única</td>
+                  </tr>
+                )}
+
               {includeDiagnosticVisit && (
                 <tr>
                   <td className="p-1.5">
@@ -313,10 +343,39 @@ export function QuoteDocument({
             Total Parcela Única
           </h4>
           <div className="space-y-1.5 text-[10px]">
-            <div className="flex justify-between items-center text-slate-600">
-              <span>Serviços Adicionais / Treinamentos</span>
-              <span className="font-medium">{formatCurrency(implValue)}</span>
-            </div>
+            {implValue > 0 &&
+              implValue -
+                trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) -
+                (includeDiagnosticVisit ? Number(diagnosticVisitValue) || 0 : 0) >
+                0 && (
+                <div className="flex justify-between items-center text-slate-600">
+                  <span>Taxa de Implantação / Serviços</span>
+                  <span className="font-medium">
+                    {formatCurrency(
+                      implValue -
+                        trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) -
+                        (includeDiagnosticVisit ? Number(diagnosticVisitValue) || 0 : 0),
+                    )}
+                  </span>
+                </div>
+              )}
+            {includeDiagnosticVisit && (
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Visita Presencial de Diagnóstico</span>
+                <span className="font-medium">
+                  {formatCurrency(Number(diagnosticVisitValue) || 0)}
+                </span>
+              </div>
+            )}
+            {trainings.map((t, idx) => (
+              <div
+                key={`rec-tr-${idx}`}
+                className="flex justify-between items-center text-slate-600"
+              >
+                <span>Treinamento: {t.name}</span>
+                <span className="font-medium">{formatCurrency(Number(t.price) || 0)}</span>
+              </div>
+            ))}
             <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
               <span>Total à Vista</span>
               <span>{formatCurrency(implValue)}</span>

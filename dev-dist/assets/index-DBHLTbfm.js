@@ -99545,41 +99545,82 @@ function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules
 										})
 									]
 								}),
-								includeDiagnosticVisit && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
-									"data-uid": "src/components/QuoteDocument.tsx:241:17",
+								implValue > 0 && implValue - trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) - (includeDiagnosticVisit ? Number(diagnosticVisitValue) || 0 : 0) > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
+									"data-uid": "src/components/QuoteDocument.tsx:245:19",
 									"data-prohibitions": "[editContent]",
 									children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:242:19",
+											"data-uid": "src/components/QuoteDocument.tsx:246:21",
 											"data-prohibitions": "[]",
 											className: "p-1.5",
 											children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-												"data-uid": "src/components/QuoteDocument.tsx:243:21",
+												"data-uid": "src/components/QuoteDocument.tsx:247:23",
+												"data-prohibitions": "[]",
+												className: "font-semibold text-slate-800",
+												children: "Taxa de Implantação / Serviços"
+											})
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+											"data-uid": "src/components/QuoteDocument.tsx:251:21",
+											"data-prohibitions": "[]",
+											className: "p-1.5 text-center font-medium",
+											children: "1"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+											"data-uid": "src/components/QuoteDocument.tsx:252:21",
+											"data-prohibitions": "[editContent]",
+											className: "p-1.5 text-right",
+											children: formatCurrency(implValue - trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) - (includeDiagnosticVisit ? Number(diagnosticVisitValue) || 0 : 0))
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+											"data-uid": "src/components/QuoteDocument.tsx:259:21",
+											"data-prohibitions": "[editContent]",
+											className: "p-1.5 text-right font-medium",
+											children: formatCurrency(implValue - trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) - (includeDiagnosticVisit ? Number(diagnosticVisitValue) || 0 : 0))
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+											"data-uid": "src/components/QuoteDocument.tsx:266:21",
+											"data-prohibitions": "[]",
+											className: "p-1.5 text-center text-slate-600",
+											children: "Parcela Única"
+										})
+									]
+								}),
+								includeDiagnosticVisit && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
+									"data-uid": "src/components/QuoteDocument.tsx:271:17",
+									"data-prohibitions": "[editContent]",
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+											"data-uid": "src/components/QuoteDocument.tsx:272:19",
+											"data-prohibitions": "[]",
+											className: "p-1.5",
+											children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+												"data-uid": "src/components/QuoteDocument.tsx:273:21",
 												"data-prohibitions": "[]",
 												className: "font-semibold text-slate-800",
 												children: "Visita Presencial de Diagnóstico"
 											})
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:247:19",
+											"data-uid": "src/components/QuoteDocument.tsx:277:19",
 											"data-prohibitions": "[]",
 											className: "p-1.5 text-center font-medium",
 											children: "1"
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:248:19",
+											"data-uid": "src/components/QuoteDocument.tsx:278:19",
 											"data-prohibitions": "[editContent]",
 											className: "p-1.5 text-right",
 											children: formatCurrency(Number(diagnosticVisitValue) || 0)
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:251:19",
+											"data-uid": "src/components/QuoteDocument.tsx:281:19",
 											"data-prohibitions": "[editContent]",
 											className: "p-1.5 text-right font-medium",
 											children: formatCurrency(Number(diagnosticVisitValue) || 0)
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:254:19",
+											"data-uid": "src/components/QuoteDocument.tsx:284:19",
 											"data-prohibitions": "[]",
 											className: "p-1.5 text-center text-slate-600",
 											children: "Parcela Única"
@@ -99587,40 +99628,40 @@ function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules
 									]
 								}),
 								trainings.map((t, idx) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
-									"data-uid": "src/components/QuoteDocument.tsx:259:17",
+									"data-uid": "src/components/QuoteDocument.tsx:289:17",
 									"data-prohibitions": "[editContent]",
 									children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:260:19",
+											"data-uid": "src/components/QuoteDocument.tsx:290:19",
 											"data-prohibitions": "[editContent]",
 											className: "p-1.5",
 											children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-												"data-uid": "src/components/QuoteDocument.tsx:261:21",
+												"data-uid": "src/components/QuoteDocument.tsx:291:21",
 												"data-prohibitions": "[editContent]",
 												className: "font-semibold text-slate-800",
 												children: ["Treinamento: ", t.name]
 											})
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:263:19",
+											"data-uid": "src/components/QuoteDocument.tsx:293:19",
 											"data-prohibitions": "[]",
 											className: "p-1.5 text-center font-medium",
 											children: "1"
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:264:19",
+											"data-uid": "src/components/QuoteDocument.tsx:294:19",
 											"data-prohibitions": "[editContent]",
 											className: "p-1.5 text-right",
 											children: formatCurrency(Number(t.price) || 0)
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:265:19",
+											"data-uid": "src/components/QuoteDocument.tsx:295:19",
 											"data-prohibitions": "[editContent]",
 											className: "p-1.5 text-right font-medium",
 											children: formatCurrency(Number(t.price) || 0)
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-											"data-uid": "src/components/QuoteDocument.tsx:268:19",
+											"data-uid": "src/components/QuoteDocument.tsx:298:19",
 											"data-prohibitions": "[]",
 											className: "p-1.5 text-center text-slate-600",
 											children: "Parcela Única"
@@ -99633,78 +99674,78 @@ function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules
 				})]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				"data-uid": "src/components/QuoteDocument.tsx:277:7",
+				"data-uid": "src/components/QuoteDocument.tsx:307:7",
 				"data-prohibitions": "[editContent]",
 				className: "grid grid-cols-2 gap-3",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/components/QuoteDocument.tsx:278:9",
+					"data-uid": "src/components/QuoteDocument.tsx:308:9",
 					"data-prohibitions": "[editContent]",
 					className: "bg-slate-50 p-3 rounded border border-slate-200",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
-						"data-uid": "src/components/QuoteDocument.tsx:279:11",
+						"data-uid": "src/components/QuoteDocument.tsx:309:11",
 						"data-prohibitions": "[]",
 						className: "font-bold text-slate-500 text-[9px] uppercase tracking-wider mb-2",
 						children: "Total Recorrente"
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/components/QuoteDocument.tsx:282:11",
+						"data-uid": "src/components/QuoteDocument.tsx:312:11",
 						"data-prohibitions": "[editContent]",
 						className: "space-y-1.5 text-[10px]",
 						children: [
 							showBasePlan && !isUpsell && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/components/QuoteDocument.tsx:284:15",
+								"data-uid": "src/components/QuoteDocument.tsx:314:15",
 								"data-prohibitions": "[editContent]",
 								className: "flex justify-between items-center text-slate-600",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:285:17",
+									"data-uid": "src/components/QuoteDocument.tsx:315:17",
 									"data-prohibitions": "[]",
 									children: "Plano Base"
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:286:17",
+									"data-uid": "src/components/QuoteDocument.tsx:316:17",
 									"data-prohibitions": "[editContent]",
 									className: "font-medium",
 									children: formatCurrency(planPrice)
 								})]
 							}),
 							selectedModulesData.map((m, idx) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/components/QuoteDocument.tsx:290:15",
+								"data-uid": "src/components/QuoteDocument.tsx:320:15",
 								"data-prohibitions": "[editContent]",
 								className: "flex justify-between items-center text-slate-600",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:294:17",
+									"data-uid": "src/components/QuoteDocument.tsx:324:17",
 									"data-prohibitions": "[editContent]",
 									children: m.name
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:295:17",
+									"data-uid": "src/components/QuoteDocument.tsx:325:17",
 									"data-prohibitions": "[editContent]",
 									className: "font-medium",
 									children: formatCurrency(m.price)
 								})]
 							}, `rec-mod-${idx}`)),
 							includeFranchise && dfeData && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/components/QuoteDocument.tsx:299:15",
+								"data-uid": "src/components/QuoteDocument.tsx:329:15",
 								"data-prohibitions": "[editContent]",
 								className: "flex justify-between items-center text-slate-600",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:300:17",
+									"data-uid": "src/components/QuoteDocument.tsx:330:17",
 									"data-prohibitions": "[editContent]",
 									children: dfeData.name || "Franquia DF-e"
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:301:17",
+									"data-uid": "src/components/QuoteDocument.tsx:331:17",
 									"data-prohibitions": "[editContent]",
 									className: "font-medium",
 									children: formatCurrency(dfePrice || 0)
 								})]
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/components/QuoteDocument.tsx:304:13",
+								"data-uid": "src/components/QuoteDocument.tsx:334:13",
 								"data-prohibitions": "[editContent]",
 								className: "pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:305:15",
+									"data-uid": "src/components/QuoteDocument.tsx:335:15",
 									"data-prohibitions": "[]",
 									children: "Total Mensal"
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/components/QuoteDocument.tsx:306:15",
+									"data-uid": "src/components/QuoteDocument.tsx:336:15",
 									"data-prohibitions": "[editContent]",
 									children: formatCurrency(totalValue)
 								})]
@@ -99712,59 +99753,92 @@ function QuoteDocument({ empresa, aosCuidadosDe, date, planName, selectedModules
 						]
 					})]
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/components/QuoteDocument.tsx:311:9",
+					"data-uid": "src/components/QuoteDocument.tsx:341:9",
 					"data-prohibitions": "[editContent]",
 					className: "bg-slate-50 p-3 rounded border border-slate-200",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
-						"data-uid": "src/components/QuoteDocument.tsx:312:11",
+						"data-uid": "src/components/QuoteDocument.tsx:342:11",
 						"data-prohibitions": "[]",
 						className: "font-bold text-slate-500 text-[9px] uppercase tracking-wider mb-2",
 						children: "Total Parcela Única"
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/components/QuoteDocument.tsx:315:11",
+						"data-uid": "src/components/QuoteDocument.tsx:345:11",
 						"data-prohibitions": "[editContent]",
 						className: "space-y-1.5 text-[10px]",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/components/QuoteDocument.tsx:316:13",
-							"data-prohibitions": "[editContent]",
-							className: "flex justify-between items-center text-slate-600",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								"data-uid": "src/components/QuoteDocument.tsx:317:15",
-								"data-prohibitions": "[]",
-								children: "Serviços Adicionais / Treinamentos"
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								"data-uid": "src/components/QuoteDocument.tsx:318:15",
+						children: [
+							implValue > 0 && implValue - trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) - (includeDiagnosticVisit ? Number(diagnosticVisitValue) || 0 : 0) > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								"data-uid": "src/components/QuoteDocument.tsx:351:17",
 								"data-prohibitions": "[editContent]",
-								className: "font-medium",
-								children: formatCurrency(implValue)
-							})]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/components/QuoteDocument.tsx:320:13",
-							"data-prohibitions": "[editContent]",
-							className: "pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								"data-uid": "src/components/QuoteDocument.tsx:321:15",
-								"data-prohibitions": "[]",
-								children: "Total à Vista"
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								"data-uid": "src/components/QuoteDocument.tsx:322:15",
+								className: "flex justify-between items-center text-slate-600",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									"data-uid": "src/components/QuoteDocument.tsx:352:19",
+									"data-prohibitions": "[]",
+									children: "Taxa de Implantação / Serviços"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									"data-uid": "src/components/QuoteDocument.tsx:353:19",
+									"data-prohibitions": "[editContent]",
+									className: "font-medium",
+									children: formatCurrency(implValue - trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) - (includeDiagnosticVisit ? Number(diagnosticVisitValue) || 0 : 0))
+								})]
+							}),
+							includeDiagnosticVisit && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								"data-uid": "src/components/QuoteDocument.tsx:363:15",
 								"data-prohibitions": "[editContent]",
-								children: formatCurrency(implValue)
-							})]
-						})]
+								className: "flex justify-between items-center text-slate-600",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									"data-uid": "src/components/QuoteDocument.tsx:364:17",
+									"data-prohibitions": "[]",
+									children: "Visita Presencial de Diagnóstico"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									"data-uid": "src/components/QuoteDocument.tsx:365:17",
+									"data-prohibitions": "[editContent]",
+									className: "font-medium",
+									children: formatCurrency(Number(diagnosticVisitValue) || 0)
+								})]
+							}),
+							trainings.map((t, idx) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								"data-uid": "src/components/QuoteDocument.tsx:371:15",
+								"data-prohibitions": "[editContent]",
+								className: "flex justify-between items-center text-slate-600",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+									"data-uid": "src/components/QuoteDocument.tsx:375:17",
+									"data-prohibitions": "[editContent]",
+									children: ["Treinamento: ", t.name]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									"data-uid": "src/components/QuoteDocument.tsx:376:17",
+									"data-prohibitions": "[editContent]",
+									className: "font-medium",
+									children: formatCurrency(Number(t.price) || 0)
+								})]
+							}, `rec-tr-${idx}`)),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								"data-uid": "src/components/QuoteDocument.tsx:379:13",
+								"data-prohibitions": "[editContent]",
+								className: "pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									"data-uid": "src/components/QuoteDocument.tsx:380:15",
+									"data-prohibitions": "[]",
+									children: "Total à Vista"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									"data-uid": "src/components/QuoteDocument.tsx:381:15",
+									"data-prohibitions": "[editContent]",
+									children: formatCurrency(implValue)
+								})]
+							})
+						]
 					})]
 				})]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				"data-uid": "src/components/QuoteDocument.tsx:328:7",
+				"data-uid": "src/components/QuoteDocument.tsx:387:7",
 				"data-prohibitions": "[]",
 				className: "mt-6 pt-3 border-t border-slate-200 text-center text-[9px] text-slate-400",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-					"data-uid": "src/components/QuoteDocument.tsx:329:9",
+					"data-uid": "src/components/QuoteDocument.tsx:388:9",
 					"data-prohibitions": "[]",
 					children: "Validade desta proposta: 15 dias corridos."
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-					"data-uid": "src/components/QuoteDocument.tsx:330:9",
+					"data-uid": "src/components/QuoteDocument.tsx:389:9",
 					"data-prohibitions": "[]",
 					children: "Para dúvidas ou esclarecimentos, entre em contato conosco."
 				})]
@@ -107634,4 +107708,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, {
 }));
 //#endregion
 
-//# sourceMappingURL=index-CKJ7inV6.js.map
+//# sourceMappingURL=index-DBHLTbfm.js.map
