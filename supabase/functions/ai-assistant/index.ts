@@ -3,8 +3,7 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
 }
 
 Deno.serve(async (req: Request) => {
@@ -19,11 +18,11 @@ Deno.serve(async (req: Request) => {
     const openAiKey = Deno.env.get('OPENAI_API_KEY')
 
     if (action === 'chat') {
-      // Esqueleto:
+      // Esqueleto: 
       // 1. Converter mensagem para embedding
       // 2. Buscar no vector DB (knowledge_article_embeddings) via RPC
       // 3. Enviar contexto para a OpenAI e retornar a resposta
-
+      
       const userMessage = payload?.message || ''
       console.log(`[AI-Assistant] Mensagem recebida: ${userMessage}`)
 
@@ -31,13 +30,12 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({
           success: true,
           message: 'Integração OpenAI arquitetada com sucesso.',
-          reply:
-            'Olá! A infraestrutura para a Inteligência Artificial já está pronta. Quando a chave da OpenAI for ativada, eu serei capaz de fazer buscas semânticas em toda a base de conhecimento e resumir tickets automaticamente!',
+          reply: 'Olá! A infraestrutura para a Inteligência Artificial já está pronta. Quando a chave da OpenAI for ativada, eu serei capaz de fazer buscas semânticas em toda a base de conhecimento e resumir tickets automaticamente!',
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200,
-        },
+        }
       )
     }
 
@@ -50,7 +48,7 @@ Deno.serve(async (req: Request) => {
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
+        }
       )
     }
 
@@ -63,7 +61,7 @@ Deno.serve(async (req: Request) => {
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
+        }
       )
     }
 
