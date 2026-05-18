@@ -47,6 +47,7 @@ import {
   IMPLEMENTATION_RATES,
   BASE_IMPLEMENTATION_HOURS,
   DFE_TIERS,
+  PREDEFINED_TRAININGS,
 } from '@/constants/contracts'
 import { ContractDocument } from '@/components/ContractDocument'
 import { cn } from '@/lib/utils'
@@ -99,7 +100,7 @@ export default function ContractGeneratorPage() {
   const [prospectSearch, setProspectSearch] = useState('')
   const [includeDiagnosticVisit, setIncludeDiagnosticVisit] = useState(false)
   const [diagnosticVisitValue, setDiagnosticVisitValue] = useState<string>('')
-  const [trainings, setTrainings] = useState<{ id: string; name: string; price: string }[]>([])
+  const [selectedTrainings, setSelectedTrainings] = useState<string[]>([])
 
   useEffect(() => {
     // Esconde a barra de pesquisa global do layout para limpar a interface
@@ -210,7 +211,10 @@ export default function ContractGeneratorPage() {
     if (includeDiagnosticVisit) {
       value += diagValue
     }
-    const trainingsValue = trainings.reduce((acc, t) => acc + (parseFloat(t.price) || 0), 0)
+    const trainingsValue = selectedTrainings.reduce((acc, id) => {
+      const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
+      return acc + (t ? t.price : 0)
+    }, 0)
     value += trainingsValue
     return value
   }, [
@@ -220,7 +224,7 @@ export default function ContractGeneratorPage() {
     implMode,
     includeDiagnosticVisit,
     diagValue,
-    trainings,
+    selectedTrainings,
     activeTab,
   ])
 
@@ -250,7 +254,10 @@ export default function ContractGeneratorPage() {
     implRate,
     totalImplHours,
     implValue,
-    trainings,
+    trainings: selectedTrainings.map((id) => {
+      const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
+      return { id, name: t?.name, price: t?.price }
+    }),
     includeDiagnosticVisit,
     diagnosticVisitValue,
   }
@@ -270,7 +277,10 @@ export default function ContractGeneratorPage() {
     selectedModulesData: selectedModules
       .map((id) => MODULES.find((m) => m.id === id))
       .filter(Boolean),
-    trainings,
+    trainings: selectedTrainings.map((id) => {
+      const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
+      return { id, name: t?.name, price: t?.price }
+    }),
     planPrice,
     modulesPrice,
     selectedDfe,
@@ -543,7 +553,10 @@ export default function ContractGeneratorPage() {
           ...selectedModules.map((id) => MODULES.find((m) => m.id === id)?.name),
           selectedDfe !== 'dfe-none' && dfeData ? dfeData.name : null,
           includeDiagnosticVisit ? 'Visita Presencial de Diagnóstico' : null,
-          ...trainings.map((t) => `Treinamento: ${t.name}`),
+          ...selectedTrainings.map((id) => {
+            const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
+            return t ? `Treinamento: ${t.name}` : null
+          }),
         ].filter(Boolean)
 
         const { error } = await supabase.from('solicitacoes_servico').insert({
@@ -609,11 +622,10 @@ export default function ContractGeneratorPage() {
             ...(includeDiagnosticVisit
               ? [{ id: 'diag', name: 'Visita Presencial de Diagnóstico', price: diagValue }]
               : []),
-            ...trainings.map((t) => ({
-              id: t.id,
-              name: `Treinamento: ${t.name}`,
-              price: parseFloat(t.price) || 0,
-            })),
+            ...selectedTrainings.map((id) => {
+              const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
+              return { id, name: `Treinamento: ${t?.name}`, price: t?.price || 0 }
+            }),
           ],
           valor_mensalidade: totalValue,
           valor_implantacao: implValue,
@@ -1020,63 +1032,34 @@ export default function ContractGeneratorPage() {
 
                     <Separator className="my-4" />
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-sm font-bold">Treinamentos Adicionais</Label>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs"
-                          onClick={() =>
-                            setTrainings([
-                              ...trainings,
-                              { id: crypto.randomUUID(), name: '', price: '' },
-                            ])
-                          }
-                        >
-                          + Treinamento
-                        </Button>
+                      <Label className="text-sm font-bold">Treinamentos Adicionais</Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {PREDEFINED_TRAININGS.map((t) => (
+                          <div
+                            key={t.id}
+                            className="flex items-center space-x-2 border p-2 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+                          >
+                            <Checkbox
+                              id={`train-gen-${t.id}`}
+                              checked={selectedTrainings.includes(t.id)}
+                              onCheckedChange={(c) => {
+                                setSelectedTrainings((prev) =>
+                                  c ? [...prev, t.id] : prev.filter((id) => id !== t.id),
+                                )
+                              }}
+                            />
+                            <Label
+                              htmlFor={`train-gen-${t.id}`}
+                              className="text-xs flex-1 cursor-pointer font-medium"
+                            >
+                              {t.name}
+                            </Label>
+                            <span className="text-xs font-semibold text-slate-600">
+                              {t.price > 0 ? formatCurrency(t.price) : 'Incluso'}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                      {trainings.length > 0 && (
-                        <div className="space-y-2 mt-2">
-                          {trainings.map((t, index) => (
-                            <div key={t.id} className="flex gap-2 items-center">
-                              <Input
-                                placeholder="Nome do Treinamento"
-                                value={t.name}
-                                onChange={(e) => {
-                                  const newTrainings = [...trainings]
-                                  newTrainings[index].name = e.target.value
-                                  setTrainings(newTrainings)
-                                }}
-                                className="flex-1 bg-white h-8 text-xs"
-                              />
-                              <Input
-                                type="number"
-                                placeholder="Valor (R$)"
-                                value={t.price}
-                                onChange={(e) => {
-                                  const newTrainings = [...trainings]
-                                  newTrainings[index].price = e.target.value
-                                  setTrainings(newTrainings)
-                                }}
-                                className="w-24 bg-white h-8 text-xs"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                onClick={() =>
-                                  setTrainings(trainings.filter((tr) => tr.id !== t.id))
-                                }
-                              >
-                                <Trash className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -1340,63 +1323,34 @@ export default function ContractGeneratorPage() {
 
                       <Separator className="my-4" />
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-sm font-bold">Treinamentos Adicionais</Label>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs"
-                            onClick={() =>
-                              setTrainings([
-                                ...trainings,
-                                { id: crypto.randomUUID(), name: '', price: '' },
-                              ])
-                            }
-                          >
-                            + Treinamento
-                          </Button>
+                        <Label className="text-sm font-bold">Treinamentos Adicionais</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {PREDEFINED_TRAININGS.map((t) => (
+                            <div
+                              key={t.id}
+                              className="flex items-center space-x-2 border p-2 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+                            >
+                              <Checkbox
+                                id={`train-up-${t.id}`}
+                                checked={selectedTrainings.includes(t.id)}
+                                onCheckedChange={(c) => {
+                                  setSelectedTrainings((prev) =>
+                                    c ? [...prev, t.id] : prev.filter((id) => id !== t.id),
+                                  )
+                                }}
+                              />
+                              <Label
+                                htmlFor={`train-up-${t.id}`}
+                                className="text-xs flex-1 cursor-pointer font-medium"
+                              >
+                                {t.name}
+                              </Label>
+                              <span className="text-xs font-semibold text-slate-600">
+                                {t.price > 0 ? formatCurrency(t.price) : 'Incluso'}
+                              </span>
+                            </div>
+                          ))}
                         </div>
-                        {trainings.length > 0 && (
-                          <div className="space-y-2 mt-2">
-                            {trainings.map((t, index) => (
-                              <div key={t.id} className="flex gap-2 items-center">
-                                <Input
-                                  placeholder="Nome do Treinamento"
-                                  value={t.name}
-                                  onChange={(e) => {
-                                    const newTrainings = [...trainings]
-                                    newTrainings[index].name = e.target.value
-                                    setTrainings(newTrainings)
-                                  }}
-                                  className="flex-1 bg-white h-8 text-xs"
-                                />
-                                <Input
-                                  type="number"
-                                  placeholder="Valor (R$)"
-                                  value={t.price}
-                                  onChange={(e) => {
-                                    const newTrainings = [...trainings]
-                                    newTrainings[index].price = e.target.value
-                                    setTrainings(newTrainings)
-                                  }}
-                                  className="w-24 bg-white h-8 text-xs"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                  onClick={() =>
-                                    setTrainings(trainings.filter((tr) => tr.id !== t.id))
-                                  }
-                                >
-                                  <Trash className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     </div>
                   )}
@@ -1437,63 +1391,34 @@ export default function ContractGeneratorPage() {
 
                       <Separator className="my-4" />
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-sm font-bold">Treinamentos Adicionais</Label>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs"
-                            onClick={() =>
-                              setTrainings([
-                                ...trainings,
-                                { id: crypto.randomUUID(), name: '', price: '' },
-                              ])
-                            }
-                          >
-                            + Treinamento
-                          </Button>
+                        <Label className="text-sm font-bold">Treinamentos Adicionais</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {PREDEFINED_TRAININGS.map((t) => (
+                            <div
+                              key={t.id}
+                              className="flex items-center space-x-2 border p-2 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+                            >
+                              <Checkbox
+                                id={`train-prosp-${t.id}`}
+                                checked={selectedTrainings.includes(t.id)}
+                                onCheckedChange={(c) => {
+                                  setSelectedTrainings((prev) =>
+                                    c ? [...prev, t.id] : prev.filter((id) => id !== t.id),
+                                  )
+                                }}
+                              />
+                              <Label
+                                htmlFor={`train-prosp-${t.id}`}
+                                className="text-xs flex-1 cursor-pointer font-medium"
+                              >
+                                {t.name}
+                              </Label>
+                              <span className="text-xs font-semibold text-slate-600">
+                                {t.price > 0 ? formatCurrency(t.price) : 'Incluso'}
+                              </span>
+                            </div>
+                          ))}
                         </div>
-                        {trainings.length > 0 && (
-                          <div className="space-y-2 mt-2">
-                            {trainings.map((t, index) => (
-                              <div key={t.id} className="flex gap-2 items-center">
-                                <Input
-                                  placeholder="Nome do Treinamento"
-                                  value={t.name}
-                                  onChange={(e) => {
-                                    const newTrainings = [...trainings]
-                                    newTrainings[index].name = e.target.value
-                                    setTrainings(newTrainings)
-                                  }}
-                                  className="flex-1 bg-white h-8 text-xs"
-                                />
-                                <Input
-                                  type="number"
-                                  placeholder="Valor (R$)"
-                                  value={t.price}
-                                  onChange={(e) => {
-                                    const newTrainings = [...trainings]
-                                    newTrainings[index].price = e.target.value
-                                    setTrainings(newTrainings)
-                                  }}
-                                  className="w-24 bg-white h-8 text-xs"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                  onClick={() =>
-                                    setTrainings(trainings.filter((tr) => tr.id !== t.id))
-                                  }
-                                >
-                                  <Trash className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     </div>
                   )}

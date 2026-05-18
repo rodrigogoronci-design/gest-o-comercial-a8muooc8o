@@ -88,3 +88,24 @@ export const MODULES = [
       'Solução completa para monitoramento e gestão operacional da frota em tempo real, proporcionando maior visibilidade, controle e agilidade nas operações logísticas. Permite acompanhar viagens, ocorrências, desempenho dos veículos, custos operacionais e indicadores estratégicos em um único painel, auxiliando na tomada de decisão e na redução de falhas, atrasos e custos da operação.',
   },
 ]
+
+export const PREDEFINED_TRAININGS = [
+  { id: 'train-admin-basico-comercial', name: 'Administrativo, Básico e Comercial', price: 200.0 },
+  { id: 'train-carga', name: 'Carga', price: 200.0 },
+  { id: 'train-faturamento-financeiro', name: 'Faturamento e Financeiro', price: 200.0 },
+  { id: 'train-fiscal-dfe', name: 'Fiscal e DFe', price: 100.0 },
+  { id: 'train-frota-todos', name: 'Gestão de Frota (Todos)', price: 600.0 },
+  { id: 'train-frota-compras', name: 'Gestão de Frota - Compras', price: 100.0 },
+  { id: 'train-frota-estoque', name: 'Gestão de Frota - Estoque', price: 100.0 },
+  { id: 'train-frota-abastecimento', name: 'Gestão de Frota - Abastecimento', price: 100.0 },
+  { id: 'train-frota-pneu', name: 'Gestão de Frota - Pneu', price: 100.0 },
+  { id: 'train-frota-manutencao', name: 'Gestão de Frota - Manutenção', price: 100.0 },
+  { id: 'train-frota-vencimento', name: 'Gestão de Frota - Vencimento', price: 100.0 },
+  { id: 'train-ctrl-viagem', name: 'Controle de Viagem', price: 100.0 },
+  { id: 'train-gerador-relatorio', name: 'Gerador de Relatório', price: 0.0 },
+  {
+    id: 'train-encontro-duvidas',
+    name: 'Encontro posterior para dúvidas (1 hora remoto)',
+    price: 100.0,
+  },
+]
