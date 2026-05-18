@@ -102,6 +102,7 @@ export default function ContractGeneratorPage() {
   const [prospectSearch, setProspectSearch] = useState('')
   const [includeDiagnosticVisit, setIncludeDiagnosticVisit] = useState(false)
   const [diagnosticVisitValue, setDiagnosticVisitValue] = useState<string>('')
+  const [diagnosticVisitDate, setDiagnosticVisitDate] = useState<string>('')
   const [selectedTrainings, setSelectedTrainings] = useState<string[]>([])
 
   const [sendToImplementation, setSendToImplementation] = useState(false)
@@ -276,6 +277,7 @@ export default function ContractGeneratorPage() {
     }),
     includeDiagnosticVisit,
     diagnosticVisitValue,
+    diagnosticVisitDate,
   }
 
   const quoteProps = {
@@ -311,6 +313,7 @@ export default function ContractGeneratorPage() {
     includeFranchise: selectedDfe !== 'dfe-none',
     includeDiagnosticVisit,
     diagnosticVisitValue,
+    diagnosticVisitDate,
     currentClientValue,
   }
 
@@ -569,7 +572,9 @@ export default function ContractGeneratorPage() {
         const modulosAdicionados = [
           ...selectedModules.map((id) => MODULES.find((m) => m.id === id)?.name),
           selectedDfe !== 'dfe-none' && dfeData ? dfeData.name : null,
-          includeDiagnosticVisit ? 'Visita Presencial de Diagnóstico' : null,
+          includeDiagnosticVisit
+            ? `Visita Presencial de Diagnóstico${diagnosticVisitDate ? ` (Data: ${new Date(diagnosticVisitDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })})` : ''}`
+            : null,
           ...selectedTrainings.map((id) => {
             const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
             return t ? `Treinamento: ${t.name}` : null
@@ -637,7 +642,13 @@ export default function ContractGeneratorPage() {
               ? [{ id: dfeData.id, name: dfeData.name, price: dfeData.price }]
               : []),
             ...(includeDiagnosticVisit
-              ? [{ id: 'diag', name: 'Visita Presencial de Diagnóstico', price: diagValue }]
+              ? [
+                  {
+                    id: 'diag',
+                    name: `Visita Presencial de Diagnóstico${diagnosticVisitDate ? ` (Data: ${new Date(diagnosticVisitDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })})` : ''}`,
+                    price: diagValue,
+                  },
+                ]
               : []),
             ...selectedTrainings.map((id) => {
               const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
@@ -1390,15 +1401,26 @@ export default function ContractGeneratorPage() {
                           </Label>
                         </div>
                         {includeDiagnosticVisit && (
-                          <div className="pl-6 pt-2">
-                            <Label className="text-xs text-slate-600">Valor da Visita</Label>
-                            <Input
-                              type="number"
-                              placeholder="Ex: 1500"
-                              value={diagnosticVisitValue}
-                              onChange={(e) => setDiagnosticVisitValue(e.target.value)}
-                              className="w-1/2 bg-white mt-1 h-8 text-xs"
-                            />
+                          <div className="pl-6 pt-2 flex flex-col sm:flex-row gap-4">
+                            <div className="flex-1">
+                              <Label className="text-xs text-slate-600">Valor da Visita</Label>
+                              <Input
+                                type="number"
+                                placeholder="Ex: 1500"
+                                value={diagnosticVisitValue}
+                                onChange={(e) => setDiagnosticVisitValue(e.target.value)}
+                                className="w-full bg-white mt-1 h-8 text-xs"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <Label className="text-xs text-slate-600">Data da Visita</Label>
+                              <Input
+                                type="date"
+                                value={diagnosticVisitDate}
+                                onChange={(e) => setDiagnosticVisitDate(e.target.value)}
+                                className="w-full bg-white mt-1 h-8 text-xs"
+                              />
+                            </div>
                           </div>
                         )}
                       </div>
@@ -1457,15 +1479,26 @@ export default function ContractGeneratorPage() {
                             </Label>
                           </div>
                           {includeDiagnosticVisit && (
-                            <div className="pl-6 pt-2">
-                              <Label className="text-xs text-slate-600">Valor da Visita</Label>
-                              <Input
-                                type="number"
-                                placeholder="Ex: 1500"
-                                value={diagnosticVisitValue}
-                                onChange={(e) => setDiagnosticVisitValue(e.target.value)}
-                                className="w-1/2 bg-white mt-1 h-8 text-xs"
-                              />
+                            <div className="pl-6 pt-2 flex flex-col sm:flex-row gap-4">
+                              <div className="flex-1">
+                                <Label className="text-xs text-slate-600">Valor da Visita</Label>
+                                <Input
+                                  type="number"
+                                  placeholder="Ex: 1500"
+                                  value={diagnosticVisitValue}
+                                  onChange={(e) => setDiagnosticVisitValue(e.target.value)}
+                                  className="w-full bg-white mt-1 h-8 text-xs"
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <Label className="text-xs text-slate-600">Data da Visita</Label>
+                                <Input
+                                  type="date"
+                                  value={diagnosticVisitDate}
+                                  onChange={(e) => setDiagnosticVisitDate(e.target.value)}
+                                  className="w-full bg-white mt-1 h-8 text-xs"
+                                />
+                              </div>
                             </div>
                           )}
                         </div>
