@@ -182,29 +182,31 @@ export default function ContractGeneratorPage() {
   const implRate =
     implMode === 'remoto' ? IMPLEMENTATION_RATES.remoto : IMPLEMENTATION_RATES.presencial
   const totalImplHours = useMemo(() => {
-    let hours =
-      activeTab === 'cotacao' && quoteTargetType === 'cliente' ? 0 : BASE_IMPLEMENTATION_HOURS
+    if (activeTab === 'cotacao') return 0
+    let hours = BASE_IMPLEMENTATION_HOURS
     selectedModules.forEach((id) => {
       const mod = MODULES.find((m) => m.id === id)
       if (mod && mod.implHours) hours += mod.implHours
     })
     return hours
-  }, [selectedModules, activeTab, quoteTargetType])
+  }, [selectedModules, activeTab])
 
   const diagValue = diagnosticVisitValue !== '' ? parseFloat(diagnosticVisitValue) : 0
 
   const calculatedImplValue = useMemo(() => {
     let value = totalImplHours * implRate
-    selectedModules.forEach((id) => {
-      const mod = MODULES.find((m) => m.id === id) as any
-      if (mod && mod.fixedImplPrice !== undefined) {
-        if (typeof mod.fixedImplPrice === 'object') {
-          value += mod.fixedImplPrice[implMode]
-        } else {
-          value += mod.fixedImplPrice
+    if (activeTab !== 'cotacao') {
+      selectedModules.forEach((id) => {
+        const mod = MODULES.find((m) => m.id === id) as any
+        if (mod && mod.fixedImplPrice !== undefined) {
+          if (typeof mod.fixedImplPrice === 'object') {
+            value += mod.fixedImplPrice[implMode]
+          } else {
+            value += mod.fixedImplPrice
+          }
         }
-      }
-    })
+      })
+    }
     if (includeDiagnosticVisit) {
       value += diagValue
     }
@@ -219,10 +221,14 @@ export default function ContractGeneratorPage() {
     includeDiagnosticVisit,
     diagValue,
     trainings,
+    activeTab,
   ])
 
   const [manualImplValue, setManualImplValue] = useState<string>('')
-  const implValue = manualImplValue !== '' ? parseFloat(manualImplValue) : calculatedImplValue
+  const implValue =
+    manualImplValue !== '' && activeTab !== 'cotacao'
+      ? parseFloat(manualImplValue)
+      : calculatedImplValue
 
   const contractProps = {
     name,
@@ -1332,22 +1338,6 @@ export default function ContractGeneratorPage() {
                         )}
                       </div>
 
-                      <div className="mt-4 pt-2 border-t border-slate-100 space-y-2">
-                        <Label className="text-xs">Valor Cobrado pelos Serviços (Opcional)</Label>
-                        <div className="flex gap-3 items-center">
-                          <Input
-                            type="number"
-                            placeholder="Ex: 1500"
-                            value={manualImplValue}
-                            onChange={(e) => setManualImplValue(e.target.value)}
-                            className="w-1/2 bg-white"
-                          />
-                          <span className="text-xs text-slate-500">
-                            Calculado: {formatCurrency(calculatedImplValue)}
-                          </span>
-                        </div>
-                      </div>
-
                       <Separator className="my-4" />
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
@@ -1413,7 +1403,7 @@ export default function ContractGeneratorPage() {
 
                   {quoteTargetType !== 'cliente' && (
                     <div className="space-y-3">
-                      <Label className="text-sm font-bold">Implantação</Label>
+                      <Label className="text-sm font-bold">Serviços Adicionais</Label>
 
                       <div className="flex flex-col gap-3 mb-4">
                         <div className="flex flex-col gap-2 border p-3 rounded-lg bg-slate-50">
@@ -1442,49 +1432,6 @@ export default function ContractGeneratorPage() {
                               />
                             </div>
                           )}
-                        </div>
-                      </div>
-
-                      <RadioGroup
-                        value={implMode}
-                        onValueChange={(v) => setImplMode(v as 'remoto' | 'presencial')}
-                        className="flex flex-col sm:flex-row gap-4"
-                      >
-                        <div className="flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors">
-                          <RadioGroupItem value="remoto" id="quote-remoto" />
-                          <Label
-                            htmlFor="quote-remoto"
-                            className="cursor-pointer font-medium flex-1 h-full py-1"
-                          >
-                            Remoto (R$ 130/h)
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors">
-                          <RadioGroupItem value="presencial" id="quote-presencial" />
-                          <Label
-                            htmlFor="quote-presencial"
-                            className="cursor-pointer font-medium flex-1 h-full py-1"
-                          >
-                            Presencial (R$ 170/h)
-                          </Label>
-                        </div>
-                      </RadioGroup>
-
-                      <div className="mt-4 pt-2 border-t border-slate-100 space-y-2">
-                        <Label className="text-xs">
-                          Valor da Implantação Personalizado (Opcional)
-                        </Label>
-                        <div className="flex gap-3 items-center">
-                          <Input
-                            type="number"
-                            placeholder="Ex: 1500"
-                            value={manualImplValue}
-                            onChange={(e) => setManualImplValue(e.target.value)}
-                            className="w-1/2 bg-white"
-                          />
-                          <span className="text-xs text-slate-500">
-                            Calculado: {formatCurrency(calculatedImplValue)}
-                          </span>
                         </div>
                       </div>
 
