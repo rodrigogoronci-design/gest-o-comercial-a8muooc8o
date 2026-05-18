@@ -89014,6 +89014,11 @@ var PREDEFINED_TRAININGS = [
 		price: 100
 	},
 	{
+		id: "train-powerbi",
+		name: "Power BI",
+		price: 200
+	},
+	{
 		id: "train-encontro-duvidas",
 		name: "Encontro posterior para dúvidas (1 hora remoto)",
 		price: 100
@@ -108121,4 +108126,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, {
 }));
 //#endregion
 
-//# sourceMappingURL=index-CnjwkIBI.js.map
+//# sourceMappingURL=index-D24fKJbI.js.map
