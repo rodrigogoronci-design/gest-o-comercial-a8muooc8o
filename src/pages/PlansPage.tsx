@@ -115,6 +115,14 @@ export default function PlansPage() {
                 <CardTitle className="text-lg group-hover:text-indigo-600 transition-colors">
                   {mod.name}
                 </CardTitle>
+                {(mod as any).description && (
+                  <CardDescription
+                    className="mt-2 text-xs line-clamp-3"
+                    title={(mod as any).description}
+                  >
+                    {(mod as any).description}
+                  </CardDescription>
+                )}
               </CardHeader>
               <CardContent className="flex-grow">
                 <div className="mb-2">

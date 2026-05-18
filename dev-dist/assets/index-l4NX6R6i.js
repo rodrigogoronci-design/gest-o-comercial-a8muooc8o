@@ -88886,6 +88886,13 @@ var MODULES = [
 		name: "Homologação Bancaria",
 		price: 200,
 		implHours: 0
+	},
+	{
+		id: "mod-torre-controle",
+		name: "Torre de Controle Logística",
+		price: 299,
+		implHours: 4,
+		description: "Solução completa para monitoramento e gestão operacional da frota em tempo real, proporcionando maior visibilidade, controle e agilidade nas operações logísticas. Permite acompanhar viagens, ocorrências, desempenho dos veículos, custos operacionais e indicadores estratégicos em um único painel, auxiliando na tomada de decisão e na redução de falhas, atrasos e custos da operação."
 	}
 ];
 //#endregion
@@ -98250,39 +98257,49 @@ function PlansPage() {
 								"data-uid": "src/pages/PlansPage.tsx:106:15",
 								"data-prohibitions": "[editContent]",
 								className: "pb-4",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									"data-uid": "src/pages/PlansPage.tsx:107:17",
-									"data-prohibitions": "[]",
-									className: "flex justify-between items-start mb-2",
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, {
-										"data-uid": "src/pages/PlansPage.tsx:108:19",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+										"data-uid": "src/pages/PlansPage.tsx:107:17",
 										"data-prohibitions": "[]",
-										variant: "secondary",
-										className: "bg-indigo-100 text-indigo-800 hover:bg-indigo-100 shadow-none",
-										children: "Módulo Adicional"
+										className: "flex justify-between items-start mb-2",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, {
+											"data-uid": "src/pages/PlansPage.tsx:108:19",
+											"data-prohibitions": "[]",
+											variant: "secondary",
+											className: "bg-indigo-100 text-indigo-800 hover:bg-indigo-100 shadow-none",
+											children: "Módulo Adicional"
+										})
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, {
+										"data-uid": "src/pages/PlansPage.tsx:115:17",
+										"data-prohibitions": "[editContent]",
+										className: "text-lg group-hover:text-indigo-600 transition-colors",
+										children: mod.name
+									}),
+									mod.description && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardDescription, {
+										"data-uid": "src/pages/PlansPage.tsx:119:19",
+										"data-prohibitions": "[editContent]",
+										className: "mt-2 text-xs line-clamp-3",
+										title: mod.description,
+										children: mod.description
 									})
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, {
-									"data-uid": "src/pages/PlansPage.tsx:115:17",
-									"data-prohibitions": "[editContent]",
-									className: "text-lg group-hover:text-indigo-600 transition-colors",
-									children: mod.name
-								})]
+								]
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardContent, {
-								"data-uid": "src/pages/PlansPage.tsx:119:15",
+								"data-uid": "src/pages/PlansPage.tsx:127:15",
 								"data-prohibitions": "[editContent]",
 								className: "flex-grow",
 								children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/PlansPage.tsx:120:17",
+									"data-uid": "src/pages/PlansPage.tsx:128:17",
 									"data-prohibitions": "[editContent]",
 									className: "mb-2",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										"data-uid": "src/pages/PlansPage.tsx:121:19",
+										"data-uid": "src/pages/PlansPage.tsx:129:19",
 										"data-prohibitions": "[editContent]",
 										className: "text-2xl font-bold text-slate-900",
 										children: formatCurrency(mod.price)
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										"data-uid": "src/pages/PlansPage.tsx:124:19",
+										"data-uid": "src/pages/PlansPage.tsx:132:19",
 										"data-prohibitions": "[]",
 										className: "text-sm text-slate-500 font-medium",
 										children: "/mês"
@@ -98294,48 +98311,48 @@ function PlansPage() {
 				})]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				"data-uid": "src/pages/PlansPage.tsx:132:7",
+				"data-uid": "src/pages/PlansPage.tsx:140:7",
 				"data-prohibitions": "[editContent]",
 				className: "space-y-6 pt-6",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/pages/PlansPage.tsx:133:9",
+					"data-uid": "src/pages/PlansPage.tsx:141:9",
 					"data-prohibitions": "[]",
 					className: "flex items-center gap-2",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShieldCheck, {
-						"data-uid": "src/pages/PlansPage.tsx:134:11",
+						"data-uid": "src/pages/PlansPage.tsx:142:11",
 						"data-prohibitions": "[editContent]",
 						className: "h-6 w-6 text-emerald-600"
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
-						"data-uid": "src/pages/PlansPage.tsx:135:11",
+						"data-uid": "src/pages/PlansPage.tsx:143:11",
 						"data-prohibitions": "[]",
 						className: "text-2xl font-semibold tracking-tight",
 						children: "Pacotes D.F.E."
 					})]
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					"data-uid": "src/pages/PlansPage.tsx:137:9",
+					"data-uid": "src/pages/PlansPage.tsx:145:9",
 					"data-prohibitions": "[editContent]",
 					className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6",
 					children: DFE_TIERS.map((dfe) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
-						"data-uid": "src/pages/PlansPage.tsx:139:13",
+						"data-uid": "src/pages/PlansPage.tsx:147:13",
 						"data-prohibitions": "[editContent]",
 						className: "relative overflow-hidden flex flex-col border-slate-200/60 shadow-sm hover:shadow-md transition-shadow group",
 						children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-								"data-uid": "src/pages/PlansPage.tsx:143:15",
+								"data-uid": "src/pages/PlansPage.tsx:151:15",
 								"data-prohibitions": "[]",
 								className: "absolute top-0 inset-x-0 h-1.5 bg-emerald-500"
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardHeader, {
-								"data-uid": "src/pages/PlansPage.tsx:144:15",
+								"data-uid": "src/pages/PlansPage.tsx:152:15",
 								"data-prohibitions": "[editContent]",
 								className: "pb-4",
 								children: [
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										"data-uid": "src/pages/PlansPage.tsx:145:17",
+										"data-uid": "src/pages/PlansPage.tsx:153:17",
 										"data-prohibitions": "[]",
 										className: "flex justify-between items-start mb-2",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, {
-											"data-uid": "src/pages/PlansPage.tsx:146:19",
+											"data-uid": "src/pages/PlansPage.tsx:154:19",
 											"data-prohibitions": "[]",
 											variant: "secondary",
 											className: "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 shadow-none",
@@ -98343,13 +98360,13 @@ function PlansPage() {
 										})
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, {
-										"data-uid": "src/pages/PlansPage.tsx:153:17",
+										"data-uid": "src/pages/PlansPage.tsx:161:17",
 										"data-prohibitions": "[editContent]",
 										className: "text-lg group-hover:text-emerald-600 transition-colors",
 										children: dfe.name
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardDescription, {
-										"data-uid": "src/pages/PlansPage.tsx:156:17",
+										"data-uid": "src/pages/PlansPage.tsx:164:17",
 										"data-prohibitions": "[editContent]",
 										className: "mt-2 text-xs",
 										children: [
@@ -98361,20 +98378,20 @@ function PlansPage() {
 								]
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardContent, {
-								"data-uid": "src/pages/PlansPage.tsx:160:15",
+								"data-uid": "src/pages/PlansPage.tsx:168:15",
 								"data-prohibitions": "[editContent]",
 								className: "flex-grow",
 								children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/PlansPage.tsx:161:17",
+									"data-uid": "src/pages/PlansPage.tsx:169:17",
 									"data-prohibitions": "[editContent]",
 									className: "mb-2",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										"data-uid": "src/pages/PlansPage.tsx:162:19",
+										"data-uid": "src/pages/PlansPage.tsx:170:19",
 										"data-prohibitions": "[editContent]",
 										className: "text-2xl font-bold text-slate-900",
 										children: formatCurrency(dfe.price)
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										"data-uid": "src/pages/PlansPage.tsx:165:19",
+										"data-uid": "src/pages/PlansPage.tsx:173:19",
 										"data-prohibitions": "[]",
 										className: "text-sm text-slate-500 font-medium",
 										children: "/mês"
@@ -107212,4 +107229,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, {
 }));
 //#endregion
 
-//# sourceMappingURL=index-GOdlLfPa.js.map
+//# sourceMappingURL=index-l4NX6R6i.js.map
