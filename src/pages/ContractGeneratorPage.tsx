@@ -88,6 +88,7 @@ export default function ContractGeneratorPage() {
   const [selectedDfe, setSelectedDfe] = useState<string>('dfe-none')
   const [clientSearch, setClientSearch] = useState('')
   const [prospectSearch, setProspectSearch] = useState('')
+  const [includeDiagnosticVisit, setIncludeDiagnosticVisit] = useState(false)
 
   useEffect(() => {
     // Esconde a barra de pesquisa global do layout para limpar a interface
@@ -167,13 +168,15 @@ export default function ContractGeneratorPage() {
   const implRate =
     implMode === 'remoto' ? IMPLEMENTATION_RATES.remoto : IMPLEMENTATION_RATES.presencial
   const totalImplHours = useMemo(() => {
-    let hours = BASE_IMPLEMENTATION_HOURS
+    let hours =
+      activeTab === 'cotacao' && quoteTargetType === 'cliente' ? 0 : BASE_IMPLEMENTATION_HOURS
     selectedModules.forEach((id) => {
       const mod = MODULES.find((m) => m.id === id)
       if (mod && mod.implHours) hours += mod.implHours
     })
     return hours
-  }, [selectedModules])
+  }, [selectedModules, activeTab, quoteTargetType])
+
   const calculatedImplValue = useMemo(() => {
     let value = totalImplHours * implRate
     selectedModules.forEach((id) => {
@@ -186,8 +189,11 @@ export default function ContractGeneratorPage() {
         }
       }
     })
+    if (includeDiagnosticVisit) {
+      value += 8 * IMPLEMENTATION_RATES.presencial
+    }
     return value
-  }, [totalImplHours, implRate, selectedModules, implMode])
+  }, [totalImplHours, implRate, selectedModules, implMode, includeDiagnosticVisit])
 
   const [manualImplValue, setManualImplValue] = useState<string>('')
   const implValue = manualImplValue !== '' ? parseFloat(manualImplValue) : calculatedImplValue
@@ -228,6 +234,7 @@ export default function ContractGeneratorPage() {
         .map((id) => MODULES.find((m) => m.id === id)?.name)
         .filter(Boolean) as string[]),
       ...(selectedDfe !== 'dfe-none' && dfeData ? [dfeData.name] : []),
+      ...(includeDiagnosticVisit ? ['Visita Presencial de Diagnóstico (8h)'] : []),
     ],
     planPrice,
     modulesPrice,
@@ -237,10 +244,11 @@ export default function ContractGeneratorPage() {
     totalValue,
     implMode,
     implRate,
-    totalImplHours,
+    totalImplHours: totalImplHours + (includeDiagnosticVisit ? 8 : 0),
     implValue,
     isUpsell: quoteTargetType === 'cliente',
     includeFranchise: selectedDfe !== 'dfe-none',
+    includeDiagnosticVisit,
   }
 
   const fetchCnpjData = async (cnpjValue: string) => {
@@ -495,12 +503,18 @@ export default function ContractGeneratorPage() {
           })
           return
         }
+        const modulosAdicionados = [
+          ...selectedModules.map((id) => MODULES.find((m) => m.id === id)?.name),
+          selectedDfe !== 'dfe-none' && dfeData ? dfeData.name : null,
+          includeDiagnosticVisit ? 'Visita Presencial de Diagnóstico' : null,
+        ].filter(Boolean)
+
         const { error } = await supabase.from('solicitacoes_servico').insert({
           cliente_id: selectedClientId,
           tipo: 'Proposta de Upsell',
           descricao: `Adição de Módulos/Serviços. Valor Mensal: ${formatCurrency(totalValue)}`,
-          valor: 0,
-          observacoes: `Módulos: ${[...selectedModules.map((id) => MODULES.find((m) => m.id === id)?.name), selectedDfe !== 'dfe-none' && dfeData ? dfeData.name : null].filter(Boolean).join(', ')}`,
+          valor: implValue,
+          observacoes: `Itens: ${modulosAdicionados.join(', ')}. Taxa de Implantação/Serviço: ${formatCurrency(implValue)}`,
           status: 'Pendente',
           data_solicitacao: new Date().toISOString().split('T')[0],
         })
@@ -512,12 +526,7 @@ export default function ContractGeneratorPage() {
             body: {
               to: 'financeiro@empresa.com',
               clientName: clientData?.nome || 'Cliente',
-              moduleName: [
-                ...selectedModules.map((id) => MODULES.find((m) => m.id === id)?.name),
-                selectedDfe !== 'dfe-none' && dfeData ? dfeData.name : null,
-              ]
-                .filter(Boolean)
-                .join(', '),
+              moduleName: modulosAdicionados.join(', '),
               type: 'aditivo',
             },
           })
@@ -559,6 +568,9 @@ export default function ContractGeneratorPage() {
             }),
             ...(selectedDfe !== 'dfe-none' && dfeData
               ? [{ id: dfeData.id, name: dfeData.name, price: dfeData.price }]
+              : []),
+            ...(includeDiagnosticVisit
+              ? [{ id: 'diag', name: 'Visita Presencial de Diagnóstico (8h)', price: 0 }]
               : []),
           ],
           valor_mensalidade: totalValue,
@@ -1189,9 +1201,60 @@ export default function ContractGeneratorPage() {
                     </Select>
                   </div>
                   <Separator />
+                  {quoteTargetType === 'cliente' && (
+                    <div className="space-y-3">
+                      <Label className="text-sm font-bold">Serviços Adicionais (Upsell)</Label>
+                      <div className="flex items-center space-x-2 border p-2 rounded-lg bg-slate-50">
+                        <Checkbox
+                          id="quote-diagnostic"
+                          checked={includeDiagnosticVisit}
+                          onCheckedChange={(c) => setIncludeDiagnosticVisit(c as boolean)}
+                        />
+                        <Label htmlFor="quote-diagnostic" className="text-xs flex-1 cursor-pointer">
+                          Visita Presencial de Diagnóstico (8h) -{' '}
+                          {formatCurrency(8 * IMPLEMENTATION_RATES.presencial)}
+                        </Label>
+                      </div>
+
+                      <div className="mt-4 pt-2 border-t border-slate-100 space-y-2">
+                        <Label className="text-xs">Valor Cobrado pelos Serviços (Opcional)</Label>
+                        <div className="flex gap-3 items-center">
+                          <Input
+                            type="number"
+                            placeholder="Ex: 1500"
+                            value={manualImplValue}
+                            onChange={(e) => setManualImplValue(e.target.value)}
+                            className="w-1/2 bg-white"
+                          />
+                          <span className="text-xs text-slate-500">
+                            Calculado: {formatCurrency(calculatedImplValue)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {quoteTargetType !== 'cliente' && (
                     <div className="space-y-3">
                       <Label className="text-sm font-bold">Implantação</Label>
+
+                      <div className="flex flex-col gap-3 mb-4">
+                        <div className="flex items-center space-x-2 border p-2 rounded-lg bg-slate-50">
+                          <Checkbox
+                            id="quote-diagnostic-prospect"
+                            checked={includeDiagnosticVisit}
+                            onCheckedChange={(c) => setIncludeDiagnosticVisit(c as boolean)}
+                          />
+                          <Label
+                            htmlFor="quote-diagnostic-prospect"
+                            className="text-xs flex-1 cursor-pointer"
+                          >
+                            Adicionar Visita Presencial de Diagnóstico (8h) -{' '}
+                            {formatCurrency(8 * IMPLEMENTATION_RATES.presencial)}
+                          </Label>
+                        </div>
+                      </div>
+
                       <RadioGroup
                         value={implMode}
                         onValueChange={(v) => setImplMode(v as 'remoto' | 'presencial')}
