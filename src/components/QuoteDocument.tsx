@@ -6,9 +6,12 @@ interface QuoteDocumentProps {
   aosCuidadosDe: string
   date: string
   planName: string
-  selectedModules: string[]
+  selectedModulesData?: any[]
+  trainings?: any[]
   planPrice: number
   modulesPrice: number
+  selectedDfe?: string
+  dfeData?: any
   dfePrice?: number
   totalValue: number
   implMode: string
@@ -17,6 +20,8 @@ interface QuoteDocumentProps {
   implValue: number
   isUpsell?: boolean
   includeFranchise?: boolean
+  includeDiagnosticVisit?: boolean
+  diagnosticVisitValue?: string
 }
 
 const FEATURE_CATEGORIES = [
@@ -63,15 +68,19 @@ export function QuoteDocument({
   aosCuidadosDe,
   date,
   planName,
-  selectedModules,
+  selectedModulesData = [],
+  trainings = [],
   planPrice,
   modulesPrice,
+  dfeData,
   dfePrice,
   totalValue,
   implMode,
   implValue,
   isUpsell,
   includeFranchise,
+  includeDiagnosticVisit,
+  diagnosticVisitValue,
 }: QuoteDocumentProps) {
   const showBasePlan =
     planName && planName !== 'Nenhum' && planName !== 'Nenhum (Somente Módulos / Upsell)'
@@ -123,11 +132,11 @@ export function QuoteDocument({
       </div>
 
       {/* Features */}
-      {showBasePlan && (
+      {showBasePlan && !isUpsell && (
         <div className="mb-4">
           <h3 className="font-bold text-xs text-[#1e3a8a] mb-2 flex items-center gap-1.5">
             <div className="w-1.5 h-3 bg-orange-500 rounded-full" />
-            Funcionalidades Inclusas no Plano
+            Funcionalidades Inclusas no Plano Base
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             {FEATURE_CATEGORIES.map((cat, i) => (
@@ -170,7 +179,7 @@ export function QuoteDocument({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {showBasePlan && (
+              {showBasePlan && !isUpsell && (
                 <tr>
                   <td className="p-1.5">
                     <span className="font-semibold text-slate-800">{planName}</span>
@@ -184,33 +193,48 @@ export function QuoteDocument({
                   <td className="p-1.5 text-center text-slate-600">Mensalidade</td>
                 </tr>
               )}
-              {selectedModules.length > 0 && (
+              {showBasePlan && isUpsell && (
                 <tr>
                   <td className="p-1.5">
-                    <span className="font-semibold text-slate-800">Módulos Adicionais</span>
-                    <span className="text-[9px] block text-slate-500 mt-0.5">
-                      {selectedModules.join(', ')}
+                    <span className="font-semibold text-slate-800">
+                      Upgrade de Plano: {planName}
                     </span>
-                    {selectedModules.some((m) => m.includes('EDI')) && (
+                  </td>
+                  <td className="p-1.5 text-center font-medium">1</td>
+                  <td className="p-1.5 text-right">{formatCurrency(planPrice)}</td>
+                  <td className="p-1.5 text-right font-medium">{formatCurrency(planPrice)}</td>
+                  <td className="p-1.5 text-center text-slate-600">Mensalidade</td>
+                </tr>
+              )}
+
+              {selectedModulesData.map((m, idx) => (
+                <tr key={`mod-${idx}`}>
+                  <td className="p-1.5">
+                    <span className="font-semibold text-slate-800">{m.name}</span>
+                    {m.id === 'mod-edi' && (
                       <span className="text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1">
-                        <strong>* EDI (Electronic Data Interchange):</strong> Inclusão de Layout
-                        padrão Proceda para integração (arquivos NOTFIS para emissão de CT-e, envios
-                        de CONEMB, DOCCOB e OCOREN) automatizando a troca de informações entre
-                        embarcador e transportadora.
+                        <strong>* EDI:</strong> Inclusão de Layout padrão Proceda para integração
+                        (arquivos NOTFIS para emissão de CT-e, envios de CONEMB, DOCCOB e OCOREN).
+                      </span>
+                    )}
+                    {m.description && (
+                      <span className="text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1">
+                        {m.description}
                       </span>
                     )}
                   </td>
                   <td className="p-1.5 text-center font-medium">1</td>
-                  <td className="p-1.5 text-right">{formatCurrency(modulesPrice)}</td>
-                  <td className="p-1.5 text-right font-medium">{formatCurrency(modulesPrice)}</td>
+                  <td className="p-1.5 text-right">{formatCurrency(m.price)}</td>
+                  <td className="p-1.5 text-right font-medium">{formatCurrency(m.price)}</td>
                   <td className="p-1.5 text-center text-slate-600">Mensalidade</td>
                 </tr>
-              )}
-              {includeFranchise && (
+              ))}
+
+              {includeFranchise && dfeData && (
                 <tr>
                   <td className="p-1.5">
                     <span className="font-semibold text-slate-800">
-                      Franquia de Emissões (DF-e)
+                      {dfeData.name || 'Franquia de Emissões (DF-e)'}
                     </span>
                     <span className="text-[9px] block text-slate-500 mt-0.5">
                       Pacote de emissões eletrônicas
@@ -226,6 +250,38 @@ export function QuoteDocument({
                   <td className="p-1.5 text-center text-slate-600">Mensalidade</td>
                 </tr>
               )}
+
+              {includeDiagnosticVisit && (
+                <tr>
+                  <td className="p-1.5">
+                    <span className="font-semibold text-slate-800">
+                      Visita Presencial de Diagnóstico
+                    </span>
+                  </td>
+                  <td className="p-1.5 text-center font-medium">1</td>
+                  <td className="p-1.5 text-right">
+                    {formatCurrency(Number(diagnosticVisitValue) || 0)}
+                  </td>
+                  <td className="p-1.5 text-right font-medium">
+                    {formatCurrency(Number(diagnosticVisitValue) || 0)}
+                  </td>
+                  <td className="p-1.5 text-center text-slate-600">Parcela Única</td>
+                </tr>
+              )}
+
+              {trainings.map((t, idx) => (
+                <tr key={`tr-${idx}`}>
+                  <td className="p-1.5">
+                    <span className="font-semibold text-slate-800">Treinamento: {t.name}</span>
+                  </td>
+                  <td className="p-1.5 text-center font-medium">1</td>
+                  <td className="p-1.5 text-right">{formatCurrency(Number(t.price) || 0)}</td>
+                  <td className="p-1.5 text-right font-medium">
+                    {formatCurrency(Number(t.price) || 0)}
+                  </td>
+                  <td className="p-1.5 text-center text-slate-600">Parcela Única</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -240,17 +296,22 @@ export function QuoteDocument({
           <div className="space-y-1.5 text-[10px]">
             {showBasePlan && (
               <div className="flex justify-between items-center text-slate-600">
-                <span>Plano Base</span>
+                <span>{isUpsell ? 'Upgrade de Plano' : 'Plano Base'}</span>
                 <span className="font-medium">{formatCurrency(planPrice)}</span>
               </div>
             )}
-            <div className="flex justify-between items-center text-slate-600">
-              <span>Módulos Adicionais</span>
-              <span className="font-medium">{formatCurrency(modulesPrice)}</span>
-            </div>
-            {includeFranchise && (
+            {selectedModulesData.map((m, idx) => (
+              <div
+                key={`rec-mod-${idx}`}
+                className="flex justify-between items-center text-slate-600"
+              >
+                <span>{m.name}</span>
+                <span className="font-medium">{formatCurrency(m.price)}</span>
+              </div>
+            ))}
+            {includeFranchise && dfeData && (
               <div className="flex justify-between items-center text-slate-600">
-                <span>Franquia DF-e</span>
+                <span>{dfeData.name || 'Franquia DF-e'}</span>
                 <span className="font-medium">{formatCurrency(dfePrice || 0)}</span>
               </div>
             )}
@@ -267,18 +328,12 @@ export function QuoteDocument({
           </h4>
           <div className="space-y-1.5 text-[10px]">
             <div className="flex justify-between items-center text-slate-600">
-              <span>Serviços Únicos</span>
-              <span className="font-medium">R$ 0,00</span>
+              <span>Serviços Adicionais / Treinamentos</span>
+              <span className="font-medium">{formatCurrency(implValue)}</span>
             </div>
-            {!isUpsell && (
-              <div className="flex justify-between items-center text-slate-600">
-                <span>Implantação ({implMode})</span>
-                <span className="font-medium">{formatCurrency(implValue)}</span>
-              </div>
-            )}
             <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
               <span>Total à Vista</span>
-              <span>{isUpsell ? formatCurrency(0) : formatCurrency(implValue)}</span>
+              <span>{formatCurrency(implValue)}</span>
             </div>
           </div>
         </div>

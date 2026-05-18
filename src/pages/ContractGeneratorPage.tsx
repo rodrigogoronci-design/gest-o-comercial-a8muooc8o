@@ -255,16 +255,10 @@ export default function ContractGeneratorPage() {
       year: 'numeric',
     }),
     planName: selectedPlan === 'none' ? 'Nenhum' : planData?.name || 'Plano Personalizado',
-    selectedModules: [
-      ...(selectedModules
-        .map((id) => MODULES.find((m) => m.id === id)?.name)
-        .filter(Boolean) as string[]),
-      ...(selectedDfe !== 'dfe-none' && dfeData ? [dfeData.name] : []),
-      ...(includeDiagnosticVisit ? ['Visita Presencial de Diagnóstico'] : []),
-      ...trainings.map(
-        (t) => `Treinamento: ${t.name} (${formatCurrency(parseFloat(t.price) || 0)})`,
-      ),
-    ],
+    selectedModulesData: selectedModules
+      .map((id) => MODULES.find((m) => m.id === id))
+      .filter(Boolean),
+    trainings,
     planPrice,
     modulesPrice,
     selectedDfe,
@@ -278,6 +272,7 @@ export default function ContractGeneratorPage() {
     isUpsell: quoteTargetType === 'cliente',
     includeFranchise: selectedDfe !== 'dfe-none',
     includeDiagnosticVisit,
+    diagnosticVisitValue,
   }
 
   const fetchCnpjData = async (cnpjValue: string) => {
@@ -539,17 +534,15 @@ export default function ContractGeneratorPage() {
           ...trainings.map((t) => `Treinamento: ${t.name}`),
         ].filter(Boolean)
 
-        const { error } = await supabase
-          .from('solicitacoes_servico')
-          .insert({
-            cliente_id: selectedClientId,
-            tipo: 'Proposta de Upsell',
-            descricao: `Adição de Módulos/Serviços. Valor Mensal: ${formatCurrency(totalValue)}`,
-            valor: implValue,
-            observacoes: `Itens: ${modulosAdicionados.join(', ')}. Taxa de Implantação/Serviço: ${formatCurrency(implValue)}`,
-            status: 'Pendente',
-            data_solicitacao: new Date().toISOString().split('T')[0],
-          })
+        const { error } = await supabase.from('solicitacoes_servico').insert({
+          cliente_id: selectedClientId,
+          tipo: 'Proposta de Upsell',
+          descricao: `Adição de Módulos/Serviços. Valor Mensal: ${formatCurrency(totalValue)}`,
+          valor: implValue,
+          observacoes: `Itens: ${modulosAdicionados.join(', ')}. Taxa de Implantação/Serviço: ${formatCurrency(implValue)}`,
+          status: 'Pendente',
+          data_solicitacao: new Date().toISOString().split('T')[0],
+        })
         if (error) throw error
 
         try {
