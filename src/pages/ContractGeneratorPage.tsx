@@ -37,6 +37,7 @@ import {
   MODULES,
   IMPLEMENTATION_RATES,
   BASE_IMPLEMENTATION_HOURS,
+  DFE_TIERS,
 } from '@/constants/contracts'
 import { ContractDocument } from '@/components/ContractDocument'
 import { cn } from '@/lib/utils'
@@ -84,7 +85,7 @@ export default function ContractGeneratorPage() {
   )
   const [selectedClientId, setSelectedClientId] = useState<string>(initialClientId)
   const [clientes, setClientes] = useState<any[]>([])
-  const [includeFranchise, setIncludeFranchise] = useState(false)
+  const [selectedDfe, setSelectedDfe] = useState<string>('dfe-none')
   const [clientSearch, setClientSearch] = useState('')
   const [prospectSearch, setProspectSearch] = useState('')
 
@@ -154,12 +155,14 @@ export default function ContractGeneratorPage() {
 
   const planData = useMemo(() => PLANS.find((p) => p.id === selectedPlan), [selectedPlan])
   const planPrice = selectedPlan === 'none' ? 0 : planData?.price || 0
+  const dfeData = useMemo(() => DFE_TIERS.find((d) => d.id === selectedDfe), [selectedDfe])
+  const dfePrice = dfeData?.price || 0
   const modulesPrice = useMemo(
     () =>
       selectedModules.reduce((acc, id) => acc + (MODULES.find((m) => m.id === id)?.price || 0), 0),
     [selectedModules],
   )
-  const totalValue = planPrice + modulesPrice
+  const totalValue = planPrice + modulesPrice + dfePrice
 
   const implRate =
     implMode === 'remoto' ? IMPLEMENTATION_RATES.remoto : IMPLEMENTATION_RATES.presencial
@@ -198,6 +201,9 @@ export default function ContractGeneratorPage() {
     planData,
     planPrice,
     modulesPrice,
+    selectedDfe,
+    dfeData,
+    dfePrice,
     totalValue,
     implMode,
     implRate,
@@ -214,18 +220,24 @@ export default function ContractGeneratorPage() {
       year: 'numeric',
     }),
     planName: selectedPlan === 'none' ? 'Nenhum' : planData?.name || 'Plano Personalizado',
-    selectedModules: selectedModules
-      .map((id) => MODULES.find((m) => m.id === id)?.name)
-      .filter(Boolean) as string[],
+    selectedModules: [
+      ...(selectedModules
+        .map((id) => MODULES.find((m) => m.id === id)?.name)
+        .filter(Boolean) as string[]),
+      ...(selectedDfe !== 'dfe-none' && dfeData ? [dfeData.name] : []),
+    ],
     planPrice,
     modulesPrice,
+    selectedDfe,
+    dfeData,
+    dfePrice,
     totalValue,
     implMode,
     implRate,
     totalImplHours,
     implValue,
     isUpsell: quoteTargetType === 'cliente',
-    includeFranchise,
+    includeFranchise: selectedDfe !== 'dfe-none',
   }
 
   const fetchCnpjData = async (cnpjValue: string) => {
@@ -485,7 +497,7 @@ export default function ContractGeneratorPage() {
           tipo: 'Proposta de Upsell',
           descricao: `Adição de Módulos/Serviços. Valor Mensal: ${formatCurrency(totalValue)}`,
           valor: 0,
-          observacoes: `Módulos: ${selectedModules.map((id) => MODULES.find((m) => m.id === id)?.name).join(', ')}`,
+          observacoes: `Módulos: ${[...selectedModules.map((id) => MODULES.find((m) => m.id === id)?.name), selectedDfe !== 'dfe-none' && dfeData ? dfeData.name : null].filter(Boolean).join(', ')}`,
           status: 'Pendente',
           data_solicitacao: new Date().toISOString().split('T')[0],
         })
@@ -497,8 +509,10 @@ export default function ContractGeneratorPage() {
             body: {
               to: 'financeiro@empresa.com',
               clientName: clientData?.nome || 'Cliente',
-              moduleName: selectedModules
-                .map((id) => MODULES.find((m) => m.id === id)?.name)
+              moduleName: [
+                ...selectedModules.map((id) => MODULES.find((m) => m.id === id)?.name),
+                selectedDfe !== 'dfe-none' && dfeData ? dfeData.name : null,
+              ]
                 .filter(Boolean)
                 .join(', '),
               type: 'aditivo',
@@ -535,10 +549,15 @@ export default function ContractGeneratorPage() {
           user_id: (await supabase.auth.getUser()).data.user?.id,
           data_proposta: new Date().toISOString().split('T')[0],
           aos_cuidados_de: quoteContato,
-          itens: selectedModules.map((id) => {
-            const m = MODULES.find((mod) => mod.id === id)
-            return { id, name: m?.name, price: m?.price }
-          }),
+          itens: [
+            ...selectedModules.map((id) => {
+              const m = MODULES.find((mod) => mod.id === id)
+              return { id, name: m?.name, price: m?.price }
+            }),
+            ...(selectedDfe !== 'dfe-none' && dfeData
+              ? [{ id: dfeData.id, name: dfeData.name, price: dfeData.price }]
+              : []),
+          ],
           valor_mensalidade: totalValue,
           valor_implantacao: implValue,
         })
@@ -577,6 +596,9 @@ export default function ContractGeneratorPage() {
         const mod = MODULES.find((m) => m.id === id)
         return { name: mod?.name || id, price: mod?.price || 0 }
       })
+      if (selectedDfe !== 'dfe-none' && dfeData) {
+        adicionais.push({ name: dfeData.name, price: dfeData.price })
+      }
 
       const modulosFormatados = {
         plano_base: planData?.name || selectedPlan,
@@ -875,19 +897,19 @@ export default function ContractGeneratorPage() {
                     </div>
                   </div>
                   <div className="space-y-3 mt-4">
-                    <div className="flex items-center space-x-2 border p-3 rounded-lg bg-slate-50">
-                      <Checkbox
-                        id="include-franchise-quote"
-                        checked={includeFranchise}
-                        onCheckedChange={(c) => setIncludeFranchise(c as boolean)}
-                      />
-                      <Label
-                        htmlFor="include-franchise-quote"
-                        className="font-medium cursor-pointer flex-1"
-                      >
-                        Incluir Franquia de Emissões (DF-e) na Cotação
-                      </Label>
-                    </div>
+                    <Label className="text-sm font-bold">Franquia de Emissões (DF-e)</Label>
+                    <Select value={selectedDfe} onValueChange={setSelectedDfe}>
+                      <SelectTrigger className="bg-slate-50 border">
+                        <SelectValue placeholder="Selecione um pacote DF-e..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DFE_TIERS.map((tier) => (
+                          <SelectItem key={tier.id} value={tier.id}>
+                            {tier.name} {tier.price > 0 ? `- ${formatCurrency(tier.price)}` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <Separator />
                   <div className="space-y-3">
@@ -1131,19 +1153,19 @@ export default function ContractGeneratorPage() {
                     </div>
                   </div>
                   <div className="space-y-3 mt-4">
-                    <div className="flex items-center space-x-2 border p-3 rounded-lg bg-slate-50">
-                      <Checkbox
-                        id="quote-include-franchise"
-                        checked={includeFranchise}
-                        onCheckedChange={(c) => setIncludeFranchise(c as boolean)}
-                      />
-                      <Label
-                        htmlFor="quote-include-franchise"
-                        className="font-medium cursor-pointer flex-1"
-                      >
-                        Incluir Franquia de Emissões (DF-e) na Cotação
-                      </Label>
-                    </div>
+                    <Label className="text-sm font-bold">Franquia de Emissões (DF-e)</Label>
+                    <Select value={selectedDfe} onValueChange={setSelectedDfe}>
+                      <SelectTrigger className="bg-slate-50 border">
+                        <SelectValue placeholder="Selecione um pacote DF-e..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DFE_TIERS.map((tier) => (
+                          <SelectItem key={tier.id} value={tier.id}>
+                            {tier.name} {tier.price > 0 ? `- ${formatCurrency(tier.price)}` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <Separator />
                   {quoteTargetType !== 'cliente' && (
