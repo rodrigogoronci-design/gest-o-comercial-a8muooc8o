@@ -1,6 +1,13 @@
 import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
-import { PLANS, MODULES, BASE_IMPLEMENTATION_HOURS } from '@/constants/contracts'
+import { PLANS, MODULES as BASE_MODULES, BASE_IMPLEMENTATION_HOURS } from '@/constants/contracts'
+
+const EXTRA_MODULES = [
+  { id: 'mod-sl-trip', name: 'SL Trip', price: 0, implHours: 0, fixedImplPrice: 0 },
+  { id: 'mod-power-bi', name: 'Power BI', price: 200, implHours: 0, fixedImplPrice: 0 },
+]
+
+const MODULES = [...BASE_MODULES, ...EXTRA_MODULES]
 import { CONTRACT_TEXT } from '@/constants/contract-text'
 import logoUrl from '@/assets/logomarca-service-ea011.png'
 
@@ -242,13 +249,16 @@ export function ContractDocument({
                   </th>
                   <th className="border border-slate-300 p-1.5 text-center w-24">Contratado</th>
                   <th className="border border-slate-300 p-1.5 text-center w-32">
-                    Implantação ({implMode === 'remoto' ? 'Remota' : 'Presencial'})
+                    Visita Presencial de Diagnóstico (
+                    {implMode === 'remoto' ? 'Remoto' : 'Presencial'})
                   </th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td className="border border-slate-300 p-1.5">Configuração Base</td>
+                  <td className="border border-slate-300 p-1.5">
+                    Visita Presencial de Diagnóstico (Base)
+                  </td>
                   <td className="border border-slate-300 p-1.5 text-right">Incluso</td>
                   <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
                     X
@@ -480,7 +490,7 @@ export function ContractDocument({
                 </tr>
                 <tr className="bg-[#1b4382]/5 print:bg-slate-200 text-[#1b4382] print:text-black">
                   <td className="border border-slate-300 p-2 font-bold text-right">
-                    Total Implantação
+                    Total Visitas / Implantação
                   </td>
                   <td className="border border-slate-300 p-2 text-right font-bold" colSpan={2}>
                     {formatCurrency(implValue)}

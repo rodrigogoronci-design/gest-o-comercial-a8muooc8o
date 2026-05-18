@@ -266,7 +266,9 @@ export function QuoteDocument({
                   0 && (
                   <tr>
                     <td className="p-1.5">
-                      <span className="font-semibold text-slate-800">Serviços de Implantação</span>
+                      <span className="font-semibold text-slate-800">
+                        Visita Presencial de Diagnóstico (Base)
+                      </span>
                     </td>
                     <td className="p-1.5 text-center font-medium">1</td>
                     <td className="p-1.5 text-right">
@@ -394,7 +396,7 @@ export function QuoteDocument({
                   : 0) >
                 0 && (
                 <div className="flex justify-between items-center text-slate-600">
-                  <span>Serviços de Implantação</span>
+                  <span>Visita Presencial de Diagnóstico (Base)</span>
                   <span className="font-medium">
                     {formatCurrency(
                       implValue -

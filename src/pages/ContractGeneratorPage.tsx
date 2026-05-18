@@ -45,12 +45,19 @@ import { formatCurrency, formatCNPJ } from '@/lib/formatters'
 import { parsePdfContract } from '@/services/parse-pdf'
 import {
   PLANS,
-  MODULES,
+  MODULES as BASE_MODULES,
   IMPLEMENTATION_RATES,
   BASE_IMPLEMENTATION_HOURS,
   DFE_TIERS,
   PREDEFINED_TRAININGS,
 } from '@/constants/contracts'
+
+const EXTRA_MODULES = [
+  { id: 'mod-sl-trip', name: 'SL Trip', price: 0, implHours: 0, fixedImplPrice: 0 },
+  { id: 'mod-power-bi', name: 'Power BI', price: 200, implHours: 0, fixedImplPrice: 0 },
+]
+
+const MODULES = [...BASE_MODULES, ...EXTRA_MODULES]
 import { ContractDocument } from '@/components/ContractDocument'
 import { cn } from '@/lib/utils'
 
@@ -614,10 +621,14 @@ export default function ContractGeneratorPage() {
 
         toast({
           title: 'Upsell salvo!',
-          description: 'A proposta foi registrada e o aditivo enviado por e-mail.',
+          description:
+            'A proposta foi registrada e o aditivo enviado por e-mail. O PDF será gerado em instantes.',
           className: 'bg-emerald-600 text-white border-none',
         })
-        navigate('/clientes')
+        setTimeout(() => {
+          window.print()
+          navigate('/clientes')
+        }, 1000)
       } else {
         let prospectId = selectedProspectId === 'novo' ? null : selectedProspectId
         if (!prospectId) {
@@ -666,10 +677,13 @@ export default function ContractGeneratorPage() {
 
         toast({
           title: 'Cotação salva!',
-          description: 'A proposta foi registrada no CRM.',
+          description: 'A proposta foi registrada no CRM. O PDF será gerado em instantes.',
           className: 'bg-emerald-600 text-white border-none',
         })
-        navigate('/crm')
+        setTimeout(() => {
+          window.print()
+          navigate('/crm')
+        }, 1000)
       }
     } catch (err: any) {
       toast({ title: 'Erro ao salvar cotação', description: err.message, variant: 'destructive' })
@@ -807,7 +821,10 @@ export default function ContractGeneratorPage() {
         })
       }
 
-      navigate('/clientes')
+      setTimeout(() => {
+        window.print()
+        navigate('/clientes')
+      }, 1000)
     } catch (err: any) {
       toast({ title: 'Erro ao salvar', description: err.message, variant: 'destructive' })
     }
@@ -1070,7 +1087,7 @@ export default function ContractGeneratorPage() {
 
                     <div className="mt-4 pt-2 border-t border-slate-100 space-y-2">
                       <Label className="text-xs">
-                        Valor da Implantação Personalizado (Opcional)
+                        Valor Personalizado (Visita Presencial de Diagnóstico)
                       </Label>
                       <div className="flex gap-3 items-center">
                         <Input
