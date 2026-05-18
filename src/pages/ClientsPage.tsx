@@ -344,8 +344,6 @@ export default function ClientsPage() {
     null,
   )
   const [emailBody, setEmailBody] = useState('')
-  const [financeiroEmailClient, setFinanceiroEmailClient] = useState<MergedClient | null>(null)
-  const [isSendingFinanceEmail, setIsSendingFinanceEmail] = useState(false)
 
   const handleRemoveModule = async (moduleToRemove: ModuleItem) => {
     if (!viewingClient) return
@@ -911,41 +909,46 @@ export default function ClientsPage() {
     }
   }
 
-  const handleOpenFinanceiroEmail = (client: MergedClient) => {
-    setFinanceiroEmailClient(client)
-  }
+  const handleOpenFinanceiroEmail = async (client: MergedClient) => {
+    const subject = encodeURIComponent(`Faturamento - ${client.name}`)
+    const body = encodeURIComponent(`Boa tarde, pessoal.
 
-  const handleSendToFinanceiro = async () => {
-    if (!financeiroEmailClient) return
-    setIsSendingFinanceEmail(true)
+Peço, por gentileza, realizar a emissão da cobrança referente à implantação do sistema e também da primeira mensalidade conforme alinhado comercialmente.
+
+Cliente: ${client.name}
+CNPJ: ${formatCNPJ(client.cnpj)}
+
+Favor considerar:
+
+* Cobrança da implantação com vencimento em: ***/***/____
+* Primeira mensalidade com vencimento : ***/***/____
+
+O prazo foi definido considerando o cronograma padrão de implantação, contemplando:
+
+* Kick-off e parametrização;
+* Treinamentos;
+* Operação assistida;
+* Encerramento e transição para o suporte.
+
+Qualquer dúvida fico à disposição.
+
+Obrigada,`)
+
+    window.open(`mailto:financeiro@servicelogic.com.br?subject=${subject}&body=${body}`, '_blank')
+
     try {
-      await updateCliente(financeiroEmailClient.id, { status: 'Faturamento' })
-
-      await supabase.functions.invoke('send-finance-email', {
-        body: {
-          to: 'financeiro@servicelogic.com.br',
-          clientName: financeiroEmailClient.name,
-          moduleName: financeiroEmailClient.plano_base || 'Plano Básico',
-          type: 'novo_contrato',
-        },
-      })
-
-      toast.success('Notificação enviada ao financeiro e status atualizado para Faturamento!')
-
-      if (viewingClient && viewingClient.id === financeiroEmailClient.id) {
+      await updateCliente(client.id, { status: 'Faturamento' })
+      toast.success("Status atualizado para 'Faturamento'")
+      loadClientes()
+      if (viewingClient && viewingClient.id === client.id) {
         setViewingClient({
           ...viewingClient,
           originalData: { ...viewingClient.originalData!, status: 'Faturamento' },
         })
       }
-
-      setFinanceiroEmailClient(null)
-      loadClientes()
-    } catch (e) {
-      console.error(e)
-      toast.error('Erro ao notificar o financeiro.')
-    } finally {
-      setIsSendingFinanceEmail(false)
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao atualizar status do cliente')
     }
   }
 
@@ -3866,33 +3869,6 @@ Obrigada.`)
           )}
         </SheetContent>
       </Sheet>
-
-      <AlertDialog
-        open={!!financeiroEmailClient}
-        onOpenChange={(open) => !open && setFinanceiroEmailClient(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Enviar para o Financeiro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Isso irá atualizar o status do cliente <strong>{financeiroEmailClient?.name}</strong>{' '}
-              para "Faturamento" e enviará um e-mail de notificação automático para a equipe
-              financeira.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleSendToFinanceiro}
-              disabled={isSendingFinanceEmail}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-            >
-              {isSendingFinanceEmail ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Sim, Enviar Notificação
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <Dialog
         open={!!implementationEmailClient}
