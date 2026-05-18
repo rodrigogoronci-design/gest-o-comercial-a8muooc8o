@@ -89,6 +89,7 @@ export default function ContractGeneratorPage() {
   const [clientSearch, setClientSearch] = useState('')
   const [prospectSearch, setProspectSearch] = useState('')
   const [includeDiagnosticVisit, setIncludeDiagnosticVisit] = useState(false)
+  const [diagnosticVisitValue, setDiagnosticVisitValue] = useState<string>('')
 
   useEffect(() => {
     // Esconde a barra de pesquisa global do layout para limpar a interface
@@ -177,6 +178,8 @@ export default function ContractGeneratorPage() {
     return hours
   }, [selectedModules, activeTab, quoteTargetType])
 
+  const diagValue = diagnosticVisitValue !== '' ? parseFloat(diagnosticVisitValue) : 0
+
   const calculatedImplValue = useMemo(() => {
     let value = totalImplHours * implRate
     selectedModules.forEach((id) => {
@@ -190,10 +193,10 @@ export default function ContractGeneratorPage() {
       }
     })
     if (includeDiagnosticVisit) {
-      value += 8 * IMPLEMENTATION_RATES.presencial
+      value += diagValue
     }
     return value
-  }, [totalImplHours, implRate, selectedModules, implMode, includeDiagnosticVisit])
+  }, [totalImplHours, implRate, selectedModules, implMode, includeDiagnosticVisit, diagValue])
 
   const [manualImplValue, setManualImplValue] = useState<string>('')
   const implValue = manualImplValue !== '' ? parseFloat(manualImplValue) : calculatedImplValue
@@ -234,7 +237,7 @@ export default function ContractGeneratorPage() {
         .map((id) => MODULES.find((m) => m.id === id)?.name)
         .filter(Boolean) as string[]),
       ...(selectedDfe !== 'dfe-none' && dfeData ? [dfeData.name] : []),
-      ...(includeDiagnosticVisit ? ['Visita Presencial de Diagnóstico (8h)'] : []),
+      ...(includeDiagnosticVisit ? ['Visita Presencial de Diagnóstico'] : []),
     ],
     planPrice,
     modulesPrice,
@@ -244,7 +247,7 @@ export default function ContractGeneratorPage() {
     totalValue,
     implMode,
     implRate,
-    totalImplHours: totalImplHours + (includeDiagnosticVisit ? 8 : 0),
+    totalImplHours,
     implValue,
     isUpsell: quoteTargetType === 'cliente',
     includeFranchise: selectedDfe !== 'dfe-none',
@@ -570,7 +573,7 @@ export default function ContractGeneratorPage() {
               ? [{ id: dfeData.id, name: dfeData.name, price: dfeData.price }]
               : []),
             ...(includeDiagnosticVisit
-              ? [{ id: 'diag', name: 'Visita Presencial de Diagnóstico (8h)', price: 0 }]
+              ? [{ id: 'diag', name: 'Visita Presencial de Diagnóstico', price: diagValue }]
               : []),
           ],
           valor_mensalidade: totalValue,
@@ -1204,16 +1207,32 @@ export default function ContractGeneratorPage() {
                   {quoteTargetType === 'cliente' && (
                     <div className="space-y-3">
                       <Label className="text-sm font-bold">Serviços Adicionais (Upsell)</Label>
-                      <div className="flex items-center space-x-2 border p-2 rounded-lg bg-slate-50">
-                        <Checkbox
-                          id="quote-diagnostic"
-                          checked={includeDiagnosticVisit}
-                          onCheckedChange={(c) => setIncludeDiagnosticVisit(c as boolean)}
-                        />
-                        <Label htmlFor="quote-diagnostic" className="text-xs flex-1 cursor-pointer">
-                          Visita Presencial de Diagnóstico (8h) -{' '}
-                          {formatCurrency(8 * IMPLEMENTATION_RATES.presencial)}
-                        </Label>
+                      <div className="flex flex-col gap-2 border p-3 rounded-lg bg-slate-50">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="quote-diagnostic"
+                            checked={includeDiagnosticVisit}
+                            onCheckedChange={(c) => setIncludeDiagnosticVisit(c as boolean)}
+                          />
+                          <Label
+                            htmlFor="quote-diagnostic"
+                            className="text-xs flex-1 cursor-pointer font-medium"
+                          >
+                            Visita Presencial de Diagnóstico
+                          </Label>
+                        </div>
+                        {includeDiagnosticVisit && (
+                          <div className="pl-6 pt-2">
+                            <Label className="text-xs text-slate-600">Valor da Visita</Label>
+                            <Input
+                              type="number"
+                              placeholder="Ex: 1500"
+                              value={diagnosticVisitValue}
+                              onChange={(e) => setDiagnosticVisitValue(e.target.value)}
+                              className="w-1/2 bg-white mt-1 h-8 text-xs"
+                            />
+                          </div>
+                        )}
                       </div>
 
                       <div className="mt-4 pt-2 border-t border-slate-100 space-y-2">
@@ -1239,19 +1258,32 @@ export default function ContractGeneratorPage() {
                       <Label className="text-sm font-bold">Implantação</Label>
 
                       <div className="flex flex-col gap-3 mb-4">
-                        <div className="flex items-center space-x-2 border p-2 rounded-lg bg-slate-50">
-                          <Checkbox
-                            id="quote-diagnostic-prospect"
-                            checked={includeDiagnosticVisit}
-                            onCheckedChange={(c) => setIncludeDiagnosticVisit(c as boolean)}
-                          />
-                          <Label
-                            htmlFor="quote-diagnostic-prospect"
-                            className="text-xs flex-1 cursor-pointer"
-                          >
-                            Adicionar Visita Presencial de Diagnóstico (8h) -{' '}
-                            {formatCurrency(8 * IMPLEMENTATION_RATES.presencial)}
-                          </Label>
+                        <div className="flex flex-col gap-2 border p-3 rounded-lg bg-slate-50">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="quote-diagnostic-prospect"
+                              checked={includeDiagnosticVisit}
+                              onCheckedChange={(c) => setIncludeDiagnosticVisit(c as boolean)}
+                            />
+                            <Label
+                              htmlFor="quote-diagnostic-prospect"
+                              className="text-xs flex-1 cursor-pointer font-medium"
+                            >
+                              Adicionar Visita Presencial de Diagnóstico
+                            </Label>
+                          </div>
+                          {includeDiagnosticVisit && (
+                            <div className="pl-6 pt-2">
+                              <Label className="text-xs text-slate-600">Valor da Visita</Label>
+                              <Input
+                                type="number"
+                                placeholder="Ex: 1500"
+                                value={diagnosticVisitValue}
+                                onChange={(e) => setDiagnosticVisitValue(e.target.value)}
+                                className="w-1/2 bg-white mt-1 h-8 text-xs"
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
 
