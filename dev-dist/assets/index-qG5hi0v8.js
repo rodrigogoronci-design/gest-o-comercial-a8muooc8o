@@ -49675,7 +49675,16 @@ function ColaboradoresPage() {
 	const [colaboradores, setColaboradores] = (0, import_react.useState)([]);
 	const [isLoading, setIsLoading] = (0, import_react.useState)(true);
 	const [isOpen, setIsOpen] = (0, import_react.useState)(false);
+	const [isEditOpen, setIsEditOpen] = (0, import_react.useState)(false);
 	const [formData, setFormData] = (0, import_react.useState)({
+		name: "",
+		email: "",
+		password: "",
+		role: "Colaborador",
+		systemAccess: true
+	});
+	const [editData, setEditData] = (0, import_react.useState)({
+		id: "",
 		name: "",
 		email: "",
 		password: "",
@@ -49722,242 +49731,470 @@ function ColaboradoresPage() {
 			setIsSubmitting(false);
 		}
 	};
+	const handleEditSubmit = async (e) => {
+		e.preventDefault();
+		setIsSubmitting(true);
+		try {
+			const payload = { ...editData };
+			if (!payload.password) delete payload.password;
+			const { data, error } = await supabase.functions.invoke("manage-user", { body: {
+				action: "update",
+				payload
+			} });
+			if (error || data?.error) throw error || new Error(data?.error);
+			toast.success("Colaborador atualizado com sucesso!");
+			setIsEditOpen(false);
+			fetchColaboradores();
+		} catch (error) {
+			toast.error("Erro ao atualizar colaborador", { description: error.message });
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+	const handleDelete = async (id) => {
+		if (!window.confirm("Tem certeza que deseja excluir este colaborador?")) return;
+		try {
+			const { data, error } = await supabase.functions.invoke("manage-user", { body: {
+				action: "delete",
+				payload: { id }
+			} });
+			if (error || data?.error) throw error || new Error(data?.error);
+			toast.success("Colaborador excluído com sucesso!");
+			fetchColaboradores();
+		} catch (error) {
+			toast.error("Erro ao excluir colaborador", { description: error.message });
+		}
+	};
+	const openEditDialog = (colab) => {
+		setEditData({
+			id: colab.id,
+			name: colab.nome,
+			email: colab.email || "",
+			password: "",
+			role: colab.role || "Colaborador",
+			systemAccess: !!colab.user_id
+		});
+		setIsEditOpen(true);
+	};
 	const filteredColaboradores = colaboradores.filter((c) => c.nome?.toLowerCase().includes(search.toLowerCase()) || c.email?.toLowerCase().includes(search.toLowerCase()));
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		"data-uid": "src/pages/ColaboradoresPage.tsx:97:5",
+		"data-uid": "src/pages/ColaboradoresPage.tsx:161:5",
 		"data-prohibitions": "[editContent]",
 		className: "p-6 max-w-7xl mx-auto space-y-6",
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			"data-uid": "src/pages/ColaboradoresPage.tsx:98:7",
+			"data-uid": "src/pages/ColaboradoresPage.tsx:162:7",
 			"data-prohibitions": "[editContent]",
 			className: "flex justify-between items-center",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				"data-uid": "src/pages/ColaboradoresPage.tsx:99:9",
-				"data-prohibitions": "[]",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-					"data-uid": "src/pages/ColaboradoresPage.tsx:100:11",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					"data-uid": "src/pages/ColaboradoresPage.tsx:163:9",
 					"data-prohibitions": "[]",
-					className: "text-3xl font-bold tracking-tight",
-					children: "Colaboradores"
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-					"data-uid": "src/pages/ColaboradoresPage.tsx:101:11",
-					"data-prohibitions": "[]",
-					className: "text-muted-foreground",
-					children: "Gerencie o acesso e perfil da sua equipe"
-				})]
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Dialog, {
-				"data-uid": "src/pages/ColaboradoresPage.tsx:104:9",
-				"data-prohibitions": "[editContent]",
-				open: isOpen,
-				onOpenChange: setIsOpen,
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogTrigger, {
-					"data-uid": "src/pages/ColaboradoresPage.tsx:105:11",
-					"data-prohibitions": "[]",
-					asChild: true,
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-						"data-uid": "src/pages/ColaboradoresPage.tsx:106:13",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+						"data-uid": "src/pages/ColaboradoresPage.tsx:164:11",
 						"data-prohibitions": "[]",
-						className: "gap-2",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(UserPlus, {
-							"data-uid": "src/pages/ColaboradoresPage.tsx:107:15",
-							"data-prohibitions": "[editContent]",
-							className: "h-4 w-4"
-						}), "Novo Colaborador"]
-					})
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogContent, {
-					"data-uid": "src/pages/ColaboradoresPage.tsx:111:11",
-					"data-prohibitions": "[editContent]",
-					className: "sm:max-w-[425px]",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogHeader, {
-						"data-uid": "src/pages/ColaboradoresPage.tsx:112:13",
+						className: "text-3xl font-bold tracking-tight",
+						children: "Colaboradores"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						"data-uid": "src/pages/ColaboradoresPage.tsx:165:11",
 						"data-prohibitions": "[]",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogTitle, {
-							"data-uid": "src/pages/ColaboradoresPage.tsx:113:15",
-							"data-prohibitions": "[]",
-							children: "Adicionar Colaborador"
-						})
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
-						"data-uid": "src/pages/ColaboradoresPage.tsx:115:13",
-						"data-prohibitions": "[editContent]",
-						onSubmit: handleSubmit,
-						className: "space-y-4 mt-4",
-						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/pages/ColaboradoresPage.tsx:116:15",
-								"data-prohibitions": "[]",
-								className: "space-y-2",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-									"data-uid": "src/pages/ColaboradoresPage.tsx:117:17",
-									"data-prohibitions": "[]",
-									htmlFor: "name",
-									children: "Nome Completo"
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-									"data-uid": "src/pages/ColaboradoresPage.tsx:118:17",
-									"data-prohibitions": "[editContent]",
-									id: "name",
-									value: formData.name,
-									onChange: (e) => setFormData({
-										...formData,
-										name: e.target.value
-									}),
-									required: true
-								})]
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/pages/ColaboradoresPage.tsx:126:15",
-								"data-prohibitions": "[]",
-								className: "flex items-center justify-between border p-3 rounded-lg bg-muted/30",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ColaboradoresPage.tsx:127:17",
-									"data-prohibitions": "[]",
-									className: "space-y-0.5",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-										"data-uid": "src/pages/ColaboradoresPage.tsx:128:19",
-										"data-prohibitions": "[]",
-										children: "Acesso ao Sistema"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-										"data-uid": "src/pages/ColaboradoresPage.tsx:129:19",
-										"data-prohibitions": "[]",
-										className: "text-xs text-muted-foreground",
-										children: "Permitir login no sistema"
-									})]
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Switch, {
-									"data-uid": "src/pages/ColaboradoresPage.tsx:131:17",
-									"data-prohibitions": "[editContent]",
-									checked: formData.systemAccess,
-									onCheckedChange: (c) => setFormData({
-										...formData,
-										systemAccess: c
-									})
-								})]
-							}),
-							formData.systemAccess && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ColaboradoresPage.tsx:139:19",
-									"data-prohibitions": "[]",
-									className: "space-y-2",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-										"data-uid": "src/pages/ColaboradoresPage.tsx:140:21",
-										"data-prohibitions": "[]",
-										htmlFor: "email",
-										children: "E-mail"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-										"data-uid": "src/pages/ColaboradoresPage.tsx:141:21",
-										"data-prohibitions": "[editContent]",
-										id: "email",
-										type: "email",
-										value: formData.email,
-										onChange: (e) => setFormData({
-											...formData,
-											email: e.target.value
-										}),
-										required: true
-									})]
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ColaboradoresPage.tsx:149:19",
-									"data-prohibitions": "[]",
-									className: "space-y-2",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-										"data-uid": "src/pages/ColaboradoresPage.tsx:150:21",
-										"data-prohibitions": "[]",
-										htmlFor: "password",
-										children: "Senha Provisória"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-										"data-uid": "src/pages/ColaboradoresPage.tsx:151:21",
-										"data-prohibitions": "[editContent]",
-										id: "password",
-										type: "text",
-										value: formData.password,
-										onChange: (e) => setFormData({
-											...formData,
-											password: e.target.value
-										}),
-										placeholder: "Ex: Skip@Pass123!",
-										required: true
-									})]
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ColaboradoresPage.tsx:160:19",
-									"data-prohibitions": "[]",
-									className: "space-y-2",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-										"data-uid": "src/pages/ColaboradoresPage.tsx:161:21",
-										"data-prohibitions": "[]",
-										htmlFor: "role",
-										children: "Perfil de Acesso"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
-										"data-uid": "src/pages/ColaboradoresPage.tsx:162:21",
-										"data-prohibitions": "[]",
-										value: formData.role,
-										onValueChange: (v) => setFormData({
-											...formData,
-											role: v
-										}),
-										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, {
-											"data-uid": "src/pages/ColaboradoresPage.tsx:166:23",
-											"data-prohibitions": "[]",
-											children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, {
-												"data-uid": "src/pages/ColaboradoresPage.tsx:167:25",
-												"data-prohibitions": "[editContent]"
-											})
-										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectContent, {
-											"data-uid": "src/pages/ColaboradoresPage.tsx:169:23",
-											"data-prohibitions": "[]",
-											children: [
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-													"data-uid": "src/pages/ColaboradoresPage.tsx:170:25",
-													"data-prohibitions": "[]",
-													value: "Admin",
-													children: "Administrador"
-												}),
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-													"data-uid": "src/pages/ColaboradoresPage.tsx:171:25",
-													"data-prohibitions": "[]",
-													value: "Gerente",
-													children: "Gerente"
-												}),
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-													"data-uid": "src/pages/ColaboradoresPage.tsx:172:25",
-													"data-prohibitions": "[]",
-													value: "Colaborador",
-													children: "Colaborador"
-												})
-											]
-										})]
-									})]
-								})
-							] }),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-								"data-uid": "src/pages/ColaboradoresPage.tsx:179:15",
-								"data-prohibitions": "[editContent]",
-								type: "submit",
-								className: "w-full mt-4",
-								disabled: isSubmitting,
-								children: isSubmitting ? "Salvando..." : "Salvar Colaborador"
-							})
-						]
+						className: "text-muted-foreground",
+						children: "Gerencie o acesso e perfil da sua equipe"
 					})]
-				})]
-			})]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Dialog, {
+					"data-uid": "src/pages/ColaboradoresPage.tsx:168:9",
+					"data-prohibitions": "[editContent]",
+					open: isOpen,
+					onOpenChange: setIsOpen,
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogTrigger, {
+						"data-uid": "src/pages/ColaboradoresPage.tsx:169:11",
+						"data-prohibitions": "[]",
+						asChild: true,
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+							"data-uid": "src/pages/ColaboradoresPage.tsx:170:13",
+							"data-prohibitions": "[]",
+							className: "gap-2",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(UserPlus, {
+								"data-uid": "src/pages/ColaboradoresPage.tsx:171:15",
+								"data-prohibitions": "[editContent]",
+								className: "h-4 w-4"
+							}), "Novo Colaborador"]
+						})
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogContent, {
+						"data-uid": "src/pages/ColaboradoresPage.tsx:175:11",
+						"data-prohibitions": "[editContent]",
+						className: "sm:max-w-[425px]",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogHeader, {
+							"data-uid": "src/pages/ColaboradoresPage.tsx:176:13",
+							"data-prohibitions": "[]",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogTitle, {
+								"data-uid": "src/pages/ColaboradoresPage.tsx:177:15",
+								"data-prohibitions": "[]",
+								children: "Adicionar Colaborador"
+							})
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+							"data-uid": "src/pages/ColaboradoresPage.tsx:179:13",
+							"data-prohibitions": "[editContent]",
+							onSubmit: handleSubmit,
+							className: "space-y-4 mt-4",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									"data-uid": "src/pages/ColaboradoresPage.tsx:180:15",
+									"data-prohibitions": "[]",
+									className: "space-y-2",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
+										"data-uid": "src/pages/ColaboradoresPage.tsx:181:17",
+										"data-prohibitions": "[]",
+										htmlFor: "name",
+										children: "Nome Completo"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+										"data-uid": "src/pages/ColaboradoresPage.tsx:182:17",
+										"data-prohibitions": "[editContent]",
+										id: "name",
+										value: formData.name,
+										onChange: (e) => setFormData({
+											...formData,
+											name: e.target.value
+										}),
+										required: true
+									})]
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									"data-uid": "src/pages/ColaboradoresPage.tsx:190:15",
+									"data-prohibitions": "[]",
+									className: "flex items-center justify-between border p-3 rounded-lg bg-muted/30",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										"data-uid": "src/pages/ColaboradoresPage.tsx:191:17",
+										"data-prohibitions": "[]",
+										className: "space-y-0.5",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
+											"data-uid": "src/pages/ColaboradoresPage.tsx:192:19",
+											"data-prohibitions": "[]",
+											children: "Acesso ao Sistema"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											"data-uid": "src/pages/ColaboradoresPage.tsx:193:19",
+											"data-prohibitions": "[]",
+											className: "text-xs text-muted-foreground",
+											children: "Permitir login no sistema"
+										})]
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Switch, {
+										"data-uid": "src/pages/ColaboradoresPage.tsx:195:17",
+										"data-prohibitions": "[editContent]",
+										checked: formData.systemAccess,
+										onCheckedChange: (c) => setFormData({
+											...formData,
+											systemAccess: c
+										})
+									})]
+								}),
+								formData.systemAccess && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										"data-uid": "src/pages/ColaboradoresPage.tsx:203:19",
+										"data-prohibitions": "[]",
+										className: "space-y-2",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
+											"data-uid": "src/pages/ColaboradoresPage.tsx:204:21",
+											"data-prohibitions": "[]",
+											htmlFor: "email",
+											children: "E-mail"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+											"data-uid": "src/pages/ColaboradoresPage.tsx:205:21",
+											"data-prohibitions": "[editContent]",
+											id: "email",
+											type: "email",
+											value: formData.email,
+											onChange: (e) => setFormData({
+												...formData,
+												email: e.target.value
+											}),
+											required: true
+										})]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										"data-uid": "src/pages/ColaboradoresPage.tsx:213:19",
+										"data-prohibitions": "[]",
+										className: "space-y-2",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
+											"data-uid": "src/pages/ColaboradoresPage.tsx:214:21",
+											"data-prohibitions": "[]",
+											htmlFor: "password",
+											children: "Senha Provisória"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+											"data-uid": "src/pages/ColaboradoresPage.tsx:215:21",
+											"data-prohibitions": "[editContent]",
+											id: "password",
+											type: "text",
+											value: formData.password,
+											onChange: (e) => setFormData({
+												...formData,
+												password: e.target.value
+											}),
+											placeholder: "Ex: Skip@Pass123!",
+											required: true
+										})]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										"data-uid": "src/pages/ColaboradoresPage.tsx:224:19",
+										"data-prohibitions": "[]",
+										className: "space-y-2",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
+											"data-uid": "src/pages/ColaboradoresPage.tsx:225:21",
+											"data-prohibitions": "[]",
+											htmlFor: "role",
+											children: "Perfil de Acesso"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
+											"data-uid": "src/pages/ColaboradoresPage.tsx:226:21",
+											"data-prohibitions": "[]",
+											value: formData.role,
+											onValueChange: (v) => setFormData({
+												...formData,
+												role: v
+											}),
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, {
+												"data-uid": "src/pages/ColaboradoresPage.tsx:230:23",
+												"data-prohibitions": "[]",
+												children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, {
+													"data-uid": "src/pages/ColaboradoresPage.tsx:231:25",
+													"data-prohibitions": "[editContent]"
+												})
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectContent, {
+												"data-uid": "src/pages/ColaboradoresPage.tsx:233:23",
+												"data-prohibitions": "[]",
+												children: [
+													/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+														"data-uid": "src/pages/ColaboradoresPage.tsx:234:25",
+														"data-prohibitions": "[]",
+														value: "Admin",
+														children: "Administrador"
+													}),
+													/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+														"data-uid": "src/pages/ColaboradoresPage.tsx:235:25",
+														"data-prohibitions": "[]",
+														value: "Gerente",
+														children: "Gerente"
+													}),
+													/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+														"data-uid": "src/pages/ColaboradoresPage.tsx:236:25",
+														"data-prohibitions": "[]",
+														value: "Colaborador",
+														children: "Colaborador"
+													})
+												]
+											})]
+										})]
+									})
+								] }),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+									"data-uid": "src/pages/ColaboradoresPage.tsx:243:15",
+									"data-prohibitions": "[editContent]",
+									type: "submit",
+									className: "w-full mt-4",
+									disabled: isSubmitting,
+									children: isSubmitting ? "Salvando..." : "Salvar Colaborador"
+								})
+							]
+						})]
+					})]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Dialog, {
+					"data-uid": "src/pages/ColaboradoresPage.tsx:250:9",
+					"data-prohibitions": "[editContent]",
+					open: isEditOpen,
+					onOpenChange: setIsEditOpen,
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogContent, {
+						"data-uid": "src/pages/ColaboradoresPage.tsx:251:11",
+						"data-prohibitions": "[editContent]",
+						className: "sm:max-w-[425px]",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogHeader, {
+							"data-uid": "src/pages/ColaboradoresPage.tsx:252:13",
+							"data-prohibitions": "[]",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogTitle, {
+								"data-uid": "src/pages/ColaboradoresPage.tsx:253:15",
+								"data-prohibitions": "[]",
+								children: "Editar Colaborador"
+							})
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+							"data-uid": "src/pages/ColaboradoresPage.tsx:255:13",
+							"data-prohibitions": "[editContent]",
+							onSubmit: handleEditSubmit,
+							className: "space-y-4 mt-4",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									"data-uid": "src/pages/ColaboradoresPage.tsx:256:15",
+									"data-prohibitions": "[]",
+									className: "space-y-2",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
+										"data-uid": "src/pages/ColaboradoresPage.tsx:257:17",
+										"data-prohibitions": "[]",
+										htmlFor: "edit-name",
+										children: "Nome Completo"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+										"data-uid": "src/pages/ColaboradoresPage.tsx:258:17",
+										"data-prohibitions": "[editContent]",
+										id: "edit-name",
+										value: editData.name,
+										onChange: (e) => setEditData({
+											...editData,
+											name: e.target.value
+										}),
+										required: true
+									})]
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									"data-uid": "src/pages/ColaboradoresPage.tsx:266:15",
+									"data-prohibitions": "[]",
+									className: "flex items-center justify-between border p-3 rounded-lg bg-muted/30",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										"data-uid": "src/pages/ColaboradoresPage.tsx:267:17",
+										"data-prohibitions": "[]",
+										className: "space-y-0.5",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
+											"data-uid": "src/pages/ColaboradoresPage.tsx:268:19",
+											"data-prohibitions": "[]",
+											children: "Acesso ao Sistema"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											"data-uid": "src/pages/ColaboradoresPage.tsx:269:19",
+											"data-prohibitions": "[]",
+											className: "text-xs text-muted-foreground",
+											children: "Permitir login no sistema"
+										})]
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Switch, {
+										"data-uid": "src/pages/ColaboradoresPage.tsx:271:17",
+										"data-prohibitions": "[editContent]",
+										checked: editData.systemAccess,
+										onCheckedChange: (c) => setEditData({
+											...editData,
+											systemAccess: c
+										})
+									})]
+								}),
+								editData.systemAccess && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										"data-uid": "src/pages/ColaboradoresPage.tsx:279:19",
+										"data-prohibitions": "[]",
+										className: "space-y-2",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
+											"data-uid": "src/pages/ColaboradoresPage.tsx:280:21",
+											"data-prohibitions": "[]",
+											htmlFor: "edit-email",
+											children: "E-mail"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+											"data-uid": "src/pages/ColaboradoresPage.tsx:281:21",
+											"data-prohibitions": "[editContent]",
+											id: "edit-email",
+											type: "email",
+											value: editData.email,
+											onChange: (e) => setEditData({
+												...editData,
+												email: e.target.value
+											}),
+											required: true
+										})]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										"data-uid": "src/pages/ColaboradoresPage.tsx:289:19",
+										"data-prohibitions": "[]",
+										className: "space-y-2",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
+											"data-uid": "src/pages/ColaboradoresPage.tsx:290:21",
+											"data-prohibitions": "[]",
+											htmlFor: "edit-password",
+											children: "Nova Senha (Opcional)"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+											"data-uid": "src/pages/ColaboradoresPage.tsx:291:21",
+											"data-prohibitions": "[editContent]",
+											id: "edit-password",
+											type: "text",
+											value: editData.password,
+											onChange: (e) => setEditData({
+												...editData,
+												password: e.target.value
+											}),
+											placeholder: "Deixe em branco para não alterar"
+										})]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										"data-uid": "src/pages/ColaboradoresPage.tsx:299:19",
+										"data-prohibitions": "[]",
+										className: "space-y-2",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
+											"data-uid": "src/pages/ColaboradoresPage.tsx:300:21",
+											"data-prohibitions": "[]",
+											htmlFor: "edit-role",
+											children: "Perfil de Acesso"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
+											"data-uid": "src/pages/ColaboradoresPage.tsx:301:21",
+											"data-prohibitions": "[]",
+											value: editData.role,
+											onValueChange: (v) => setEditData({
+												...editData,
+												role: v
+											}),
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, {
+												"data-uid": "src/pages/ColaboradoresPage.tsx:305:23",
+												"data-prohibitions": "[]",
+												children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, {
+													"data-uid": "src/pages/ColaboradoresPage.tsx:306:25",
+													"data-prohibitions": "[editContent]"
+												})
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectContent, {
+												"data-uid": "src/pages/ColaboradoresPage.tsx:308:23",
+												"data-prohibitions": "[]",
+												children: [
+													/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+														"data-uid": "src/pages/ColaboradoresPage.tsx:309:25",
+														"data-prohibitions": "[]",
+														value: "Admin",
+														children: "Administrador"
+													}),
+													/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+														"data-uid": "src/pages/ColaboradoresPage.tsx:310:25",
+														"data-prohibitions": "[]",
+														value: "Gerente",
+														children: "Gerente"
+													}),
+													/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+														"data-uid": "src/pages/ColaboradoresPage.tsx:311:25",
+														"data-prohibitions": "[]",
+														value: "Colaborador",
+														children: "Colaborador"
+													})
+												]
+											})]
+										})]
+									})
+								] }),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+									"data-uid": "src/pages/ColaboradoresPage.tsx:318:15",
+									"data-prohibitions": "[editContent]",
+									type: "submit",
+									className: "w-full mt-4",
+									disabled: isSubmitting,
+									children: isSubmitting ? "Salvando..." : "Salvar Alterações"
+								})
+							]
+						})]
+					})
+				})
+			]
 		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			"data-uid": "src/pages/ColaboradoresPage.tsx:187:7",
+			"data-uid": "src/pages/ColaboradoresPage.tsx:326:7",
 			"data-prohibitions": "[editContent]",
 			className: "bg-card rounded-xl border shadow-sm overflow-hidden",
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				"data-uid": "src/pages/ColaboradoresPage.tsx:188:9",
+				"data-uid": "src/pages/ColaboradoresPage.tsx:327:9",
 				"data-prohibitions": "[]",
 				className: "p-4 border-b",
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/pages/ColaboradoresPage.tsx:189:11",
+					"data-uid": "src/pages/ColaboradoresPage.tsx:328:11",
 					"data-prohibitions": "[]",
 					className: "relative max-w-sm",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Search, {
-						"data-uid": "src/pages/ColaboradoresPage.tsx:190:13",
+						"data-uid": "src/pages/ColaboradoresPage.tsx:329:13",
 						"data-prohibitions": "[editContent]",
 						className: "absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-						"data-uid": "src/pages/ColaboradoresPage.tsx:191:13",
+						"data-uid": "src/pages/ColaboradoresPage.tsx:330:13",
 						"data-prohibitions": "[editContent]",
 						placeholder: "Buscar colaboradores...",
 						className: "pl-9",
@@ -49966,101 +50203,143 @@ function ColaboradoresPage() {
 					})]
 				})
 			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Table, {
-				"data-uid": "src/pages/ColaboradoresPage.tsx:200:9",
+				"data-uid": "src/pages/ColaboradoresPage.tsx:339:9",
 				"data-prohibitions": "[editContent]",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableHeader, {
-					"data-uid": "src/pages/ColaboradoresPage.tsx:201:11",
+					"data-uid": "src/pages/ColaboradoresPage.tsx:340:11",
 					"data-prohibitions": "[]",
 					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(TableRow, {
-						"data-uid": "src/pages/ColaboradoresPage.tsx:202:13",
+						"data-uid": "src/pages/ColaboradoresPage.tsx:341:13",
 						"data-prohibitions": "[]",
 						children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableHead, {
-								"data-uid": "src/pages/ColaboradoresPage.tsx:203:15",
+								"data-uid": "src/pages/ColaboradoresPage.tsx:342:15",
 								"data-prohibitions": "[]",
 								children: "Nome"
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableHead, {
-								"data-uid": "src/pages/ColaboradoresPage.tsx:204:15",
+								"data-uid": "src/pages/ColaboradoresPage.tsx:343:15",
 								"data-prohibitions": "[]",
 								children: "E-mail"
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableHead, {
-								"data-uid": "src/pages/ColaboradoresPage.tsx:205:15",
+								"data-uid": "src/pages/ColaboradoresPage.tsx:344:15",
 								"data-prohibitions": "[]",
 								children: "Perfil"
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableHead, {
-								"data-uid": "src/pages/ColaboradoresPage.tsx:206:15",
+								"data-uid": "src/pages/ColaboradoresPage.tsx:345:15",
 								"data-prohibitions": "[]",
 								children: "Acesso"
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableHead, {
+								"data-uid": "src/pages/ColaboradoresPage.tsx:346:15",
+								"data-prohibitions": "[]",
+								className: "w-[100px] text-right",
+								children: "Ações"
 							})
 						]
 					})
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableBody, {
-					"data-uid": "src/pages/ColaboradoresPage.tsx:209:11",
+					"data-uid": "src/pages/ColaboradoresPage.tsx:349:11",
 					"data-prohibitions": "[editContent]",
 					children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableRow, {
-						"data-uid": "src/pages/ColaboradoresPage.tsx:211:15",
+						"data-uid": "src/pages/ColaboradoresPage.tsx:351:15",
 						"data-prohibitions": "[]",
 						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableCell, {
-							"data-uid": "src/pages/ColaboradoresPage.tsx:212:17",
+							"data-uid": "src/pages/ColaboradoresPage.tsx:352:17",
 							"data-prohibitions": "[]",
-							colSpan: 4,
+							colSpan: 5,
 							className: "text-center py-8",
 							children: "Carregando..."
 						})
 					}) : filteredColaboradores.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableRow, {
-						"data-uid": "src/pages/ColaboradoresPage.tsx:217:15",
+						"data-uid": "src/pages/ColaboradoresPage.tsx:357:15",
 						"data-prohibitions": "[]",
 						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableCell, {
-							"data-uid": "src/pages/ColaboradoresPage.tsx:218:17",
+							"data-uid": "src/pages/ColaboradoresPage.tsx:358:17",
 							"data-prohibitions": "[]",
-							colSpan: 4,
+							colSpan: 5,
 							className: "text-center py-8 text-muted-foreground",
 							children: "Nenhum colaborador encontrado"
 						})
 					}) : filteredColaboradores.map((colab) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(TableRow, {
-						"data-uid": "src/pages/ColaboradoresPage.tsx:224:17",
+						"data-uid": "src/pages/ColaboradoresPage.tsx:364:17",
 						"data-prohibitions": "[editContent]",
 						children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableCell, {
-								"data-uid": "src/pages/ColaboradoresPage.tsx:225:19",
+								"data-uid": "src/pages/ColaboradoresPage.tsx:365:19",
 								"data-prohibitions": "[editContent]",
 								className: "font-medium",
 								children: colab.nome
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableCell, {
-								"data-uid": "src/pages/ColaboradoresPage.tsx:226:19",
+								"data-uid": "src/pages/ColaboradoresPage.tsx:366:19",
 								"data-prohibitions": "[editContent]",
 								children: colab.email || "-"
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableCell, {
-								"data-uid": "src/pages/ColaboradoresPage.tsx:227:19",
+								"data-uid": "src/pages/ColaboradoresPage.tsx:367:19",
 								"data-prohibitions": "[editContent]",
 								children: colab.role
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableCell, {
-								"data-uid": "src/pages/ColaboradoresPage.tsx:228:19",
+								"data-uid": "src/pages/ColaboradoresPage.tsx:368:19",
 								"data-prohibitions": "[editContent]",
 								children: colab.user_id ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ColaboradoresPage.tsx:230:23",
+									"data-uid": "src/pages/ColaboradoresPage.tsx:370:23",
 									"data-prohibitions": "[]",
 									className: "flex items-center gap-1.5 text-green-600 text-sm font-medium bg-green-500/10 w-fit px-2 py-1 rounded-md",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShieldCheck, {
-										"data-uid": "src/pages/ColaboradoresPage.tsx:231:25",
+										"data-uid": "src/pages/ColaboradoresPage.tsx:371:25",
 										"data-prohibitions": "[editContent]",
 										className: "h-4 w-4"
 									}), " Ativo"]
 								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/ColaboradoresPage.tsx:234:23",
+									"data-uid": "src/pages/ColaboradoresPage.tsx:374:23",
 									"data-prohibitions": "[]",
 									className: "flex items-center gap-1.5 text-muted-foreground text-sm bg-muted w-fit px-2 py-1 rounded-md",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShieldAlert, {
-										"data-uid": "src/pages/ColaboradoresPage.tsx:235:25",
+										"data-uid": "src/pages/ColaboradoresPage.tsx:375:25",
 										"data-prohibitions": "[editContent]",
 										className: "h-4 w-4"
 									}), " Sem acesso"]
+								})
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableCell, {
+								"data-uid": "src/pages/ColaboradoresPage.tsx:379:19",
+								"data-prohibitions": "[]",
+								className: "text-right",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									"data-uid": "src/pages/ColaboradoresPage.tsx:380:21",
+									"data-prohibitions": "[]",
+									className: "flex items-center justify-end gap-2",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+										"data-uid": "src/pages/ColaboradoresPage.tsx:381:23",
+										"data-prohibitions": "[]",
+										variant: "ghost",
+										size: "icon",
+										onClick: () => openEditDialog(colab),
+										title: "Editar colaborador",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pencil, {
+											"data-uid": "src/pages/ColaboradoresPage.tsx:387:25",
+											"data-prohibitions": "[editContent]",
+											className: "h-4 w-4 text-muted-foreground"
+										})
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+										"data-uid": "src/pages/ColaboradoresPage.tsx:389:23",
+										"data-prohibitions": "[]",
+										variant: "ghost",
+										size: "icon",
+										className: "text-red-500 hover:text-red-600 hover:bg-red-50",
+										onClick: () => handleDelete(colab.id),
+										title: "Excluir colaborador",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, {
+											"data-uid": "src/pages/ColaboradoresPage.tsx:396:25",
+											"data-prohibitions": "[editContent]",
+											className: "h-4 w-4"
+										})
+									})]
 								})
 							})
 						]
@@ -108189,4 +108468,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, {
 }));
 //#endregion
 
-//# sourceMappingURL=index-C322kKrN.js.map
+//# sourceMappingURL=index-qG5hi0v8.js.map

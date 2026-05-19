@@ -27,13 +27,22 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
-import { UserPlus, Search, ShieldAlert, ShieldCheck } from 'lucide-react'
+import { UserPlus, Search, ShieldAlert, ShieldCheck, Pencil, Trash2 } from 'lucide-react'
 
 export default function ColaboradoresPage() {
   const [colaboradores, setColaboradores] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isOpen, setIsOpen] = useState(false)
+  const [isEditOpen, setIsEditOpen] = useState(false)
   const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'Colaborador',
+    systemAccess: true,
+  })
+  const [editData, setEditData] = useState({
+    id: '',
     name: '',
     email: '',
     password: '',
@@ -85,6 +94,61 @@ export default function ColaboradoresPage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+
+    try {
+      const payload: any = { ...editData }
+      if (!payload.password) {
+        delete payload.password
+      }
+
+      const { data, error } = await supabase.functions.invoke('manage-user', {
+        body: { action: 'update', payload },
+      })
+
+      if (error || data?.error) throw error || new Error(data?.error)
+
+      toast.success('Colaborador atualizado com sucesso!')
+      setIsEditOpen(false)
+      fetchColaboradores()
+    } catch (error: any) {
+      toast.error('Erro ao atualizar colaborador', { description: error.message })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir este colaborador?')) return
+
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-user', {
+        body: { action: 'delete', payload: { id } },
+      })
+
+      if (error || data?.error) throw error || new Error(data?.error)
+
+      toast.success('Colaborador excluído com sucesso!')
+      fetchColaboradores()
+    } catch (error: any) {
+      toast.error('Erro ao excluir colaborador', { description: error.message })
+    }
+  }
+
+  const openEditDialog = (colab: any) => {
+    setEditData({
+      id: colab.id,
+      name: colab.nome,
+      email: colab.email || '',
+      password: '',
+      role: colab.role || 'Colaborador',
+      systemAccess: !!colab.user_id,
+    })
+    setIsEditOpen(true)
   }
 
   const filteredColaboradores = colaboradores.filter(
@@ -182,6 +246,81 @@ export default function ColaboradoresPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Editar Colaborador</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleEditSubmit} className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Nome Completo</Label>
+                <Input
+                  id="edit-name"
+                  value={editData.name}
+                  onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="flex items-center justify-between border p-3 rounded-lg bg-muted/30">
+                <div className="space-y-0.5">
+                  <Label>Acesso ao Sistema</Label>
+                  <p className="text-xs text-muted-foreground">Permitir login no sistema</p>
+                </div>
+                <Switch
+                  checked={editData.systemAccess}
+                  onCheckedChange={(c) => setEditData({ ...editData, systemAccess: c })}
+                />
+              </div>
+
+              {editData.systemAccess && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-email">E-mail</Label>
+                    <Input
+                      id="edit-email"
+                      type="email"
+                      value={editData.email}
+                      onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-password">Nova Senha (Opcional)</Label>
+                    <Input
+                      id="edit-password"
+                      type="text"
+                      value={editData.password}
+                      onChange={(e) => setEditData({ ...editData, password: e.target.value })}
+                      placeholder="Deixe em branco para não alterar"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-role">Perfil de Acesso</Label>
+                    <Select
+                      value={editData.role}
+                      onValueChange={(v) => setEditData({ ...editData, role: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Admin">Administrador</SelectItem>
+                        <SelectItem value="Gerente">Gerente</SelectItem>
+                        <SelectItem value="Colaborador">Colaborador</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
+
+              <Button type="submit" className="w-full mt-4" disabled={isSubmitting}>
+                {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
@@ -204,18 +343,19 @@ export default function ColaboradoresPage() {
               <TableHead>E-mail</TableHead>
               <TableHead>Perfil</TableHead>
               <TableHead>Acesso</TableHead>
+              <TableHead className="w-[100px] text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8">
+                <TableCell colSpan={5} className="text-center py-8">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : filteredColaboradores.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   Nenhum colaborador encontrado
                 </TableCell>
               </TableRow>
@@ -235,6 +375,27 @@ export default function ColaboradoresPage() {
                         <ShieldAlert className="h-4 w-4" /> Sem acesso
                       </div>
                     )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditDialog(colab)}
+                        title="Editar colaborador"
+                      >
+                        <Pencil className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        onClick={() => handleDelete(colab.id)}
+                        title="Excluir colaborador"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
