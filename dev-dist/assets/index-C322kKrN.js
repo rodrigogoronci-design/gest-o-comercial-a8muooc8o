@@ -48187,8 +48187,8 @@ function LoginPage() {
 	const handleLogin = async (e) => {
 		e.preventDefault();
 		setIsLoading(true);
-		const { error } = await signIn(email, password);
-		if (error) toast.error("Erro ao fazer login", { description: "Verifique suas credenciais e tente novamente." });
+		const { error } = await signIn(email.trim(), password);
+		if (error) toast.error("Erro ao fazer login", { description: error.message === "Invalid login credentials" ? "Credenciais inválidas. Verifique seu e-mail e senha." : error.message || "Verifique suas credenciais e tente novamente." });
 		else {
 			toast.success("Login realizado com sucesso!");
 			navigate("/");
@@ -48196,67 +48196,67 @@ function LoginPage() {
 		setIsLoading(false);
 	};
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-		"data-uid": "src/pages/LoginPage.tsx:42:5",
+		"data-uid": "src/pages/LoginPage.tsx:45:5",
 		"data-prohibitions": "[editContent]",
 		className: "min-h-screen flex items-center justify-center bg-muted/30 p-4",
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
-			"data-uid": "src/pages/LoginPage.tsx:43:7",
+			"data-uid": "src/pages/LoginPage.tsx:46:7",
 			"data-prohibitions": "[editContent]",
 			className: "w-full max-w-md shadow-xl border-border/50",
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardHeader, {
-				"data-uid": "src/pages/LoginPage.tsx:44:9",
+				"data-uid": "src/pages/LoginPage.tsx:47:9",
 				"data-prohibitions": "[]",
 				className: "space-y-6 flex flex-col items-center pt-8",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					"data-uid": "src/pages/LoginPage.tsx:45:11",
+					"data-uid": "src/pages/LoginPage.tsx:48:11",
 					"data-prohibitions": "[]",
 					className: "bg-white p-4 rounded-xl shadow-sm border",
 					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-						"data-uid": "src/pages/LoginPage.tsx:46:13",
+						"data-uid": "src/pages/LoginPage.tsx:49:13",
 						"data-prohibitions": "[editContent]",
 						src: logomarca_service_ea011_default,
 						alt: "Logo",
 						className: "h-12 object-contain"
 					})
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/pages/LoginPage.tsx:48:11",
+					"data-uid": "src/pages/LoginPage.tsx:51:11",
 					"data-prohibitions": "[]",
 					className: "text-center space-y-2",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardTitle, {
-						"data-uid": "src/pages/LoginPage.tsx:49:13",
+						"data-uid": "src/pages/LoginPage.tsx:52:13",
 						"data-prohibitions": "[]",
 						className: "text-2xl font-bold flex items-center justify-center gap-2",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShieldCheck, {
-							"data-uid": "src/pages/LoginPage.tsx:50:15",
+							"data-uid": "src/pages/LoginPage.tsx:53:15",
 							"data-prohibitions": "[editContent]",
 							className: "w-6 h-6 text-primary"
 						}), "Acesso Seguro"]
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardDescription, {
-						"data-uid": "src/pages/LoginPage.tsx:53:13",
+						"data-uid": "src/pages/LoginPage.tsx:56:13",
 						"data-prohibitions": "[]",
 						className: "text-base",
 						children: "Faça login para acessar o sistema de gestão"
 					})]
 				})]
 			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
-				"data-uid": "src/pages/LoginPage.tsx:58:9",
+				"data-uid": "src/pages/LoginPage.tsx:61:9",
 				"data-prohibitions": "[editContent]",
 				onSubmit: handleLogin,
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardContent, {
-					"data-uid": "src/pages/LoginPage.tsx:59:11",
+					"data-uid": "src/pages/LoginPage.tsx:62:11",
 					"data-prohibitions": "[]",
 					className: "space-y-4 pb-6",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/pages/LoginPage.tsx:60:13",
+						"data-uid": "src/pages/LoginPage.tsx:63:13",
 						"data-prohibitions": "[]",
 						className: "space-y-2",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-							"data-uid": "src/pages/LoginPage.tsx:61:15",
+							"data-uid": "src/pages/LoginPage.tsx:64:15",
 							"data-prohibitions": "[]",
 							htmlFor: "email",
 							children: "E-mail corporativo"
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-							"data-uid": "src/pages/LoginPage.tsx:62:15",
+							"data-uid": "src/pages/LoginPage.tsx:65:15",
 							"data-prohibitions": "[editContent]",
 							id: "email",
 							type: "email",
@@ -48267,16 +48267,16 @@ function LoginPage() {
 							className: "h-11"
 						})]
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						"data-uid": "src/pages/LoginPage.tsx:72:13",
+						"data-uid": "src/pages/LoginPage.tsx:75:13",
 						"data-prohibitions": "[]",
 						className: "space-y-2",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$3, {
-							"data-uid": "src/pages/LoginPage.tsx:73:15",
+							"data-uid": "src/pages/LoginPage.tsx:76:15",
 							"data-prohibitions": "[]",
 							htmlFor: "password",
 							children: "Senha"
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-							"data-uid": "src/pages/LoginPage.tsx:74:15",
+							"data-uid": "src/pages/LoginPage.tsx:77:15",
 							"data-prohibitions": "[editContent]",
 							id: "password",
 							type: "password",
@@ -48288,11 +48288,11 @@ function LoginPage() {
 						})]
 					})]
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardFooter, {
-					"data-uid": "src/pages/LoginPage.tsx:85:11",
+					"data-uid": "src/pages/LoginPage.tsx:88:11",
 					"data-prohibitions": "[editContent]",
 					className: "pb-8",
 					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-						"data-uid": "src/pages/LoginPage.tsx:86:13",
+						"data-uid": "src/pages/LoginPage.tsx:89:13",
 						"data-prohibitions": "[editContent]",
 						type: "submit",
 						className: "w-full h-11 text-base",
@@ -108189,4 +108189,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, {
 }));
 //#endregion
 
-//# sourceMappingURL=index-DkgRgrMT.js.map
+//# sourceMappingURL=index-C322kKrN.js.map
