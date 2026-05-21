@@ -78,6 +78,7 @@ export function QuoteDocument({
   dfePrice,
   totalValue,
   implMode,
+  totalImplHours,
   implValue,
   isUpsell,
   includeFranchise,
