@@ -52,12 +52,7 @@ import {
   PREDEFINED_TRAININGS,
 } from '@/constants/contracts'
 
-const EXTRA_MODULES = [
-  { id: 'mod-sl-trip', name: 'SL Trip', price: 0, implHours: 3 },
-  { id: 'mod-power-bi', name: 'Power BI', price: 200, implHours: 0 },
-]
-
-const MODULES = [...BASE_MODULES, ...EXTRA_MODULES]
+const MODULES = [...BASE_MODULES]
 import { ContractDocument } from '@/components/ContractDocument'
 import { cn } from '@/lib/utils'
 

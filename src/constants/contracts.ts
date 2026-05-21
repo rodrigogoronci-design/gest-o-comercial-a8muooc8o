@@ -74,7 +74,7 @@ export const MODULES = [
     implHours: 2,
   },
   { id: 'mod-powerbi', name: 'Power BI', price: 199.0, implHours: 0 },
-  { id: 'mod-sltrip', name: 'SL-Trip', price: 299.0, implHours: 3 },
+  { id: 'mod-sltrip', name: 'SL TRIP', price: 299.0, implHours: 3 },
   { id: 'mod-patrimonio', name: 'Patrimonio', price: 0.0, implHours: 6 },
   { id: 'mod-sltrack', name: 'SL-Track', price: 299.0, implHours: 5 },
   { id: 'mod-homolog-banc', name: 'Homologação Bancaria', price: 200.0, implHours: 0 },
@@ -103,7 +103,7 @@ export const PREDEFINED_TRAININGS = [
   { id: 'train-ctrl-viagem', name: 'Controle de Viagem', price: 100.0 },
   { id: 'train-gerador-relatorio', name: 'Gerador de Relatório', price: 0.0 },
   { id: 'train-sl-track', name: 'SL Track', price: 100.0 },
-  { id: 'train-sl-trip', name: 'SL Trip', price: 100.0 },
+  { id: 'train-sl-trip', name: 'SL TRIP', price: 100.0 },
   { id: 'train-powerbi', name: 'Power BI', price: 200.0 },
   {
     id: 'train-encontro-duvidas',
