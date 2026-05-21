@@ -53,8 +53,8 @@ import {
 } from '@/constants/contracts'
 
 const EXTRA_MODULES = [
-  { id: 'mod-sl-trip', name: 'SL Trip', price: 0, implHours: 0, fixedImplPrice: 0 },
-  { id: 'mod-power-bi', name: 'Power BI', price: 200, implHours: 0, fixedImplPrice: 0 },
+  { id: 'mod-sl-trip', name: 'SL Trip', price: 0, implHours: 3 },
+  { id: 'mod-power-bi', name: 'Power BI', price: 200, implHours: 0 },
 ]
 
 const MODULES = [...BASE_MODULES, ...EXTRA_MODULES]
@@ -212,31 +212,31 @@ export default function ContractGeneratorPage() {
   const implRate =
     implMode === 'remoto' ? IMPLEMENTATION_RATES.remoto : IMPLEMENTATION_RATES.presencial
   const totalImplHours = useMemo(() => {
-    if (activeTab === 'cotacao') return 0
-    let hours = BASE_IMPLEMENTATION_HOURS
+    let hours = 0
+    if (selectedPlan !== 'none') {
+      hours += BASE_IMPLEMENTATION_HOURS
+    }
     selectedModules.forEach((id) => {
       const mod = MODULES.find((m) => m.id === id)
       if (mod && mod.implHours) hours += mod.implHours
     })
     return hours
-  }, [selectedModules, activeTab])
+  }, [selectedModules, selectedPlan])
 
   const diagValue = diagnosticVisits.reduce((acc, visit) => acc + (parseFloat(visit.value) || 0), 0)
 
   const calculatedImplValue = useMemo(() => {
     let value = totalImplHours * implRate
-    if (activeTab !== 'cotacao') {
-      selectedModules.forEach((id) => {
-        const mod = MODULES.find((m) => m.id === id) as any
-        if (mod && mod.fixedImplPrice !== undefined) {
-          if (typeof mod.fixedImplPrice === 'object') {
-            value += mod.fixedImplPrice[implMode]
-          } else {
-            value += mod.fixedImplPrice
-          }
+    selectedModules.forEach((id) => {
+      const mod = MODULES.find((m) => m.id === id) as any
+      if (mod && mod.fixedImplPrice !== undefined) {
+        if (typeof mod.fixedImplPrice === 'object') {
+          value += mod.fixedImplPrice[implMode]
+        } else {
+          value += mod.fixedImplPrice
         }
-      })
-    }
+      }
+    })
     if (includeDiagnosticVisit) {
       value += diagValue
     }
@@ -254,14 +254,10 @@ export default function ContractGeneratorPage() {
     includeDiagnosticVisit,
     diagValue,
     selectedTrainings,
-    activeTab,
   ])
 
   const [manualImplValue, setManualImplValue] = useState<string>('')
-  const implValue =
-    manualImplValue !== '' && activeTab !== 'cotacao'
-      ? parseFloat(manualImplValue)
-      : calculatedImplValue
+  const implValue = manualImplValue !== '' ? parseFloat(manualImplValue) : calculatedImplValue
 
   const currentClientValue = useMemo(() => {
     if (quoteTargetType === 'cliente' && selectedClientId !== 'novo') {
@@ -673,7 +669,12 @@ export default function ContractGeneratorPage() {
           itens: [
             ...selectedModules.map((id) => {
               const m = MODULES.find((mod) => mod.id === id)
-              return { id, name: m?.name, price: m?.price }
+              return {
+                id,
+                name: m?.name,
+                price: m?.price,
+                implHours: m?.implHours || 0,
+              }
             }),
             ...(selectedDfe !== 'dfe-none' && dfeData
               ? [{ id: dfeData.id, name: dfeData.name, price: dfeData.price }]
@@ -689,6 +690,14 @@ export default function ContractGeneratorPage() {
               const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
               return { id, name: `Treinamento: ${t?.name}`, price: t?.price || 0 }
             }),
+            {
+              id: 'impl-details',
+              name: 'Detalhes da Implantação',
+              price: implValue,
+              modo: implMode,
+              totalHours: totalImplHours,
+              implRate: implRate,
+            },
           ],
           valor_mensalidade: totalValue,
           valor_implantacao: implValue,
@@ -1424,6 +1433,50 @@ export default function ContractGeneratorPage() {
                     </Select>
                   </div>
                   <Separator />
+                  <div className="space-y-3">
+                    <Label className="text-sm font-bold">Implantação</Label>
+                    <RadioGroup
+                      value={implMode}
+                      onValueChange={(v) => setImplMode(v as 'remoto' | 'presencial')}
+                      className="flex flex-col sm:flex-row gap-4"
+                    >
+                      <div className="flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors">
+                        <RadioGroupItem value="remoto" id="remoto-quote" />
+                        <Label
+                          htmlFor="remoto-quote"
+                          className="cursor-pointer font-medium flex-1 h-full py-1"
+                        >
+                          Remoto (R$ 130/h)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 border p-3 rounded-lg flex-1 cursor-pointer hover:bg-slate-50 transition-colors">
+                        <RadioGroupItem value="presencial" id="presencial-quote" />
+                        <Label
+                          htmlFor="presencial-quote"
+                          className="cursor-pointer font-medium flex-1 h-full py-1"
+                        >
+                          Presencial (R$ 170/h)
+                        </Label>
+                      </div>
+                    </RadioGroup>
+
+                    <div className="mt-4 pt-2 border-t border-slate-100 space-y-2">
+                      <Label className="text-xs">Valor Personalizado de Implantação</Label>
+                      <div className="flex gap-3 items-center">
+                        <Input
+                          type="number"
+                          placeholder="Ex: 1500"
+                          value={manualImplValue}
+                          onChange={(e) => setManualImplValue(e.target.value)}
+                          className="w-1/2 bg-white"
+                        />
+                        <span className="text-xs text-slate-500">
+                          Calculado: {formatCurrency(calculatedImplValue)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <Separator className="my-4" />
                   {quoteTargetType === 'cliente' && (
                     <div className="space-y-3">
                       <div className="mb-4 bg-blue-50 text-blue-800 p-3 rounded-md border border-blue-100 flex items-center justify-between">

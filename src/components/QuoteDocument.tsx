@@ -267,7 +267,13 @@ export function QuoteDocument({
                   <tr>
                     <td className="p-1.5">
                       <span className="font-semibold text-slate-800">
-                        Visita Presencial de Diagnóstico (Base)
+                        Serviços de Implantação / Configuração (
+                        {implMode === 'remoto' ? 'Remoto' : 'Presencial'})
+                      </span>
+                      <span className="text-[9px] block text-slate-500 mt-0.5">
+                        {totalImplHours > 0
+                          ? `Total estimado: ${totalImplHours} horas`
+                          : 'Taxa de setup inicial'}
                       </span>
                     </td>
                     <td className="p-1.5 text-center font-medium">1</td>
@@ -396,7 +402,9 @@ export function QuoteDocument({
                   : 0) >
                 0 && (
                 <div className="flex justify-between items-center text-slate-600">
-                  <span>Visita Presencial de Diagnóstico (Base)</span>
+                  <span>
+                    Serviços de Implantação ({implMode === 'remoto' ? 'Remoto' : 'Presencial'})
+                  </span>
                   <span className="font-medium">
                     {formatCurrency(
                       implValue -

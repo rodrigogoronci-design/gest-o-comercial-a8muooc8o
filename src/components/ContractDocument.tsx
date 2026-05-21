@@ -3,8 +3,8 @@ import { cn } from '@/lib/utils'
 import { PLANS, MODULES as BASE_MODULES, BASE_IMPLEMENTATION_HOURS } from '@/constants/contracts'
 
 const EXTRA_MODULES = [
-  { id: 'mod-sl-trip', name: 'SL Trip', price: 0, implHours: 0, fixedImplPrice: 0 },
-  { id: 'mod-power-bi', name: 'Power BI', price: 200, implHours: 0, fixedImplPrice: 0 },
+  { id: 'mod-sl-trip', name: 'SL Trip', price: 0, implHours: 3 },
+  { id: 'mod-power-bi', name: 'Power BI', price: 200, implHours: 0 },
 ]
 
 const MODULES = [...BASE_MODULES, ...EXTRA_MODULES]
@@ -249,24 +249,23 @@ export function ContractDocument({
                   </th>
                   <th className="border border-slate-300 p-1.5 text-center w-24">Contratado</th>
                   <th className="border border-slate-300 p-1.5 text-center w-32">
-                    Visita Presencial de Diagnóstico (
-                    {implMode === 'remoto' ? 'Remoto' : 'Presencial'})
+                    Implantação ({implMode === 'remoto' ? 'Remoto' : 'Presencial'})
                   </th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td className="border border-slate-300 p-1.5">
-                    Visita Presencial de Diagnóstico (Base)
-                  </td>
-                  <td className="border border-slate-300 p-1.5 text-right">Incluso</td>
-                  <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
-                    X
-                  </td>
-                  <td className="border border-slate-300 p-1.5 text-center">
-                    {formatCurrency(BASE_IMPLEMENTATION_HOURS * implRate)}
-                  </td>
-                </tr>
+                {selectedPlan !== 'none' && (
+                  <tr>
+                    <td className="border border-slate-300 p-1.5">Implantação (Plano Base)</td>
+                    <td className="border border-slate-300 p-1.5 text-right">Incluso</td>
+                    <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
+                      X
+                    </td>
+                    <td className="border border-slate-300 p-1.5 text-center">
+                      {formatCurrency(BASE_IMPLEMENTATION_HOURS * implRate)}
+                    </td>
+                  </tr>
+                )}
                 {MODULES.map((m) => (
                   <tr
                     key={m.id}
