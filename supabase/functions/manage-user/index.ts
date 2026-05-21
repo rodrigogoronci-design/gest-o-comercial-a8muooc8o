@@ -36,7 +36,7 @@ Deno.serve(async (req: Request) => {
       if (payload.systemAccess !== false && payload.email) {
         if (payload.sendInvite) {
           const { data, error } = await supabase.auth.admin.inviteUserByEmail(payload.email, {
-            data: { name: payload.name },
+            data: { name: payload.name, app_source: 'controle-de-beneficios' },
           })
           if (error) throw error
           authUser = data.user
@@ -45,7 +45,7 @@ Deno.serve(async (req: Request) => {
             email: payload.email,
             password: payload.password || 'Skip@Pass123!',
             email_confirm: true,
-            user_metadata: { name: payload.name },
+            user_metadata: { name: payload.name, app_source: 'controle-de-beneficios' },
           })
           if (error) throw error
           authUser = data.user
@@ -62,6 +62,7 @@ Deno.serve(async (req: Request) => {
         email: payload.email || null,
         nome: payload.name,
         role: mapRole(payload.role),
+        app_source: 'controle-de-beneficios',
         departamento: payload.departamento || null,
         avatar_url: payload.avatar_url || null,
         recebe_transporte:
@@ -141,7 +142,7 @@ Deno.serve(async (req: Request) => {
         } else if (email) {
           const updateData: any = {
             email,
-            user_metadata: { name },
+            user_metadata: { name, app_source: 'controle-de-beneficios' },
             email_confirm: true,
           }
           if (password) updateData.password = password
@@ -157,7 +158,7 @@ Deno.serve(async (req: Request) => {
                   email,
                   password: password || 'Skip@Pass123!',
                   email_confirm: true,
-                  user_metadata: { name },
+                  user_metadata: { name, app_source: 'controle-de-beneficios' },
                 })
                 if (!createErr) {
                   await supabase
@@ -176,7 +177,7 @@ Deno.serve(async (req: Request) => {
           email,
           password: password || 'Skip@Pass123!',
           email_confirm: true,
-          user_metadata: { name },
+          user_metadata: { name, app_source: 'controle-de-beneficios' },
         })
         if (createErr) throw createErr
 
@@ -191,6 +192,7 @@ Deno.serve(async (req: Request) => {
         role: mapRole(role),
         departamento: payload.departamento || null,
         recebe_transporte: receivesTransport,
+        app_source: 'controle-de-beneficios',
       }
       if (email !== undefined) updateDataDb.email = email || null
 

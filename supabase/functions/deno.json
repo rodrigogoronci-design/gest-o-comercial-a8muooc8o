@@ -1,9 +1,10 @@
 {
   "_versions": {
-    "manage-user": 22,
-    "parse-pdf": 10,
-    "parse-receipt-pdf": 2,
-    "send-finance-email": 6,
-    "ai-assistant": 1
+    "manage-user": 24,
+    "parse-pdf": 11,
+    "parse-receipt-pdf": 3,
+    "send-finance-email": 7,
+    "ai-assistant": 2,
+    "parse-excel": 1
   }
 }
