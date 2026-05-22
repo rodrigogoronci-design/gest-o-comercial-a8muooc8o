@@ -88919,66 +88919,59 @@ function calculateFinancialScore(receipts) {
 var PLANS = [
 	{
 		id: "tms-50",
-		name: "TMS 50",
-		limit: "De 0 à 50",
+		name: "TMS-50",
+		limit: "Até 50",
 		maxDocs: "50",
-		price: 400
+		price: 399
 	},
 	{
 		id: "tms-100",
-		name: "TMS 100",
-		limit: "De 0 à 100",
+		name: "TMS-100",
+		limit: "à 100",
 		maxDocs: "100",
 		price: 657
 	},
 	{
 		id: "tms-300",
-		name: "TMS 300",
-		limit: "De 101 à 300",
+		name: "TMS-300",
+		limit: "à 300",
 		maxDocs: "300",
 		price: 877
 	},
 	{
 		id: "tms-500",
-		name: "TMS 500",
-		limit: "De 301 à 500",
+		name: "TMS-500",
+		limit: "à 500",
 		maxDocs: "500",
 		price: 1097
 	},
 	{
-		id: "tms-1000",
-		name: "TMS 1000",
-		limit: "De 501 à 1000",
+		id: "mts-1000",
+		name: "MTS-1000",
+		limit: "à 1000",
 		maxDocs: "1000",
 		price: 1427
 	},
 	{
 		id: "tms-3000",
-		name: "TMS 3000",
-		limit: "De 1000 à 3000",
+		name: "TMS-3000",
+		limit: "à 3000",
 		maxDocs: "3000",
 		price: 1757
 	},
 	{
 		id: "tms-5000",
-		name: "TMS 5000",
-		limit: "3001 de 5000",
+		name: "TMS-5000",
+		limit: "à 5000",
 		maxDocs: "5000",
 		price: 2087
 	},
 	{
 		id: "tms-5000-plus",
-		name: "TMS 5000+",
+		name: "TMS-5000+",
 		limit: "Acima de 5000",
 		maxDocs: "10000",
 		price: 2487
-	},
-	{
-		id: "tms-10000-plus",
-		name: "TMS 10000+",
-		limit: "Acima de 10000",
-		maxDocs: "ilimitado",
-		price: 3200
 	}
 ];
 var IMPLEMENTATION_RATES = {
@@ -89034,7 +89027,7 @@ var MODULES$2 = [
 		id: "mod-admin",
 		name: "Administração",
 		price: 0,
-		implHours: 0,
+		implHours: 10,
 		isBasic: true
 	},
 	{
@@ -89073,124 +89066,88 @@ var MODULES$2 = [
 		isBasic: true
 	},
 	{
+		id: "mod-fiscal",
+		name: "Fiscal",
+		price: 199,
+		implHours: 4
+	},
+	{
+		id: "mod-powerbi",
+		name: "B.I.",
+		price: 199,
+		implHours: 2
+	},
+	{
 		id: "mod-edi",
 		name: "EDI",
 		price: 250,
-		implHours: 2
+		implHours: 4
 	},
 	{
 		id: "mod-ctrl-viagem",
 		name: "Controle de Viagem",
 		price: 199,
-		implHours: 3
+		implHours: 6
 	},
 	{
 		id: "mod-frota",
-		name: "Frota (até 10 placas)*",
+		name: "Frota",
 		price: 250,
-		implHours: 16
-	},
-	{
-		id: "mod-frota-compras",
-		name: "Frota (Compras)",
-		price: 250,
-		implHours: 3
-	},
-	{
-		id: "mod-frota-estoque",
-		name: "Frota (Estoque)",
-		price: 250,
-		implHours: 3
-	},
-	{
-		id: "mod-frota-abastecimento",
-		name: "Frota (Abastecimento)",
-		price: 250,
-		implHours: 3
-	},
-	{
-		id: "mod-frota-manutencao",
-		name: "Frota (Manutenção)",
-		price: 250,
-		implHours: 3
-	},
-	{
-		id: "mod-frota-pneu",
-		name: "Frota (Pneu)",
-		price: 250,
-		implHours: 2
-	},
-	{
-		id: "mod-frota-vencimento",
-		name: "Frota (Vencimento)",
-		price: 250,
-		implHours: 2
+		implHours: 18
 	},
 	{
 		id: "mod-medicao",
 		name: "Medição",
 		price: 350,
-		implHours: 6
+		implHours: 8
 	},
 	{
 		id: "mod-fracionado",
 		name: "Fracionado",
 		price: 350,
-		implHours: 4
+		implHours: 6
 	},
 	{
 		id: "mod-transp",
 		name: "Transporte (Bloco/TCE/TCI)",
 		price: 350,
-		implHours: 10
+		implHours: 18
 	},
 	{
 		id: "mod-fundo-prot",
 		name: "Fundo de proteção",
 		price: 1201,
-		implHours: 6
+		implHours: 8
 	},
 	{
-		id: "mod-fiscal",
-		name: "Fiscal",
-		price: 199,
-		implHours: 3
+		id: "mod-patrimonio",
+		name: "Patrimônio",
+		price: 0,
+		implHours: 2
 	},
 	{
 		id: "mod-calendario",
 		name: "Calendário",
 		price: 165,
-		implHours: 1
+		implHours: 2
 	},
 	{
 		id: "mod-painel",
 		name: "Painel de Informações",
 		price: 165,
-		implHours: 1
-	},
-	{
-		id: "mod-dfe",
-		name: "DF-e",
-		price: 165,
 		implHours: 2
 	},
 	{
-		id: "mod-powerbi",
-		name: "Power BI",
-		price: 199,
-		implHours: 0
+		id: "mod-dfe",
+		name: "Df-e",
+		price: 165,
+		implHours: 2
 	},
 	{
 		id: "mod-sltrip",
 		name: "SL TRIP",
 		price: 299,
 		implHours: 3
-	},
-	{
-		id: "mod-patrimonio",
-		name: "Patrimonio",
-		price: 0,
-		implHours: 6
 	},
 	{
 		id: "mod-sltrack",
@@ -108760,4 +108717,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, {
 }));
 //#endregion
 
-//# sourceMappingURL=index-CglYOC4X.js.map
+//# sourceMappingURL=index-B5Pxx-SW.js.map
