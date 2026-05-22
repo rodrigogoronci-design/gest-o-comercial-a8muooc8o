@@ -80,6 +80,7 @@ export default function ContractGeneratorPage() {
   const [selectedPlan, setSelectedPlan] = useState<string>('tms-50')
   const [selectedModules, setSelectedModules] = useState<string[]>([])
   const [implMode, setImplMode] = useState<'remoto' | 'presencial'>('remoto')
+  const [additionalPlates, setAdditionalPlates] = useState<number>(0)
 
   const [isExtractingCompany, setIsExtractingCompany] = useState(false)
   const [isExtractingProposal, setIsExtractingProposal] = useState(false)
@@ -202,7 +203,18 @@ export default function ContractGeneratorPage() {
       selectedModules.reduce((acc, id) => acc + (MODULES.find((m) => m.id === id)?.price || 0), 0),
     [selectedModules],
   )
-  const totalValue = planPrice + modulesPrice + dfePrice
+
+  const additionalPlatesPrice = useMemo(() => {
+    if (additionalPlates <= 0) return 0
+    if (additionalPlates <= 50) return 10
+    if (additionalPlates <= 100) return 6
+    if (additionalPlates <= 200) return 3
+    return 2
+  }, [additionalPlates])
+
+  const additionalPlatesTotal = additionalPlates * additionalPlatesPrice
+
+  const totalValue = planPrice + modulesPrice + dfePrice + additionalPlatesTotal
 
   const implRate =
     implMode === 'remoto' ? IMPLEMENTATION_RATES.remoto : IMPLEMENTATION_RATES.presencial
@@ -290,6 +302,9 @@ export default function ContractGeneratorPage() {
     diagnosticVisits,
     diagnosticVisitValue: diagnosticVisits[0]?.value || '',
     diagnosticVisitDate: diagnosticVisits[0]?.date || '',
+    additionalPlates,
+    additionalPlatesPrice,
+    additionalPlatesTotal,
   }
 
   const quoteProps = {
@@ -328,6 +343,9 @@ export default function ContractGeneratorPage() {
     diagnosticVisitValue: diagnosticVisits[0]?.value || '',
     diagnosticVisitDate: diagnosticVisits[0]?.date || '',
     currentClientValue,
+    additionalPlates,
+    additionalPlatesPrice,
+    additionalPlatesTotal,
   }
 
   const fetchCnpjData = async (cnpjValue: string) => {
@@ -600,6 +618,7 @@ export default function ContractGeneratorPage() {
             const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
             return t ? `Treinamento: ${t.name}` : null
           }),
+          additionalPlates > 0 ? `Placa Adicional Frota (Qtd: ${additionalPlates})` : null,
         ].filter(Boolean)
 
         const { error } = await supabase.from('solicitacoes_servico').insert({
@@ -685,6 +704,17 @@ export default function ContractGeneratorPage() {
               const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
               return { id, name: `Treinamento: ${t?.name}`, price: t?.price || 0 }
             }),
+            ...(additionalPlates > 0
+              ? [
+                  {
+                    id: 'placas-adicionais',
+                    name: `Placa Adicional Frota (Qtd: ${additionalPlates})`,
+                    price: additionalPlatesTotal,
+                    quantity: additionalPlates,
+                    unitPrice: additionalPlatesPrice,
+                  },
+                ]
+              : []),
             {
               id: 'impl-details',
               name: 'Detalhes da Implantação',
@@ -741,12 +771,37 @@ export default function ContractGeneratorPage() {
       if (selectedDfe !== 'dfe-none' && dfeData) {
         adicionais.push({ name: dfeData.name, price: dfeData.price })
       }
+      if (additionalPlates > 0) {
+        adicionais.push({
+          name: `Placa Adicional Frota (Qtd: ${additionalPlates})`,
+          price: additionalPlatesTotal,
+        })
+      }
 
       const modulosFormatados = {
         plano_base: planData?.name || selectedPlan,
         filiais: 0,
         adicionais: adicionais,
       }
+
+      const cobrancasAtuais = existingClient?.cobrancas
+        ? Array.isArray(existingClient.cobrancas)
+          ? existingClient.cobrancas
+          : []
+        : []
+      const updatedCobrancas =
+        additionalPlates > 0
+          ? [
+              ...cobrancasAtuais,
+              {
+                tipo: 'Placa Adicional Frota',
+                quantidade: additionalPlates,
+                valor_unitario: additionalPlatesPrice,
+                valor_total: additionalPlatesTotal,
+                data_inclusao: new Date().toISOString(),
+              },
+            ]
+          : cobrancasAtuais
 
       if (existingClient) {
         await updateCliente(existingClient.id, {
@@ -760,6 +815,7 @@ export default function ContractGeneratorPage() {
           modo_implantacao: implMode,
           modulos: modulosFormatados,
           valor_total: totalValue,
+          cobrancas: updatedCobrancas,
           status: sendToFinance
             ? 'Enviado p/ Financeiro'
             : sendToImplementation
@@ -808,6 +864,18 @@ export default function ContractGeneratorPage() {
           modo_implantacao: implMode,
           modulos: modulosFormatados,
           valor_total: totalValue,
+          cobrancas:
+            additionalPlates > 0
+              ? [
+                  {
+                    tipo: 'Placa Adicional Frota',
+                    quantidade: additionalPlates,
+                    valor_unitario: additionalPlatesPrice,
+                    valor_total: additionalPlatesTotal,
+                    data_inclusao: new Date().toISOString(),
+                  },
+                ]
+              : [],
           status: sendToFinance
             ? 'Enviado p/ Financeiro'
             : sendToImplementation
@@ -1086,6 +1154,25 @@ export default function ContractGeneratorPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="space-y-3 mt-4">
+                    <Label className="text-sm font-bold">Placas Adicionais Frota</Label>
+                    <div className="flex gap-3 items-center">
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={additionalPlates || ''}
+                        onChange={(e) => setAdditionalPlates(parseInt(e.target.value) || 0)}
+                        className="w-32 bg-slate-50 border"
+                      />
+                      {additionalPlates > 0 && (
+                        <span className="text-xs text-slate-500 font-medium">
+                          Vlr. Unitário: {formatCurrency(additionalPlatesPrice)} | Subtotal:{' '}
+                          {formatCurrency(additionalPlatesTotal)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <Separator />
                   <div className="space-y-3">
@@ -1426,6 +1513,25 @@ export default function ContractGeneratorPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="space-y-3 mt-4">
+                    <Label className="text-sm font-bold">Placas Adicionais Frota</Label>
+                    <div className="flex gap-3 items-center">
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={additionalPlates || ''}
+                        onChange={(e) => setAdditionalPlates(parseInt(e.target.value) || 0)}
+                        className="w-32 bg-slate-50 border"
+                      />
+                      {additionalPlates > 0 && (
+                        <span className="text-xs text-slate-500 font-medium">
+                          Vlr. Unitário: {formatCurrency(additionalPlatesPrice)} | Subtotal:{' '}
+                          {formatCurrency(additionalPlatesTotal)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <Separator />
                   <div className="space-y-3">

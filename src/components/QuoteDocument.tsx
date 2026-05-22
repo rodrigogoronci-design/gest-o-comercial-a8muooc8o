@@ -24,6 +24,9 @@ interface QuoteDocumentProps {
   diagnosticVisitValue?: string
   diagnosticVisits?: { id: string; date: string; value: string }[]
   currentClientValue?: number
+  additionalPlates?: number
+  additionalPlatesPrice?: number
+  additionalPlatesTotal?: number
 }
 
 const FEATURE_CATEGORIES = [
@@ -86,6 +89,9 @@ export function QuoteDocument({
   diagnosticVisitValue,
   diagnosticVisits,
   currentClientValue,
+  additionalPlates,
+  additionalPlatesPrice,
+  additionalPlatesTotal,
 }: QuoteDocumentProps) {
   const showBasePlan =
     planName && planName !== 'Nenhum' && planName !== 'Nenhum (Somente Módulos / Upsell)'
@@ -258,6 +264,23 @@ export function QuoteDocument({
                 </tr>
               )}
 
+              {!!additionalPlates && additionalPlates > 0 && (
+                <tr>
+                  <td className="p-1.5">
+                    <span className="font-semibold text-slate-800">(*) Placa Adicional Frota</span>
+                    <span className="text-[9px] block text-slate-500 mt-0.5">
+                      Placas excedentes do módulo Frota
+                    </span>
+                  </td>
+                  <td className="p-1.5 text-center font-medium">{additionalPlates}</td>
+                  <td className="p-1.5 text-right">{formatCurrency(additionalPlatesPrice || 0)}</td>
+                  <td className="p-1.5 text-right font-medium">
+                    {formatCurrency(additionalPlatesTotal || 0)}
+                  </td>
+                  <td className="p-1.5 text-center text-slate-600">Mensalidade</td>
+                </tr>
+              )}
+
               {implValue > 0 &&
                 implValue -
                   trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) -
@@ -380,6 +403,12 @@ export function QuoteDocument({
                 <div className="flex justify-between items-center text-slate-600">
                   <span>{dfeData.name || 'Franquia DF-e'}</span>
                   <span className="font-medium">{formatCurrency(dfePrice || 0)}</span>
+                </div>
+              )}
+              {!!additionalPlates && additionalPlates > 0 && (
+                <div className="flex justify-between items-center text-slate-600">
+                  <span>Placas Adicionais ({additionalPlates})</span>
+                  <span className="font-medium">{formatCurrency(additionalPlatesTotal || 0)}</span>
                 </div>
               )}
               <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">

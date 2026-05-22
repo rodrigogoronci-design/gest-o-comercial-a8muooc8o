@@ -62,6 +62,9 @@ export function ContractDocument({
   diagnosticVisitValue,
   diagnosticVisitDate,
   diagnosticVisits = [],
+  additionalPlates,
+  additionalPlatesPrice,
+  additionalPlatesTotal,
 }: any) {
   return (
     <div className="p-8 sm:p-12 text-[12px] text-slate-800 font-serif leading-relaxed space-y-5 print:p-0 print:text-black">
@@ -351,7 +354,11 @@ export function ContractDocument({
             <p>
               5.8) Caso a CONTRATANTE opte por contratar o módulo FROTA, já estará incluso nesta
               contratação a franquia de 10 (dez) placas. Placas adicionais serão cobradas um valor
-              unitário.
+              unitário
+              {additionalPlates > 0
+                ? ` de ${formatCurrency(additionalPlatesPrice || 0)} para a quantidade atual de ${additionalPlates} placa(s)`
+                : ''}
+              .
             </p>
             <p>
               5.9) O valor da Licença de Uso será composto pelo somatório dos valores do plano
@@ -478,6 +485,16 @@ export function ContractDocument({
                     </td>
                     <td className="border border-slate-300 p-2 text-right">
                       {formatCurrency(dfePrice || 0)}
+                    </td>
+                  </tr>
+                )}
+                {!!additionalPlates && additionalPlates > 0 && (
+                  <tr>
+                    <td className="border border-slate-300 p-2 font-bold">
+                      Placas Adicionais ({additionalPlates})
+                    </td>
+                    <td className="border border-slate-300 p-2 text-right">
+                      {formatCurrency(additionalPlatesTotal || 0)}
                     </td>
                   </tr>
                 )}
