@@ -81,6 +81,7 @@ export default function ContractGeneratorPage() {
   const [selectedModules, setSelectedModules] = useState<string[]>([])
   const [implMode, setImplMode] = useState<'remoto' | 'presencial'>('remoto')
   const [additionalPlates, setAdditionalPlates] = useState<number>(0)
+  const [additionalBranches, setAdditionalBranches] = useState<number>(0)
 
   const [isExtractingCompany, setIsExtractingCompany] = useState(false)
   const [isExtractingProposal, setIsExtractingProposal] = useState(false)
@@ -214,7 +215,11 @@ export default function ContractGeneratorPage() {
 
   const additionalPlatesTotal = additionalPlates * additionalPlatesPrice
 
-  const totalValue = planPrice + modulesPrice + dfePrice + additionalPlatesTotal
+  const additionalBranchesPrice = 199
+  const additionalBranchesTotal = additionalBranches * additionalBranchesPrice
+
+  const totalValue =
+    planPrice + modulesPrice + dfePrice + additionalPlatesTotal + additionalBranchesTotal
 
   const implRate =
     implMode === 'remoto' ? IMPLEMENTATION_RATES.remoto : IMPLEMENTATION_RATES.presencial
@@ -306,6 +311,9 @@ export default function ContractGeneratorPage() {
     additionalPlates,
     additionalPlatesPrice,
     additionalPlatesTotal,
+    additionalBranches,
+    additionalBranchesPrice,
+    additionalBranchesTotal,
   }
 
   const quoteProps = {
@@ -347,6 +355,9 @@ export default function ContractGeneratorPage() {
     additionalPlates,
     additionalPlatesPrice,
     additionalPlatesTotal,
+    additionalBranches,
+    additionalBranchesPrice,
+    additionalBranchesTotal,
   }
 
   const fetchCnpjData = async (cnpjValue: string) => {
@@ -620,6 +631,7 @@ export default function ContractGeneratorPage() {
             return t ? `Treinamento: ${t.name}` : null
           }),
           additionalPlates > 0 ? `Placa Adicional Frota (Qtd: ${additionalPlates})` : null,
+          additionalBranches > 0 ? `Filiais Adicionais (Qtd: ${additionalBranches})` : null,
         ].filter(Boolean)
 
         const { error } = await supabase.from('solicitacoes_servico').insert({
@@ -716,6 +728,17 @@ export default function ContractGeneratorPage() {
                   },
                 ]
               : []),
+            ...(additionalBranches > 0
+              ? [
+                  {
+                    id: 'filiais-adicionais',
+                    name: `Filiais Adicionais (Qtd: ${additionalBranches})`,
+                    price: additionalBranchesTotal,
+                    quantity: additionalBranches,
+                    unitPrice: additionalBranchesPrice,
+                  },
+                ]
+              : []),
             {
               id: 'impl-details',
               name: 'Detalhes da Implantação',
@@ -727,6 +750,7 @@ export default function ContractGeneratorPage() {
           ],
           valor_mensalidade: totalValue,
           valor_implantacao: implValue,
+          quantidade_filiais: additionalBranches,
         })
         if (error) throw error
 
@@ -778,10 +802,16 @@ export default function ContractGeneratorPage() {
           price: additionalPlatesTotal,
         })
       }
+      if (additionalBranches > 0) {
+        adicionais.push({
+          name: `Filiais Adicionais (Qtd: ${additionalBranches})`,
+          price: additionalBranchesTotal,
+        })
+      }
 
       const modulosFormatados = {
         plano_base: planData?.name || selectedPlan,
-        filiais: 0,
+        filiais: additionalBranches,
         adicionais: adicionais,
       }
 
@@ -790,19 +820,25 @@ export default function ContractGeneratorPage() {
           ? existingClient.cobrancas
           : []
         : []
-      const updatedCobrancas =
-        additionalPlates > 0
-          ? [
-              ...cobrancasAtuais,
-              {
-                tipo: 'Placa Adicional Frota',
-                quantidade: additionalPlates,
-                valor_unitario: additionalPlatesPrice,
-                valor_total: additionalPlatesTotal,
-                data_inclusao: new Date().toISOString(),
-              },
-            ]
-          : cobrancasAtuais
+      let updatedCobrancas = [...cobrancasAtuais]
+      if (additionalPlates > 0) {
+        updatedCobrancas.push({
+          tipo: 'Placa Adicional Frota',
+          quantidade: additionalPlates,
+          valor_unitario: additionalPlatesPrice,
+          valor_total: additionalPlatesTotal,
+          data_inclusao: new Date().toISOString(),
+        })
+      }
+      if (additionalBranches > 0) {
+        updatedCobrancas.push({
+          tipo: 'Filiais Adicionais',
+          quantidade: additionalBranches,
+          valor_unitario: additionalBranchesPrice,
+          valor_total: additionalBranchesTotal,
+          data_inclusao: new Date().toISOString(),
+        })
+      }
 
       if (existingClient) {
         await updateCliente(existingClient.id, {
@@ -865,18 +901,7 @@ export default function ContractGeneratorPage() {
           modo_implantacao: implMode,
           modulos: modulosFormatados,
           valor_total: totalValue,
-          cobrancas:
-            additionalPlates > 0
-              ? [
-                  {
-                    tipo: 'Placa Adicional Frota',
-                    quantidade: additionalPlates,
-                    valor_unitario: additionalPlatesPrice,
-                    valor_total: additionalPlatesTotal,
-                    data_inclusao: new Date().toISOString(),
-                  },
-                ]
-              : [],
+          cobrancas: updatedCobrancas,
           status: sendToFinance
             ? 'Enviado p/ Financeiro'
             : sendToImplementation
@@ -1171,6 +1196,25 @@ export default function ContractGeneratorPage() {
                         <span className="text-xs text-slate-500 font-medium">
                           Vlr. Unitário: {formatCurrency(additionalPlatesPrice)} | Subtotal:{' '}
                           {formatCurrency(additionalPlatesTotal)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-3 mt-4">
+                    <Label className="text-sm font-bold">Filiais Adicionais</Label>
+                    <div className="flex gap-3 items-center">
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={additionalBranches || ''}
+                        onChange={(e) => setAdditionalBranches(parseInt(e.target.value) || 0)}
+                        className="w-32 bg-slate-50 border"
+                      />
+                      {additionalBranches > 0 && (
+                        <span className="text-xs text-slate-500 font-medium">
+                          Vlr. Unitário: {formatCurrency(additionalBranchesPrice)} | Subtotal:{' '}
+                          {formatCurrency(additionalBranchesTotal)}
                         </span>
                       )}
                     </div>
@@ -1530,6 +1574,25 @@ export default function ContractGeneratorPage() {
                         <span className="text-xs text-slate-500 font-medium">
                           Vlr. Unitário: {formatCurrency(additionalPlatesPrice)} | Subtotal:{' '}
                           {formatCurrency(additionalPlatesTotal)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-3 mt-4">
+                    <Label className="text-sm font-bold">Filiais Adicionais</Label>
+                    <div className="flex gap-3 items-center">
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={additionalBranches || ''}
+                        onChange={(e) => setAdditionalBranches(parseInt(e.target.value) || 0)}
+                        className="w-32 bg-slate-50 border"
+                      />
+                      {additionalBranches > 0 && (
+                        <span className="text-xs text-slate-500 font-medium">
+                          Vlr. Unitário: {formatCurrency(additionalBranchesPrice)} | Subtotal:{' '}
+                          {formatCurrency(additionalBranchesTotal)}
                         </span>
                       )}
                     </div>

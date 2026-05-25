@@ -60,6 +60,9 @@ export function ContractDocument({
   additionalPlates,
   additionalPlatesPrice,
   additionalPlatesTotal,
+  additionalBranches,
+  additionalBranchesPrice,
+  additionalBranchesTotal,
 }: any) {
   return (
     <div className="p-8 sm:p-12 text-[12px] text-slate-800 font-serif leading-relaxed space-y-5 print:p-0 print:text-black">
@@ -212,7 +215,9 @@ export function ContractDocument({
                 <tr>
                   <td className="border border-slate-300 p-1.5 font-bold">Filial</td>
                   <td className="border border-slate-300 p-1.5 text-slate-400 italic">
-                    Preencher caso haja...
+                    {additionalBranches > 0
+                      ? `${additionalBranches} filial(is) adicional(is) inclusa(s)`
+                      : 'Preencher caso haja...'}
                   </td>
                   <td className="border border-slate-300 p-1.5"></td>
                 </tr>
@@ -523,6 +528,16 @@ export function ContractDocument({
                     </td>
                     <td className="border border-slate-300 p-2 text-right">
                       {formatCurrency(additionalPlatesTotal || 0)}
+                    </td>
+                  </tr>
+                )}
+                {!!additionalBranches && additionalBranches > 0 && (
+                  <tr>
+                    <td className="border border-slate-300 p-2 font-bold">
+                      Filiais Adicionais ({additionalBranches})
+                    </td>
+                    <td className="border border-slate-300 p-2 text-right">
+                      {formatCurrency(additionalBranchesTotal || 0)}
                     </td>
                   </tr>
                 )}

@@ -1176,6 +1176,7 @@ export type Database = {
           id: string
           itens: Json
           prospect_id: string
+          quantidade_filiais: number
           user_id: string | null
           valor_implantacao: number
           valor_mensalidade: number
@@ -1187,6 +1188,7 @@ export type Database = {
           id?: string
           itens?: Json
           prospect_id: string
+          quantidade_filiais?: number
           user_id?: string | null
           valor_implantacao?: number
           valor_mensalidade?: number
@@ -1198,6 +1200,7 @@ export type Database = {
           id?: string
           itens?: Json
           prospect_id?: string
+          quantidade_filiais?: number
           user_id?: string | null
           valor_implantacao?: number
           valor_mensalidade?: number
@@ -3230,6 +3233,7 @@ export const Constants = {
 //   valor_mensalidade: numeric (not null, default: 0)
 //   valor_implantacao: numeric (not null, default: 0)
 //   created_at: timestamp with time zone (not null, default: now())
+//   quantidade_filiais: integer (not null, default: 0)
 // Table: crm_prospects
 //   id: uuid (not null, default: gen_random_uuid())
 //   empresa: text (not null)

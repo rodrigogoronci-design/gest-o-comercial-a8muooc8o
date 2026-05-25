@@ -27,6 +27,9 @@ interface QuoteDocumentProps {
   additionalPlates?: number
   additionalPlatesPrice?: number
   additionalPlatesTotal?: number
+  additionalBranches?: number
+  additionalBranchesPrice?: number
+  additionalBranchesTotal?: number
 }
 
 const FEATURE_CATEGORIES = [
@@ -92,6 +95,9 @@ export function QuoteDocument({
   additionalPlates,
   additionalPlatesPrice,
   additionalPlatesTotal,
+  additionalBranches,
+  additionalBranchesPrice,
+  additionalBranchesTotal,
 }: QuoteDocumentProps) {
   const showBasePlan =
     planName && planName !== 'Nenhum' && planName !== 'Nenhum (Somente Módulos / Upsell)'
@@ -281,6 +287,25 @@ export function QuoteDocument({
                 </tr>
               )}
 
+              {!!additionalBranches && additionalBranches > 0 && (
+                <tr>
+                  <td className="p-1.5">
+                    <span className="font-semibold text-slate-800">Filiais Adicionais</span>
+                    <span className="text-[9px] block text-slate-500 mt-0.5">
+                      CNPJs adicionais da mesma raiz
+                    </span>
+                  </td>
+                  <td className="p-1.5 text-center font-medium">{additionalBranches}</td>
+                  <td className="p-1.5 text-right">
+                    {formatCurrency(additionalBranchesPrice || 199)}
+                  </td>
+                  <td className="p-1.5 text-right font-medium">
+                    {formatCurrency(additionalBranchesTotal || 0)}
+                  </td>
+                  <td className="p-1.5 text-center text-slate-600">Mensalidade</td>
+                </tr>
+              )}
+
               {implValue > 0 &&
                 implValue -
                   trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) -
@@ -409,6 +434,14 @@ export function QuoteDocument({
                 <div className="flex justify-between items-center text-slate-600">
                   <span>Placas Adicionais ({additionalPlates})</span>
                   <span className="font-medium">{formatCurrency(additionalPlatesTotal || 0)}</span>
+                </div>
+              )}
+              {!!additionalBranches && additionalBranches > 0 && (
+                <div className="flex justify-between items-center text-slate-600">
+                  <span>Filiais Adicionais ({additionalBranches})</span>
+                  <span className="font-medium">
+                    {formatCurrency(additionalBranchesTotal || 0)}
+                  </span>
                 </div>
               )}
               <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
