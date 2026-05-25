@@ -63,6 +63,7 @@ export function ContractDocument({
   additionalBranches,
   additionalBranchesPrice,
   additionalBranchesTotal,
+  filiais = [],
 }: any) {
   return (
     <div className="p-8 sm:p-12 text-[12px] text-slate-800 font-serif leading-relaxed space-y-5 print:p-0 print:text-black">
@@ -188,6 +189,23 @@ export function ContractDocument({
             <p className="pl-4">
               ● Os planos SL_TMS dão direito ao cadastro de apenas um CNPJ Matriz. Para a inclusão
               de filiais (CNPJ’s de mesma raiz) será cobrado uma taxa de R$ 199,00 cada adicional.
+              {filiais && filiais.length > 0 && filiais.every((f: any) => f.isentar) && (
+                <span className="font-bold">
+                  {' '}
+                  Fica isenta a taxa de inclusão para as filiais descritas abaixo.
+                </span>
+              )}
+              {filiais &&
+                filiais.length > 0 &&
+                filiais.some((f: any) => !f.isentar) &&
+                filiais.some((f: any) => f.isentar) && (
+                  <span className="font-bold">
+                    {' '}
+                    Fica isenta a taxa de inclusão apenas para as filiais devidamente marcadas com
+                    Isenção.
+                  </span>
+                )}
+              <br />
               Será incluída neste contrato como parte integrante, a empresa coligada ou filial
               descritas:
             </p>
@@ -212,15 +230,32 @@ export function ContractDocument({
                     <Highlight value={cnpj} fallback="[CNPJ]" />
                   </td>
                 </tr>
-                <tr>
-                  <td className="border border-slate-300 p-1.5 font-bold">Filial</td>
-                  <td className="border border-slate-300 p-1.5 text-slate-400 italic">
-                    {additionalBranches > 0
-                      ? `${additionalBranches} filial(is) adicional(is) inclusa(s)`
-                      : 'Preencher caso haja...'}
-                  </td>
-                  <td className="border border-slate-300 p-1.5"></td>
-                </tr>
+                {filiais && filiais.length > 0 ? (
+                  filiais.map((filial: any, index: number) => (
+                    <tr key={index}>
+                      <td className="border border-slate-300 p-1.5 font-bold w-1/4">
+                        Filial {index + 1}
+                      </td>
+                      <td className="border border-slate-300 p-1.5 text-slate-600">
+                        {filial.nome ? filial.nome : 'Inclusão de Filial'}
+                        {filial.isentar && (
+                          <span className="text-xs italic text-slate-400 ml-1">(Isenta)</span>
+                        )}
+                      </td>
+                      <td className="border border-slate-300 p-1.5">
+                        <Highlight value={filial.cnpj} fallback="[CNPJ]" />
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="border border-slate-300 p-1.5 font-bold w-1/4">Filial</td>
+                    <td className="border border-slate-300 p-1.5 text-slate-400 italic">
+                      Preencher caso haja...
+                    </td>
+                    <td className="border border-slate-300 p-1.5"></td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -632,13 +667,14 @@ export function AddendumDocument({
     }
     if (Array.isArray(modules.filiais_detalhes)) {
       modules.filiais_detalhes.forEach((f: any) => {
+        const branchName = f.nome ? ` - ${f.nome}` : ''
         formattedModules.push({
-          name: `Inclusão de Filial: ${f.nome || f.cnpj || 'Nova Unidade'}`,
-          price: Number(f.price || f.valor || 199),
+          name: `Inclusão de Filial${branchName} - CNPJ: ${f.cnpj || 'Nova Unidade'}${f.isentar ? ' (Isenta)' : ''}`,
+          price: f.isentar ? 0 : Number(f.price || f.valor || 199),
         })
         if (f.dfe || f.dfe_ativo) {
           formattedModules.push({
-            name: `Ativação de DF-e (Filial: ${f.nome || f.cnpj || 'Nova Unidade'})`,
+            name: `Ativação de DF-e (Filial${branchName}: ${f.cnpj || 'Nova Unidade'})`,
             price: Number(f.dfe_price || f.dfe_valor || 0),
           })
         }

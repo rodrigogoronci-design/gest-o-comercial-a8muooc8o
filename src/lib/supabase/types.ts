@@ -827,12 +827,14 @@ export type Database = {
         Row: {
           cnpj: string
           cobrancas: Json | null
+          cobrar_filiais: boolean | null
           contrato_url: string | null
           created_at: string
           diagnostico: Json | null
           documentos_urls: Json | null
           email: string | null
           endereco: string | null
+          filiais_detalhes: Json | null
           id: string
           modo_implantacao: string | null
           modulos: Json | null
@@ -849,12 +851,14 @@ export type Database = {
         Insert: {
           cnpj: string
           cobrancas?: Json | null
+          cobrar_filiais?: boolean | null
           contrato_url?: string | null
           created_at?: string
           diagnostico?: Json | null
           documentos_urls?: Json | null
           email?: string | null
           endereco?: string | null
+          filiais_detalhes?: Json | null
           id?: string
           modo_implantacao?: string | null
           modulos?: Json | null
@@ -871,12 +875,14 @@ export type Database = {
         Update: {
           cnpj?: string
           cobrancas?: Json | null
+          cobrar_filiais?: boolean | null
           contrato_url?: string | null
           created_at?: string
           diagnostico?: Json | null
           documentos_urls?: Json | null
           email?: string | null
           endereco?: string | null
+          filiais_detalhes?: Json | null
           id?: string
           modo_implantacao?: string | null
           modulos?: Json | null
@@ -1171,8 +1177,10 @@ export type Database = {
       crm_propostas: {
         Row: {
           aos_cuidados_de: string | null
+          cobrar_filiais: boolean | null
           created_at: string
           data_proposta: string
+          filiais_detalhes: Json | null
           id: string
           itens: Json
           prospect_id: string
@@ -1183,8 +1191,10 @@ export type Database = {
         }
         Insert: {
           aos_cuidados_de?: string | null
+          cobrar_filiais?: boolean | null
           created_at?: string
           data_proposta?: string
+          filiais_detalhes?: Json | null
           id?: string
           itens?: Json
           prospect_id: string
@@ -1195,8 +1205,10 @@ export type Database = {
         }
         Update: {
           aos_cuidados_de?: string | null
+          cobrar_filiais?: boolean | null
           created_at?: string
           data_proposta?: string
+          filiais_detalhes?: Json | null
           id?: string
           itens?: Json
           prospect_id?: string
@@ -3154,6 +3166,8 @@ export const Constants = {
 //   documentos_urls: jsonb (nullable, default: '[]'::jsonb)
 //   diagnostico: jsonb (nullable, default: '{}'::jsonb)
 //   tags: jsonb (nullable, default: '[]'::jsonb)
+//   filiais_detalhes: jsonb (nullable, default: '[]'::jsonb)
+//   cobrar_filiais: boolean (nullable, default: true)
 // Table: colaborador_planos
 //   id: uuid (not null, default: gen_random_uuid())
 //   colaborador_id: uuid (nullable)
@@ -3234,6 +3248,8 @@ export const Constants = {
 //   valor_implantacao: numeric (not null, default: 0)
 //   created_at: timestamp with time zone (not null, default: now())
 //   quantidade_filiais: integer (not null, default: 0)
+//   filiais_detalhes: jsonb (nullable, default: '[]'::jsonb)
+//   cobrar_filiais: boolean (nullable, default: false)
 // Table: crm_prospects
 //   id: uuid (not null, default: gen_random_uuid())
 //   empresa: text (not null)

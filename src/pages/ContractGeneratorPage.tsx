@@ -81,7 +81,11 @@ export default function ContractGeneratorPage() {
   const [selectedModules, setSelectedModules] = useState<string[]>([])
   const [implMode, setImplMode] = useState<'remoto' | 'presencial'>('remoto')
   const [additionalPlates, setAdditionalPlates] = useState<number>(0)
-  const [additionalBranches, setAdditionalBranches] = useState<number>(0)
+  const [filiais, setFiliais] = useState<
+    { id: string; cnpj: string; nome?: string; isentar: boolean }[]
+  >([])
+  const [newFilialCnpj, setNewFilialCnpj] = useState('')
+  const [newFilialNome, setNewFilialNome] = useState('')
 
   const [isExtractingCompany, setIsExtractingCompany] = useState(false)
   const [isExtractingProposal, setIsExtractingProposal] = useState(false)
@@ -216,7 +220,10 @@ export default function ContractGeneratorPage() {
   const additionalPlatesTotal = additionalPlates * additionalPlatesPrice
 
   const additionalBranchesPrice = 199
-  const additionalBranchesTotal = additionalBranches * additionalBranchesPrice
+  const additionalBranchesTotal = filiais.reduce((acc, filial) => {
+    return acc + (filial.isentar ? 0 : additionalBranchesPrice)
+  }, 0)
+  const additionalBranches = filiais.length
 
   const totalValue =
     planPrice + modulesPrice + dfePrice + additionalPlatesTotal + additionalBranchesTotal
@@ -314,6 +321,7 @@ export default function ContractGeneratorPage() {
     additionalBranches,
     additionalBranchesPrice,
     additionalBranchesTotal,
+    filiais,
   }
 
   const quoteProps = {
@@ -358,6 +366,7 @@ export default function ContractGeneratorPage() {
     additionalBranches,
     additionalBranchesPrice,
     additionalBranchesTotal,
+    filiais,
   }
 
   const fetchCnpjData = async (cnpjValue: string) => {
@@ -427,6 +436,36 @@ export default function ContractGeneratorPage() {
 
   const handleToggleModule = (id: string, checked: boolean) => {
     setSelectedModules((prev) => (checked ? [...prev, id] : prev.filter((m) => m !== id)))
+  }
+
+  const fetchFilialCnpjData = async (cnpjValue: string) => {
+    try {
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjValue}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.razao_social) setNewFilialNome(data.razao_social)
+      }
+    } catch (e) {
+      // Ignora erro silenciosamente
+    }
+  }
+
+  const handleAddFilial = () => {
+    if (newFilialCnpj.replace(/\D/g, '').length === 14) {
+      setFiliais([
+        ...filiais,
+        {
+          id: Math.random().toString(),
+          cnpj: formatCNPJ(newFilialCnpj),
+          nome: newFilialNome,
+          isentar: false,
+        },
+      ])
+      setNewFilialCnpj('')
+      setNewFilialNome('')
+    } else {
+      toast({ title: 'Atenção', description: 'CNPJ da filial inválido.', variant: 'destructive' })
+    }
   }
 
   const handleFiles = async (files: File[]) => {
@@ -751,6 +790,8 @@ export default function ContractGeneratorPage() {
           valor_mensalidade: totalValue,
           valor_implantacao: implValue,
           quantidade_filiais: additionalBranches,
+          filiais_detalhes: filiais,
+          cobrar_filiais: !filiais.every((f) => f.isentar),
         })
         if (error) throw error
 
@@ -858,7 +899,9 @@ export default function ContractGeneratorPage() {
             : sendToImplementation
               ? 'Enviado p/ Implantação'
               : 'Ativo',
-        })
+          filiais_detalhes: filiais,
+          cobrar_filiais: !filiais.every((f) => f.isentar),
+        } as any)
 
         await createHistorico({
           cliente_id: existingClient.id,
@@ -907,7 +950,9 @@ export default function ContractGeneratorPage() {
             : sendToImplementation
               ? 'Enviado p/ Implantação'
               : 'Ativo',
-        })
+          filiais_detalhes: filiais,
+          cobrar_filiais: !filiais.every((f) => f.isentar),
+        } as any)
 
         await createHistorico({
           cliente_id: newClient.id,
@@ -1202,20 +1247,76 @@ export default function ContractGeneratorPage() {
                   </div>
                   <div className="space-y-3 mt-4">
                     <Label className="text-sm font-bold">Filiais Adicionais</Label>
-                    <div className="flex gap-3 items-center">
-                      <Input
-                        type="number"
-                        min="0"
-                        placeholder="0"
-                        value={additionalBranches || ''}
-                        onChange={(e) => setAdditionalBranches(parseInt(e.target.value) || 0)}
-                        className="w-32 bg-slate-50 border"
-                      />
-                      {additionalBranches > 0 && (
-                        <span className="text-xs text-slate-500 font-medium">
-                          Vlr. Unitário: {formatCurrency(additionalBranchesPrice)} | Subtotal:{' '}
-                          {formatCurrency(additionalBranchesTotal)}
-                        </span>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex gap-3 items-center flex-wrap sm:flex-nowrap">
+                        <Input
+                          placeholder="00.000.000/0000-00"
+                          value={newFilialCnpj}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/\D/g, '')
+                            if (raw.length <= 14) setNewFilialCnpj(formatCNPJ(raw))
+                            if (raw.length === 14) fetchFilialCnpjData(raw)
+                          }}
+                          className="w-48 bg-slate-50 border"
+                        />
+                        <Input
+                          placeholder="Nome da Empresa (opcional)"
+                          value={newFilialNome}
+                          onChange={(e) => setNewFilialNome(e.target.value)}
+                          className="w-full sm:w-64 bg-slate-50 border"
+                        />
+                        <Button variant="outline" size="sm" onClick={handleAddFilial}>
+                          Adicionar Filial
+                        </Button>
+                      </div>
+                      {filiais.length > 0 && (
+                        <div className="space-y-2 mt-2">
+                          {filiais.map((filial) => (
+                            <div
+                              key={filial.id}
+                              className="flex flex-col sm:flex-row sm:items-center gap-3 bg-slate-50 p-2 border rounded-md"
+                            >
+                              <div className="flex-1 flex flex-col">
+                                <span className="font-medium text-sm">
+                                  {filial.nome || 'Nome não informado'}
+                                </span>
+                                <span className="text-xs text-slate-500">CNPJ: {filial.cnpj}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`isentar-${filial.id}`}
+                                  checked={filial.isentar}
+                                  onCheckedChange={(c) => {
+                                    setFiliais(
+                                      filiais.map((f) =>
+                                        f.id === filial.id ? { ...f, isentar: c as boolean } : f,
+                                      ),
+                                    )
+                                  }}
+                                />
+                                <Label
+                                  htmlFor={`isentar-${filial.id}`}
+                                  className="text-xs cursor-pointer text-slate-600"
+                                >
+                                  Isentar valor de inclusão
+                                </Label>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => {
+                                  setFiliais(filiais.filter((f) => f.id !== filial.id))
+                                }}
+                              >
+                                <Trash className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          <div className="text-xs text-slate-500 font-medium text-right mt-2 pt-2 border-t">
+                            Subtotal Filiais: {formatCurrency(additionalBranchesTotal)}
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1580,20 +1681,76 @@ export default function ContractGeneratorPage() {
                   </div>
                   <div className="space-y-3 mt-4">
                     <Label className="text-sm font-bold">Filiais Adicionais</Label>
-                    <div className="flex gap-3 items-center">
-                      <Input
-                        type="number"
-                        min="0"
-                        placeholder="0"
-                        value={additionalBranches || ''}
-                        onChange={(e) => setAdditionalBranches(parseInt(e.target.value) || 0)}
-                        className="w-32 bg-slate-50 border"
-                      />
-                      {additionalBranches > 0 && (
-                        <span className="text-xs text-slate-500 font-medium">
-                          Vlr. Unitário: {formatCurrency(additionalBranchesPrice)} | Subtotal:{' '}
-                          {formatCurrency(additionalBranchesTotal)}
-                        </span>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex gap-3 items-center flex-wrap sm:flex-nowrap">
+                        <Input
+                          placeholder="00.000.000/0000-00"
+                          value={newFilialCnpj}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/\D/g, '')
+                            if (raw.length <= 14) setNewFilialCnpj(formatCNPJ(raw))
+                            if (raw.length === 14) fetchFilialCnpjData(raw)
+                          }}
+                          className="w-48 bg-slate-50 border"
+                        />
+                        <Input
+                          placeholder="Nome da Empresa (opcional)"
+                          value={newFilialNome}
+                          onChange={(e) => setNewFilialNome(e.target.value)}
+                          className="w-full sm:w-64 bg-slate-50 border"
+                        />
+                        <Button variant="outline" size="sm" onClick={handleAddFilial}>
+                          Adicionar Filial
+                        </Button>
+                      </div>
+                      {filiais.length > 0 && (
+                        <div className="space-y-2 mt-2">
+                          {filiais.map((filial) => (
+                            <div
+                              key={filial.id}
+                              className="flex flex-col sm:flex-row sm:items-center gap-3 bg-slate-50 p-2 border rounded-md"
+                            >
+                              <div className="flex-1 flex flex-col">
+                                <span className="font-medium text-sm">
+                                  {filial.nome || 'Nome não informado'}
+                                </span>
+                                <span className="text-xs text-slate-500">CNPJ: {filial.cnpj}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`isentar-quote-${filial.id}`}
+                                  checked={filial.isentar}
+                                  onCheckedChange={(c) => {
+                                    setFiliais(
+                                      filiais.map((f) =>
+                                        f.id === filial.id ? { ...f, isentar: c as boolean } : f,
+                                      ),
+                                    )
+                                  }}
+                                />
+                                <Label
+                                  htmlFor={`isentar-quote-${filial.id}`}
+                                  className="text-xs cursor-pointer text-slate-600"
+                                >
+                                  Isentar valor de inclusão
+                                </Label>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => {
+                                  setFiliais(filiais.filter((f) => f.id !== filial.id))
+                                }}
+                              >
+                                <Trash className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          <div className="text-xs text-slate-500 font-medium text-right mt-2 pt-2 border-t">
+                            Subtotal Filiais: {formatCurrency(additionalBranchesTotal)}
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
