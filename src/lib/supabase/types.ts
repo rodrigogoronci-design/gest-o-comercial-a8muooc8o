@@ -1171,8 +1171,10 @@ export type Database = {
       crm_propostas: {
         Row: {
           aos_cuidados_de: string | null
+          cobrar_filiais: boolean | null
           created_at: string
           data_proposta: string
+          filiais_detalhes: Json | null
           id: string
           itens: Json
           prospect_id: string
@@ -1183,8 +1185,10 @@ export type Database = {
         }
         Insert: {
           aos_cuidados_de?: string | null
+          cobrar_filiais?: boolean | null
           created_at?: string
           data_proposta?: string
+          filiais_detalhes?: Json | null
           id?: string
           itens?: Json
           prospect_id: string
@@ -1195,8 +1199,10 @@ export type Database = {
         }
         Update: {
           aos_cuidados_de?: string | null
+          cobrar_filiais?: boolean | null
           created_at?: string
           data_proposta?: string
+          filiais_detalhes?: Json | null
           id?: string
           itens?: Json
           prospect_id?: string
@@ -3234,6 +3240,8 @@ export const Constants = {
 //   valor_implantacao: numeric (not null, default: 0)
 //   created_at: timestamp with time zone (not null, default: now())
 //   quantidade_filiais: integer (not null, default: 0)
+//   filiais_detalhes: jsonb (nullable, default: '[]'::jsonb)
+//   cobrar_filiais: boolean (nullable, default: false)
 // Table: crm_prospects
 //   id: uuid (not null, default: gen_random_uuid())
 //   empresa: text (not null)
