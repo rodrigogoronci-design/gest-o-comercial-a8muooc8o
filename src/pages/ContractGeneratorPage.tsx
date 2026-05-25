@@ -51,10 +51,10 @@ import {
   DFE_TIERS,
   PREDEFINED_TRAININGS,
 } from '@/constants/contracts'
-
-const MODULES = [...BASE_MODULES]
 import { ContractDocument } from '@/components/ContractDocument'
 import { cn } from '@/lib/utils'
+
+const MODULES = [...BASE_MODULES]
 
 export default function ContractGeneratorPage() {
   const navigate = useNavigate()
