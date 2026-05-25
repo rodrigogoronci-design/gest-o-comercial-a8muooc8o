@@ -47,7 +47,7 @@ import {
   PLANS,
   MODULES as BASE_MODULES,
   IMPLEMENTATION_RATES,
-  BASE_IMPLEMENTATION_HOURS,
+  BASE_IMPLEMENTATION_PRICE,
   DFE_TIERS,
   PREDEFINED_TRAININGS,
 } from '@/constants/contracts'
@@ -220,20 +220,20 @@ export default function ContractGeneratorPage() {
     implMode === 'remoto' ? IMPLEMENTATION_RATES.remoto : IMPLEMENTATION_RATES.presencial
   const totalImplHours = useMemo(() => {
     let hours = 0
-    if (selectedPlan !== 'none') {
-      hours += BASE_IMPLEMENTATION_HOURS
-    }
     selectedModules.forEach((id) => {
       const mod = MODULES.find((m) => m.id === id)
       if (mod && mod.implHours) hours += mod.implHours
     })
     return hours
-  }, [selectedModules, selectedPlan])
+  }, [selectedModules])
 
   const diagValue = diagnosticVisits.reduce((acc, visit) => acc + (parseFloat(visit.value) || 0), 0)
 
   const calculatedImplValue = useMemo(() => {
     let value = totalImplHours * implRate
+    if (selectedPlan !== 'none') {
+      value += BASE_IMPLEMENTATION_PRICE
+    }
     selectedModules.forEach((id) => {
       const mod = MODULES.find((m) => m.id === id) as any
       if (mod && mod.fixedImplPrice !== undefined) {
@@ -261,6 +261,7 @@ export default function ContractGeneratorPage() {
     includeDiagnosticVisit,
     diagValue,
     selectedTrainings,
+    selectedPlan,
   ])
 
   const [manualImplValue, setManualImplValue] = useState<string>('')

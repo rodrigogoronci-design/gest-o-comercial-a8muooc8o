@@ -1,6 +1,6 @@
 import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
-import { PLANS, MODULES as BASE_MODULES, BASE_IMPLEMENTATION_HOURS } from '@/constants/contracts'
+import { PLANS, MODULES as BASE_MODULES, BASE_IMPLEMENTATION_PRICE } from '@/constants/contracts'
 
 const EXTRA_MODULES = [
   { id: 'mod-sl-trip', name: 'SL Trip', price: 0, implHours: 3 },
@@ -265,7 +265,7 @@ export function ContractDocument({
                       X
                     </td>
                     <td className="border border-slate-300 p-1.5 text-center">
-                      {formatCurrency(BASE_IMPLEMENTATION_HOURS * implRate)}
+                      {formatCurrency(BASE_IMPLEMENTATION_PRICE)}
                     </td>
                   </tr>
                 )}

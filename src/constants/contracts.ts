@@ -20,7 +20,7 @@ export const IMPLEMENTATION_RATES = {
   remoto: 130.0,
 }
 
-export const BASE_IMPLEMENTATION_HOURS = 10
+export const BASE_IMPLEMENTATION_PRICE = 510.0
 
 export const DFE_TIERS = [
   {
