@@ -20,8 +20,8 @@ export const IMPLEMENTATION_RATES = {
   remoto: 130.0,
 }
 
-export const BASE_IMPLEMENTATION_PRICE = 510.0
-export const BASE_IMPLEMENTATION_HOURS = 3
+export const BASE_IMPLEMENTATION_PRICE = 0.0 // Deprecated, kept to avoid breaking other files
+export const BASE_IMPLEMENTATION_HOURS = 10
 
 export const DFE_TIERS = [
   {
@@ -39,26 +39,27 @@ export const DFE_TIERS = [
 ]
 
 export const MODULES = [
-  { id: 'mod-admin', name: 'Administração', price: 0.0, implHours: 10, isBasic: true },
+  { id: 'mod-admin', name: 'Administração', price: 0.0, implHours: 0, isBasic: true },
   { id: 'mod-basico', name: 'Básico', price: 0.0, implHours: 0, isBasic: true },
   { id: 'mod-carga', name: 'Carga', price: 0.0, implHours: 0, isBasic: true },
   { id: 'mod-comercial', name: 'Comercial', price: 0.0, implHours: 0, isBasic: true },
   { id: 'mod-faturamento', name: 'Faturamento', price: 0.0, implHours: 0, isBasic: true },
   { id: 'mod-financeiro', name: 'Financeiro', price: 0.0, implHours: 0, isBasic: true },
-  { id: 'mod-fiscal', name: 'Fiscal', price: 199.0, implHours: 4 },
-  { id: 'mod-powerbi', name: 'B.I.', price: 199.0, implHours: 2 },
-  { id: 'mod-edi', name: 'EDI', price: 250.0, implHours: 4 },
-  { id: 'mod-ctrl-viagem', name: 'Controle de Viagem', price: 199.0, implHours: 6 },
-  { id: 'mod-frota', name: 'Frota', price: 250.0, implHours: 18 },
-  { id: 'mod-medicao', name: 'Medição', price: 350.0, implHours: 8 },
-  { id: 'mod-fracionado', name: 'Fracionado', price: 350.0, implHours: 6 },
-  { id: 'mod-transp', name: 'Transporte (Bloco/TCE/TCI)', price: 350.0, implHours: 18 },
-  { id: 'mod-fundo-prot', name: 'Fundo de proteção', price: 1201.0, implHours: 8 },
-  { id: 'mod-patrimonio', name: 'Patrimônio', price: 0.0, implHours: 2 },
-  { id: 'mod-calendario', name: 'Calendário', price: 165.0, implHours: 2 },
-  { id: 'mod-painel', name: 'Painel de Informações', price: 165.0, implHours: 2 },
-  { id: 'mod-dfe', name: 'Df-e', price: 165.0, implHours: 2 },
-  { id: 'mod-sltrip', name: 'SL TRIP', price: 299.0, implHours: 3 },
+  { id: 'mod-edi', name: 'EDI', price: 250.0, implHours: 2 },
+  { id: 'mod-ctrl-viagem', name: 'Controle de Viagem', price: 199.0, implHours: 3 },
+  { id: 'mod-frota', name: 'Frota (até 10 placas)', price: 250.0, implHours: 16 },
+  { id: 'mod-medicao', name: 'Medição', price: 350.0, implHours: 6 },
+  { id: 'mod-fracionado', name: 'Fracionado', price: 350.0, implHours: 4 },
+  { id: 'mod-transp', name: 'Bloco TCI e TCE (Transportes)', price: 350.0, implHours: 10 },
+  { id: 'mod-fundo-prot', name: 'Fundo de proteção', price: 1201.0, implHours: 6 },
+  { id: 'mod-patrimonio', name: 'Patrimônio', price: 0.0, implHours: 1 },
+  { id: 'mod-calendario', name: 'Calendário', price: 165.0, implHours: 1 },
+  { id: 'mod-painel', name: 'Painel de Informações', price: 165.0, implHours: 1 },
+  { id: 'mod-fiscal', name: 'Fiscal', price: 199.0, implHours: 3 },
+  { id: 'mod-dfe', name: 'DF-e', price: 165.0, implHours: 2 },
+  { id: 'mod-powerbi', name: 'Power BI', price: 199.0, implHours: 0 },
+  { id: 'mod-sltrip', name: 'SL-Trip', price: 299.0, implHours: 3 },
+  { id: 'mod-patrimonio-avancado', name: 'Patrimonio', price: 0.0, implHours: 6 },
   { id: 'mod-sltrack', name: 'SL-Track', price: 299.0, implHours: 5 },
   { id: 'mod-homolog-banc', name: 'Homologação Bancaria', price: 200.0, implHours: 0 },
   {

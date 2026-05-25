@@ -1,13 +1,8 @@
 import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
-import { PLANS, MODULES as BASE_MODULES, BASE_IMPLEMENTATION_PRICE } from '@/constants/contracts'
+import { PLANS, MODULES as BASE_MODULES, BASE_IMPLEMENTATION_HOURS } from '@/constants/contracts'
 
-const EXTRA_MODULES = [
-  { id: 'mod-sl-trip', name: 'SL Trip', price: 0, implHours: 3 },
-  { id: 'mod-power-bi', name: 'Power BI', price: 200, implHours: 0 },
-]
-
-const MODULES = [...BASE_MODULES, ...EXTRA_MODULES]
+const MODULES = [...BASE_MODULES]
 import { CONTRACT_TEXT } from '@/constants/contract-text'
 import logoUrl from '@/assets/logomarca-service-ea011.png'
 
@@ -247,11 +242,12 @@ export function ContractDocument({
               <thead>
                 <tr className="bg-[#1b4382] text-white print:bg-slate-200 print:text-black">
                   <th className="border border-slate-300 p-1.5 text-left">Módulo</th>
+                  <th className="border border-slate-300 p-1.5 text-center w-16">Horas</th>
                   <th className="border border-slate-300 p-1.5 text-right w-24">
                     Valor / Mês (R$)
                   </th>
                   <th className="border border-slate-300 p-1.5 text-center w-24">Contratado</th>
-                  <th className="border border-slate-300 p-1.5 text-center w-32">
+                  <th className="border border-slate-300 p-1.5 text-right w-32">
                     Implantação ({implMode === 'remoto' ? 'Remoto' : 'Presencial'})
                   </th>
                 </tr>
@@ -259,50 +255,68 @@ export function ContractDocument({
               <tbody>
                 {selectedPlan !== 'none' && (
                   <tr>
-                    <td className="border border-slate-300 p-1.5">Implantação (Plano Base)</td>
+                    <td className="border border-slate-300 p-1.5">Básicos</td>
+                    <td className="border border-slate-300 p-1.5 text-center">
+                      {BASE_IMPLEMENTATION_HOURS}
+                    </td>
                     <td className="border border-slate-300 p-1.5 text-right">Incluso</td>
                     <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
                       X
                     </td>
-                    <td className="border border-slate-300 p-1.5 text-center">
-                      {formatCurrency(BASE_IMPLEMENTATION_PRICE)}
+                    <td className="border border-slate-300 p-1.5 text-right">
+                      {formatCurrency(BASE_IMPLEMENTATION_HOURS * implRate)}
                     </td>
                   </tr>
                 )}
-                {MODULES.map((m) => (
-                  <tr
-                    key={m.id}
-                    className={
-                      selectedModules.includes(m.id)
-                        ? 'bg-[#1b4382]/10 print:bg-transparent print:font-bold'
-                        : ''
-                    }
-                  >
-                    <td className="border border-slate-300 p-1.5">{m.name}</td>
-                    <td className="border border-slate-300 p-1.5 text-right">
-                      {m.price === 0 ? 'Incluso' : formatCurrency(m.price)}
-                    </td>
-                    <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
-                      {selectedModules.includes(m.id) ? 'X' : ''}
-                    </td>
-                    <td className="border border-slate-300 p-1.5 text-center">
-                      {selectedModules.includes(m.id)
-                        ? (m as any).fixedImplPrice !== undefined
-                          ? typeof (m as any).fixedImplPrice === 'object'
-                            ? formatCurrency((m as any).fixedImplPrice[implMode])
-                            : formatCurrency((m as any).fixedImplPrice)
-                          : formatCurrency(m.implHours * implRate)
-                        : '-'}
-                    </td>
-                  </tr>
-                ))}
+                {MODULES.map((m) => {
+                  if (
+                    [
+                      'mod-admin',
+                      'mod-basico',
+                      'mod-carga',
+                      'mod-comercial',
+                      'mod-faturamento',
+                      'mod-financeiro',
+                    ].includes(m.id)
+                  )
+                    return null
+
+                  return (
+                    <tr
+                      key={m.id}
+                      className={
+                        selectedModules.includes(m.id)
+                          ? 'bg-[#1b4382]/10 print:bg-transparent print:font-bold'
+                          : ''
+                      }
+                    >
+                      <td className="border border-slate-300 p-1.5">{m.name}</td>
+                      <td className="border border-slate-300 p-1.5 text-center">{m.implHours}</td>
+                      <td className="border border-slate-300 p-1.5 text-right">
+                        {m.price === 0 ? 'Incluso' : formatCurrency(m.price)}
+                      </td>
+                      <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
+                        {selectedModules.includes(m.id) ? 'X' : ''}
+                      </td>
+                      <td className="border border-slate-300 p-1.5 text-right">
+                        {selectedModules.includes(m.id)
+                          ? (m as any).fixedImplPrice !== undefined
+                            ? typeof (m as any).fixedImplPrice === 'object'
+                              ? formatCurrency((m as any).fixedImplPrice[implMode])
+                              : formatCurrency((m as any).fixedImplPrice)
+                            : formatCurrency(m.implHours * implRate)
+                          : '-'}
+                      </td>
+                    </tr>
+                  )
+                })}
                 {includeDiagnosticVisit && diagnosticVisits.length > 0
                   ? diagnosticVisits.map((v: any, index: number) => (
                       <tr
                         key={`diag-${index}`}
                         className="bg-[#1b4382]/10 print:bg-transparent print:font-bold"
                       >
-                        <td className="border border-slate-300 p-1.5">
+                        <td className="border border-slate-300 p-1.5" colSpan={2}>
                           Visita Presencial de Diagnóstico
                           {v.date
                             ? ` - Data: ${new Date(v.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}`
@@ -312,14 +326,14 @@ export function ContractDocument({
                         <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
                           X
                         </td>
-                        <td className="border border-slate-300 p-1.5 text-center">
+                        <td className="border border-slate-300 p-1.5 text-right">
                           {formatCurrency(Number(v.value) || 0)}
                         </td>
                       </tr>
                     ))
                   : includeDiagnosticVisit && (
                       <tr className="bg-[#1b4382]/10 print:bg-transparent print:font-bold">
-                        <td className="border border-slate-300 p-1.5">
+                        <td className="border border-slate-300 p-1.5" colSpan={2}>
                           Visita Presencial de Diagnóstico
                           {diagnosticVisitDate
                             ? ` - Data: ${new Date(diagnosticVisitDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}`
@@ -329,7 +343,7 @@ export function ContractDocument({
                         <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
                           X
                         </td>
-                        <td className="border border-slate-300 p-1.5 text-center">
+                        <td className="border border-slate-300 p-1.5 text-right">
                           {formatCurrency(Number(diagnosticVisitValue) || 0)}
                         </td>
                       </tr>
@@ -337,17 +351,31 @@ export function ContractDocument({
                 {trainings &&
                   trainings.map((t: any) => (
                     <tr key={t.id} className="bg-[#1b4382]/10 print:bg-transparent print:font-bold">
-                      <td className="border border-slate-300 p-1.5">Treinamento: {t.name}</td>
+                      <td className="border border-slate-300 p-1.5" colSpan={2}>
+                        Treinamento: {t.name}
+                      </td>
                       <td className="border border-slate-300 p-1.5 text-right">-</td>
                       <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
                         X
                       </td>
-                      <td className="border border-slate-300 p-1.5 text-center">
+                      <td className="border border-slate-300 p-1.5 text-right">
                         {formatCurrency(Number(t.price) || 0)}
                       </td>
                     </tr>
                   ))}
               </tbody>
+              <tfoot>
+                <tr className="bg-[#1b4382] text-white print:bg-slate-200 print:text-black font-bold">
+                  <td className="border border-slate-300 p-1.5 text-right">Total</td>
+                  <td className="border border-slate-300 p-1.5 text-center">
+                    {(selectedPlan !== 'none' ? BASE_IMPLEMENTATION_HOURS : 0) + totalImplHours}
+                  </td>
+                  <td className="border border-slate-300 p-1.5 text-right" colSpan={2}></td>
+                  <td className="border border-slate-300 p-1.5 text-right">
+                    {formatCurrency(implValue)}
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
           <div className="space-y-3 mt-4">

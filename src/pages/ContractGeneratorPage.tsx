@@ -47,7 +47,7 @@ import {
   PLANS,
   MODULES as BASE_MODULES,
   IMPLEMENTATION_RATES,
-  BASE_IMPLEMENTATION_PRICE,
+  BASE_IMPLEMENTATION_HOURS,
   DFE_TIERS,
   PREDEFINED_TRAININGS,
 } from '@/constants/contracts'
@@ -232,7 +232,7 @@ export default function ContractGeneratorPage() {
   const calculatedImplValue = useMemo(() => {
     let value = totalImplHours * implRate
     if (selectedPlan !== 'none') {
-      value += BASE_IMPLEMENTATION_PRICE
+      value += BASE_IMPLEMENTATION_HOURS * implRate
     }
     selectedModules.forEach((id) => {
       const mod = MODULES.find((m) => m.id === id) as any
