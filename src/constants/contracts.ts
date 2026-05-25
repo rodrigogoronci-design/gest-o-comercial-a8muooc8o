@@ -21,6 +21,7 @@ export const IMPLEMENTATION_RATES = {
 }
 
 export const BASE_IMPLEMENTATION_PRICE = 510.0
+export const BASE_IMPLEMENTATION_HOURS = 3
 
 export const DFE_TIERS = [
   {
