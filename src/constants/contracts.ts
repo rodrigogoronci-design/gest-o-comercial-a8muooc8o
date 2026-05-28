@@ -60,6 +60,7 @@ export const MODULES = [
   { id: 'mod-sltrip', name: 'SL-Trip', price: 299.0, implHours: 3 },
   { id: 'mod-sltrack', name: 'SL-Track', price: 299.0, implHours: 5 },
   { id: 'mod-homolog-banc', name: 'Homologação Bancaria', price: 200.0, implHours: 0 },
+  { id: 'mod-ciot', name: 'CIOT', price: 250.0, implHours: 0 },
   {
     id: 'mod-torre-controle',
     name: 'Torre de Controle Logística',

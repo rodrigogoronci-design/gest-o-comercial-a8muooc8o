@@ -24,3 +24,18 @@ dist-ssr
 *.sw?
 
 supabase/functions/deno.json
+
+# Generated output, caches, and crash artifacts (Skip-managed)
+dev-dist
+dev-dist-ssr
+.pnpm-store
+.pnpm
+*.bak-*
+*.legacy-bak-*
+*.failed-*
+*.tmp
+screenshot.png
+.eslintcache
+.oxlintcache
+.env*
+core.[0-9]*
