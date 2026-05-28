@@ -5139,6 +5139,10 @@ section[aria-label='Notifications alt+T'] {
     flex-direction: column;
   }
 
+  .sm\:flex-nowrap{
+    flex-wrap: nowrap;
+  }
+
   .sm\:items-start{
     align-items: flex-start;
   }
