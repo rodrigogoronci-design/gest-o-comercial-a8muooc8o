@@ -23,6 +23,7 @@ const filialSchema = z.object({
 export const propostaFormSchema = z.object({
   valor_implantacao: z.number().min(0),
   valor_mensalidade: z.number().min(0),
+  desconto_mensalidade: z.number().min(0).default(0),
   quantidade_filiais: z.number().min(0).default(0),
   cobrar_filiais: z.boolean().default(false),
   filiais_detalhes: z.array(filialSchema).default([]),
@@ -46,6 +47,7 @@ export function CrmPropostaForm({
     defaultValues: {
       valor_implantacao: initialData?.valor_implantacao || 0,
       valor_mensalidade: initialData?.valor_mensalidade || 0,
+      desconto_mensalidade: initialData?.desconto_mensalidade || 0,
       quantidade_filiais: initialData?.quantidade_filiais || 0,
       cobrar_filiais: initialData?.cobrar_filiais || false,
       filiais_detalhes: initialData?.filiais_detalhes || [],
@@ -78,7 +80,7 @@ export function CrmPropostaForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <FormField
             control={form.control}
             name="valor_implantacao"
@@ -103,6 +105,24 @@ export function CrmPropostaForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Valor Mensalidade (R$)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="desconto_mensalidade"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Desconto Mensalidade (R$)</FormLabel>
                 <FormControl>
                   <Input
                     type="number"

@@ -64,6 +64,9 @@ export function ContractDocument({
   additionalBranchesPrice,
   additionalBranchesTotal,
   filiais = [],
+  descontoMensalidade = 0,
+  moduleGracePeriods = {},
+  totalValueStandard = 0,
 }: any) {
   return (
     <div className="p-8 sm:p-12 text-[12px] text-slate-800 font-serif leading-relaxed space-y-5 print:p-0 print:text-black">
@@ -330,7 +333,14 @@ export function ContractDocument({
                           : ''
                       }
                     >
-                      <td className="border border-slate-300 p-1.5">{m.name}</td>
+                      <td className="border border-slate-300 p-1.5">
+                        {m.name}
+                        {selectedModules.includes(m.id) && moduleGracePeriods[m.id] > 0 && (
+                          <span className="text-[9px] block text-emerald-600">
+                            Isento por {moduleGracePeriods[m.id]} meses
+                          </span>
+                        )}
+                      </td>
                       <td className="border border-slate-300 p-1.5 text-center">{m.implHours}</td>
                       <td className="border border-slate-300 p-1.5 text-right">
                         {m.price === 0 ? 'Incluso' : formatCurrency(m.price)}
@@ -576,12 +586,34 @@ export function ContractDocument({
                     </td>
                   </tr>
                 )}
+                {descontoMensalidade > 0 && (
+                  <tr>
+                    <td className="border border-slate-300 p-2 font-bold text-emerald-700">
+                      Desconto Especial
+                    </td>
+                    <td className="border border-slate-300 p-2 text-right text-emerald-700 font-medium">
+                      - {formatCurrency(descontoMensalidade)}
+                    </td>
+                  </tr>
+                )}
                 <tr className="bg-[#1b4382]/5 print:bg-slate-200 text-[#1b4382] print:text-black">
-                  <td className="border border-slate-300 p-2 font-bold text-right">Total Mensal</td>
+                  <td className="border border-slate-300 p-2 font-bold text-right">
+                    Total Mensal Inicial
+                  </td>
                   <td className="border border-slate-300 p-2 text-right font-bold">
-                    {formatCurrency(totalValue)}
+                    {formatCurrency(Math.max(0, totalValue))}
                   </td>
                 </tr>
+                {totalValue !== totalValueStandard && (
+                  <tr className="bg-slate-50 text-slate-600 print:bg-white print:text-black">
+                    <td className="border border-slate-300 p-2 text-right text-[10px]">
+                      Total Mensal Padrão (Após período de isenção)
+                    </td>
+                    <td className="border border-slate-300 p-2 text-right text-[10px] font-medium">
+                      {formatCurrency(Math.max(0, totalValueStandard))}
+                    </td>
+                  </tr>
+                )}
                 <tr className="bg-[#1b4382]/5 print:bg-slate-200 text-[#1b4382] print:text-black">
                   <td className="border border-slate-300 p-2 font-bold text-right">
                     Total Visitas / Implantação

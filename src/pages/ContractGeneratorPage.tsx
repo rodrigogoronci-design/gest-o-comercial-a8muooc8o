@@ -87,6 +87,9 @@ export default function ContractGeneratorPage() {
   const [newFilialCnpj, setNewFilialCnpj] = useState('')
   const [newFilialNome, setNewFilialNome] = useState('')
 
+  const [descontoMensalidade, setDescontoMensalidade] = useState<number>(0)
+  const [moduleGracePeriods, setModuleGracePeriods] = useState<Record<string, number>>({})
+
   const [isExtractingCompany, setIsExtractingCompany] = useState(false)
   const [isExtractingProposal, setIsExtractingProposal] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -203,10 +206,21 @@ export default function ContractGeneratorPage() {
       : planData?.price || 0
   const dfeData = useMemo(() => DFE_TIERS.find((d) => d.id === selectedDfe), [selectedDfe])
   const dfePrice = dfeData?.price || 0
-  const modulesPrice = useMemo(
+  const modulesPriceStandard = useMemo(
     () =>
       selectedModules.reduce((acc, id) => acc + (MODULES.find((m) => m.id === id)?.price || 0), 0),
     [selectedModules],
+  )
+  
+  const modulesPrice = useMemo(
+    () =>
+      selectedModules.reduce((acc, id) => {
+        const m = MODULES.find((m) => m.id === id);
+        if (!m) return acc;
+        if (moduleGracePeriods[id] && moduleGracePeriods[id] > 0) return acc;
+        return acc + m.price;
+      }, 0),
+    [selectedModules, moduleGracePeriods],
   )
 
   const additionalPlatesPrice = useMemo(() => {
@@ -225,8 +239,13 @@ export default function ContractGeneratorPage() {
   }, 0)
   const additionalBranches = filiais.length
 
-  const totalValue =
-    planPrice + modulesPrice + dfePrice + additionalPlatesTotal + additionalBranchesTotal
+  const totalValue = Math.max(0,
+    planPrice + modulesPrice + dfePrice + additionalPlatesTotal + additionalBranchesTotal - descontoMensalidade
+  )
+
+  const totalValueStandard = Math.max(0,
+    planPrice + modulesPriceStandard + dfePrice + additionalPlatesTotal + additionalBranchesTotal - descontoMensalidade
+  )
 
   const implRate =
     implMode === 'remoto' ? IMPLEMENTATION_RATES.remoto : IMPLEMENTATION_RATES.presencial
@@ -322,6 +341,9 @@ export default function ContractGeneratorPage() {
     additionalBranchesPrice,
     additionalBranchesTotal,
     filiais,
+    descontoMensalidade,
+    moduleGracePeriods,
+    totalValueStandard,
   }
 
   const quoteProps = {
@@ -367,6 +389,9 @@ export default function ContractGeneratorPage() {
     additionalBranchesPrice,
     additionalBranchesTotal,
     filiais,
+    descontoMensalidade,
+    moduleGracePeriods,
+    totalValueStandard,
   }
 
   const fetchCnpjData = async (cnpjValue: string) => {
@@ -714,6 +739,8 @@ export default function ContractGeneratorPage() {
       } else {
         let prospectId = selectedProspectId === 'novo' ? null : selectedProspectId
         if (!prospectId) {
+          let prospectId = selectedProspectId === 'novo' ? null : selectedProspectId
+        if (!prospectId) {
           const { data, error } = await supabase
             .from('crm_prospects')
             .insert({
@@ -732,6 +759,7 @@ export default function ContractGeneratorPage() {
           user_id: (await supabase.auth.getUser()).data.user?.id,
           data_proposta: new Date().toISOString().split('T')[0],
           aos_cuidados_de: quoteContato,
+          desconto_mensalidade: descontoMensalidade,
           itens: [
             ...selectedModules.map((id) => {
               const m = MODULES.find((mod) => mod.id === id)
@@ -740,6 +768,8 @@ export default function ContractGeneratorPage() {
                 name: m?.name,
                 price: m?.price,
                 implHours: m?.implHours || 0,
+                tem_gratuidade: !!moduleGracePeriods[id],
+                periodo_gratuidade: moduleGracePeriods[id] || 0
               }
             }),
             ...(selectedDfe !== 'dfe-none' && dfeData
@@ -853,7 +883,13 @@ export default function ContractGeneratorPage() {
       const modulosFormatados = {
         plano_base: planData?.name || selectedPlan,
         filiais: additionalBranches,
-        adicionais: adicionais,
+        adicionais: adicionais.map(a => {
+           const m = MODULES.find(mod => mod.name === a.name);
+           if (m && moduleGracePeriods[m.id]) {
+             return { ...a, tem_gratuidade: true, periodo_gratuidade: moduleGracePeriods[m.id] }
+           }
+           return a;
+        }),
       }
 
       const cobrancasAtuais = existingClient?.cobrancas
@@ -893,6 +929,7 @@ export default function ContractGeneratorPage() {
           modo_implantacao: implMode,
           modulos: modulosFormatados,
           valor_total: totalValue,
+          desconto_mensalidade: descontoMensalidade,
           cobrancas: updatedCobrancas,
           status: sendToFinance
             ? 'Enviado p/ Financeiro'
@@ -908,10 +945,11 @@ export default function ContractGeneratorPage() {
           tipo: 'Renovação / Novo Contrato',
           data_solicitacao: new Date().toISOString().split('T')[0],
           plano: planData?.name,
-          modulos: adicionais,
+          modulos: modulosFormatados.adicionais,
           valor_adicional: 0,
           valor_total: totalValue,
-          observacoes: `Contrato atualizado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}`,
+          desconto_mensalidade: descontoMensalidade,
+          observacoes: `Contrato atualizado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}${descontoMensalidade > 0 ? ` | Desconto: R$ ${descontoMensalidade}` : ''}`,
         })
 
         try {
@@ -944,6 +982,7 @@ export default function ContractGeneratorPage() {
           modo_implantacao: implMode,
           modulos: modulosFormatados,
           valor_total: totalValue,
+          desconto_mensalidade: descontoMensalidade,
           cobrancas: updatedCobrancas,
           status: sendToFinance
             ? 'Enviado p/ Financeiro'
@@ -959,10 +998,11 @@ export default function ContractGeneratorPage() {
           tipo: 'Contrato Inicial',
           data_solicitacao: new Date().toISOString().split('T')[0],
           plano: planData?.name,
-          modulos: adicionais,
+          modulos: modulosFormatados.adicionais,
           valor_adicional: 0,
           valor_total: totalValue,
-          observacoes: `Contrato gerado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}`,
+          desconto_mensalidade: descontoMensalidade,
+          observacoes: `Contrato gerado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}${descontoMensalidade > 0 ? ` | Desconto: R$ ${descontoMensalidade}` : ''}`,
         })
 
         if (sendToFinance) {
@@ -1193,22 +1233,53 @@ export default function ContractGeneratorPage() {
                   )}
                   <div className="space-y-3">
                     <Label className="text-sm font-bold">Módulos Adicionais</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {MODULES.map((m) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {MODULES.map((m) => {
+                        const isChecked = selectedModules.includes(m.id);
+                        return (
                         <div
                           key={m.id}
-                          className="flex items-center space-x-2 border p-2 rounded-lg"
+                          className="flex flex-col border p-3 rounded-lg bg-white shadow-sm gap-2 transition-colors hover:border-indigo-200"
                         >
-                          <Checkbox
-                            id={m.id}
-                            checked={selectedModules.includes(m.id)}
-                            onCheckedChange={(c) => handleToggleModule(m.id, c as boolean)}
-                          />
-                          <Label htmlFor={m.id} className="text-xs">
-                            {m.name}
-                          </Label>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id={m.id}
+                              checked={isChecked}
+                              onCheckedChange={(c) => handleToggleModule(m.id, c as boolean)}
+                            />
+                            <Label htmlFor={m.id} className="text-xs font-semibold cursor-pointer">
+                              {m.name} <span className="font-normal text-slate-500">- {formatCurrency(m.price)}</span>
+                            </Label>
+                          </div>
+                          {isChecked && m.price > 0 && (
+                            <div className="pl-6 pt-1 flex items-center gap-3 border-t border-slate-100 mt-1">
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`grace-${m.id}`}
+                                  checked={!!moduleGracePeriods[m.id]}
+                                  onCheckedChange={(c) => {
+                                    if (c) setModuleGracePeriods(p => ({...p, [m.id]: 3}));
+                                    else { const p = {...moduleGracePeriods}; delete p[m.id]; setModuleGracePeriods(p); }
+                                  }}
+                                />
+                                <Label htmlFor={`grace-${m.id}`} className="text-[10px] text-slate-600 cursor-pointer">Gratuidade</Label>
+                              </div>
+                              {!!moduleGracePeriods[m.id] && (
+                                <div className="flex items-center gap-1">
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    className="w-16 h-6 text-[10px] px-1 bg-slate-50 border-slate-200"
+                                    value={moduleGracePeriods[m.id]}
+                                    onChange={e => setModuleGracePeriods(p => ({...p, [m.id]: parseInt(e.target.value)||0}))}
+                                  />
+                                  <span className="text-[10px] text-slate-500">meses</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      ))}
+                      )})}
                     </div>
                   </div>
                   <div className="space-y-3 mt-4">
@@ -1317,6 +1388,25 @@ export default function ContractGeneratorPage() {
                             Subtotal Filiais: {formatCurrency(additionalBranchesTotal)}
                           </div>
                         </div>
+                      )}
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="space-y-3">
+                    <Label className="text-sm font-bold">Desconto na Mensalidade (R$)</Label>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="0,00"
+                        value={descontoMensalidade || ''}
+                        onChange={(e) => setDescontoMensalidade(parseFloat(e.target.value) || 0)}
+                        className="w-48 bg-slate-50 border"
+                      />
+                      {descontoMensalidade > 0 && (
+                        <span className="text-xs text-emerald-600 font-medium">
+                          Será aplicado no total mensal.
+                        </span>
                       )}
                     </div>
                   </div>
@@ -1627,22 +1717,53 @@ export default function ContractGeneratorPage() {
                   <Separator />
                   <div className="space-y-3">
                     <Label className="text-sm font-bold">Módulos Adicionais</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {MODULES.map((m) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {MODULES.map((m) => {
+                        const isChecked = selectedModules.includes(m.id);
+                        return (
                         <div
-                          key={m.id}
-                          className="flex items-center space-x-2 border p-2 rounded-lg"
+                          key={`quote-mod-${m.id}`}
+                          className="flex flex-col border p-3 rounded-lg bg-white shadow-sm gap-2 transition-colors hover:border-indigo-200"
                         >
-                          <Checkbox
-                            id={`quote-${m.id}`}
-                            checked={selectedModules.includes(m.id)}
-                            onCheckedChange={(c) => handleToggleModule(m.id, c as boolean)}
-                          />
-                          <Label htmlFor={`quote-${m.id}`} className="text-xs">
-                            {m.name}
-                          </Label>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`quote-${m.id}`}
+                              checked={isChecked}
+                              onCheckedChange={(c) => handleToggleModule(m.id, c as boolean)}
+                            />
+                            <Label htmlFor={`quote-${m.id}`} className="text-xs font-semibold cursor-pointer">
+                              {m.name} <span className="font-normal text-slate-500">- {formatCurrency(m.price)}</span>
+                            </Label>
+                          </div>
+                          {isChecked && m.price > 0 && (
+                            <div className="pl-6 pt-1 flex items-center gap-3 border-t border-slate-100 mt-1">
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`quote-grace-${m.id}`}
+                                  checked={!!moduleGracePeriods[m.id]}
+                                  onCheckedChange={(c) => {
+                                    if (c) setModuleGracePeriods(p => ({...p, [m.id]: 3}));
+                                    else { const p = {...moduleGracePeriods}; delete p[m.id]; setModuleGracePeriods(p); }
+                                  }}
+                                />
+                                <Label htmlFor={`quote-grace-${m.id}`} className="text-[10px] text-slate-600 cursor-pointer">Gratuidade</Label>
+                              </div>
+                              {!!moduleGracePeriods[m.id] && (
+                                <div className="flex items-center gap-1">
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    className="w-16 h-6 text-[10px] px-1 bg-slate-50 border-slate-200"
+                                    value={moduleGracePeriods[m.id]}
+                                    onChange={e => setModuleGracePeriods(p => ({...p, [m.id]: parseInt(e.target.value)||0}))}
+                                  />
+                                  <span className="text-[10px] text-slate-500">meses</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      ))}
+                      )})}
                     </div>
                   </div>
                   <div className="space-y-3 mt-4">
@@ -1751,6 +1872,25 @@ export default function ContractGeneratorPage() {
                             Subtotal Filiais: {formatCurrency(additionalBranchesTotal)}
                           </div>
                         </div>
+                      )}
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="space-y-3">
+                    <Label className="text-sm font-bold">Desconto na Mensalidade (R$)</Label>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="0,00"
+                        value={descontoMensalidade || ''}
+                        onChange={(e) => setDescontoMensalidade(parseFloat(e.target.value) || 0)}
+                        className="w-48 bg-slate-50 border"
+                      />
+                      {descontoMensalidade > 0 && (
+                        <span className="text-xs text-emerald-600 font-medium">
+                          Será aplicado no total mensal.
+                        </span>
                       )}
                     </div>
                   </div>

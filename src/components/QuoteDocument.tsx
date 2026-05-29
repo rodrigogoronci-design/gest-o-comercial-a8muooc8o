@@ -30,6 +30,9 @@ interface QuoteDocumentProps {
   additionalBranches?: number
   additionalBranchesPrice?: number
   additionalBranchesTotal?: number
+  descontoMensalidade?: number
+  moduleGracePeriods?: Record<string, number>
+  totalValueStandard?: number
 }
 
 const FEATURE_CATEGORIES = [
@@ -98,6 +101,9 @@ export function QuoteDocument({
   additionalBranches,
   additionalBranchesPrice,
   additionalBranchesTotal,
+  descontoMensalidade = 0,
+  moduleGracePeriods = {},
+  totalValueStandard = 0,
 }: QuoteDocumentProps) {
   const showBasePlan =
     planName && planName !== 'Nenhum' && planName !== 'Nenhum (Somente Módulos / Upsell)'
@@ -226,28 +232,46 @@ export function QuoteDocument({
                   <td className="p-1.5 text-center text-slate-600">Mensalidade Atual</td>
                 </tr>
               )}
-              {selectedModulesData.map((m, idx) => (
-                <tr key={`mod-${idx}`}>
-                  <td className="p-1.5">
-                    <span className="font-semibold text-slate-800">{m.name}</span>
-                    {m.id === 'mod-edi' && (
-                      <span className="text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1">
-                        <strong>* EDI:</strong> Inclusão de Layout padrão Proceda para integração
-                        (arquivos NOTFIS para emissão de CT-e, envios de CONEMB, DOCCOB e OCOREN).
-                      </span>
-                    )}
-                    {m.description && !m.name?.toLowerCase().includes('torre de controle') && (
-                      <span className="text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1">
-                        {m.description}
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-1.5 text-center font-medium">1</td>
-                  <td className="p-1.5 text-right">{formatCurrency(m.price)}</td>
-                  <td className="p-1.5 text-right font-medium">{formatCurrency(m.price)}</td>
-                  <td className="p-1.5 text-center text-slate-600">Mensalidade</td>
-                </tr>
-              ))}
+              {selectedModulesData.map((m, idx) => {
+                const hasGrace = moduleGracePeriods[m.id] > 0
+                const graceMonths = moduleGracePeriods[m.id]
+                return (
+                  <tr key={`mod-${idx}`}>
+                    <td className="p-1.5">
+                      <span className="font-semibold text-slate-800">{m.name}</span>
+                      {hasGrace && (
+                        <span className="text-[9px] font-bold text-emerald-600 ml-2">
+                          (Isento por {graceMonths} meses)
+                        </span>
+                      )}
+                      {m.id === 'mod-edi' && (
+                        <span className="text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1">
+                          <strong>* EDI:</strong> Inclusão de Layout padrão Proceda para integração
+                          (arquivos NOTFIS para emissão de CT-e, envios de CONEMB, DOCCOB e OCOREN).
+                        </span>
+                      )}
+                      {m.description && !m.name?.toLowerCase().includes('torre de controle') && (
+                        <span className="text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1">
+                          {m.description}
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-1.5 text-center font-medium">1</td>
+                    <td className="p-1.5 text-right">{formatCurrency(m.price)}</td>
+                    <td className="p-1.5 text-right font-medium">
+                      {hasGrace ? (
+                        <span className="line-through text-slate-400 mr-1">
+                          {formatCurrency(m.price)}
+                        </span>
+                      ) : null}
+                      {hasGrace ? formatCurrency(0) : formatCurrency(m.price)}
+                    </td>
+                    <td className="p-1.5 text-center text-slate-600">
+                      {hasGrace ? `Isento por ${graceMonths} meses` : 'Mensalidade'}
+                    </td>
+                  </tr>
+                )
+              })}
 
               {includeFranchise && dfeData && (
                 <tr>
@@ -402,10 +426,22 @@ export function QuoteDocument({
                 <span>Valor dos Adicionais (Upsell)</span>
                 <span className="font-medium">{formatCurrency(totalValue)}</span>
               </div>
+              {descontoMensalidade > 0 && (
+                <div className="flex justify-between items-center text-emerald-600 font-medium">
+                  <span>Desconto na Mensalidade</span>
+                  <span>- {formatCurrency(descontoMensalidade)}</span>
+                </div>
+              )}
               <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
-                <span>Nova Mensalidade Total</span>
+                <span>Nova Mensalidade (Com Isenções)</span>
                 <span>{formatCurrency((currentClientValue || 0) + totalValue)}</span>
               </div>
+              {totalValue !== totalValueStandard && (
+                <div className="flex justify-between items-center font-medium text-slate-500 text-[10px] mt-1">
+                  <span>Nova Mensalidade (Após isenções)</span>
+                  <span>{formatCurrency((currentClientValue || 0) + totalValueStandard)}</span>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-1.5 text-[10px]">
@@ -444,10 +480,22 @@ export function QuoteDocument({
                   </span>
                 </div>
               )}
+              {descontoMensalidade > 0 && (
+                <div className="flex justify-between items-center text-emerald-600 font-medium">
+                  <span>Desconto na Mensalidade</span>
+                  <span>- {formatCurrency(descontoMensalidade)}</span>
+                </div>
+              )}
               <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
-                <span>Total Mensal</span>
+                <span>Total Mensal (Com Isenções/Desconto)</span>
                 <span>{formatCurrency(totalValue)}</span>
               </div>
+              {totalValue !== totalValueStandard && (
+                <div className="flex justify-between items-center font-medium text-slate-500 text-[10px] mt-1">
+                  <span>Total Padrão (Após isenções)</span>
+                  <span>{formatCurrency(totalValueStandard)}</span>
+                </div>
+              )}
             </div>
           )}
         </div>
