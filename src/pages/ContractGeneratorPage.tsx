@@ -89,6 +89,7 @@ export default function ContractGeneratorPage() {
 
   const [descontoMensalidade, setDescontoMensalidade] = useState<number>(0)
   const [tipoDesconto, setTipoDesconto] = useState<'valor' | 'percentual'>('valor')
+  const [isencaoPeriodo, setIsencaoPeriodo] = useState<number>(0)
   const [moduleGracePeriods, setModuleGracePeriods] = useState<Record<string, number>>({})
 
   const [isExtractingCompany, setIsExtractingCompany] = useState(false)
@@ -361,6 +362,7 @@ export default function ContractGeneratorPage() {
     descontoMensalidade: validDescontoMensalidade,
     tipoDesconto,
     calculatedDiscount,
+    isencaoPeriodo,
     moduleGracePeriods,
     totalValueStandard,
   }
@@ -411,6 +413,7 @@ export default function ContractGeneratorPage() {
     descontoMensalidade: validDescontoMensalidade,
     tipoDesconto,
     calculatedDiscount,
+    isencaoPeriodo,
     moduleGracePeriods,
     totalValueStandard,
   }
@@ -780,6 +783,7 @@ export default function ContractGeneratorPage() {
           aos_cuidados_de: quoteContato,
           desconto_mensalidade: validDescontoMensalidade,
           tipo_desconto: tipoDesconto,
+          isencao_periodo: isencaoPeriodo,
           itens: [
             ...selectedModules.map((id) => {
               const m = MODULES.find((mod) => mod.id === id)
@@ -971,7 +975,8 @@ export default function ContractGeneratorPage() {
           valor_total: totalValue,
           desconto_mensalidade: validDescontoMensalidade,
           tipo_desconto: tipoDesconto,
-          observacoes: `Contrato atualizado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}${validDescontoMensalidade > 0 ? ` | Desconto: ${tipoDesconto === 'percentual' ? `${validDescontoMensalidade}%` : `R$ ${validDescontoMensalidade}`} (${formatCurrency(calculatedDiscount)})` : ''}`,
+          isencao_periodo: isencaoPeriodo,
+          observacoes: `Contrato atualizado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}${validDescontoMensalidade > 0 ? ` | Desconto: ${tipoDesconto === 'percentual' ? `${validDescontoMensalidade}%` : `R$ ${validDescontoMensalidade}`} (${formatCurrency(calculatedDiscount)})${isencaoPeriodo > 0 ? ` Isenção: ${isencaoPeriodo} meses` : ''}` : ''}`,
         })
 
         try {
@@ -1026,7 +1031,8 @@ export default function ContractGeneratorPage() {
           valor_total: totalValue,
           desconto_mensalidade: validDescontoMensalidade,
           tipo_desconto: tipoDesconto,
-          observacoes: `Contrato gerado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}${validDescontoMensalidade > 0 ? ` | Desconto: ${tipoDesconto === 'percentual' ? `${validDescontoMensalidade}%` : `R$ ${validDescontoMensalidade}`} (${formatCurrency(calculatedDiscount)})` : ''}`,
+          isencao_periodo: isencaoPeriodo,
+          observacoes: `Contrato gerado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}${validDescontoMensalidade > 0 ? ` | Desconto: ${tipoDesconto === 'percentual' ? `${validDescontoMensalidade}%` : `R$ ${validDescontoMensalidade}`} (${formatCurrency(calculatedDiscount)})${isencaoPeriodo > 0 ? ` Isenção: ${isencaoPeriodo} meses` : ''}` : ''}`,
         })
 
         if (sendToFinance) {
@@ -1439,32 +1445,44 @@ export default function ContractGeneratorPage() {
                   <Separator />
                   <div className="space-y-3">
                     <Label className="text-sm font-bold">Desconto na Mensalidade</Label>
-                    <div className="flex items-center gap-3">
-                      <Select
-                        value={tipoDesconto}
-                        onValueChange={(v) => setTipoDesconto(v as 'valor' | 'percentual')}
-                      >
-                        <SelectTrigger className="w-24 bg-slate-50 border">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="valor">R$</SelectItem>
-                          <SelectItem value="percentual">%</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        type="number"
-                        min="0"
-                        max={tipoDesconto === 'percentual' ? '100' : undefined}
-                        placeholder={tipoDesconto === 'percentual' ? '0%' : '0,00'}
-                        value={descontoMensalidade || ''}
-                        onChange={(e) => setDescontoMensalidade(parseFloat(e.target.value) || 0)}
-                        className="w-32 bg-slate-50 border"
-                      />
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                      <div className="flex items-center gap-3">
+                        <Select
+                          value={tipoDesconto}
+                          onValueChange={(v) => setTipoDesconto(v as 'valor' | 'percentual')}
+                        >
+                          <SelectTrigger className="w-24 bg-slate-50 border">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="valor">R$</SelectItem>
+                            <SelectItem value="percentual">%</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          type="number"
+                          min="0"
+                          max={tipoDesconto === 'percentual' ? '100' : undefined}
+                          placeholder={tipoDesconto === 'percentual' ? '0%' : '0,00'}
+                          value={descontoMensalidade || ''}
+                          onChange={(e) => setDescontoMensalidade(parseFloat(e.target.value) || 0)}
+                          className="w-32 bg-slate-50 border"
+                        />
+                      </div>
+
                       {validDescontoMensalidade > 0 && (
-                        <span className="text-xs text-emerald-600 font-medium">
-                          Será aplicado no total mensal. (- {formatCurrency(calculatedDiscount)})
-                        </span>
+                        <div className="flex items-center gap-2 sm:border-l sm:border-slate-200 sm:pl-4">
+                          <Label className="text-xs whitespace-nowrap">
+                            Período de Isenção (meses):
+                          </Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={isencaoPeriodo || ''}
+                            onChange={(e) => setIsencaoPeriodo(parseInt(e.target.value) || 0)}
+                            className="w-20 bg-slate-50 border h-9"
+                          />
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1544,6 +1562,31 @@ export default function ContractGeneratorPage() {
                           </div>
                         ))}
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg mt-6">
+                    <h4 className="font-bold text-sm mb-3 text-slate-800">
+                      Resumo de Valores (Mensal)
+                    </h4>
+                    <div className="flex justify-between items-center text-sm mb-1">
+                      <span className="text-slate-600">Valor Original:</span>
+                      <span className="font-medium text-slate-800">
+                        {formatCurrency(subtotalMensalidade)}
+                      </span>
+                    </div>
+                    {calculatedDiscount > 0 && (
+                      <div className="flex justify-between items-center text-sm text-emerald-600 mb-2">
+                        <span>
+                          Desconto Aplicado{' '}
+                          {isencaoPeriodo > 0 ? `(Isenção: ${isencaoPeriodo} meses)` : ''}:
+                        </span>
+                        <span className="font-medium">- {formatCurrency(calculatedDiscount)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center text-base font-bold text-indigo-700 pt-2 border-t border-slate-200 mt-2">
+                      <span>Valor Final Mensal:</span>
+                      <span>{formatCurrency(totalValue)}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -1957,32 +2000,44 @@ export default function ContractGeneratorPage() {
                   <Separator />
                   <div className="space-y-3">
                     <Label className="text-sm font-bold">Desconto na Mensalidade</Label>
-                    <div className="flex items-center gap-3">
-                      <Select
-                        value={tipoDesconto}
-                        onValueChange={(v) => setTipoDesconto(v as 'valor' | 'percentual')}
-                      >
-                        <SelectTrigger className="w-24 bg-slate-50 border">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="valor">R$</SelectItem>
-                          <SelectItem value="percentual">%</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        type="number"
-                        min="0"
-                        max={tipoDesconto === 'percentual' ? '100' : undefined}
-                        placeholder={tipoDesconto === 'percentual' ? '0%' : '0,00'}
-                        value={descontoMensalidade || ''}
-                        onChange={(e) => setDescontoMensalidade(parseFloat(e.target.value) || 0)}
-                        className="w-32 bg-slate-50 border"
-                      />
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                      <div className="flex items-center gap-3">
+                        <Select
+                          value={tipoDesconto}
+                          onValueChange={(v) => setTipoDesconto(v as 'valor' | 'percentual')}
+                        >
+                          <SelectTrigger className="w-24 bg-slate-50 border">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="valor">R$</SelectItem>
+                            <SelectItem value="percentual">%</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          type="number"
+                          min="0"
+                          max={tipoDesconto === 'percentual' ? '100' : undefined}
+                          placeholder={tipoDesconto === 'percentual' ? '0%' : '0,00'}
+                          value={descontoMensalidade || ''}
+                          onChange={(e) => setDescontoMensalidade(parseFloat(e.target.value) || 0)}
+                          className="w-32 bg-slate-50 border"
+                        />
+                      </div>
+
                       {validDescontoMensalidade > 0 && (
-                        <span className="text-xs text-emerald-600 font-medium">
-                          Será aplicado no total mensal. (- {formatCurrency(calculatedDiscount)})
-                        </span>
+                        <div className="flex items-center gap-2 sm:border-l sm:border-slate-200 sm:pl-4">
+                          <Label className="text-xs whitespace-nowrap">
+                            Período de Isenção (meses):
+                          </Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={isencaoPeriodo || ''}
+                            onChange={(e) => setIsencaoPeriodo(parseInt(e.target.value) || 0)}
+                            className="w-20 bg-slate-50 border h-9"
+                          />
+                        </div>
                       )}
                     </div>
                   </div>
@@ -2287,6 +2342,31 @@ export default function ContractGeneratorPage() {
                       </div>
                     </div>
                   )}
+
+                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg mt-6">
+                    <h4 className="font-bold text-sm mb-3 text-slate-800">
+                      Resumo de Valores (Mensal)
+                    </h4>
+                    <div className="flex justify-between items-center text-sm mb-1">
+                      <span className="text-slate-600">Valor Original:</span>
+                      <span className="font-medium text-slate-800">
+                        {formatCurrency(subtotalMensalidade)}
+                      </span>
+                    </div>
+                    {calculatedDiscount > 0 && (
+                      <div className="flex justify-between items-center text-sm text-emerald-600 mb-2">
+                        <span>
+                          Desconto Aplicado{' '}
+                          {isencaoPeriodo > 0 ? `(Isenção: ${isencaoPeriodo} meses)` : ''}:
+                        </span>
+                        <span className="font-medium">- {formatCurrency(calculatedDiscount)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center text-base font-bold text-indigo-700 pt-2 border-t border-slate-200 mt-2">
+                      <span>Valor Final Mensal:</span>
+                      <span>{formatCurrency(totalValue)}</span>
+                    </div>
+                  </div>
                 </CardContent>{' '}
               </Card>
             </div>

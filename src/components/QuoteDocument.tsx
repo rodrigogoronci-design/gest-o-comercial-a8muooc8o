@@ -33,6 +33,7 @@ interface QuoteDocumentProps {
   descontoMensalidade?: number
   tipoDesconto?: 'valor' | 'percentual'
   calculatedDiscount?: number
+  isencaoPeriodo?: number
   moduleGracePeriods?: Record<string, number>
   totalValueStandard?: number
 }
@@ -106,6 +107,7 @@ export function QuoteDocument({
   descontoMensalidade = 0,
   tipoDesconto = 'valor',
   calculatedDiscount = 0,
+  isencaoPeriodo = 0,
   moduleGracePeriods = {},
   totalValueStandard = 0,
 }: QuoteDocumentProps) {
@@ -431,13 +433,20 @@ export function QuoteDocument({
                 <span className="font-medium">{formatCurrency(totalValue)}</span>
               </div>
               {calculatedDiscount > 0 && (
-                <div className="flex justify-between items-center text-emerald-600 font-medium">
-                  <span>
-                    Desconto na Mensalidade{' '}
-                    {tipoDesconto === 'percentual' ? `(${descontoMensalidade}%)` : ''}
-                  </span>
-                  <span>- {formatCurrency(calculatedDiscount)}</span>
-                </div>
+                <>
+                  <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center text-slate-600 font-medium">
+                    <span>Valor Original (Adicionais)</span>
+                    <span>{formatCurrency(totalValue + calculatedDiscount)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-emerald-600 font-medium mt-1">
+                    <span>
+                      Desconto Aplicado{' '}
+                      {tipoDesconto === 'percentual' ? `(${descontoMensalidade}%)` : ''}
+                      {isencaoPeriodo > 0 ? ` (Isenção: ${isencaoPeriodo} meses)` : ''}
+                    </span>
+                    <span>- {formatCurrency(calculatedDiscount)}</span>
+                  </div>
+                </>
               )}
               <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
                 <span>Nova Mensalidade (Com Isenções)</span>
@@ -488,16 +497,23 @@ export function QuoteDocument({
                 </div>
               )}
               {calculatedDiscount > 0 && (
-                <div className="flex justify-between items-center text-emerald-600 font-medium">
-                  <span>
-                    Desconto na Mensalidade{' '}
-                    {tipoDesconto === 'percentual' ? `(${descontoMensalidade}%)` : ''}
-                  </span>
-                  <span>- {formatCurrency(calculatedDiscount)}</span>
-                </div>
+                <>
+                  <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center text-slate-600 font-medium">
+                    <span>Valor Original</span>
+                    <span>{formatCurrency(totalValue + calculatedDiscount)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-emerald-600 font-medium mt-1">
+                    <span>
+                      Desconto Aplicado{' '}
+                      {tipoDesconto === 'percentual' ? `(${descontoMensalidade}%)` : ''}
+                      {isencaoPeriodo > 0 ? ` (Isenção: ${isencaoPeriodo} meses)` : ''}
+                    </span>
+                    <span>- {formatCurrency(calculatedDiscount)}</span>
+                  </div>
+                </>
               )}
               <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
-                <span>Total Mensal (Com Isenções/Desconto)</span>
+                <span>Total Mensal Final</span>
                 <span>{formatCurrency(totalValue)}</span>
               </div>
               {totalValue !== totalValueStandard && (

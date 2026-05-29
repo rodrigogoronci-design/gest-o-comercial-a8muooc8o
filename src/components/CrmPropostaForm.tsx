@@ -25,6 +25,7 @@ export const propostaFormSchema = z.object({
   valor_mensalidade: z.number().min(0),
   desconto_mensalidade: z.number().min(0).default(0),
   tipo_desconto: z.enum(['valor', 'percentual']).default('valor'),
+  isencao_periodo: z.number().min(0).default(0),
   quantidade_filiais: z.number().min(0).default(0),
   cobrar_filiais: z.boolean().default(false),
   filiais_detalhes: z.array(filialSchema).default([]),
@@ -50,6 +51,7 @@ export function CrmPropostaForm({
       valor_mensalidade: initialData?.valor_mensalidade || 0,
       desconto_mensalidade: initialData?.desconto_mensalidade || 0,
       tipo_desconto: initialData?.tipo_desconto || 'valor',
+      isencao_periodo: initialData?.isencao_periodo || 0,
       quantidade_filiais: initialData?.quantidade_filiais || 0,
       cobrar_filiais: initialData?.cobrar_filiais || false,
       filiais_detalhes: initialData?.filiais_detalhes || [],
@@ -158,6 +160,25 @@ export function CrmPropostaForm({
             </div>
             <FormMessage />
           </div>
+
+          <FormField
+            control={form.control}
+            name="isencao_periodo"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Período de Isenção (Meses)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="0"
+                    {...field}
+                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <FormField

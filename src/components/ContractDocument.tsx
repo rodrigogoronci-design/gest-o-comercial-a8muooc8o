@@ -67,6 +67,7 @@ export function ContractDocument({
   descontoMensalidade = 0,
   tipoDesconto = 'valor',
   calculatedDiscount = 0,
+  isencaoPeriodo = 0,
   moduleGracePeriods = {},
   totalValueStandard = 0,
 }: any) {
@@ -589,15 +590,26 @@ export function ContractDocument({
                   </tr>
                 )}
                 {calculatedDiscount > 0 && (
-                  <tr>
-                    <td className="border border-slate-300 p-2 font-bold text-emerald-700">
-                      Desconto Especial{' '}
-                      {tipoDesconto === 'percentual' ? `(${descontoMensalidade}%)` : ''}
-                    </td>
-                    <td className="border border-slate-300 p-2 text-right text-emerald-700 font-medium">
-                      - {formatCurrency(calculatedDiscount)}
-                    </td>
-                  </tr>
+                  <>
+                    <tr className="bg-slate-50 print:bg-slate-100">
+                      <td className="border border-slate-300 p-2 font-bold text-right text-xs">
+                        Subtotal (Valor Original)
+                      </td>
+                      <td className="border border-slate-300 p-2 text-right font-bold">
+                        {formatCurrency(totalValue + calculatedDiscount)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-slate-300 p-2 font-bold text-emerald-700 text-right">
+                        Desconto Aplicado{' '}
+                        {tipoDesconto === 'percentual' ? `(${descontoMensalidade}%)` : ''}
+                        {isencaoPeriodo > 0 ? ` - Período de Isenção: ${isencaoPeriodo} meses` : ''}
+                      </td>
+                      <td className="border border-slate-300 p-2 text-right text-emerald-700 font-medium">
+                        - {formatCurrency(calculatedDiscount)}
+                      </td>
+                    </tr>
+                  </>
                 )}
                 <tr className="bg-[#1b4382]/5 print:bg-slate-200 text-[#1b4382] print:text-black">
                   <td className="border border-slate-300 p-2 font-bold text-right">
