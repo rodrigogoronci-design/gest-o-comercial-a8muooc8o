@@ -211,14 +211,14 @@ export default function ContractGeneratorPage() {
       selectedModules.reduce((acc, id) => acc + (MODULES.find((m) => m.id === id)?.price || 0), 0),
     [selectedModules],
   )
-  
+
   const modulesPrice = useMemo(
     () =>
       selectedModules.reduce((acc, id) => {
-        const m = MODULES.find((m) => m.id === id);
-        if (!m) return acc;
-        if (moduleGracePeriods[id] && moduleGracePeriods[id] > 0) return acc;
-        return acc + m.price;
+        const m = MODULES.find((m) => m.id === id)
+        if (!m) return acc
+        if (moduleGracePeriods[id] && moduleGracePeriods[id] > 0) return acc
+        return acc + m.price
       }, 0),
     [selectedModules, moduleGracePeriods],
   )
@@ -239,12 +239,24 @@ export default function ContractGeneratorPage() {
   }, 0)
   const additionalBranches = filiais.length
 
-  const totalValue = Math.max(0,
-    planPrice + modulesPrice + dfePrice + additionalPlatesTotal + additionalBranchesTotal - descontoMensalidade
+  const totalValue = Math.max(
+    0,
+    planPrice +
+      modulesPrice +
+      dfePrice +
+      additionalPlatesTotal +
+      additionalBranchesTotal -
+      descontoMensalidade,
   )
 
-  const totalValueStandard = Math.max(0,
-    planPrice + modulesPriceStandard + dfePrice + additionalPlatesTotal + additionalBranchesTotal - descontoMensalidade
+  const totalValueStandard = Math.max(
+    0,
+    planPrice +
+      modulesPriceStandard +
+      dfePrice +
+      additionalPlatesTotal +
+      additionalBranchesTotal -
+      descontoMensalidade,
   )
 
   const implRate =
@@ -739,8 +751,6 @@ export default function ContractGeneratorPage() {
       } else {
         let prospectId = selectedProspectId === 'novo' ? null : selectedProspectId
         if (!prospectId) {
-          let prospectId = selectedProspectId === 'novo' ? null : selectedProspectId
-        if (!prospectId) {
           const { data, error } = await supabase
             .from('crm_prospects')
             .insert({
@@ -769,7 +779,7 @@ export default function ContractGeneratorPage() {
                 price: m?.price,
                 implHours: m?.implHours || 0,
                 tem_gratuidade: !!moduleGracePeriods[id],
-                periodo_gratuidade: moduleGracePeriods[id] || 0
+                periodo_gratuidade: moduleGracePeriods[id] || 0,
               }
             }),
             ...(selectedDfe !== 'dfe-none' && dfeData
@@ -883,12 +893,12 @@ export default function ContractGeneratorPage() {
       const modulosFormatados = {
         plano_base: planData?.name || selectedPlan,
         filiais: additionalBranches,
-        adicionais: adicionais.map(a => {
-           const m = MODULES.find(mod => mod.name === a.name);
-           if (m && moduleGracePeriods[m.id]) {
-             return { ...a, tem_gratuidade: true, periodo_gratuidade: moduleGracePeriods[m.id] }
-           }
-           return a;
+        adicionais: adicionais.map((a) => {
+          const m = MODULES.find((mod) => mod.name === a.name)
+          if (m && moduleGracePeriods[m.id]) {
+            return { ...a, tem_gratuidade: true, periodo_gratuidade: moduleGracePeriods[m.id] }
+          }
+          return a
         }),
       }
 
@@ -1235,51 +1245,72 @@ export default function ContractGeneratorPage() {
                     <Label className="text-sm font-bold">Módulos Adicionais</Label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {MODULES.map((m) => {
-                        const isChecked = selectedModules.includes(m.id);
+                        const isChecked = selectedModules.includes(m.id)
                         return (
-                        <div
-                          key={m.id}
-                          className="flex flex-col border p-3 rounded-lg bg-white shadow-sm gap-2 transition-colors hover:border-indigo-200"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id={m.id}
-                              checked={isChecked}
-                              onCheckedChange={(c) => handleToggleModule(m.id, c as boolean)}
-                            />
-                            <Label htmlFor={m.id} className="text-xs font-semibold cursor-pointer">
-                              {m.name} <span className="font-normal text-slate-500">- {formatCurrency(m.price)}</span>
-                            </Label>
-                          </div>
-                          {isChecked && m.price > 0 && (
-                            <div className="pl-6 pt-1 flex items-center gap-3 border-t border-slate-100 mt-1">
-                              <div className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={`grace-${m.id}`}
-                                  checked={!!moduleGracePeriods[m.id]}
-                                  onCheckedChange={(c) => {
-                                    if (c) setModuleGracePeriods(p => ({...p, [m.id]: 3}));
-                                    else { const p = {...moduleGracePeriods}; delete p[m.id]; setModuleGracePeriods(p); }
-                                  }}
-                                />
-                                <Label htmlFor={`grace-${m.id}`} className="text-[10px] text-slate-600 cursor-pointer">Gratuidade</Label>
-                              </div>
-                              {!!moduleGracePeriods[m.id] && (
-                                <div className="flex items-center gap-1">
-                                  <Input
-                                    type="number"
-                                    min="1"
-                                    className="w-16 h-6 text-[10px] px-1 bg-slate-50 border-slate-200"
-                                    value={moduleGracePeriods[m.id]}
-                                    onChange={e => setModuleGracePeriods(p => ({...p, [m.id]: parseInt(e.target.value)||0}))}
-                                  />
-                                  <span className="text-[10px] text-slate-500">meses</span>
-                                </div>
-                              )}
+                          <div
+                            key={m.id}
+                            className="flex flex-col border p-3 rounded-lg bg-white shadow-sm gap-2 transition-colors hover:border-indigo-200"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={m.id}
+                                checked={isChecked}
+                                onCheckedChange={(c) => handleToggleModule(m.id, c as boolean)}
+                              />
+                              <Label
+                                htmlFor={m.id}
+                                className="text-xs font-semibold cursor-pointer"
+                              >
+                                {m.name}{' '}
+                                <span className="font-normal text-slate-500">
+                                  - {formatCurrency(m.price)}
+                                </span>
+                              </Label>
                             </div>
-                          )}
-                        </div>
-                      )})}
+                            {isChecked && m.price > 0 && (
+                              <div className="pl-6 pt-1 flex items-center gap-3 border-t border-slate-100 mt-1">
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`grace-${m.id}`}
+                                    checked={!!moduleGracePeriods[m.id]}
+                                    onCheckedChange={(c) => {
+                                      if (c) setModuleGracePeriods((p) => ({ ...p, [m.id]: 3 }))
+                                      else {
+                                        const p = { ...moduleGracePeriods }
+                                        delete p[m.id]
+                                        setModuleGracePeriods(p)
+                                      }
+                                    }}
+                                  />
+                                  <Label
+                                    htmlFor={`grace-${m.id}`}
+                                    className="text-[10px] text-slate-600 cursor-pointer"
+                                  >
+                                    Gratuidade
+                                  </Label>
+                                </div>
+                                {!!moduleGracePeriods[m.id] && (
+                                  <div className="flex items-center gap-1">
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      className="w-16 h-6 text-[10px] px-1 bg-slate-50 border-slate-200"
+                                      value={moduleGracePeriods[m.id]}
+                                      onChange={(e) =>
+                                        setModuleGracePeriods((p) => ({
+                                          ...p,
+                                          [m.id]: parseInt(e.target.value) || 0,
+                                        }))
+                                      }
+                                    />
+                                    <span className="text-[10px] text-slate-500">meses</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
                   <div className="space-y-3 mt-4">
@@ -1719,51 +1750,72 @@ export default function ContractGeneratorPage() {
                     <Label className="text-sm font-bold">Módulos Adicionais</Label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {MODULES.map((m) => {
-                        const isChecked = selectedModules.includes(m.id);
+                        const isChecked = selectedModules.includes(m.id)
                         return (
-                        <div
-                          key={`quote-mod-${m.id}`}
-                          className="flex flex-col border p-3 rounded-lg bg-white shadow-sm gap-2 transition-colors hover:border-indigo-200"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`quote-${m.id}`}
-                              checked={isChecked}
-                              onCheckedChange={(c) => handleToggleModule(m.id, c as boolean)}
-                            />
-                            <Label htmlFor={`quote-${m.id}`} className="text-xs font-semibold cursor-pointer">
-                              {m.name} <span className="font-normal text-slate-500">- {formatCurrency(m.price)}</span>
-                            </Label>
-                          </div>
-                          {isChecked && m.price > 0 && (
-                            <div className="pl-6 pt-1 flex items-center gap-3 border-t border-slate-100 mt-1">
-                              <div className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={`quote-grace-${m.id}`}
-                                  checked={!!moduleGracePeriods[m.id]}
-                                  onCheckedChange={(c) => {
-                                    if (c) setModuleGracePeriods(p => ({...p, [m.id]: 3}));
-                                    else { const p = {...moduleGracePeriods}; delete p[m.id]; setModuleGracePeriods(p); }
-                                  }}
-                                />
-                                <Label htmlFor={`quote-grace-${m.id}`} className="text-[10px] text-slate-600 cursor-pointer">Gratuidade</Label>
-                              </div>
-                              {!!moduleGracePeriods[m.id] && (
-                                <div className="flex items-center gap-1">
-                                  <Input
-                                    type="number"
-                                    min="1"
-                                    className="w-16 h-6 text-[10px] px-1 bg-slate-50 border-slate-200"
-                                    value={moduleGracePeriods[m.id]}
-                                    onChange={e => setModuleGracePeriods(p => ({...p, [m.id]: parseInt(e.target.value)||0}))}
-                                  />
-                                  <span className="text-[10px] text-slate-500">meses</span>
-                                </div>
-                              )}
+                          <div
+                            key={`quote-mod-${m.id}`}
+                            className="flex flex-col border p-3 rounded-lg bg-white shadow-sm gap-2 transition-colors hover:border-indigo-200"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`quote-${m.id}`}
+                                checked={isChecked}
+                                onCheckedChange={(c) => handleToggleModule(m.id, c as boolean)}
+                              />
+                              <Label
+                                htmlFor={`quote-${m.id}`}
+                                className="text-xs font-semibold cursor-pointer"
+                              >
+                                {m.name}{' '}
+                                <span className="font-normal text-slate-500">
+                                  - {formatCurrency(m.price)}
+                                </span>
+                              </Label>
                             </div>
-                          )}
-                        </div>
-                      )})}
+                            {isChecked && m.price > 0 && (
+                              <div className="pl-6 pt-1 flex items-center gap-3 border-t border-slate-100 mt-1">
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`quote-grace-${m.id}`}
+                                    checked={!!moduleGracePeriods[m.id]}
+                                    onCheckedChange={(c) => {
+                                      if (c) setModuleGracePeriods((p) => ({ ...p, [m.id]: 3 }))
+                                      else {
+                                        const p = { ...moduleGracePeriods }
+                                        delete p[m.id]
+                                        setModuleGracePeriods(p)
+                                      }
+                                    }}
+                                  />
+                                  <Label
+                                    htmlFor={`quote-grace-${m.id}`}
+                                    className="text-[10px] text-slate-600 cursor-pointer"
+                                  >
+                                    Gratuidade
+                                  </Label>
+                                </div>
+                                {!!moduleGracePeriods[m.id] && (
+                                  <div className="flex items-center gap-1">
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      className="w-16 h-6 text-[10px] px-1 bg-slate-50 border-slate-200"
+                                      value={moduleGracePeriods[m.id]}
+                                      onChange={(e) =>
+                                        setModuleGracePeriods((p) => ({
+                                          ...p,
+                                          [m.id]: parseInt(e.target.value) || 0,
+                                        }))
+                                      }
+                                    />
+                                    <span className="text-[10px] text-slate-500">meses</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
                   <div className="space-y-3 mt-4">
