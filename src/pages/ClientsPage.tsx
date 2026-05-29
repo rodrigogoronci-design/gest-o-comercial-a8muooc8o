@@ -133,6 +133,8 @@ export interface ClienteRecord {
   documentos_urls?: { name: string; url: string }[] | null
   diagnostico?: any
   tags?: string[]
+  desconto_mensalidade?: number | null
+  tipo_desconto?: string | null
 }
 
 type ModuleItem = { name: string; price: number }
@@ -243,6 +245,8 @@ type MergedClient = {
   stats?: ReturnType<typeof calculateFinancialScore>
   cobrancas?: { data_vencimento: string; valor: number }[]
   tags?: string[]
+  desconto_mensalidade?: number
+  tipo_desconto?: 'valor' | 'percentual'
 }
 
 const clientSchema = z.object({
@@ -267,6 +271,8 @@ const clientSchema = z.object({
   plano_base: z.string().optional().or(z.literal('')),
   filiais: z.number().min(0).default(0),
   valor_total: z.number().min(0, 'Valor inválido'),
+  desconto_mensalidade: z.number().min(0).optional().default(0),
+  tipo_desconto: z.enum(['valor', 'percentual']).optional().default('valor'),
 })
 
 type ClientFormValues = z.infer<typeof clientSchema>
@@ -620,21 +626,27 @@ export default function ClientsPage() {
       plano_base: '',
       filiais: 0,
       valor_total: 0,
+      desconto_mensalidade: 0,
+      tipo_desconto: 'valor',
     },
   })
 
   const watchPlanoBase = form.watch('plano_base')
   const watchFiliais = form.watch('filiais')
   const watchModulos = form.watch('modulos')
+  const watchDesconto = form.watch('desconto_mensalidade')
+  const watchTipoDesconto = form.watch('tipo_desconto')
 
   useEffect(() => {
     if (!isSheetOpen) return
     const isDirty =
       form.formState.dirtyFields.plano_base ||
       form.formState.dirtyFields.filiais ||
-      form.formState.dirtyFields.modulos
+      form.formState.dirtyFields.modulos ||
+      form.formState.dirtyFields.desconto_mensalidade ||
+      form.formState.dirtyFields.tipo_desconto
 
-    if (isDirty) {
+    if (isDirty || editingClient) {
       let total = 0
       if (watchPlanoBase) {
         const plan = PLANS.find((p) => p.id === watchPlanoBase || p.name === watchPlanoBase)
@@ -656,9 +668,23 @@ export default function ClientsPage() {
         })
       }
 
-      form.setValue('valor_total', total, { shouldValidate: true })
+      let calcDiscount =
+        watchTipoDesconto === 'percentual'
+          ? (total * (watchDesconto || 0)) / 100
+          : watchDesconto || 0
+
+      form.setValue('valor_total', Math.max(0, total - calcDiscount), { shouldValidate: true })
     }
-  }, [watchPlanoBase, watchFiliais, watchModulos, isSheetOpen, form])
+  }, [
+    watchPlanoBase,
+    watchFiliais,
+    watchModulos,
+    watchDesconto,
+    watchTipoDesconto,
+    isSheetOpen,
+    form,
+    editingClient,
+  ])
 
   useEffect(() => {
     loadClientes()
@@ -798,6 +824,8 @@ export default function ClientsPage() {
       plano_base: '',
       filiais: 0,
       valor_total: 0,
+      desconto_mensalidade: 0,
+      tipo_desconto: 'valor',
     })
     setIsSheetOpen(true)
   }
@@ -819,6 +847,8 @@ export default function ClientsPage() {
       plano_base: client.plano_base || '',
       filiais: client.filiais || 0,
       valor_total: client.totalValue || 0,
+      desconto_mensalidade: client.desconto_mensalidade || 0,
+      tipo_desconto: client.tipo_desconto || 'valor',
     })
     setIsSheetOpen(true)
   }
@@ -1025,6 +1055,8 @@ Obrigada,`
       valor_implantacao: data.valor_implantacao,
       modo_implantacao: data.modo_implantacao,
       valor_total: data.valor_total,
+      desconto_mensalidade: data.desconto_mensalidade,
+      tipo_desconto: data.tipo_desconto,
       modulos: {
         plano_base: data.plano_base,
         filiais: data.filiais,
@@ -1950,6 +1982,8 @@ Obrigada.`)
         stats,
         cobrancas: Array.isArray(c.cobrancas) ? c.cobrancas : [],
         tags: Array.isArray(c.tags) ? c.tags : [],
+        desconto_mensalidade: c.desconto_mensalidade || 0,
+        tipo_desconto: (c.tipo_desconto as 'valor' | 'percentual') || 'valor',
       }
     }),
   ]
@@ -3457,6 +3491,51 @@ Obrigada.`)
                       )
                     }}
                   />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                    <div className="space-y-2">
+                      <FormLabel className="text-sm">Desconto na Mensalidade</FormLabel>
+                      <div className="flex items-center gap-2">
+                        <FormField
+                          control={form.control}
+                          name="tipo_desconto"
+                          render={({ field }) => (
+                            <FormItem className="w-24">
+                              <FormControl>
+                                <Select value={field.value} onValueChange={field.onChange}>
+                                  <SelectTrigger className="bg-white">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="valor">R$</SelectItem>
+                                    <SelectItem value="percentual">%</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="desconto_mensalidade"
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  {...field}
+                                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                  className="bg-white"
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </div>
 
                   <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100 mt-6 space-y-3">
                     <FormField

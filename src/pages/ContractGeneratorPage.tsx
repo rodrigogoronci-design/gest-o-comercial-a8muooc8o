@@ -88,6 +88,7 @@ export default function ContractGeneratorPage() {
   const [newFilialNome, setNewFilialNome] = useState('')
 
   const [descontoMensalidade, setDescontoMensalidade] = useState<number>(0)
+  const [tipoDesconto, setTipoDesconto] = useState<'valor' | 'percentual'>('valor')
   const [moduleGracePeriods, setModuleGracePeriods] = useState<Record<string, number>>({})
 
   const [isExtractingCompany, setIsExtractingCompany] = useState(false)
@@ -239,25 +240,29 @@ export default function ContractGeneratorPage() {
   }, 0)
   const additionalBranches = filiais.length
 
-  const totalValue = Math.max(
-    0,
-    planPrice +
-      modulesPrice +
-      dfePrice +
-      additionalPlatesTotal +
-      additionalBranchesTotal -
-      descontoMensalidade,
-  )
+  const subtotalMensalidade =
+    planPrice + modulesPrice + dfePrice + additionalPlatesTotal + additionalBranchesTotal
+  const subtotalMensalidadeStandard =
+    planPrice + modulesPriceStandard + dfePrice + additionalPlatesTotal + additionalBranchesTotal
 
-  const totalValueStandard = Math.max(
-    0,
-    planPrice +
-      modulesPriceStandard +
-      dfePrice +
-      additionalPlatesTotal +
-      additionalBranchesTotal -
-      descontoMensalidade,
-  )
+  let validDescontoMensalidade = descontoMensalidade
+  if (tipoDesconto === 'percentual' && validDescontoMensalidade > 100)
+    validDescontoMensalidade = 100
+  if (tipoDesconto === 'valor' && validDescontoMensalidade > subtotalMensalidade)
+    validDescontoMensalidade = subtotalMensalidade
+
+  const calculatedDiscount =
+    tipoDesconto === 'percentual'
+      ? (subtotalMensalidade * validDescontoMensalidade) / 100
+      : validDescontoMensalidade
+  const calculatedDiscountStandard =
+    tipoDesconto === 'percentual'
+      ? (subtotalMensalidadeStandard * validDescontoMensalidade) / 100
+      : validDescontoMensalidade
+
+  const totalValue = Math.max(0, subtotalMensalidade - calculatedDiscount)
+
+  const totalValueStandard = Math.max(0, subtotalMensalidadeStandard - calculatedDiscountStandard)
 
   const implRate =
     implMode === 'remoto' ? IMPLEMENTATION_RATES.remoto : IMPLEMENTATION_RATES.presencial
@@ -353,7 +358,9 @@ export default function ContractGeneratorPage() {
     additionalBranchesPrice,
     additionalBranchesTotal,
     filiais,
-    descontoMensalidade,
+    descontoMensalidade: validDescontoMensalidade,
+    tipoDesconto,
+    calculatedDiscount,
     moduleGracePeriods,
     totalValueStandard,
   }
@@ -401,7 +408,9 @@ export default function ContractGeneratorPage() {
     additionalBranchesPrice,
     additionalBranchesTotal,
     filiais,
-    descontoMensalidade,
+    descontoMensalidade: validDescontoMensalidade,
+    tipoDesconto,
+    calculatedDiscount,
     moduleGracePeriods,
     totalValueStandard,
   }
@@ -769,7 +778,8 @@ export default function ContractGeneratorPage() {
           user_id: (await supabase.auth.getUser()).data.user?.id,
           data_proposta: new Date().toISOString().split('T')[0],
           aos_cuidados_de: quoteContato,
-          desconto_mensalidade: descontoMensalidade,
+          desconto_mensalidade: validDescontoMensalidade,
+          tipo_desconto: tipoDesconto,
           itens: [
             ...selectedModules.map((id) => {
               const m = MODULES.find((mod) => mod.id === id)
@@ -939,7 +949,8 @@ export default function ContractGeneratorPage() {
           modo_implantacao: implMode,
           modulos: modulosFormatados,
           valor_total: totalValue,
-          desconto_mensalidade: descontoMensalidade,
+          desconto_mensalidade: validDescontoMensalidade,
+          tipo_desconto: tipoDesconto,
           cobrancas: updatedCobrancas,
           status: sendToFinance
             ? 'Enviado p/ Financeiro'
@@ -958,8 +969,9 @@ export default function ContractGeneratorPage() {
           modulos: modulosFormatados.adicionais,
           valor_adicional: 0,
           valor_total: totalValue,
-          desconto_mensalidade: descontoMensalidade,
-          observacoes: `Contrato atualizado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}${descontoMensalidade > 0 ? ` | Desconto: R$ ${descontoMensalidade}` : ''}`,
+          desconto_mensalidade: validDescontoMensalidade,
+          tipo_desconto: tipoDesconto,
+          observacoes: `Contrato atualizado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}${validDescontoMensalidade > 0 ? ` | Desconto: ${tipoDesconto === 'percentual' ? `${validDescontoMensalidade}%` : `R$ ${validDescontoMensalidade}`} (${formatCurrency(calculatedDiscount)})` : ''}`,
         })
 
         try {
@@ -992,7 +1004,8 @@ export default function ContractGeneratorPage() {
           modo_implantacao: implMode,
           modulos: modulosFormatados,
           valor_total: totalValue,
-          desconto_mensalidade: descontoMensalidade,
+          desconto_mensalidade: validDescontoMensalidade,
+          tipo_desconto: tipoDesconto,
           cobrancas: updatedCobrancas,
           status: sendToFinance
             ? 'Enviado p/ Financeiro'
@@ -1011,8 +1024,9 @@ export default function ContractGeneratorPage() {
           modulos: modulosFormatados.adicionais,
           valor_adicional: 0,
           valor_total: totalValue,
-          desconto_mensalidade: descontoMensalidade,
-          observacoes: `Contrato gerado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}${descontoMensalidade > 0 ? ` | Desconto: R$ ${descontoMensalidade}` : ''}`,
+          desconto_mensalidade: validDescontoMensalidade,
+          tipo_desconto: tipoDesconto,
+          observacoes: `Contrato gerado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}${validDescontoMensalidade > 0 ? ` | Desconto: ${tipoDesconto === 'percentual' ? `${validDescontoMensalidade}%` : `R$ ${validDescontoMensalidade}`} (${formatCurrency(calculatedDiscount)})` : ''}`,
         })
 
         if (sendToFinance) {
@@ -1424,19 +1438,32 @@ export default function ContractGeneratorPage() {
                   </div>
                   <Separator />
                   <div className="space-y-3">
-                    <Label className="text-sm font-bold">Desconto na Mensalidade (R$)</Label>
+                    <Label className="text-sm font-bold">Desconto na Mensalidade</Label>
                     <div className="flex items-center gap-3">
+                      <Select
+                        value={tipoDesconto}
+                        onValueChange={(v) => setTipoDesconto(v as 'valor' | 'percentual')}
+                      >
+                        <SelectTrigger className="w-24 bg-slate-50 border">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="valor">R$</SelectItem>
+                          <SelectItem value="percentual">%</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <Input
                         type="number"
                         min="0"
-                        placeholder="0,00"
+                        max={tipoDesconto === 'percentual' ? '100' : undefined}
+                        placeholder={tipoDesconto === 'percentual' ? '0%' : '0,00'}
                         value={descontoMensalidade || ''}
                         onChange={(e) => setDescontoMensalidade(parseFloat(e.target.value) || 0)}
-                        className="w-48 bg-slate-50 border"
+                        className="w-32 bg-slate-50 border"
                       />
-                      {descontoMensalidade > 0 && (
+                      {validDescontoMensalidade > 0 && (
                         <span className="text-xs text-emerald-600 font-medium">
-                          Será aplicado no total mensal.
+                          Será aplicado no total mensal. (- {formatCurrency(calculatedDiscount)})
                         </span>
                       )}
                     </div>
@@ -1929,19 +1956,32 @@ export default function ContractGeneratorPage() {
                   </div>
                   <Separator />
                   <div className="space-y-3">
-                    <Label className="text-sm font-bold">Desconto na Mensalidade (R$)</Label>
+                    <Label className="text-sm font-bold">Desconto na Mensalidade</Label>
                     <div className="flex items-center gap-3">
+                      <Select
+                        value={tipoDesconto}
+                        onValueChange={(v) => setTipoDesconto(v as 'valor' | 'percentual')}
+                      >
+                        <SelectTrigger className="w-24 bg-slate-50 border">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="valor">R$</SelectItem>
+                          <SelectItem value="percentual">%</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <Input
                         type="number"
                         min="0"
-                        placeholder="0,00"
+                        max={tipoDesconto === 'percentual' ? '100' : undefined}
+                        placeholder={tipoDesconto === 'percentual' ? '0%' : '0,00'}
                         value={descontoMensalidade || ''}
                         onChange={(e) => setDescontoMensalidade(parseFloat(e.target.value) || 0)}
-                        className="w-48 bg-slate-50 border"
+                        className="w-32 bg-slate-50 border"
                       />
-                      {descontoMensalidade > 0 && (
+                      {validDescontoMensalidade > 0 && (
                         <span className="text-xs text-emerald-600 font-medium">
-                          Será aplicado no total mensal.
+                          Será aplicado no total mensal. (- {formatCurrency(calculatedDiscount)})
                         </span>
                       )}
                     </div>

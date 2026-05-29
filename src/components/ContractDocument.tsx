@@ -65,6 +65,8 @@ export function ContractDocument({
   additionalBranchesTotal,
   filiais = [],
   descontoMensalidade = 0,
+  tipoDesconto = 'valor',
+  calculatedDiscount = 0,
   moduleGracePeriods = {},
   totalValueStandard = 0,
 }: any) {
@@ -586,13 +588,14 @@ export function ContractDocument({
                     </td>
                   </tr>
                 )}
-                {descontoMensalidade > 0 && (
+                {calculatedDiscount > 0 && (
                   <tr>
                     <td className="border border-slate-300 p-2 font-bold text-emerald-700">
-                      Desconto Especial
+                      Desconto Especial{' '}
+                      {tipoDesconto === 'percentual' ? `(${descontoMensalidade}%)` : ''}
                     </td>
                     <td className="border border-slate-300 p-2 text-right text-emerald-700 font-medium">
-                      - {formatCurrency(descontoMensalidade)}
+                      - {formatCurrency(calculatedDiscount)}
                     </td>
                   </tr>
                 )}

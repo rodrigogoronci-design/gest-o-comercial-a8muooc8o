@@ -24,6 +24,7 @@ export const propostaFormSchema = z.object({
   valor_implantacao: z.number().min(0),
   valor_mensalidade: z.number().min(0),
   desconto_mensalidade: z.number().min(0).default(0),
+  tipo_desconto: z.enum(['valor', 'percentual']).default('valor'),
   quantidade_filiais: z.number().min(0).default(0),
   cobrar_filiais: z.boolean().default(false),
   filiais_detalhes: z.array(filialSchema).default([]),
@@ -48,6 +49,7 @@ export function CrmPropostaForm({
       valor_implantacao: initialData?.valor_implantacao || 0,
       valor_mensalidade: initialData?.valor_mensalidade || 0,
       desconto_mensalidade: initialData?.desconto_mensalidade || 0,
+      tipo_desconto: initialData?.tipo_desconto || 'valor',
       quantidade_filiais: initialData?.quantidade_filiais || 0,
       cobrar_filiais: initialData?.cobrar_filiais || false,
       filiais_detalhes: initialData?.filiais_detalhes || [],
@@ -117,24 +119,45 @@ export function CrmPropostaForm({
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="desconto_mensalidade"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Desconto Mensalidade (R$)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="space-y-2">
+            <FormLabel>Desconto Mensalidade</FormLabel>
+            <div className="flex items-center gap-2">
+              <FormField
+                control={form.control}
+                name="tipo_desconto"
+                render={({ field }) => (
+                  <FormItem className="w-24">
+                    <FormControl>
+                      <select
+                        className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        {...field}
+                      >
+                        <option value="valor">R$</option>
+                        <option value="percentual">%</option>
+                      </select>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="desconto_mensalidade"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormMessage />
+          </div>
         </div>
 
         <FormField

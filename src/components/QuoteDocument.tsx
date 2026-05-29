@@ -31,6 +31,8 @@ interface QuoteDocumentProps {
   additionalBranchesPrice?: number
   additionalBranchesTotal?: number
   descontoMensalidade?: number
+  tipoDesconto?: 'valor' | 'percentual'
+  calculatedDiscount?: number
   moduleGracePeriods?: Record<string, number>
   totalValueStandard?: number
 }
@@ -102,6 +104,8 @@ export function QuoteDocument({
   additionalBranchesPrice,
   additionalBranchesTotal,
   descontoMensalidade = 0,
+  tipoDesconto = 'valor',
+  calculatedDiscount = 0,
   moduleGracePeriods = {},
   totalValueStandard = 0,
 }: QuoteDocumentProps) {
@@ -426,10 +430,13 @@ export function QuoteDocument({
                 <span>Valor dos Adicionais (Upsell)</span>
                 <span className="font-medium">{formatCurrency(totalValue)}</span>
               </div>
-              {descontoMensalidade > 0 && (
+              {calculatedDiscount > 0 && (
                 <div className="flex justify-between items-center text-emerald-600 font-medium">
-                  <span>Desconto na Mensalidade</span>
-                  <span>- {formatCurrency(descontoMensalidade)}</span>
+                  <span>
+                    Desconto na Mensalidade{' '}
+                    {tipoDesconto === 'percentual' ? `(${descontoMensalidade}%)` : ''}
+                  </span>
+                  <span>- {formatCurrency(calculatedDiscount)}</span>
                 </div>
               )}
               <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
@@ -480,10 +487,13 @@ export function QuoteDocument({
                   </span>
                 </div>
               )}
-              {descontoMensalidade > 0 && (
+              {calculatedDiscount > 0 && (
                 <div className="flex justify-between items-center text-emerald-600 font-medium">
-                  <span>Desconto na Mensalidade</span>
-                  <span>- {formatCurrency(descontoMensalidade)}</span>
+                  <span>
+                    Desconto na Mensalidade{' '}
+                    {tipoDesconto === 'percentual' ? `(${descontoMensalidade}%)` : ''}
+                  </span>
+                  <span>- {formatCurrency(calculatedDiscount)}</span>
                 </div>
               )}
               <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
