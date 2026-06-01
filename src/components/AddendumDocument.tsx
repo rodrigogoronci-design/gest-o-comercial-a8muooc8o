@@ -16,6 +16,8 @@ export function AddendumDocument(props: any) {
     dfePrice,
     totalValue,
     totalValueStandard,
+    valor_mensalidade,
+    valor_total,
     implMode,
     implValue,
     trainings,
@@ -35,8 +37,19 @@ export function AddendumDocument(props: any) {
     }),
   } = props
 
-  const newTotalMensal = totalValueStandard
-  const finalTotalMensal = totalValue
+  const currentContract = Number(currentContractValue ?? valor_total ?? 0)
+  const newTotalMensal = Number(valor_mensalidade ?? totalValueStandard ?? 0)
+  const discount = Number(calculatedDiscount ?? 0)
+
+  let finalTotalMensal = Number(totalValue ?? 0)
+  // Ensures calculation resilience if totalValue is unexpectedly passed as 0 when it shouldn't be
+  if (finalTotalMensal === 0 && newTotalMensal > 0 && discount === 0) {
+    finalTotalMensal = newTotalMensal
+  } else if (finalTotalMensal === 0 && newTotalMensal > 0 && discount > 0) {
+    finalTotalMensal = Math.max(0, newTotalMensal - discount)
+  }
+
+  const finalSum = currentContract + finalTotalMensal
 
   return (
     <div className="bg-white text-black p-8 text-sm max-w-4xl mx-auto border border-slate-200 shadow-sm print:shadow-none print:border-none">
@@ -132,11 +145,11 @@ export function AddendumDocument(props: any) {
                 </tr>
               </thead>
               <tbody>
-                {currentContractValue > 0 && (
+                {currentContract > 0 && (
                   <tr>
                     <td className="p-2 border-b border-slate-200">Mensalidade Contrato Atual</td>
                     <td className="p-2 border-b border-slate-200 text-right">
-                      {formatCurrency(currentContractValue)}
+                      {formatCurrency(currentContract)}
                     </td>
                   </tr>
                 )}
@@ -146,25 +159,31 @@ export function AddendumDocument(props: any) {
                     {formatCurrency(newTotalMensal)}
                   </td>
                 </tr>
-                {calculatedDiscount > 0 && (
+                {discount > 0 && (
                   <tr>
                     <td className="p-2 border-b border-slate-200 text-red-600">
                       Desconto Aplicado
                     </td>
                     <td className="p-2 border-b border-slate-200 text-right text-red-600">
-                      - {formatCurrency(calculatedDiscount)}
+                      - {formatCurrency(discount)}
                     </td>
                   </tr>
                 )}
                 <tr className="bg-slate-50 font-bold">
                   <td className="p-2">Novo Valor Final da Mensalidade</td>
                   <td className="p-2 text-right text-lg text-indigo-700">
-                    {formatCurrency((currentContractValue || 0) + finalTotalMensal)}
+                    {formatCurrency(finalSum)}
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
+
+          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-md font-medium text-sm mt-4">
+            A partir desta adesão, a nova mensalidade total do contrato passará a ser de{' '}
+            {formatCurrency(finalSum)}.
+          </div>
+
           <div className="space-y-2 mt-4">
             <p>
               <strong>Taxa de Implantação/Serviços (Única):</strong> {formatCurrency(implValue)} (

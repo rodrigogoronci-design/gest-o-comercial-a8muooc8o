@@ -1917,31 +1917,63 @@ export default function ContractGeneratorPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg">
-                      <h4 className="font-bold text-sm mb-2 text-slate-600">
-                        Valor Original do Plano
-                      </h4>
-                      <span className="text-xl font-bold text-slate-800">
-                        {formatCurrency(subtotalMensalidade)}
-                      </span>
-                    </div>
-                    <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-lg">
-                      <h4 className="font-bold text-sm mb-2 text-indigo-700">
-                        Valor com Desconto Aplicado
-                      </h4>
-                      <div className="flex flex-col">
+                  {selectedGenTargetType === 'cliente' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                      <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg">
+                        <h4 className="font-bold text-sm mb-2 text-slate-600">Mensalidade Atual</h4>
+                        <span className="text-xl font-bold text-slate-800">
+                          {formatCurrency(currentContractValue)}
+                        </span>
+                      </div>
+                      <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-lg">
+                        <h4 className="font-bold text-sm mb-2 text-indigo-700">
+                          Módulos Adicionais
+                        </h4>
                         <span className="text-xl font-bold text-indigo-800">
-                          {formatCurrency(totalValue)}
+                          +{formatCurrency(totalValue)}
                         </span>
                         {isencaoPeriodo > 0 && (
-                          <span className="text-xs text-indigo-600 mt-1 font-medium">
+                          <span className="text-xs text-indigo-600 mt-1 font-medium block">
                             Inclui isenção de {isencaoPeriodo} meses
                           </span>
                         )}
                       </div>
+                      <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-lg">
+                        <h4 className="font-bold text-sm mb-2 text-emerald-700">
+                          Nova Mensalidade Total
+                        </h4>
+                        <span className="text-xl font-bold text-emerald-800">
+                          {formatCurrency(currentContractValue + totalValue)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                      <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg">
+                        <h4 className="font-bold text-sm mb-2 text-slate-600">
+                          Valor Original do Plano
+                        </h4>
+                        <span className="text-xl font-bold text-slate-800">
+                          {formatCurrency(subtotalMensalidade)}
+                        </span>
+                      </div>
+                      <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-lg">
+                        <h4 className="font-bold text-sm mb-2 text-indigo-700">
+                          Valor com Desconto Aplicado
+                        </h4>
+                        <div className="flex flex-col">
+                          <span className="text-xl font-bold text-indigo-800">
+                            {formatCurrency(totalValue)}
+                          </span>
+                          {isencaoPeriodo > 0 && (
+                            <span className="text-xs text-indigo-600 mt-1 font-medium">
+                              Inclui isenção de {isencaoPeriodo} meses
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -2767,31 +2799,63 @@ export default function ContractGeneratorPage() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg">
-                      <h4 className="font-bold text-sm mb-2 text-slate-600">
-                        Valor Original do Plano
-                      </h4>
-                      <span className="text-xl font-bold text-slate-800">
-                        {formatCurrency(subtotalMensalidade)}
-                      </span>
-                    </div>
-                    <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-lg">
-                      <h4 className="font-bold text-sm mb-2 text-indigo-700">
-                        Valor com Desconto Aplicado
-                      </h4>
-                      <div className="flex flex-col">
+                  {quoteTargetType === 'cliente' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                      <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg">
+                        <h4 className="font-bold text-sm mb-2 text-slate-600">Mensalidade Atual</h4>
+                        <span className="text-xl font-bold text-slate-800">
+                          {formatCurrency(currentClientValue || 0)}
+                        </span>
+                      </div>
+                      <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-lg">
+                        <h4 className="font-bold text-sm mb-2 text-indigo-700">
+                          Módulos Adicionais
+                        </h4>
                         <span className="text-xl font-bold text-indigo-800">
-                          {formatCurrency(totalValue)}
+                          +{formatCurrency(totalValue)}
                         </span>
                         {isencaoPeriodo > 0 && (
-                          <span className="text-xs text-indigo-600 mt-1 font-medium">
+                          <span className="text-xs text-indigo-600 mt-1 font-medium block">
                             Inclui isenção de {isencaoPeriodo} meses
                           </span>
                         )}
                       </div>
+                      <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-lg">
+                        <h4 className="font-bold text-sm mb-2 text-emerald-700">
+                          Nova Mensalidade Total
+                        </h4>
+                        <span className="text-xl font-bold text-emerald-800">
+                          {formatCurrency((currentClientValue || 0) + totalValue)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                      <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg">
+                        <h4 className="font-bold text-sm mb-2 text-slate-600">
+                          Valor Original do Plano
+                        </h4>
+                        <span className="text-xl font-bold text-slate-800">
+                          {formatCurrency(subtotalMensalidade)}
+                        </span>
+                      </div>
+                      <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-lg">
+                        <h4 className="font-bold text-sm mb-2 text-indigo-700">
+                          Valor com Desconto Aplicado
+                        </h4>
+                        <div className="flex flex-col">
+                          <span className="text-xl font-bold text-indigo-800">
+                            {formatCurrency(totalValue)}
+                          </span>
+                          {isencaoPeriodo > 0 && (
+                            <span className="text-xs text-indigo-600 mt-1 font-medium">
+                              Inclui isenção de {isencaoPeriodo} meses
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>{' '}
               </Card>
             </div>

@@ -1183,6 +1183,7 @@ export type Database = {
       crm_propostas: {
         Row: {
           aos_cuidados_de: string | null
+          cliente_id: string | null
           cobrar_filiais: boolean | null
           created_at: string
           data_proposta: string
@@ -1193,7 +1194,7 @@ export type Database = {
           isencao_periodo: number | null
           itens: Json
           prazos_concedidos: string | null
-          prospect_id: string
+          prospect_id: string | null
           quantidade_filiais: number
           tipo_desconto: string
           user_id: string | null
@@ -1202,6 +1203,7 @@ export type Database = {
         }
         Insert: {
           aos_cuidados_de?: string | null
+          cliente_id?: string | null
           cobrar_filiais?: boolean | null
           created_at?: string
           data_proposta?: string
@@ -1212,7 +1214,7 @@ export type Database = {
           isencao_periodo?: number | null
           itens?: Json
           prazos_concedidos?: string | null
-          prospect_id: string
+          prospect_id?: string | null
           quantidade_filiais?: number
           tipo_desconto?: string
           user_id?: string | null
@@ -1221,6 +1223,7 @@ export type Database = {
         }
         Update: {
           aos_cuidados_de?: string | null
+          cliente_id?: string | null
           cobrar_filiais?: boolean | null
           created_at?: string
           data_proposta?: string
@@ -1231,7 +1234,7 @@ export type Database = {
           isencao_periodo?: number | null
           itens?: Json
           prazos_concedidos?: string | null
-          prospect_id?: string
+          prospect_id?: string | null
           quantidade_filiais?: number
           tipo_desconto?: string
           user_id?: string | null
@@ -1239,6 +1242,13 @@ export type Database = {
           valor_mensalidade?: number
         }
         Relationships: [
+          {
+            foreignKeyName: 'crm_propostas_cliente_id_fkey'
+            columns: ['cliente_id']
+            isOneToOne: false
+            referencedRelation: 'clientes'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'crm_propostas_prospect_id_fkey'
             columns: ['prospect_id']
@@ -3283,7 +3293,7 @@ export const Constants = {
 //   created_at: timestamp with time zone (not null, default: now())
 // Table: crm_propostas
 //   id: uuid (not null, default: gen_random_uuid())
-//   prospect_id: uuid (not null)
+//   prospect_id: uuid (nullable)
 //   user_id: uuid (nullable)
 //   data_proposta: date (not null, default: CURRENT_DATE)
 //   aos_cuidados_de: text (nullable)
@@ -3299,6 +3309,7 @@ export const Constants = {
 //   isencao_periodo: integer (nullable, default: 0)
 //   prazos_concedidos: text (nullable)
 //   is_gratuito: boolean (nullable, default: false)
+//   cliente_id: uuid (nullable)
 // Table: crm_prospects
 //   id: uuid (not null, default: gen_random_uuid())
 //   empresa: text (not null)
@@ -3745,6 +3756,7 @@ export const Constants = {
 //   FOREIGN KEY crm_historico_interacoes_prospect_id_fkey: FOREIGN KEY (prospect_id) REFERENCES crm_prospects(id) ON DELETE CASCADE
 //   FOREIGN KEY crm_historico_interacoes_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL
 // Table: crm_propostas
+//   FOREIGN KEY crm_propostas_cliente_id_fkey: FOREIGN KEY (cliente_id) REFERENCES clientes(id)
 //   PRIMARY KEY crm_propostas_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY crm_propostas_prospect_id_fkey: FOREIGN KEY (prospect_id) REFERENCES crm_prospects(id) ON DELETE CASCADE
 //   FOREIGN KEY crm_propostas_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL
