@@ -1189,6 +1189,7 @@ export type Database = {
           desconto_mensalidade: number | null
           filiais_detalhes: Json | null
           id: string
+          isencao_periodo: number | null
           itens: Json
           prospect_id: string
           quantidade_filiais: number
@@ -1205,6 +1206,7 @@ export type Database = {
           desconto_mensalidade?: number | null
           filiais_detalhes?: Json | null
           id?: string
+          isencao_periodo?: number | null
           itens?: Json
           prospect_id: string
           quantidade_filiais?: number
@@ -1221,6 +1223,7 @@ export type Database = {
           desconto_mensalidade?: number | null
           filiais_detalhes?: Json | null
           id?: string
+          isencao_periodo?: number | null
           itens?: Json
           prospect_id?: string
           quantidade_filiais?: number
@@ -1641,6 +1644,7 @@ export type Database = {
           data_solicitacao: string
           desconto_mensalidade: number | null
           id: string
+          isencao_periodo: number | null
           modulos: Json | null
           observacoes: string | null
           plano: string | null
@@ -1656,6 +1660,7 @@ export type Database = {
           data_solicitacao?: string
           desconto_mensalidade?: number | null
           id?: string
+          isencao_periodo?: number | null
           modulos?: Json | null
           observacoes?: string | null
           plano?: string | null
@@ -1671,6 +1676,7 @@ export type Database = {
           data_solicitacao?: string
           desconto_mensalidade?: number | null
           id?: string
+          isencao_periodo?: number | null
           modulos?: Json | null
           observacoes?: string | null
           plano?: string | null
@@ -3272,6 +3278,7 @@ export const Constants = {
 //   cobrar_filiais: boolean (nullable, default: false)
 //   desconto_mensalidade: numeric (nullable, default: 0)
 //   tipo_desconto: text (not null, default: 'valor'::text)
+//   isencao_periodo: integer (nullable, default: 0)
 // Table: crm_prospects
 //   id: uuid (not null, default: gen_random_uuid())
 //   empresa: text (not null)
@@ -3375,6 +3382,7 @@ export const Constants = {
 //   solicitacao_id: uuid (nullable)
 //   desconto_mensalidade: numeric (nullable, default: 0)
 //   tipo_desconto: text (not null, default: 'valor'::text)
+//   isencao_periodo: integer (nullable, default: 0)
 // Table: jira_issues
 //   id: uuid (not null, default: gen_random_uuid())
 //   issue_key: text (not null)

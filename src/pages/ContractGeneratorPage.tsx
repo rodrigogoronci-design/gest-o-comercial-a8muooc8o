@@ -98,6 +98,7 @@ export default function ContractGeneratorPage() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [autoFilled, setAutoFilled] = useState(false)
   const [isLoadingCnpj, setIsLoadingCnpj] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Cotação State
   const [quoteEmpresa, setQuoteEmpresa] = useState(initialTab === 'cotacao' ? initialProspect : '')
@@ -696,8 +697,10 @@ export default function ContractGeneratorPage() {
       return
     }
     try {
+      setIsSubmitting(true)
       if (quoteTargetType === 'cliente') {
         if (selectedClientId === 'novo' || !selectedClientId) {
+          setIsSubmitting(false)
           toast({
             title: 'Atenção',
             description: 'Selecione um cliente para o Upsell.',
@@ -733,11 +736,86 @@ export default function ContractGeneratorPage() {
         })
         if (error) throw error
 
+        const clientData = clientes.find((c) => c.id === selectedClientId)
+
+        // Generate HTML Blob for Document Storage
+        const quoteHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Proposta de Upsell - ${quoteEmpresa}</title>
+            <style>
+              body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+              h1 { color: #1e1b4b; border-bottom: 2px solid #e0e7ff; padding-bottom: 0.5rem; }
+              .section { margin-bottom: 1.5rem; }
+              .label { font-weight: bold; }
+            </style>
+          </head>
+          <body>
+            <h1>Proposta de Serviços Adicionais (Upsell)</h1>
+            <div class="section">
+              <h2>1. Cliente</h2>
+              <p><span class="label">Empresa:</span> ${quoteEmpresa}</p>
+              <p><span class="label">Aos Cuidados de:</span> ${quoteContato}</p>
+            </div>
+            <div class="section">
+              <h2>2. Novos Itens</h2>
+              <ul>
+                ${modulosAdicionados.map((a) => `<li>${a}</li>`).join('')}
+              </ul>
+            </div>
+            <div class="section">
+              <h2>3. Valores Adicionais</h2>
+              <p><span class="label">Valor Mensal Adicional:</span> R$ ${totalValue.toFixed(2)}</p>
+              <p><span class="label">Valor de Implantação:</span> R$ ${implValue.toFixed(2)}</p>
+              ${validDescontoMensalidade > 0 ? `<p><span class="label">Desconto Aplicado:</span> ${tipoDesconto === 'percentual' ? `${validDescontoMensalidade}%` : `R$ ${validDescontoMensalidade}`} (R$ ${calculatedDiscount.toFixed(2)})</p>` : ''}
+              ${isencaoPeriodo > 0 ? `<p><span class="label">Período de Isenção:</span> ${isencaoPeriodo} meses</p>` : ''}
+            </div>
+          </body>
+          </html>
+        `
+
+        const blob = new Blob([quoteHtml], { type: 'text/html' })
+        const timestamp = new Date().getTime()
+        const fileName = `contracts/${selectedClientId}/${timestamp}_proposta_upsell.html`
+
+        const { error: uploadError } = await supabase.storage
+          .from('documentos_clientes')
+          .upload(fileName, blob, { contentType: 'text/html', upsert: true })
+
+        if (!uploadError) {
+          const { data: publicUrlData } = supabase.storage
+            .from('documentos_clientes')
+            .getPublicUrl(fileName)
+
+          const fileUrl = publicUrlData.publicUrl
+
+          const { data: existingClients } = await supabase
+            .from('clientes')
+            .select('documentos_urls')
+            .eq('id', selectedClientId)
+            .single()
+          const existingDocs = existingClients?.documentos_urls
+            ? Array.isArray(existingClients.documentos_urls)
+              ? existingClients.documentos_urls
+              : []
+            : []
+          const newDoc = {
+            name: `Proposta Upsell - ${new Date().toLocaleDateString('pt-BR')}`,
+            url: fileUrl,
+            type: 'proposal',
+          }
+
+          await updateCliente(selectedClientId, {
+            documentos_urls: [...existingDocs, newDoc],
+          } as any)
+        }
+
         try {
-          const clientData = clientes.find((c) => c.id === selectedClientId)
           await supabase.functions.invoke('send-finance-email', {
             body: {
-              to: 'financeiro@empresa.com',
+              to: clientData?.email || 'financeiro@empresa.com',
               clientName: clientData?.nome || 'Cliente',
               moduleName: modulosAdicionados.join(', '),
               type: 'aditivo',
@@ -747,10 +825,11 @@ export default function ContractGeneratorPage() {
           console.error('Erro ao enviar email automático', e)
         }
 
+        setIsSubmitting(false)
+
         toast({
           title: 'Upsell salvo!',
-          description:
-            'A proposta foi registrada e o aditivo enviado por e-mail. O PDF será gerado em instantes.',
+          description: 'A proposta foi registrada e anexada ao perfil do cliente.',
           className: 'bg-emerald-600 text-white border-none',
         })
         setTimeout(() => {
@@ -849,6 +928,8 @@ export default function ContractGeneratorPage() {
         })
         if (error) throw error
 
+        setIsSubmitting(false)
+
         toast({
           title: 'Cotação salva!',
           description: 'A proposta foi registrada no CRM. O PDF será gerado em instantes.',
@@ -863,11 +944,12 @@ export default function ContractGeneratorPage() {
         }, 1000)
       }
     } catch (err: any) {
+      setIsSubmitting(false)
       toast({ title: 'Erro ao salvar cotação', description: err.message, variant: 'destructive' })
     }
   }
 
-  const handleSaveClient = async () => {
+  const handleConfirmAndSave = async () => {
     if (!name || !cnpj) {
       toast({
         title: 'Atenção',
@@ -878,11 +960,13 @@ export default function ContractGeneratorPage() {
     }
 
     try {
+      setIsSubmitting(true)
       const rawCnpj = cnpj.replace(/\D/g, '')
 
       const { data: existingClients } = await supabase.from('clientes').select('*')
-
       const existingClient = existingClients?.find((c) => c.cnpj.replace(/\D/g, '') === rawCnpj)
+
+      let clientId = existingClient?.id
 
       const adicionais = selectedModules.map((id) => {
         const mod = MODULES.find((m) => m.id === id)
@@ -921,7 +1005,8 @@ export default function ContractGeneratorPage() {
           ? existingClient.cobrancas
           : []
         : []
-      let updatedCobrancas = [...cobrancasAtuais]
+      const updatedCobrancas = [...cobrancasAtuais]
+
       if (additionalPlates > 0) {
         updatedCobrancas.push({
           tipo: 'Placa Adicional Frota',
@@ -941,121 +1026,154 @@ export default function ContractGeneratorPage() {
         })
       }
 
+      const clientDataToSave = {
+        nome: name,
+        cnpj,
+        endereco: address,
+        rep_nome: repName,
+        rep_cpf: repCpf,
+        rep_rg: repRg,
+        valor_implantacao: implValue,
+        modo_implantacao: implMode,
+        modulos: modulosFormatados,
+        valor_total: totalValue,
+        desconto_mensalidade: validDescontoMensalidade,
+        tipo_desconto: tipoDesconto,
+        cobrancas: updatedCobrancas,
+        status: sendToFinance
+          ? 'Enviado p/ Financeiro'
+          : sendToImplementation
+            ? 'Enviado p/ Implantação'
+            : 'Ativo',
+        filiais_detalhes: filiais,
+        cobrar_filiais: !filiais.every((f) => f.isentar),
+      }
+
       if (existingClient) {
-        await updateCliente(existingClient.id, {
-          nome: name,
-          cnpj,
-          endereco: address,
-          rep_nome: repName,
-          rep_cpf: repCpf,
-          rep_rg: repRg,
-          valor_implantacao: implValue,
-          modo_implantacao: implMode,
-          modulos: modulosFormatados,
-          valor_total: totalValue,
-          desconto_mensalidade: validDescontoMensalidade,
-          tipo_desconto: tipoDesconto,
-          cobrancas: updatedCobrancas,
-          status: sendToFinance
-            ? 'Enviado p/ Financeiro'
-            : sendToImplementation
-              ? 'Enviado p/ Implantação'
-              : 'Ativo',
-          filiais_detalhes: filiais,
-          cobrar_filiais: !filiais.every((f) => f.isentar),
-        } as any)
+        await updateCliente(existingClient.id, clientDataToSave as any)
+      } else {
+        const newClient = await createCliente(clientDataToSave as any)
+        clientId = newClient.id
+      }
 
-        await createHistorico({
-          cliente_id: existingClient.id,
-          tipo: 'Renovação / Novo Contrato',
-          data_solicitacao: new Date().toISOString().split('T')[0],
-          plano: planData?.name,
-          modulos: modulosFormatados.adicionais,
-          valor_adicional: 0,
-          valor_total: totalValue,
-          desconto_mensalidade: validDescontoMensalidade,
-          tipo_desconto: tipoDesconto,
-          isencao_periodo: isencaoPeriodo,
-          observacoes: `Contrato atualizado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}${validDescontoMensalidade > 0 ? ` | Desconto: ${tipoDesconto === 'percentual' ? `${validDescontoMensalidade}%` : `R$ ${validDescontoMensalidade}`} (${formatCurrency(calculatedDiscount)})${isencaoPeriodo > 0 ? ` Isenção: ${isencaoPeriodo} meses` : ''}` : ''}`,
-        })
+      const contractHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Contrato - ${name}</title>
+          <style>
+            body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+            h1 { color: #1e1b4b; border-bottom: 2px solid #e0e7ff; padding-bottom: 0.5rem; }
+            .section { margin-bottom: 1.5rem; }
+            .label { font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <h1>Contrato de Prestação de Serviços</h1>
+          <div class="section">
+            <h2>1. Contratante</h2>
+            <p><span class="label">Razão Social:</span> ${name}</p>
+            <p><span class="label">CNPJ:</span> ${cnpj}</p>
+            <p><span class="label">Endereço:</span> ${address}</p>
+            <p><span class="label">Representante Legal:</span> ${repName} (CPF: ${repCpf})</p>
+          </div>
+          <div class="section">
+            <h2>2. Plano e Valores</h2>
+            <p><span class="label">Plano Base:</span> ${planData?.name} - R$ ${planPrice.toFixed(2)}</p>
+            <p><span class="label">Valor Total Mensal:</span> R$ ${totalValue.toFixed(2)}</p>
+            ${validDescontoMensalidade > 0 ? `<p><span class="label">Desconto Aplicado:</span> ${tipoDesconto === 'percentual' ? `${validDescontoMensalidade}%` : `R$ ${validDescontoMensalidade}`} (R$ ${calculatedDiscount.toFixed(2)})</p>` : ''}
+            ${isencaoPeriodo > 0 ? `<p><span class="label">Período de Isenção:</span> ${isencaoPeriodo} meses</p>` : ''}
+          </div>
+          <div class="section">
+            <h2>3. Implantação</h2>
+            <p><span class="label">Modo:</span> ${implMode}</p>
+            <p><span class="label">Valor da Implantação:</span> R$ ${implValue.toFixed(2)}</p>
+          </div>
+          <div class="section">
+            <h2>4. Módulos Adicionais</h2>
+            <ul>
+              ${adicionais.map((a) => `<li>${a.name} - R$ ${a.price.toFixed(2)}</li>`).join('')}
+            </ul>
+          </div>
+        </body>
+        </html>
+      `
 
+      const blob = new Blob([contractHtml], { type: 'text/html' })
+      const timestamp = new Date().getTime()
+      const fileName = `contracts/${clientId}/${timestamp}_contrato.html`
+
+      const { error: uploadError } = await supabase.storage
+        .from('documentos_clientes')
+        .upload(fileName, blob, { contentType: 'text/html', upsert: true })
+
+      if (uploadError) {
+        console.error('Upload Error:', uploadError)
+        throw new Error('Falha ao fazer upload do documento do contrato.')
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('documentos_clientes')
+        .getPublicUrl(fileName)
+
+      const fileUrl = publicUrlData.publicUrl
+
+      const existingDocs = existingClient?.documentos_urls
+        ? Array.isArray(existingClient.documentos_urls)
+          ? existingClient.documentos_urls
+          : []
+        : []
+      const newDoc = {
+        name: `Contrato - ${new Date().toLocaleDateString('pt-BR')}`,
+        url: fileUrl,
+        type: 'contract',
+      }
+
+      await updateCliente(
+        clientId as string,
+        {
+          contrato_url: fileUrl,
+          documentos_urls: [...existingDocs, newDoc],
+        } as any,
+      )
+
+      await createHistorico({
+        cliente_id: clientId as string,
+        tipo: existingClient ? 'Renovação / Novo Contrato' : 'Contrato Confirmado',
+        data_solicitacao: new Date().toISOString().split('T')[0],
+        plano: planData?.name,
+        modulos: modulosFormatados.adicionais,
+        valor_adicional: subtotalMensalidade - planPrice,
+        valor_total: totalValue,
+        desconto_mensalidade: validDescontoMensalidade,
+        tipo_desconto: tipoDesconto,
+        isencao_periodo: isencaoPeriodo,
+        observacoes: `Original Value: R$ ${subtotalMensalidade.toFixed(2)}, Discount: ${tipoDesconto === 'percentual' ? `${validDescontoMensalidade}%` : `R$ ${validDescontoMensalidade.toFixed(2)}`}, Final Value: R$ ${totalValue.toFixed(2)}. ${isencaoPeriodo > 0 ? `Isenção: ${isencaoPeriodo} meses` : ''}`,
+      })
+
+      if (sendToFinance) {
         try {
           await supabase.functions.invoke('send-finance-email', {
             body: {
-              to: existingClient.email || 'financeiro@empresa.com',
-              clientName: existingClient.nome,
-              moduleName: adicionais.map((a: any) => a.name).join(', '),
-              type: 'aditivo',
+              to: existingClient?.email || 'financeiro@empresa.com',
+              clientName: name,
+              moduleName: existingClient
+                ? adicionais.map((a: any) => a.name).join(', ')
+                : planData?.name || selectedPlan,
+              type: existingClient ? 'aditivo' : 'novo_contrato',
             },
           })
         } catch (e) {
-          console.error('Erro ao enviar email automático de aditivo', e)
+          console.error('Erro ao enviar email automático', e)
         }
-
-        toast({
-          title: 'Cliente Atualizado',
-          description: 'O contrato foi salvo e o aditivo enviado por e-mail.',
-          className: 'bg-emerald-600 text-white border-none',
-        })
-      } else {
-        const newClient = await createCliente({
-          nome: name,
-          cnpj,
-          endereco: address,
-          rep_nome: repName,
-          rep_cpf: repCpf,
-          rep_rg: repRg,
-          valor_implantacao: implValue,
-          modo_implantacao: implMode,
-          modulos: modulosFormatados,
-          valor_total: totalValue,
-          desconto_mensalidade: validDescontoMensalidade,
-          tipo_desconto: tipoDesconto,
-          cobrancas: updatedCobrancas,
-          status: sendToFinance
-            ? 'Enviado p/ Financeiro'
-            : sendToImplementation
-              ? 'Enviado p/ Implantação'
-              : 'Ativo',
-          filiais_detalhes: filiais,
-          cobrar_filiais: !filiais.every((f) => f.isentar),
-        } as any)
-
-        await createHistorico({
-          cliente_id: newClient.id,
-          tipo: 'Contrato Inicial',
-          data_solicitacao: new Date().toISOString().split('T')[0],
-          plano: planData?.name,
-          modulos: modulosFormatados.adicionais,
-          valor_adicional: 0,
-          valor_total: totalValue,
-          desconto_mensalidade: validDescontoMensalidade,
-          tipo_desconto: tipoDesconto,
-          isencao_periodo: isencaoPeriodo,
-          observacoes: `Contrato gerado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}${validDescontoMensalidade > 0 ? ` | Desconto: ${tipoDesconto === 'percentual' ? `${validDescontoMensalidade}%` : `R$ ${validDescontoMensalidade}`} (${formatCurrency(calculatedDiscount)})${isencaoPeriodo > 0 ? ` Isenção: ${isencaoPeriodo} meses` : ''}` : ''}`,
-        })
-
-        if (sendToFinance) {
-          try {
-            await supabase.functions.invoke('send-finance-email', {
-              body: {
-                to: 'financeiro@empresa.com',
-                clientName: name,
-                moduleName: planData?.name || selectedPlan,
-                type: 'novo_contrato',
-              },
-            })
-          } catch (e) {
-            console.error('Erro ao enviar email automático de novo contrato', e)
-          }
-        }
-
-        toast({
-          title: 'Contrato Gerado',
-          description: 'O novo cliente e o contrato foram salvos.',
-          className: 'bg-emerald-600 text-white border-none',
-        })
       }
+
+      toast({
+        title: 'Contrato Confirmado e Salvo',
+        description: 'O cliente foi atualizado e o contrato armazenado com sucesso.',
+        className: 'bg-emerald-600 text-white border-none',
+      })
 
       setTimeout(() => {
         const oldTitle = document.title
@@ -1066,6 +1184,8 @@ export default function ContractGeneratorPage() {
       }, 1000)
     } catch (err: any) {
       toast({ title: 'Erro ao salvar', description: err.message, variant: 'destructive' })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -1645,10 +1765,16 @@ export default function ContractGeneratorPage() {
                     <Printer className="mr-2 h-4 w-4" /> Imprimir / Salvar PDF
                   </Button>
                   <Button
-                    onClick={handleSaveClient}
+                    onClick={handleConfirmAndSave}
+                    disabled={isSubmitting}
                     className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white"
                   >
-                    <Save className="mr-2 h-4 w-4" /> Efetivar Cliente
+                    {isSubmitting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Confirmar e Salvar
                   </Button>
                 </CardFooter>
               </Card>
@@ -2390,9 +2516,15 @@ export default function ContractGeneratorPage() {
                   </Button>
                   <Button
                     onClick={handleSaveQuote}
+                    disabled={isSubmitting}
                     className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white"
                   >
-                    <Save className="mr-2 h-4 w-4" /> Salvar Cotação
+                    {isSubmitting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Confirmar e Salvar Cotação
                   </Button>
                 </CardFooter>
               </Card>
