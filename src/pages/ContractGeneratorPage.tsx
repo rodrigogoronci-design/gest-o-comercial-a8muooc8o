@@ -101,6 +101,16 @@ export default function ContractGeneratorPage() {
   const [loadedProposalId, setLoadedProposalId] = useState<string>('none')
   const [isAddendum, setIsAddendum] = useState(false)
   const [currentContractValue, setCurrentContractValue] = useState<number>(0)
+  const [currentClientModules, setCurrentClientModules] = useState<any>({
+    plano_base: '',
+    adicionais: [],
+  })
+
+  const [selectedGenTargetType, setSelectedGenTargetType] = useState<'prospect' | 'cliente'>(
+    'prospect',
+  )
+  const [selectedGenClientId, setSelectedGenClientId] = useState<string>('novo')
+
   const [isExtractingProposal, setIsExtractingProposal] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -161,7 +171,7 @@ export default function ContractGeneratorPage() {
     const fetchClientes = async () => {
       const { data } = await supabase
         .from('clientes')
-        .select('id, nome, rep_nome, valor_total')
+        .select('id, nome, rep_nome, valor_total, modulos, cnpj, endereco')
         .order('nome')
       if (data) setClientes(data)
     }
@@ -193,7 +203,9 @@ export default function ContractGeneratorPage() {
           id, data_proposta, valor_mensalidade, valor_implantacao, itens,
           desconto_mensalidade, tipo_desconto, isencao_periodo, prazos_concedidos,
           is_gratuito, quantidade_filiais, filiais_detalhes, aos_cuidados_de,
-          crm_prospects ( id, empresa, contato_nome, cnpj, endereco )
+          cliente_id,
+          crm_prospects ( id, empresa, contato_nome, cnpj, endereco ),
+          clientes ( id, nome, rep_nome, cnpj, endereco, modulos, valor_total )
         `)
         .order('data_proposta', { ascending: false })
       if (data) setAvailableProposals(data)
@@ -205,16 +217,31 @@ export default function ContractGeneratorPage() {
     setLoadedProposalId(id)
     if (id === 'none') {
       setIsAddendum(false)
+      setSelectedGenTargetType('prospect')
       return
     }
     const prop = availableProposals.find((p) => p.id === id)
     if (!prop) return
 
-    const prospect = prop.crm_prospects || {}
-    setName(prospect.empresa || '')
-    if (prospect.cnpj) setCnpj(formatCNPJ(prospect.cnpj))
-    setAddress(prospect.endereco || '')
-    setRepName(prop.aos_cuidados_de || prospect.contato_nome || '')
+    if (prop.cliente_id && prop.clientes) {
+      setIsAddendum(true)
+      setSelectedGenTargetType('cliente')
+      setSelectedGenClientId(prop.cliente_id)
+      setName(prop.clientes.nome)
+      setCnpj(formatCNPJ(prop.clientes.cnpj || ''))
+      setAddress(prop.clientes.endereco || '')
+      setRepName(prop.aos_cuidados_de || prop.clientes.rep_nome || '')
+      setCurrentContractValue(prop.clientes.valor_total || 0)
+      setCurrentClientModules(prop.clientes.modulos || { plano_base: '', adicionais: [] })
+    } else {
+      setIsAddendum(false)
+      setSelectedGenTargetType('prospect')
+      const prospect = prop.crm_prospects || {}
+      setName(prospect.empresa || '')
+      if (prospect.cnpj) setCnpj(formatCNPJ(prospect.cnpj))
+      setAddress(prospect.endereco || '')
+      setRepName(prop.aos_cuidados_de || prospect.contato_nome || '')
+    }
 
     const items = Array.isArray(prop.itens) ? prop.itens : []
     const newModules: string[] = []
@@ -393,6 +420,53 @@ export default function ContractGeneratorPage() {
     return 0
   }, [quoteTargetType, selectedClientId, clientes])
 
+  const newItemsToContract = useMemo(() => {
+    return [
+      ...selectedModules.map((id) => ({
+        name: MODULES.find((m) => m.id === id)?.name,
+        price: MODULES.find((m) => m.id === id)?.price,
+      })),
+      ...(selectedDfe !== 'dfe-none' ? [{ name: dfeData?.name, price: dfeData?.price }] : []),
+      ...(additionalPlates > 0
+        ? [
+            {
+              name: `Placa Adicional Frota (Qtd: ${additionalPlates})`,
+              price: additionalPlatesTotal,
+            },
+          ]
+        : []),
+      ...(additionalBranches > 0
+        ? [
+            {
+              name: `Filiais Adicionais (Qtd: ${additionalBranches})`,
+              price: additionalBranchesTotal,
+            },
+          ]
+        : []),
+      ...(includeDiagnosticVisit
+        ? diagnosticVisits.map((v) => ({
+            name: 'Visita Presencial de Diagnóstico',
+            price: parseFloat(v.value) || 0,
+          }))
+        : []),
+      ...selectedTrainings.map((id) => ({
+        name: `Treinamento: ${PREDEFINED_TRAININGS.find((t) => t.id === id)?.name}`,
+        price: PREDEFINED_TRAININGS.find((t) => t.id === id)?.price,
+      })),
+    ].filter((i) => i.name)
+  }, [
+    selectedModules,
+    selectedDfe,
+    dfeData,
+    additionalPlates,
+    additionalPlatesTotal,
+    additionalBranches,
+    additionalBranchesTotal,
+    includeDiagnosticVisit,
+    diagnosticVisits,
+    selectedTrainings,
+  ])
+
   const contractProps = {
     name,
     cnpj,
@@ -437,6 +511,13 @@ export default function ContractGeneratorPage() {
     prazosConcedidos,
     currentContractValue,
     isTreinamentoGratuito,
+    // Addendum specific props
+    clientName: name,
+    valorTotalAtual: currentContractValue,
+    dataSolicitacao: new Date().toISOString(),
+    currentClientModules,
+    newItems: newItemsToContract,
+    valorAdicional: totalValue,
   }
 
   const quoteProps = {
@@ -768,6 +849,73 @@ export default function ContractGeneratorPage() {
       })
       return
     }
+
+    const proposalItems = [
+      ...(selectedPlan !== 'none'
+        ? [{ id: selectedPlan, type: 'plan', name: planData?.name, price: planPrice }]
+        : []),
+      ...selectedModules.map((id) => {
+        const m = MODULES.find((mod) => mod.id === id)
+        return {
+          id,
+          name: m?.name,
+          price: m?.price,
+          implHours: m?.implHours || 0,
+          tem_gratuidade: !!moduleGracePeriods[id],
+          periodo_gratuidade: moduleGracePeriods[id] || 0,
+        }
+      }),
+      ...(selectedDfe !== 'dfe-none' && dfeData
+        ? [{ id: dfeData.id, name: dfeData.name, price: dfeData.price }]
+        : []),
+      ...(includeDiagnosticVisit
+        ? diagnosticVisits.map((v) => ({
+            id: `diag-${v.id}`,
+            name: `Visita Presencial de Diagnóstico${v.date ? ` (Data: ${new Date(v.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })})` : ''}`,
+            price: parseFloat(v.value) || 0,
+          }))
+        : []),
+      ...selectedTrainings.map((id) => {
+        const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
+        return {
+          id,
+          name: `Treinamento: ${t?.name}`,
+          price: t?.price || 0,
+          isFree: isTreinamentoGratuito,
+        }
+      }),
+      ...(additionalPlates > 0
+        ? [
+            {
+              id: 'placas-adicionais',
+              name: `Placa Adicional Frota (Qtd: ${additionalPlates})`,
+              price: additionalPlatesTotal,
+              quantity: additionalPlates,
+              unitPrice: additionalPlatesPrice,
+            },
+          ]
+        : []),
+      ...(additionalBranches > 0
+        ? [
+            {
+              id: 'filiais-adicionais',
+              name: `Filiais Adicionais (Qtd: ${additionalBranches})`,
+              price: additionalBranchesTotal,
+              quantity: additionalBranches,
+              unitPrice: additionalBranchesPrice,
+            },
+          ]
+        : []),
+      {
+        id: 'impl-details',
+        name: 'Detalhes da Implantação',
+        price: implValue,
+        modo: implMode,
+        totalHours: totalImplHours,
+        implRate: implRate,
+      },
+    ]
+
     try {
       if (quoteTargetType === 'cliente') {
         if (selectedClientId === 'novo' || !selectedClientId) {
@@ -778,22 +926,10 @@ export default function ContractGeneratorPage() {
           })
           return
         }
-        const modulosAdicionados = [
-          ...selectedModules.map((id) => MODULES.find((m) => m.id === id)?.name),
-          selectedDfe !== 'dfe-none' && dfeData ? dfeData.name : null,
-          ...(includeDiagnosticVisit
-            ? diagnosticVisits.map(
-                (v) =>
-                  `Visita Presencial de Diagnóstico${v.date ? ` (Data: ${new Date(v.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })})` : ''}`,
-              )
-            : []),
-          ...selectedTrainings.map((id) => {
-            const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
-            return t ? `Treinamento: ${t.name}` : null
-          }),
-          additionalPlates > 0 ? `Placa Adicional Frota (Qtd: ${additionalPlates})` : null,
-          additionalBranches > 0 ? `Filiais Adicionais (Qtd: ${additionalBranches})` : null,
-        ].filter(Boolean)
+        const modulosAdicionados = proposalItems
+          .filter((i) => i.id !== 'impl-details')
+          .map((i) => i.name)
+          .filter(Boolean)
 
         const { error } = await supabase.from('solicitacoes_servico').insert({
           cliente_id: selectedClientId,
@@ -807,6 +943,25 @@ export default function ContractGeneratorPage() {
           prazos_concedidos: prazosConcedidos,
         })
         if (error) throw error
+
+        await supabase.from('crm_propostas').insert({
+          cliente_id: selectedClientId,
+          prospect_id: null,
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+          data_proposta: new Date().toISOString().split('T')[0],
+          aos_cuidados_de: quoteContato,
+          desconto_mensalidade: validDescontoMensalidade,
+          tipo_desconto: tipoDesconto,
+          isencao_periodo: isencaoPeriodo,
+          is_gratuito: isTreinamentoGratuito,
+          itens: proposalItems,
+          valor_mensalidade: totalValue,
+          valor_implantacao: implValue,
+          quantidade_filiais: additionalBranches,
+          filiais_detalhes: filiais,
+          cobrar_filiais: !filiais.every((f) => f.isentar),
+          prazos_concedidos: prazosConcedidos,
+        } as any)
 
         try {
           const clientData = clientes.find((c) => c.id === selectedClientId)
@@ -860,78 +1015,13 @@ export default function ContractGeneratorPage() {
           tipo_desconto: tipoDesconto,
           isencao_periodo: isencaoPeriodo,
           is_gratuito: isTreinamentoGratuito,
-          itens: [
-            ...(selectedPlan !== 'none'
-              ? [{ id: selectedPlan, type: 'plan', name: planData?.name, price: planPrice }]
-              : []),
-            ...selectedModules.map((id) => {
-              const m = MODULES.find((mod) => mod.id === id)
-              return {
-                id,
-                name: m?.name,
-                price: m?.price,
-                implHours: m?.implHours || 0,
-                tem_gratuidade: !!moduleGracePeriods[id],
-                periodo_gratuidade: moduleGracePeriods[id] || 0,
-              }
-            }),
-            ...(selectedDfe !== 'dfe-none' && dfeData
-              ? [{ id: dfeData.id, name: dfeData.name, price: dfeData.price }]
-              : []),
-            ...(includeDiagnosticVisit
-              ? diagnosticVisits.map((v) => ({
-                  id: `diag-${v.id}`,
-                  name: `Visita Presencial de Diagnóstico${v.date ? ` (Data: ${new Date(v.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })})` : ''}`,
-                  price: parseFloat(v.value) || 0,
-                }))
-              : []),
-            ...selectedTrainings.map((id) => {
-              const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
-              return {
-                id,
-                name: `Treinamento: ${t?.name}`,
-                price: t?.price || 0,
-                isFree: isTreinamentoGratuito,
-              }
-            }),
-            ...(additionalPlates > 0
-              ? [
-                  {
-                    id: 'placas-adicionais',
-                    name: `Placa Adicional Frota (Qtd: ${additionalPlates})`,
-                    price: additionalPlatesTotal,
-                    quantity: additionalPlates,
-                    unitPrice: additionalPlatesPrice,
-                  },
-                ]
-              : []),
-            ...(additionalBranches > 0
-              ? [
-                  {
-                    id: 'filiais-adicionais',
-                    name: `Filiais Adicionais (Qtd: ${additionalBranches})`,
-                    price: additionalBranchesTotal,
-                    quantity: additionalBranches,
-                    unitPrice: additionalBranchesPrice,
-                  },
-                ]
-              : []),
-            {
-              id: 'impl-details',
-              name: 'Detalhes da Implantação',
-              price: implValue,
-              modo: implMode,
-              totalHours: totalImplHours,
-              implRate: implRate,
-            },
-          ],
+          itens: proposalItems,
           valor_mensalidade: totalValue,
           valor_implantacao: implValue,
           quantidade_filiais: additionalBranches,
           filiais_detalhes: filiais,
           cobrar_filiais: !filiais.every((f) => f.isentar),
           prazos_concedidos: prazosConcedidos,
-          is_gratuito: isTreinamentoGratuito,
         } as any)
         if (error) throw error
 
@@ -968,7 +1058,10 @@ export default function ContractGeneratorPage() {
 
       const { data: existingClients } = await supabase.from('clientes').select('*')
 
-      const existingClient = existingClients?.find((c) => c.cnpj.replace(/\D/g, '') === rawCnpj)
+      const existingClient =
+        isAddendum && selectedGenTargetType === 'cliente' && selectedGenClientId !== 'novo'
+          ? existingClients?.find((c) => c.id === selectedGenClientId)
+          : existingClients?.find((c) => c.cnpj.replace(/\D/g, '') === rawCnpj)
 
       const adicionais = selectedModules.map((id) => {
         const mod = MODULES.find((m) => m.id === id)
@@ -1208,52 +1301,25 @@ export default function ContractGeneratorPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                    <div className="flex-1 w-full">
-                      <Select value={loadedProposalId} onValueChange={handleLoadProposal}>
-                        <SelectTrigger className="bg-white">
-                          <SelectValue placeholder="Selecione uma proposta..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Nenhuma</SelectItem>
-                          {availableProposals.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>
-                              {p.crm_prospects?.empresa || 'Sem empresa'} -{' '}
-                              {new Date(p.data_proposta).toLocaleDateString('pt-BR', {
-                                timeZone: 'UTC',
-                              })}{' '}
-                              ({formatCurrency(p.valor_mensalidade)})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-center gap-2 border bg-white p-2 rounded-md h-10">
-                      <Checkbox
-                        id="is-addendum"
-                        checked={isAddendum}
-                        onCheckedChange={(c) => setIsAddendum(c as boolean)}
-                      />
-                      <Label
-                        htmlFor="is-addendum"
-                        className="cursor-pointer text-sm font-medium text-nowrap"
-                      >
-                        Gerar como Aditivo
-                      </Label>
-                    </div>
+                  <div className="flex flex-col gap-4">
+                    <Select value={loadedProposalId} onValueChange={handleLoadProposal}>
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Selecione uma proposta..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Nenhuma</SelectItem>
+                        {availableProposals.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.crm_prospects?.empresa || p.clientes?.nome || 'Sem empresa'} -{' '}
+                            {new Date(p.data_proposta).toLocaleDateString('pt-BR', {
+                              timeZone: 'UTC',
+                            })}{' '}
+                            ({formatCurrency(p.valor_mensalidade)})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  {isAddendum && (
-                    <div className="flex items-center gap-3 pt-2">
-                      <Label className="text-sm font-medium">Valor do Contrato Atual (R$)</Label>
-                      <Input
-                        type="number"
-                        value={currentContractValue || ''}
-                        onChange={(e) => setCurrentContractValue(parseFloat(e.target.value) || 0)}
-                        className="w-32 bg-white"
-                        placeholder="Ex: 500.00"
-                      />
-                    </div>
-                  )}
                 </CardContent>
               </Card>
 
@@ -1334,6 +1400,93 @@ export default function ContractGeneratorPage() {
                   <CardTitle>1. Dados da Contratante</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <div className="space-y-4 mb-6 pb-4 border-b border-slate-100">
+                    <Label className="text-sm font-bold text-slate-700">Tipo de Contrato</Label>
+                    <RadioGroup
+                      value={selectedGenTargetType}
+                      onValueChange={(v) => {
+                        setSelectedGenTargetType(v as 'prospect' | 'cliente')
+                        setIsAddendum(v === 'cliente')
+                        if (v === 'prospect') {
+                          setSelectedGenClientId('novo')
+                          setCurrentClientModules({ plano_base: '', adicionais: [] })
+                          setCurrentContractValue(0)
+                        }
+                      }}
+                      className="flex gap-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="prospect" id="gen-prospect" />
+                        <Label htmlFor="gen-prospect" className="font-medium cursor-pointer">
+                          Novo Contrato (Prospect)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="cliente" id="gen-cliente" />
+                        <Label htmlFor="gen-cliente" className="font-medium cursor-pointer">
+                          Aditivo (Cliente Existente)
+                        </Label>
+                      </div>
+                    </RadioGroup>
+
+                    {selectedGenTargetType === 'cliente' && (
+                      <div className="space-y-2 mt-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <Label>Vincular a um Cliente para gerar Aditivo</Label>
+                        <Select
+                          value={selectedGenClientId}
+                          onValueChange={(val) => {
+                            setSelectedGenClientId(val)
+                            if (val !== 'novo') {
+                              const c = clientes.find((cl) => cl.id === val)
+                              if (c) {
+                                setName(c.nome)
+                                setCnpj(formatCNPJ(c.cnpj || ''))
+                                setAddress(c.endereco || '')
+                                setRepName(c.rep_nome || '')
+                                setCurrentContractValue(c.valor_total || 0)
+                                setCurrentClientModules(
+                                  c.modulos || { plano_base: '', adicionais: [] },
+                                )
+                              }
+                            } else {
+                              setName('')
+                              setCnpj('')
+                              setAddress('')
+                              setRepName('')
+                              setCurrentContractValue(0)
+                              setCurrentClientModules({ plano_base: '', adicionais: [] })
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="bg-white">
+                            <SelectValue placeholder="Selecione um cliente..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <div className="p-2 border-b sticky top-0 bg-popover z-10">
+                              <Input
+                                placeholder="Pesquisar cliente..."
+                                value={clientSearch}
+                                onChange={(e) => setClientSearch(e.target.value)}
+                                onKeyDown={(e) => e.stopPropagation()}
+                                className="h-8"
+                              />
+                            </div>
+                            <SelectItem value="novo">-- Selecione um Cliente --</SelectItem>
+                            {clientes
+                              .filter((c) =>
+                                c.nome.toLowerCase().includes(clientSearch.toLowerCase()),
+                              )
+                              .map((c) => (
+                                <SelectItem key={c.id} value={c.id}>
+                                  {c.nome}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="space-y-2">
                     <Label>Razão Social</Label>
                     <Input
@@ -1401,7 +1554,7 @@ export default function ContractGeneratorPage() {
                   <CardTitle>2. Plano, Módulos e Implantação</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {quoteTargetType !== 'cliente' && (
+                  {selectedGenTargetType !== 'cliente' && (
                     <>
                       <div className="space-y-3">
                         <Label className="text-sm font-bold">Plano Base</Label>
@@ -1856,7 +2009,8 @@ export default function ContractGeneratorPage() {
                     onClick={handleSaveClient}
                     className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white"
                   >
-                    <Save className="mr-2 h-4 w-4" /> Efetivar Cliente
+                    <Save className="mr-2 h-4 w-4" />{' '}
+                    {isAddendum ? 'Salvar Aditivo e Efetivar' : 'Efetivar Cliente'}
                   </Button>
                 </CardFooter>
               </Card>
@@ -2663,7 +2817,10 @@ export default function ContractGeneratorPage() {
                     onClick={handleSaveQuote}
                     className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white"
                   >
-                    <Save className="mr-2 h-4 w-4" /> Salvar Cotação
+                    <Save className="mr-2 h-4 w-4" />{' '}
+                    {quoteTargetType === 'cliente'
+                      ? 'Salvar Cotação & Gerar Aditivo'
+                      : 'Salvar Cotação'}
                   </Button>
                 </CardFooter>
               </Card>
