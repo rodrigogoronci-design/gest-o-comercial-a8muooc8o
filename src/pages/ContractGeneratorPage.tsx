@@ -11,6 +11,7 @@ import {
   Rocket,
   DollarSign,
   Gift,
+  FileText,
 } from 'lucide-react'
 import {
   Card,
@@ -22,6 +23,7 @@ import {
 } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ImportContracts } from '@/components/ImportContracts'
+import { AddendumDocument } from '@/components/AddendumDocument'
 import { createCliente, updateCliente } from '@/services/clientes'
 import { createHistorico } from '@/services/historico_contratos'
 import { supabase } from '@/lib/supabase/client'
@@ -94,6 +96,11 @@ export default function ContractGeneratorPage() {
   const [prazosConcedidos, setPrazosConcedidos] = useState('')
 
   const [isExtractingCompany, setIsExtractingCompany] = useState(false)
+
+  const [availableProposals, setAvailableProposals] = useState<any[]>([])
+  const [loadedProposalId, setLoadedProposalId] = useState<string>('none')
+  const [isAddendum, setIsAddendum] = useState(false)
+  const [currentContractValue, setCurrentContractValue] = useState<number>(0)
   const [isExtractingProposal, setIsExtractingProposal] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -177,6 +184,90 @@ export default function ContractGeneratorPage() {
       fetchCnpjData(initialCnpj.replace(/\D/g, ''))
     }
   }, [])
+
+  useEffect(() => {
+    const fetchProposals = async () => {
+      const { data } = await supabase
+        .from('crm_propostas')
+        .select(`
+          id, data_proposta, valor_mensalidade, valor_implantacao, itens,
+          desconto_mensalidade, tipo_desconto, isencao_periodo, prazos_concedidos,
+          is_gratuito, quantidade_filiais, filiais_detalhes, aos_cuidados_de,
+          crm_prospects ( id, empresa, contato_nome, cnpj, endereco )
+        `)
+        .order('data_proposta', { ascending: false })
+      if (data) setAvailableProposals(data)
+    }
+    fetchProposals()
+  }, [])
+
+  const handleLoadProposal = (id: string) => {
+    setLoadedProposalId(id)
+    if (id === 'none') {
+      setIsAddendum(false)
+      return
+    }
+    const prop = availableProposals.find((p) => p.id === id)
+    if (!prop) return
+
+    const prospect = prop.crm_prospects || {}
+    setName(prospect.empresa || '')
+    if (prospect.cnpj) setCnpj(formatCNPJ(prospect.cnpj))
+    setAddress(prospect.endereco || '')
+    setRepName(prop.aos_cuidados_de || prospect.contato_nome || '')
+
+    const items = Array.isArray(prop.itens) ? prop.itens : []
+    const newModules: string[] = []
+    const newTrainings: string[] = []
+    let newDfe = 'dfe-none'
+    let newPlates = 0
+    let newBranches = prop.quantidade_filiais || 0
+    let newImplMode: 'remoto' | 'presencial' = 'remoto'
+    let newImplValue = prop.valor_implantacao || 0
+    const newGracePeriods: Record<string, number> = {}
+    let includeDiag = false
+    let diagVisits: any[] = []
+    let foundPlan = 'none'
+
+    items.forEach((item) => {
+      if (item.type === 'plan' || PLANS.find((p) => p.id === item.id)) {
+        foundPlan = item.id
+      } else if (MODULES.find((m) => m.id === item.id)) {
+        newModules.push(item.id)
+        if (item.tem_gratuidade) {
+          newGracePeriods[item.id] = item.periodo_gratuidade || 3
+        }
+      } else if (item.id && item.id.startsWith('dfe-')) {
+        newDfe = item.id
+      } else if (PREDEFINED_TRAININGS.find((t) => t.id === item.id)) {
+        newTrainings.push(item.id)
+      } else if (item.id === 'placas-adicionais') {
+        newPlates = item.quantity || 0
+      } else if (item.id === 'impl-details') {
+        newImplMode = item.modo || 'remoto'
+        newImplValue = item.price || 0
+      } else if (item.id && item.id.startsWith('diag-')) {
+        includeDiag = true
+        diagVisits.push({ id: item.id, date: '', value: item.price })
+      }
+    })
+
+    setSelectedPlan(foundPlan)
+    setSelectedModules(newModules)
+    setModuleGracePeriods(newGracePeriods)
+    setSelectedDfe(newDfe)
+    setSelectedTrainings(newTrainings)
+    setAdditionalPlates(newPlates)
+    setImplMode(newImplMode)
+    setManualImplValue(newImplValue.toString())
+    setDescontoMensalidade(prop.desconto_mensalidade || 0)
+    setTipoDesconto(prop.tipo_desconto || 'valor')
+    setIsencaoPeriodo(prop.isencao_periodo || 0)
+    setPrazosConcedidos(prop.prazos_concedidos || '')
+    setIsTreinamentoGratuito(prop.is_gratuito || false)
+    setIncludeDiagnosticVisit(includeDiag)
+    if (diagVisits.length > 0) setDiagnosticVisits(diagVisits)
+  }
 
   const planData = useMemo(() => PLANS.find((p) => p.id === selectedPlan), [selectedPlan])
   const planPrice =
@@ -344,6 +435,8 @@ export default function ContractGeneratorPage() {
     moduleGracePeriods,
     totalValueStandard,
     prazosConcedidos,
+    currentContractValue,
+    isTreinamentoGratuito,
   }
 
   const quoteProps = {
@@ -766,7 +859,11 @@ export default function ContractGeneratorPage() {
           desconto_mensalidade: validDescontoMensalidade,
           tipo_desconto: tipoDesconto,
           isencao_periodo: isencaoPeriodo,
+          is_gratuito: isTreinamentoGratuito,
           itens: [
+            ...(selectedPlan !== 'none'
+              ? [{ id: selectedPlan, type: 'plan', name: planData?.name, price: planPrice }]
+              : []),
             ...selectedModules.map((id) => {
               const m = MODULES.find((mod) => mod.id === id)
               return {
@@ -834,7 +931,8 @@ export default function ContractGeneratorPage() {
           filiais_detalhes: filiais,
           cobrar_filiais: !filiais.every((f) => f.isentar),
           prazos_concedidos: prazosConcedidos,
-        })
+          is_gratuito: isTreinamentoGratuito,
+        } as any)
         if (error) throw error
 
         toast({
@@ -966,7 +1064,7 @@ export default function ContractGeneratorPage() {
 
         await createHistorico({
           cliente_id: existingClient.id,
-          tipo: 'Renovação / Novo Contrato',
+          tipo: isAddendum ? 'Aditivo Contratual' : 'Renovação / Novo Contrato',
           data_solicitacao: new Date().toISOString().split('T')[0],
           plano: planData?.name,
           modulos: adicionais,
@@ -1024,7 +1122,7 @@ export default function ContractGeneratorPage() {
 
         await createHistorico({
           cliente_id: newClient.id,
-          tipo: 'Contrato Inicial',
+          tipo: isAddendum ? 'Aditivo Contratual' : 'Contrato Inicial',
           data_solicitacao: new Date().toISOString().split('T')[0],
           plano: planData?.name,
           modulos: adicionais,
@@ -1099,6 +1197,66 @@ export default function ContractGeneratorPage() {
         <TabsContent value="gerar" className="print:m-0">
           <div className="grid lg:grid-cols-12 gap-6 items-start print:block print:w-full print:m-0 print:p-0">
             <div className="lg:col-span-5 space-y-6 print:hidden">
+              <Card className="border-indigo-100 shadow-sm bg-indigo-50/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-indigo-800 text-sm flex items-center gap-2">
+                    <FileText className="w-4 h-4" /> Gerar a partir de Proposta
+                  </CardTitle>
+                  <CardDescription className="text-xs text-indigo-600/80">
+                    Selecione uma proposta existente para gerar um contrato ou aditivo
+                    automaticamente.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    <div className="flex-1 w-full">
+                      <Select value={loadedProposalId} onValueChange={handleLoadProposal}>
+                        <SelectTrigger className="bg-white">
+                          <SelectValue placeholder="Selecione uma proposta..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Nenhuma</SelectItem>
+                          {availableProposals.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.crm_prospects?.empresa || 'Sem empresa'} -{' '}
+                              {new Date(p.data_proposta).toLocaleDateString('pt-BR', {
+                                timeZone: 'UTC',
+                              })}{' '}
+                              ({formatCurrency(p.valor_mensalidade)})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-2 border bg-white p-2 rounded-md h-10">
+                      <Checkbox
+                        id="is-addendum"
+                        checked={isAddendum}
+                        onCheckedChange={(c) => setIsAddendum(c as boolean)}
+                      />
+                      <Label
+                        htmlFor="is-addendum"
+                        className="cursor-pointer text-sm font-medium text-nowrap"
+                      >
+                        Gerar como Aditivo
+                      </Label>
+                    </div>
+                  </div>
+                  {isAddendum && (
+                    <div className="flex items-center gap-3 pt-2">
+                      <Label className="text-sm font-medium">Valor do Contrato Atual (R$)</Label>
+                      <Input
+                        type="number"
+                        value={currentContractValue || ''}
+                        onChange={(e) => setCurrentContractValue(parseFloat(e.target.value) || 0)}
+                        className="w-32 bg-white"
+                        placeholder="Ex: 500.00"
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               <Card className="border-indigo-100 shadow-sm bg-indigo-50/30">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-indigo-800 text-sm flex items-center gap-2">
@@ -1672,10 +1830,18 @@ export default function ContractGeneratorPage() {
                   </div>
                 </CardHeader>
                 <div className="flex-1 overflow-y-auto print:hidden p-1">
-                  <ContractDocument {...contractProps} />
+                  {isAddendum ? (
+                    <AddendumDocument {...contractProps} />
+                  ) : (
+                    <ContractDocument {...contractProps} />
+                  )}
                 </div>
                 <div className="hidden print:block">
-                  <ContractDocument {...contractProps} />
+                  {isAddendum ? (
+                    <AddendumDocument {...contractProps} />
+                  ) : (
+                    <ContractDocument {...contractProps} />
+                  )}
                 </div>
                 <CardFooter className="bg-slate-50 border-t p-4 flex flex-col sm:flex-row gap-3 justify-end shrink-0 print:hidden">
                   <Button
