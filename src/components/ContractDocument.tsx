@@ -70,6 +70,7 @@ export function ContractDocument({
   isencaoPeriodo = 0,
   moduleGracePeriods = {},
   totalValueStandard = 0,
+  prazosConcedidos,
 }: any) {
   return (
     <div className="p-8 sm:p-12 text-[12px] text-slate-800 font-serif leading-relaxed space-y-5 print:p-0 print:text-black">
@@ -411,8 +412,12 @@ export function ContractDocument({
                       <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
                         X
                       </td>
-                      <td className="border border-slate-300 p-1.5 text-right">
-                        {formatCurrency(Number(t.price) || 0)}
+                      <td className="border border-slate-300 p-1.5 text-right font-medium">
+                        {t.isFree ? (
+                          <span className="text-emerald-700 print:text-black">Grátis</span>
+                        ) : (
+                          formatCurrency(Number(t.price) || 0)
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -640,6 +645,15 @@ export function ContractDocument({
               </tbody>
             </table>
           </div>
+
+          {prazosConcedidos && (
+            <div className="mt-6 transition-colors duration-500 p-3 bg-slate-50 border border-slate-200 rounded-lg print:bg-transparent print:border-none print:p-0">
+              <h3 className="font-bold uppercase mb-2 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+                CONDIÇÕES ESPECIAIS / PRAZOS CONCEDIDOS
+              </h3>
+              <p className="text-justify">{prazosConcedidos}</p>
+            </div>
+          )}
         </div>
 
         <ClauseBlock
@@ -688,6 +702,7 @@ export function AddendumDocument({
   valorTotalAtual,
   tipo,
   observacoes,
+  prazosConcedidos,
 }: any) {
   let formattedModules: Array<{ name: string; price: number }> = []
 
@@ -875,9 +890,18 @@ export function AddendumDocument({
           </table>
         </div>
 
+        {prazosConcedidos && (
+          <div>
+            <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+              3. CONDIÇÕES ESPECIAIS / PRAZOS CONCEDIDOS
+            </h3>
+            <p className="mb-4">{prazosConcedidos}</p>
+          </div>
+        )}
+
         <div>
           <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
-            3. DISPOSIÇÕES GERAIS
+            {prazosConcedidos ? '4' : '3'}. DISPOSIÇÕES GERAIS
           </h3>
           <p className="mb-4">
             Permanecem inalteradas e em pleno vigor as demais cláusulas e condições estabelecidas no

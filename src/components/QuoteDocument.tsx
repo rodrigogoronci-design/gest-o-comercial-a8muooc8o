@@ -36,6 +36,7 @@ interface QuoteDocumentProps {
   isencaoPeriodo?: number
   moduleGracePeriods?: Record<string, number>
   totalValueStandard?: number
+  prazosConcedidos?: string
 }
 
 const FEATURE_CATEGORIES = [
@@ -110,6 +111,7 @@ export function QuoteDocument({
   isencaoPeriodo = 0,
   moduleGracePeriods = {},
   totalValueStandard = 0,
+  prazosConcedidos,
 }: QuoteDocumentProps) {
   const showBasePlan =
     planName && planName !== 'Nenhum' && planName !== 'Nenhum (Somente Módulos / Upsell)'
@@ -404,9 +406,15 @@ export function QuoteDocument({
                     <span className="font-semibold text-slate-800">Treinamento: {t.name}</span>
                   </td>
                   <td className="p-1.5 text-center font-medium">1</td>
-                  <td className="p-1.5 text-right">{formatCurrency(Number(t.price) || 0)}</td>
+                  <td className="p-1.5 text-right">
+                    {t.isFree ? 'Grátis' : formatCurrency(Number(t.price) || 0)}
+                  </td>
                   <td className="p-1.5 text-right font-medium">
-                    {formatCurrency(Number(t.price) || 0)}
+                    {t.isFree ? (
+                      <span className="text-emerald-600">Cortesia</span>
+                    ) : (
+                      formatCurrency(Number(t.price) || 0)
+                    )}
                   </td>
                   <td className="p-1.5 text-center text-slate-600">Parcela Única</td>
                 </tr>
@@ -415,6 +423,18 @@ export function QuoteDocument({
           </table>
         </div>
       </div>
+
+      {prazosConcedidos && (
+        <div className="mb-4">
+          <h3 className="font-bold text-xs text-[#1e3a8a] mb-2 flex items-center gap-1.5">
+            <div className="w-1.5 h-3 bg-orange-500 rounded-full" />
+            Condições Especiais / Prazos Concedidos
+          </h3>
+          <div className="bg-slate-50 p-2.5 rounded border border-slate-200 text-xs text-slate-700 text-justify">
+            {prazosConcedidos}
+          </div>
+        </div>
+      )}
 
       {/* Totals */}
       <div className="grid grid-cols-2 gap-3">
@@ -574,7 +594,13 @@ export function QuoteDocument({
                 className="flex justify-between items-center text-slate-600"
               >
                 <span>Treinamento: {t.name}</span>
-                <span className="font-medium">{formatCurrency(Number(t.price) || 0)}</span>
+                <span className="font-medium">
+                  {t.isFree ? (
+                    <span className="text-emerald-600">Grátis</span>
+                  ) : (
+                    formatCurrency(Number(t.price) || 0)
+                  )}
+                </span>
               </div>
             ))}
             <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">

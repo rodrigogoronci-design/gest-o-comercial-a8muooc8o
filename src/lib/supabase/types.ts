@@ -1191,6 +1191,7 @@ export type Database = {
           id: string
           isencao_periodo: number | null
           itens: Json
+          prazos_concedidos: string | null
           prospect_id: string
           quantidade_filiais: number
           tipo_desconto: string
@@ -1208,6 +1209,7 @@ export type Database = {
           id?: string
           isencao_periodo?: number | null
           itens?: Json
+          prazos_concedidos?: string | null
           prospect_id: string
           quantidade_filiais?: number
           tipo_desconto?: string
@@ -1225,6 +1227,7 @@ export type Database = {
           id?: string
           isencao_periodo?: number | null
           itens?: Json
+          prazos_concedidos?: string | null
           prospect_id?: string
           quantidade_filiais?: number
           tipo_desconto?: string
@@ -1649,6 +1652,7 @@ export type Database = {
           modulos: Json | null
           observacoes: string | null
           plano: string | null
+          prazos_concedidos: string | null
           solicitacao_id: string | null
           tipo: string
           tipo_desconto: string
@@ -1666,6 +1670,7 @@ export type Database = {
           modulos?: Json | null
           observacoes?: string | null
           plano?: string | null
+          prazos_concedidos?: string | null
           solicitacao_id?: string | null
           tipo?: string
           tipo_desconto?: string
@@ -1683,6 +1688,7 @@ export type Database = {
           modulos?: Json | null
           observacoes?: string | null
           plano?: string | null
+          prazos_concedidos?: string | null
           solicitacao_id?: string | null
           tipo?: string
           tipo_desconto?: string
@@ -2723,6 +2729,7 @@ export type Database = {
           id: string
           is_gratuito: boolean | null
           observacoes: string | null
+          prazos_concedidos: string | null
           status: string | null
           tipo: string
           valor: number | null
@@ -2737,6 +2744,7 @@ export type Database = {
           id?: string
           is_gratuito?: boolean | null
           observacoes?: string | null
+          prazos_concedidos?: string | null
           status?: string | null
           tipo: string
           valor?: number | null
@@ -2751,6 +2759,7 @@ export type Database = {
           id?: string
           is_gratuito?: boolean | null
           observacoes?: string | null
+          prazos_concedidos?: string | null
           status?: string | null
           tipo?: string
           valor?: number | null

@@ -10,6 +10,7 @@ import {
   Trash,
   Rocket,
   DollarSign,
+  Gift,
 } from 'lucide-react'
 import {
   Card,
@@ -90,6 +91,7 @@ export default function ContractGeneratorPage() {
   const [tipoDesconto, setTipoDesconto] = useState<'valor' | 'percentual'>('valor')
   const [isencaoPeriodo, setIsencaoPeriodo] = useState<number>(0)
   const [moduleGracePeriods, setModuleGracePeriods] = useState<Record<string, number>>({})
+  const [prazosConcedidos, setPrazosConcedidos] = useState('')
 
   const [isExtractingCompany, setIsExtractingCompany] = useState(false)
   const [isExtractingProposal, setIsExtractingProposal] = useState(false)
@@ -341,6 +343,7 @@ export default function ContractGeneratorPage() {
     isencaoPeriodo,
     moduleGracePeriods,
     totalValueStandard,
+    prazosConcedidos,
   }
 
   const quoteProps = {
@@ -392,6 +395,7 @@ export default function ContractGeneratorPage() {
     isencaoPeriodo,
     moduleGracePeriods,
     totalValueStandard,
+    prazosConcedidos,
   }
 
   const fetchCnpjData = async (cnpjValue: string) => {
@@ -707,6 +711,7 @@ export default function ContractGeneratorPage() {
           status: 'Pendente',
           data_solicitacao: new Date().toISOString().split('T')[0],
           is_gratuito: isTreinamentoGratuito,
+          prazos_concedidos: prazosConcedidos,
         })
         if (error) throw error
 
@@ -828,6 +833,7 @@ export default function ContractGeneratorPage() {
           quantidade_filiais: additionalBranches,
           filiais_detalhes: filiais,
           cobrar_filiais: !filiais.every((f) => f.isentar),
+          prazos_concedidos: prazosConcedidos,
         })
         if (error) throw error
 
@@ -970,6 +976,8 @@ export default function ContractGeneratorPage() {
           tipo_desconto: tipoDesconto,
           isencao_periodo: isencaoPeriodo,
           observacoes: `Contrato atualizado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}${validDescontoMensalidade > 0 ? ` | Desconto: ${tipoDesconto === 'percentual' ? `${validDescontoMensalidade}%` : `R$ ${validDescontoMensalidade}`} (${formatCurrency(calculatedDiscount)})${isencaoPeriodo > 0 ? ` Isenção: ${isencaoPeriodo} meses` : ''}` : ''}`,
+          is_gratuito: isTreinamentoGratuito,
+          prazos_concedidos: prazosConcedidos,
         })
 
         try {
@@ -1026,6 +1034,8 @@ export default function ContractGeneratorPage() {
           tipo_desconto: tipoDesconto,
           isencao_periodo: isencaoPeriodo,
           observacoes: `Contrato gerado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}${validDescontoMensalidade > 0 ? ` | Desconto: ${tipoDesconto === 'percentual' ? `${validDescontoMensalidade}%` : `R$ ${validDescontoMensalidade}`} (${formatCurrency(calculatedDiscount)})${isencaoPeriodo > 0 ? ` Isenção: ${isencaoPeriodo} meses` : ''}` : ''}`,
+          is_gratuito: isTreinamentoGratuito,
+          prazos_concedidos: prazosConcedidos,
         })
 
         if (sendToFinance) {
@@ -1479,6 +1489,20 @@ export default function ContractGeneratorPage() {
                       )}
                     </div>
                   </div>
+
+                  <div className="space-y-3 mt-4">
+                    <Label className="text-sm font-bold flex items-center gap-2 text-[#1e3a8a]">
+                      <Gift className="w-4 h-4 text-orange-500" /> Prazos Concedidos / Condições
+                      Especiais
+                    </Label>
+                    <Input
+                      value={prazosConcedidos}
+                      onChange={(e) => setPrazosConcedidos(e.target.value)}
+                      placeholder="Descreva prazos negociados, isenções especiais ou condições específicas..."
+                      className="w-full bg-slate-50 border transition-colors focus:border-orange-300"
+                    />
+                  </div>
+
                   <Separator />
                   <div className="space-y-3">
                     <Label className="text-sm font-bold">Implantação</Label>
@@ -1547,7 +1571,12 @@ export default function ContractGeneratorPage() {
                         {PREDEFINED_TRAININGS.map((t) => (
                           <div
                             key={t.id}
-                            className="flex items-center space-x-2 border p-2 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+                            className={cn(
+                              'flex items-center space-x-2 border p-2 rounded-lg transition-colors',
+                              isTreinamentoGratuito && selectedTrainings.includes(t.id)
+                                ? 'bg-emerald-50 border-emerald-200'
+                                : 'bg-slate-50 hover:bg-slate-100',
+                            )}
                           >
                             <Checkbox
                               id={`train-gen-${t.id}`}
@@ -1565,7 +1594,11 @@ export default function ContractGeneratorPage() {
                               {t.name}
                             </Label>
                             <span className="text-xs font-semibold text-slate-600">
-                              {t.price > 0 ? formatCurrency(t.price) : 'Incluso'}
+                              {t.price > 0 && !isTreinamentoGratuito ? (
+                                formatCurrency(t.price)
+                              ) : (
+                                <span className="text-emerald-600 font-bold">Grátis</span>
+                              )}
                             </span>
                           </div>
                         ))}
@@ -2050,6 +2083,20 @@ export default function ContractGeneratorPage() {
                       )}
                     </div>
                   </div>
+
+                  <div className="space-y-3 mt-4">
+                    <Label className="text-sm font-bold flex items-center gap-2 text-[#1e3a8a]">
+                      <Gift className="w-4 h-4 text-orange-500" /> Prazos Concedidos / Condições
+                      Especiais
+                    </Label>
+                    <Input
+                      value={prazosConcedidos}
+                      onChange={(e) => setPrazosConcedidos(e.target.value)}
+                      placeholder="Descreva prazos negociados, isenções especiais ou condições específicas..."
+                      className="w-full bg-slate-50 border transition-colors focus:border-orange-300"
+                    />
+                  </div>
+
                   <Separator />
                   <div className="space-y-3">
                     <Label className="text-sm font-bold">Implantação</Label>
@@ -2213,7 +2260,12 @@ export default function ContractGeneratorPage() {
                           {PREDEFINED_TRAININGS.map((t) => (
                             <div
                               key={t.id}
-                              className="flex items-center space-x-2 border p-2 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+                              className={cn(
+                                'flex items-center space-x-2 border p-2 rounded-lg transition-colors',
+                                isTreinamentoGratuito && selectedTrainings.includes(t.id)
+                                  ? 'bg-emerald-50 border-emerald-200'
+                                  : 'bg-slate-50 hover:bg-slate-100',
+                              )}
                             >
                               <Checkbox
                                 id={`train-up-${t.id}`}
@@ -2231,7 +2283,11 @@ export default function ContractGeneratorPage() {
                                 {t.name}
                               </Label>
                               <span className="text-xs font-semibold text-slate-600">
-                                {t.price > 0 ? formatCurrency(t.price) : 'Incluso'}
+                                {t.price > 0 && !isTreinamentoGratuito ? (
+                                  formatCurrency(t.price)
+                                ) : (
+                                  <span className="text-emerald-600 font-bold">Grátis</span>
+                                )}
                               </span>
                             </div>
                           ))}
@@ -2355,7 +2411,12 @@ export default function ContractGeneratorPage() {
                           {PREDEFINED_TRAININGS.map((t) => (
                             <div
                               key={t.id}
-                              className="flex items-center space-x-2 border p-2 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+                              className={cn(
+                                'flex items-center space-x-2 border p-2 rounded-lg transition-colors',
+                                isTreinamentoGratuito && selectedTrainings.includes(t.id)
+                                  ? 'bg-emerald-50 border-emerald-200'
+                                  : 'bg-slate-50 hover:bg-slate-100',
+                              )}
                             >
                               <Checkbox
                                 id={`train-prosp-${t.id}`}
@@ -2373,7 +2434,11 @@ export default function ContractGeneratorPage() {
                                 {t.name}
                               </Label>
                               <span className="text-xs font-semibold text-slate-600">
-                                {t.price > 0 ? formatCurrency(t.price) : 'Incluso'}
+                                {t.price > 0 && !isTreinamentoGratuito ? (
+                                  formatCurrency(t.price)
+                                ) : (
+                                  <span className="text-emerald-600 font-bold">Grátis</span>
+                                )}
                               </span>
                             </div>
                           ))}
