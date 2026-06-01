@@ -1644,6 +1644,7 @@ export type Database = {
           data_solicitacao: string
           desconto_mensalidade: number | null
           id: string
+          is_gratuito: boolean | null
           isencao_periodo: number | null
           modulos: Json | null
           observacoes: string | null
@@ -1660,6 +1661,7 @@ export type Database = {
           data_solicitacao?: string
           desconto_mensalidade?: number | null
           id?: string
+          is_gratuito?: boolean | null
           isencao_periodo?: number | null
           modulos?: Json | null
           observacoes?: string | null
@@ -1676,6 +1678,7 @@ export type Database = {
           data_solicitacao?: string
           desconto_mensalidade?: number | null
           id?: string
+          is_gratuito?: boolean | null
           isencao_periodo?: number | null
           modulos?: Json | null
           observacoes?: string | null
@@ -2718,6 +2721,7 @@ export type Database = {
           descricao: string
           forma_pagamento: string | null
           id: string
+          is_gratuito: boolean | null
           observacoes: string | null
           status: string | null
           tipo: string
@@ -2731,6 +2735,7 @@ export type Database = {
           descricao: string
           forma_pagamento?: string | null
           id?: string
+          is_gratuito?: boolean | null
           observacoes?: string | null
           status?: string | null
           tipo: string
@@ -2744,6 +2749,7 @@ export type Database = {
           descricao?: string
           forma_pagamento?: string | null
           id?: string
+          is_gratuito?: boolean | null
           observacoes?: string | null
           status?: string | null
           tipo?: string
@@ -3383,6 +3389,7 @@ export const Constants = {
 //   desconto_mensalidade: numeric (nullable, default: 0)
 //   tipo_desconto: text (not null, default: 'valor'::text)
 //   isencao_periodo: integer (nullable, default: 0)
+//   is_gratuito: boolean (nullable, default: false)
 // Table: jira_issues
 //   id: uuid (not null, default: gen_random_uuid())
 //   issue_key: text (not null)
@@ -3612,6 +3619,7 @@ export const Constants = {
 //   observacoes: text (nullable)
 //   status: text (nullable, default: 'Pendente'::text)
 //   created_at: timestamp with time zone (not null, default: now())
+//   is_gratuito: boolean (nullable, default: false)
 // Table: ticket_ai_summaries
 //   id: uuid (not null, default: gen_random_uuid())
 //   ticket_id: uuid (not null)
@@ -4900,7 +4908,7 @@ export const Constants = {
 //
 //     IF TG_OP = 'INSERT' THEN
 //       INSERT INTO public.historico_contratos (
-//         cliente_id, solicitacao_id, tipo, data_solicitacao, observacoes, valor_adicional, valor_total
+//         cliente_id, solicitacao_id, tipo, data_solicitacao, observacoes, valor_adicional, valor_total, is_gratuito
 //       ) VALUES (
 //         NEW.cliente_id,
 //         NEW.id,
@@ -4908,7 +4916,8 @@ export const Constants = {
 //         COALESCE(NEW.data_solicitacao, CURRENT_DATE),
 //         NEW.descricao || CASE WHEN NEW.observacoes IS NOT NULL AND NEW.observacoes <> '' THEN CHR(10) || 'Obs: ' || NEW.observacoes ELSE '' END,
 //         COALESCE(NEW.valor, 0),
-//         COALESCE(v_valor_total, 0)
+//         COALESCE(v_valor_total, 0),
+//         NEW.is_gratuito
 //       );
 //     ELSIF TG_OP = 'UPDATE' THEN
 //       IF EXISTS (SELECT 1 FROM public.historico_contratos WHERE solicitacao_id = NEW.id) THEN
@@ -4917,11 +4926,12 @@ export const Constants = {
 //           tipo = 'Solicitação: ' || NEW.tipo,
 //           data_solicitacao = COALESCE(NEW.data_solicitacao, CURRENT_DATE),
 //           observacoes = NEW.descricao || CASE WHEN NEW.observacoes IS NOT NULL AND NEW.observacoes <> '' THEN CHR(10) || 'Obs: ' || NEW.observacoes ELSE '' END,
-//           valor_adicional = COALESCE(NEW.valor, 0)
+//           valor_adicional = COALESCE(NEW.valor, 0),
+//           is_gratuito = NEW.is_gratuito
 //         WHERE solicitacao_id = NEW.id;
 //       ELSE
 //         INSERT INTO public.historico_contratos (
-//           cliente_id, solicitacao_id, tipo, data_solicitacao, observacoes, valor_adicional, valor_total
+//           cliente_id, solicitacao_id, tipo, data_solicitacao, observacoes, valor_adicional, valor_total, is_gratuito
 //         ) VALUES (
 //           NEW.cliente_id,
 //           NEW.id,
@@ -4929,7 +4939,8 @@ export const Constants = {
 //           COALESCE(NEW.data_solicitacao, CURRENT_DATE),
 //           NEW.descricao || CASE WHEN NEW.observacoes IS NOT NULL AND NEW.observacoes <> '' THEN CHR(10) || 'Obs: ' || NEW.observacoes ELSE '' END,
 //           COALESCE(NEW.valor, 0),
-//           COALESCE(v_valor_total, 0)
+//           COALESCE(v_valor_total, 0),
+//           NEW.is_gratuito
 //         );
 //       END IF;
 //     END IF;
