@@ -60,7 +60,7 @@ export function CrmProspectForm({
       contato_nome: '',
       telefone: '',
       email: '',
-      status: 'Contato Inicial',
+      status: 'Contato inicial',
       classificacao: 'Frio',
       data_followup: '',
       observacoes: '',
@@ -76,7 +76,7 @@ export function CrmProspectForm({
         contato_nome: initialData.contato_nome || '',
         telefone: initialData.telefone || '',
         email: initialData.email || '',
-        status: initialData.status || 'Contato Inicial',
+        status: initialData.status || 'Contato inicial',
         classificacao: initialData.classificacao || 'Frio',
         data_followup: initialData.data_followup || '',
         observacoes: initialData.observacoes || '',
@@ -367,10 +367,28 @@ export function CrmProspectForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Contato Inicial">Contato Inicial</SelectItem>
-                    <SelectItem value="Em Negociação">Em Negociação</SelectItem>
-                    <SelectItem value="Aguardando Feedback">Aguardando Feedback</SelectItem>
-                    <SelectItem value="Fechado">Fechado</SelectItem>
+                    {[
+                      'Contato Inicial',
+                      'Em Negociação',
+                      'Aguardando Feedback',
+                      'Fechado',
+                    ].includes(field.value) && (
+                      <SelectItem value={field.value} className="hidden">
+                        {field.value}
+                      </SelectItem>
+                    )}
+                    <SelectItem value="Contato inicial">Contato inicial</SelectItem>
+                    <SelectItem value="Apresentação do sistema">Apresentação do sistema</SelectItem>
+                    <SelectItem value="Em negociação">Em negociação</SelectItem>
+                    <SelectItem value="aguardando documentos">aguardando documentos</SelectItem>
+                    <SelectItem value="contrato enviado para assinatura">
+                      contrato enviado para assinatura
+                    </SelectItem>
+                    <SelectItem value="Contrato assinado">Contrato assinado</SelectItem>
+                    <SelectItem value="Enviado para Implantação">
+                      Enviado para Implantação
+                    </SelectItem>
+                    <SelectItem value="Treinamento agendado">Treinamento agendado</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

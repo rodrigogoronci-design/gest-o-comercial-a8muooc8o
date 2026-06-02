@@ -237,14 +237,24 @@ export default function CRMPage() {
   )
 
   const getStatusColor = (s: string) => {
-    if (s === 'Contato Inicial')
+    if (s === 'Contato inicial' || s === 'Contato Inicial')
       return 'bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200'
-    if (s === 'Em Negociação')
+    if (s === 'Apresentação do sistema')
+      return 'bg-purple-100 text-purple-800 hover:bg-purple-200 border-purple-200'
+    if (s === 'Em negociação' || s === 'Em Negociação')
       return 'bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-200'
+    if (s === 'aguardando documentos')
+      return 'bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200'
+    if (s === 'contrato enviado para assinatura')
+      return 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200 border-indigo-200'
+    if (s === 'Contrato assinado' || s === 'Fechado')
+      return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200'
+    if (s === 'Enviado para Implantação')
+      return 'bg-cyan-100 text-cyan-800 hover:bg-cyan-200 border-cyan-200'
+    if (s === 'Treinamento agendado')
+      return 'bg-teal-100 text-teal-800 hover:bg-teal-200 border-teal-200'
     if (s === 'Aguardando Feedback')
       return 'bg-purple-100 text-purple-800 hover:bg-purple-200 border-purple-200'
-    if (s === 'Fechado')
-      return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200'
     return 'bg-slate-100 text-slate-800 border-slate-200'
   }
 
@@ -257,7 +267,15 @@ export default function CRMPage() {
 
   const today = new Date().toISOString().split('T')[0]
   const followUpsHoje = prospects.filter(
-    (p) => p.data_followup && p.data_followup <= today && !['Fechado'].includes(p.status),
+    (p) =>
+      p.data_followup &&
+      p.data_followup <= today &&
+      ![
+        'Fechado',
+        'Contrato assinado',
+        'Enviado para Implantação',
+        'Treinamento agendado',
+      ].includes(p.status),
   )
 
   return (
@@ -388,7 +406,13 @@ export default function CRMPage() {
                         <div
                           className={cn(
                             'flex items-center gap-1.5 text-xs font-medium',
-                            p.data_followup <= today && p.status !== 'Fechado'
+                            p.data_followup <= today &&
+                              ![
+                                'Fechado',
+                                'Contrato assinado',
+                                'Enviado para Implantação',
+                                'Treinamento agendado',
+                              ].includes(p.status)
                               ? 'text-amber-600'
                               : 'text-muted-foreground',
                           )}
@@ -441,10 +465,32 @@ export default function CRMPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Contato Inicial">Contato Inicial</SelectItem>
-                          <SelectItem value="Em Negociação">Em Negociação</SelectItem>
-                          <SelectItem value="Aguardando Feedback">Aguardando Feedback</SelectItem>
-                          <SelectItem value="Fechado">Fechado</SelectItem>
+                          {[
+                            'Contato Inicial',
+                            'Em Negociação',
+                            'Aguardando Feedback',
+                            'Fechado',
+                          ].includes(p.status) && (
+                            <SelectItem value={p.status} className="hidden">
+                              {p.status}
+                            </SelectItem>
+                          )}
+                          <SelectItem value="Contato inicial">Contato inicial</SelectItem>
+                          <SelectItem value="Apresentação do sistema">
+                            Apresentação do sistema
+                          </SelectItem>
+                          <SelectItem value="Em negociação">Em negociação</SelectItem>
+                          <SelectItem value="aguardando documentos">
+                            aguardando documentos
+                          </SelectItem>
+                          <SelectItem value="contrato enviado para assinatura">
+                            contrato enviado para assinatura
+                          </SelectItem>
+                          <SelectItem value="Contrato assinado">Contrato assinado</SelectItem>
+                          <SelectItem value="Enviado para Implantação">
+                            Enviado para Implantação
+                          </SelectItem>
+                          <SelectItem value="Treinamento agendado">Treinamento agendado</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
