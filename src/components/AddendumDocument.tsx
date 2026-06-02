@@ -66,16 +66,20 @@ export function AddendumDocument(props: any) {
   return (
     <div className="bg-white text-black p-10 text-sm max-w-[210mm] mx-auto border border-slate-200 shadow-sm print:shadow-none print:border-none print:p-0 font-sans leading-relaxed">
       {/* HEADER */}
-      <header className="flex flex-col items-center mb-8 border-b-2 border-slate-800 pb-6">
-        <img src={logoUrl} alt="Service Logic Logo" className="h-16 mb-4 object-contain" />
-        <h1 className="text-xl font-bold uppercase tracking-wider text-center">
+      <div className="flex flex-col items-center mb-8 border-b-2 border-slate-800 pb-6 print:break-inside-avoid">
+        <img
+          src={logoUrl}
+          alt="Service Logic Logo"
+          className="h-16 mb-4 object-contain print:h-20"
+        />
+        <h1 className="text-xl font-bold uppercase tracking-wider text-center print:text-black">
           Termo Aditivo de Contrato de Prestação de Serviços
         </h1>
-      </header>
+      </div>
 
       <div className="space-y-6 text-justify">
         {/* 1. DAS PARTES */}
-        <section>
+        <section className="print:break-inside-avoid">
           <h2 className="font-bold text-base mb-2">1. QUALIFICAÇÃO DAS PARTES</h2>
           <div className="space-y-2">
             <p>
@@ -94,7 +98,7 @@ export function AddendumDocument(props: any) {
         </section>
 
         {/* 2. DO OBJETO E COMPARAÇÃO */}
-        <section>
+        <section className="print:break-inside-avoid">
           <h2 className="font-bold text-base mb-2">2. DO OBJETO</h2>
           <p className="mb-4">
             O presente termo aditivo tem por objeto a inclusão de novos módulos, franquias e/ou
@@ -163,7 +167,7 @@ export function AddendumDocument(props: any) {
         </section>
 
         {/* 3. DOS VALORES E CONDIÇÕES COMERCIAIS */}
-        <section>
+        <section className="print:break-inside-avoid">
           <h2 className="font-bold text-base mb-2">3. DOS VALORES E CONDIÇÕES FINANCEIRAS</h2>
           <p className="mb-3">
             Em decorrência das adições especificadas na Cláusula 2, os valores contratuais mensais
@@ -226,7 +230,7 @@ export function AddendumDocument(props: any) {
         </section>
 
         {/* 4. DISPOSIÇÕES GERAIS */}
-        <section>
+        <section className="print:break-inside-avoid">
           <h2 className="font-bold text-base mb-2">4. DAS DISPOSIÇÕES GERAIS</h2>
           <p>
             Permanecem inalteradas e em pleno vigor todas as demais cláusulas e condições do
@@ -242,7 +246,7 @@ export function AddendumDocument(props: any) {
         </p>
 
         {/* ASSINATURAS */}
-        <div className="flex flex-col sm:flex-row justify-between gap-12 mt-12 pb-8">
+        <div className="flex flex-col sm:flex-row justify-between gap-12 mt-12 pb-8 print:break-inside-avoid">
           <div className="flex-1 text-center">
             <div className="border-t border-black w-full mb-2"></div>
             <p className="font-bold text-sm uppercase">CONTACTO SOLUÇÕES EM TECNOLOGIA - LTDA</p>

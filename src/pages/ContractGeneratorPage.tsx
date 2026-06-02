@@ -155,7 +155,7 @@ export default function ContractGeneratorPage() {
         * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
         *::-webkit-scrollbar { display: none !important; }
         .overflow-auto, .overflow-x-auto, .overflow-y-auto, .overflow-hidden, .overflow-scroll { overflow: visible !important; }
-        header, aside, nav, [data-sidebar="sidebar"], .sidebar-container { display: none !important; }
+        header.sticky, aside, nav, [data-sidebar="sidebar"], .sidebar-container { display: none !important; }
         body, html { background-color: white !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
         main { margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; overflow: visible !important; }
       }
