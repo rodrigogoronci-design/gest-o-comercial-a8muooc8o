@@ -111,6 +111,7 @@ import { TrainingProposalDocument } from '@/components/TrainingProposalDocument'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { DiagnosticoOperacional } from '@/components/DiagnosticoOperacional'
+import { useAuth } from '@/hooks/use-auth'
 
 export interface ClienteRecord {
   id: string
@@ -326,6 +327,10 @@ export default function ClientsPage() {
   const [solicitacaoObservacoes, setSolicitacaoObservacoes] = useState('')
   const [isSubmittingSolicitacao, setIsSubmittingSolicitacao] = useState(false)
   const [editingSolicitacaoId, setEditingSolicitacaoId] = useState<string | null>(null)
+  const [solicitacaoContatoNome, setSolicitacaoContatoNome] = useState('')
+  const [solicitacaoContatoTelefone, setSolicitacaoContatoTelefone] = useState('')
+
+  const { user } = useAuth()
 
   const [isSetupTrainingProposalOpen, setIsSetupTrainingProposalOpen] = useState(false)
   const [selectedTrainingModules, setSelectedTrainingModules] = useState<string[]>([])
@@ -494,6 +499,8 @@ export default function ClientsPage() {
     setSolicitacaoFormaPagamento('Boleto')
     setSolicitacaoDataVencimento('')
     setSolicitacaoObservacoes('')
+    setSolicitacaoContatoNome('')
+    setSolicitacaoContatoTelefone('')
   }
 
   const [implementationEmailClient, setImplementationEmailClient] = useState<MergedClient | null>(
@@ -1468,6 +1475,8 @@ Obrigada,`
           forma_pagamento: solicitacaoFormaPagamento || null,
           data_vencimento: solicitacaoDataVencimento || null,
           observacoes: solicitacaoObservacoes.trim() || null,
+          contato_nome: solicitacaoContatoNome.trim() || null,
+          contato_telefone: solicitacaoContatoTelefone.trim() || null,
         })
         toast.success('Solicitação atualizada com sucesso!')
       } else {
@@ -1480,6 +1489,8 @@ Obrigada,`
           forma_pagamento: solicitacaoFormaPagamento || null,
           data_vencimento: solicitacaoDataVencimento || null,
           observacoes: solicitacaoObservacoes.trim() || null,
+          contato_nome: solicitacaoContatoNome.trim() || null,
+          contato_telefone: solicitacaoContatoTelefone.trim() || null,
           status: 'Pendente',
         })
         toast.success('Solicitação registrada com sucesso!')
@@ -1507,6 +1518,8 @@ Obrigada,`
     setSolicitacaoFormaPagamento(sol.forma_pagamento || 'Boleto')
     setSolicitacaoDataVencimento(sol.data_vencimento || '')
     setSolicitacaoObservacoes(sol.observacoes || '')
+    setSolicitacaoContatoNome(sol.contato_nome || '')
+    setSolicitacaoContatoTelefone(sol.contato_telefone || '')
     setIsAddSolicitacaoOpen(true)
   }
 
@@ -1523,21 +1536,46 @@ Obrigada,`
     }
   }
 
-  const handleEmailImplantacao = (sol: any) => {
-    const subject = encodeURIComponent(`Agendamento de ${sol.tipo} - ${viewingClient?.name}`)
-    const body = encodeURIComponent(`Gesualdo,
+  const handleEmailImplantacao = async (sol: any) => {
+    if (!viewingClient) return
 
-Peço, por gentileza, que entre em contato com a cliente abaixo para realizar o agendamento de treinamento módulo:
-Cliente: ${viewingClient?.name}
-Contato: ${viewingClient?.rep_nome || 'Não informado'}
-Telefone: ${viewingClient?.originalData?.telefone || 'Não informado'}
-Necessidade identificada:
-${sol.descricao}${sol.observacoes ? `\n\nObservações:\n${sol.observacoes}` : ''}
+    const toastId = toast.loading('Enviando e-mail para implantação...')
+    try {
+      let senderName = 'Equipe'
+      if (user?.id) {
+        const { data: colab } = await supabase
+          .from('colaboradores')
+          .select('nome')
+          .eq('user_id', user.id)
+          .maybeSingle()
+        if (colab) senderName = colab.nome
+      }
 
+      const res = await supabase.functions.invoke('send-implementation-email', {
+        body: {
+          to: 'gesualdo@servicelogic.com.br',
+          clientName: viewingClient.name,
+          contactName: sol.contato_nome || viewingClient.rep_nome,
+          contactPhone: sol.contato_telefone || viewingClient.originalData?.telefone,
+          modules: sol.descricao,
+          senderName: senderName,
+        },
+      })
 
-Atenciosamente`)
+      if (res.error) throw res.error
 
-    window.open(`mailto:gesualdo@servicelogic.com.br?subject=${subject}&body=${body}`, '_blank')
+      await createHistorico({
+        cliente_id: viewingClient.id,
+        tipo: 'Notificação Enviada',
+        observacoes: `E-mail para implantação enviado com sucesso referente à solicitação: ${sol.tipo}`,
+        valor_total: viewingClient.totalValue,
+      })
+
+      toast.success('E-mail enviado para implantação com sucesso!', { id: toastId })
+      loadHistory(viewingClient.id)
+    } catch (e: any) {
+      toast.error('Erro ao enviar e-mail: ' + e.message, { id: toastId })
+    }
   }
 
   const handleGenerateTrainingProposal = async () => {
@@ -2890,6 +2928,25 @@ Obrigada.`)
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Nome do Contato</Label>
+                <Input
+                  placeholder="Nome do responsável"
+                  value={solicitacaoContatoNome}
+                  onChange={(e) => setSolicitacaoContatoNome(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Telefone do Contato</Label>
+                <Input
+                  placeholder="(00) 00000-0000"
+                  value={solicitacaoContatoTelefone}
+                  onChange={(e) => setSolicitacaoContatoTelefone(e.target.value)}
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label>Descrição do Serviço / Módulos</Label>
               <Textarea
@@ -3217,29 +3274,41 @@ Obrigada.`)
                 onClick={async () => {
                   if (!viewingClient) return
                   try {
-                    await createSolicitacao({
+                    const sol = await createSolicitacao({
                       cliente_id: viewingClient.id,
                       tipo: 'Treinamento',
                       descricao: `Solicitação de Agendamento/Implantação de Treinamento.\nMódulos: ${viewingTrainingProposal.modules.map((m: any) => m.name).join(', ')}`,
+                      contato_nome: viewingTrainingProposal.contato || null,
                       status: 'Pendente',
                     })
+
+                    let senderName = 'Equipe'
+                    if (user?.id) {
+                      const { data: colab } = await supabase
+                        .from('colaboradores')
+                        .select('nome')
+                        .eq('user_id', user.id)
+                        .maybeSingle()
+                      if (colab) senderName = colab.nome
+                    }
+
+                    await supabase.functions.invoke('send-implementation-email', {
+                      body: {
+                        to: 'gesualdo@servicelogic.com.br',
+                        clientName: viewingTrainingProposal.clientName,
+                        contactName: viewingTrainingProposal.contato,
+                        contactPhone: viewingClient.originalData?.telefone,
+                        modules: viewingTrainingProposal.modules.map((m: any) => m.name).join(', '),
+                        senderName: senderName,
+                      },
+                    })
+
                     await createHistorico({
                       cliente_id: viewingClient.id,
                       tipo: 'Notificação Enviada',
                       observacoes:
                         'Solicitação de agendamento de treinamento enviada à equipe de implantação.',
                     })
-
-                    const subject = encodeURIComponent(
-                      `Agendamento de Treinamento - ${viewingTrainingProposal.clientName}`,
-                    )
-                    const body = encodeURIComponent(
-                      `Gesualdo,\n\nPeço, por gentileza, que entre em contato com a cliente abaixo para realizar o agendamento de treinamento.\n\nCliente: ${viewingTrainingProposal.clientName}\nContato: ${viewingTrainingProposal.contato || 'Não informado'}\nMódulos: ${viewingTrainingProposal.modules.map((m: any) => m.name).join(', ')}\n\nAtenciosamente,`,
-                    )
-                    window.open(
-                      `mailto:gesualdo@servicelogic.com.br?subject=${subject}&body=${body}`,
-                      '_blank',
-                    )
 
                     toast.success('Solicitação de implantação gerada e salva no histórico.')
                     loadSolicitacoes(viewingClient.id)
@@ -3336,6 +3405,30 @@ Obrigada.`)
                       descricao: `Solicitação de Implantação para Aditivo Contratual.\nMódulos: ${viewingAddendum.modules?.map((m: any) => (typeof m === 'string' ? m : m.name)).join(', ')}`,
                       status: 'Pendente',
                     })
+
+                    let senderName = 'Equipe'
+                    if (user?.id) {
+                      const { data: colab } = await supabase
+                        .from('colaboradores')
+                        .select('nome')
+                        .eq('user_id', user.id)
+                        .maybeSingle()
+                      if (colab) senderName = colab.nome
+                    }
+
+                    await supabase.functions.invoke('send-implementation-email', {
+                      body: {
+                        to: 'gesualdo@servicelogic.com.br',
+                        clientName: viewingClient.name,
+                        contactName: viewingClient.rep_nome,
+                        contactPhone: viewingClient.originalData?.telefone,
+                        modules: viewingAddendum.modules
+                          ?.map((m: any) => (typeof m === 'string' ? m : m.name))
+                          .join(', '),
+                        senderName: senderName,
+                      },
+                    })
+
                     await createHistorico({
                       cliente_id: viewingClient.id,
                       tipo: 'Notificação Enviada',
@@ -4229,15 +4322,38 @@ Obrigada.`)
                               </div>
                             )}
 
+                            {(sol.contato_nome || sol.contato_telefone) && (
+                              <div className="mb-4 bg-slate-50 p-3 rounded-md border border-slate-100">
+                                <p className="text-xs text-slate-500 font-medium mb-1">
+                                  Contato para o Serviço
+                                </p>
+                                <div className="flex gap-4">
+                                  {sol.contato_nome && (
+                                    <span className="text-sm text-slate-700">
+                                      <b>Nome:</b> {sol.contato_nome}
+                                    </span>
+                                  )}
+                                  {sol.contato_telefone && (
+                                    <span className="text-sm text-slate-700">
+                                      <b>Telefone:</b> {sol.contato_telefone}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
                             <div className="flex gap-2 pt-2 border-t border-slate-100">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full text-xs"
-                                onClick={() => handleEmailImplantacao(sol)}
-                              >
-                                <Mail className="h-3.5 w-3.5 mr-1.5" /> Enviar p/ Implantação
-                              </Button>
+                              {(sol.tipo === 'Treinamento' || sol.tipo === 'Visita Técnica') && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full text-xs"
+                                  onClick={() => handleEmailImplantacao(sol)}
+                                >
+                                  <Mail className="h-3.5 w-3.5 mr-1.5" /> Enviar e-mail para
+                                  implantação
+                                </Button>
+                              )}
                               <Button
                                 variant="outline"
                                 size="sm"
