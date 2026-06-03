@@ -3,7 +3,8 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
 }
 
 Deno.serve(async (req: Request) => {
@@ -16,17 +17,18 @@ Deno.serve(async (req: Request) => {
     const { to, clientName, contactName, contactPhone, modules, senderName } = body
 
     const subject = `Agendamento de Treinamentos - ${clientName}`
-    
+
     const emailBody = `Prezado(a),
 
 Peço, por gentileza, que entre em contato com o cliente abaixo para realizar o agendamento dos treinamentos.
 
-<b>Dados do Cliente</b>
+Dados do Cliente
 
-<b>Empresa</b>: ${clientName}
-<b>Contato</b>: ${contactName || 'Não informado'}
-<b>Telefone</b>: ${contactPhone || 'Não informado'}
-<b>Módulos para Treinamento</b>: ${modules || 'Não especificado'}
+Empresa: ${clientName}
+Contato: ${contactName || 'Não informado'}
+Telefone: ${contactPhone || 'Não informado'}
+Módulos para Treinamento
+${modules || 'Não especificado'}
 
 Após o agendamento, peço a gentileza de nos informar a data e o horário definidos para acompanhamento do processo.
 

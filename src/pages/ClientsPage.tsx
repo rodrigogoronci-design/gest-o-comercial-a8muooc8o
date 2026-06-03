@@ -1551,13 +1551,18 @@ Obrigada,`
         if (colab) senderName = colab.nome
       }
 
+      const modulosList =
+        viewingClient.modules && viewingClient.modules.length > 0
+          ? viewingClient.modules.map((m) => `- ${m.name}`).join('\n')
+          : 'Nenhum módulo adicional especificado (verificar plano base)'
+
       const res = await supabase.functions.invoke('send-implementation-email', {
         body: {
           to: 'gesualdo@servicelogic.com.br',
           clientName: viewingClient.name,
           contactName: sol.contato_nome || viewingClient.rep_nome,
           contactPhone: sol.contato_telefone || viewingClient.originalData?.telefone,
-          modules: sol.descricao,
+          modules: modulosList,
           senderName: senderName,
         },
       })
@@ -1571,7 +1576,10 @@ Obrigada,`
         valor_total: viewingClient.totalValue,
       })
 
+      await updateSolicitacao(sol.id, { status: 'Enviado p/ Implantação' })
+
       toast.success('E-mail enviado para implantação com sucesso!', { id: toastId })
+      loadSolicitacoes(viewingClient.id)
       loadHistory(viewingClient.id)
     } catch (e: any) {
       toast.error('Erro ao enviar e-mail: ' + e.message, { id: toastId })
@@ -3296,9 +3304,11 @@ Obrigada.`)
                       body: {
                         to: 'gesualdo@servicelogic.com.br',
                         clientName: viewingTrainingProposal.clientName,
-                        contactName: viewingTrainingProposal.contato,
+                        contactName: viewingTrainingProposal.contato || viewingClient.rep_nome,
                         contactPhone: viewingClient.originalData?.telefone,
-                        modules: viewingTrainingProposal.modules.map((m: any) => m.name).join(', '),
+                        modules: viewingTrainingProposal.modules
+                          .map((m: any) => `- ${m.name}`)
+                          .join('\n'),
                         senderName: senderName,
                       },
                     })
@@ -3423,8 +3433,8 @@ Obrigada.`)
                         contactName: viewingClient.rep_nome,
                         contactPhone: viewingClient.originalData?.telefone,
                         modules: viewingAddendum.modules
-                          ?.map((m: any) => (typeof m === 'string' ? m : m.name))
-                          .join(', '),
+                          ?.map((m: any) => `- ${typeof m === 'string' ? m : m.name}`)
+                          .join('\n'),
                         senderName: senderName,
                       },
                     })
@@ -4214,16 +4224,18 @@ Obrigada.`)
                                 disabled={sol.status === 'Efetivado'}
                               >
                                 <SelectTrigger
-                                  className={`h-6 text-xs font-medium border-0 shadow-none focus:ring-0 w-[110px] ${
+                                  className={`h-6 text-xs font-medium border-0 shadow-none focus:ring-0 w-[160px] ${
                                     sol.status === 'Validada'
                                       ? 'bg-blue-100 text-blue-800'
-                                      : sol.status === 'Efetivado'
-                                        ? 'bg-emerald-100 text-emerald-800'
-                                        : sol.status === 'Em Análise'
-                                          ? 'bg-amber-100 text-amber-800'
-                                          : sol.status === 'Cancelado'
-                                            ? 'bg-red-100 text-red-800'
-                                            : 'bg-slate-200 text-slate-800'
+                                      : sol.status === 'Enviado p/ Implantação'
+                                        ? 'bg-purple-100 text-purple-800'
+                                        : sol.status === 'Efetivado'
+                                          ? 'bg-emerald-100 text-emerald-800'
+                                          : sol.status === 'Em Análise'
+                                            ? 'bg-amber-100 text-amber-800'
+                                            : sol.status === 'Cancelado'
+                                              ? 'bg-red-100 text-red-800'
+                                              : 'bg-slate-200 text-slate-800'
                                   }`}
                                 >
                                   <SelectValue />
@@ -4232,6 +4244,9 @@ Obrigada.`)
                                   <SelectItem value="Pendente">Pendente</SelectItem>
                                   <SelectItem value="Em Análise">Em Análise</SelectItem>
                                   <SelectItem value="Validada">Validada</SelectItem>
+                                  <SelectItem value="Enviado p/ Implantação">
+                                    Enviado p/ Implantação
+                                  </SelectItem>
                                   <SelectItem value="Efetivado" disabled>
                                     Efetivado
                                   </SelectItem>
