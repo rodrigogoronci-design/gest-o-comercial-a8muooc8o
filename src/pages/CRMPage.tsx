@@ -46,8 +46,9 @@ import { cn } from '@/lib/utils'
 import { CrmProspectForm, ProspectFormValues } from '@/components/CrmProspectForm'
 import { CrmDiagnosticoForm } from '@/components/CrmDiagnosticoForm'
 import { CrmHistorico } from '@/components/CrmHistorico'
+import { CrmKanbanBoard } from '@/components/CrmKanbanBoard'
 
-type CrmProspect = {
+export type CrmProspect = {
   id: string
   cnpj: string | null
   empresa: string
@@ -67,6 +68,7 @@ type CrmProspect = {
 export default function CRMPage() {
   const [prospects, setProspects] = useState<CrmProspect[]>([])
   const [searchTerm, setSearchTerm] = useState('')
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingProspect, setEditingProspect] = useState<CrmProspect | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -326,26 +328,20 @@ export default function CRMPage() {
   )
 
   const getStatusColor = (s: string) => {
+    if (s === 'Novo Lead') return 'bg-sky-100 text-sky-800 hover:bg-sky-200 border-sky-200'
     if (s === 'Contato inicial' || s === 'Contato Inicial')
       return 'bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200'
     if (s === 'Apresentação do sistema')
       return 'bg-purple-100 text-purple-800 hover:bg-purple-200 border-purple-200'
     if (s === 'Em negociação' || s === 'Em Negociação')
       return 'bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-200'
-    if (s === 'aguardando documentos')
-      return 'bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200'
-    if (s === 'contrato enviado para assinatura')
+    if (s === 'Proposta enviada')
       return 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200 border-indigo-200'
     if (s === 'Contrato assinado' || s === 'Fechado')
       return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200'
-    if (s === 'Enviado para Implantação')
-      return 'bg-cyan-100 text-cyan-800 hover:bg-cyan-200 border-cyan-200'
     if (s === 'Cliente Efetivado')
       return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200'
-    if (s === 'Treinamento agendado')
-      return 'bg-teal-100 text-teal-800 hover:bg-teal-200 border-teal-200'
-    if (s === 'Aguardando Feedback')
-      return 'bg-purple-100 text-purple-800 hover:bg-purple-200 border-purple-200'
+    if (s === 'Perdido') return 'bg-red-100 text-red-800 hover:bg-red-200 border-red-200'
     return 'bg-slate-100 text-slate-800 border-slate-200'
   }
 
@@ -361,13 +357,7 @@ export default function CRMPage() {
     (p) =>
       p.data_followup &&
       p.data_followup <= today &&
-      ![
-        'Fechado',
-        'Contrato assinado',
-        'Enviado para Implantação',
-        'Treinamento agendado',
-        'Cliente Efetivado',
-      ].includes(p.status),
+      !['Fechado', 'Cliente Efetivado', 'Perdido'].includes(p.status),
   )
 
   return (
@@ -417,246 +407,253 @@ export default function CRMPage() {
         </Alert>
       )}
 
-      <Card className="border-slate-200/60 shadow-sm">
-        <CardHeader className="pb-3 border-b border-slate-100 mb-2">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <CardTitle className="text-lg">Pipeline de Vendas</CardTitle>
-              <CardDescription>
-                Lista atualizada de todas as negociações em andamento.
-              </CardDescription>
-            </div>
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar prospect..."
-                className="pl-9 h-9 bg-slate-50"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader className="bg-slate-50/50">
-              <TableRow>
-                <TableHead className="w-[280px]">Empresa</TableHead>
-                <TableHead>Contato</TableHead>
-                <TableHead>Follow-up</TableHead>
-                <TableHead>Classificação</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+        <Tabs
+          value={viewMode}
+          onValueChange={(v) => setViewMode(v as 'list' | 'kanban')}
+          className="w-full sm:w-[300px] shrink-0"
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="kanban">Kanban</TabsTrigger>
+            <TabsTrigger value="list">Lista</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar prospect..."
+            className="pl-9 h-9 bg-white shadow-sm border-slate-200"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {viewMode === 'kanban' ? (
+        <CrmKanbanBoard
+          prospects={filtered}
+          onUpdateStatus={updateStatus}
+          onEdit={setEditingProspect}
+          onDelete={handleDelete}
+          onEfetivar={handleEfetivarCliente}
+        />
+      ) : (
+        <Card className="border-slate-200/60 shadow-sm">
+          <CardHeader className="pb-3 border-b border-slate-100 mb-2">
+            <CardTitle className="text-lg">Pipeline de Vendas</CardTitle>
+            <CardDescription>
+              Lista atualizada de todas as negociações em andamento.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader className="bg-slate-50/50">
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                    Carregando contatos...
-                  </TableCell>
+                  <TableHead className="w-[280px]">Empresa</TableHead>
+                  <TableHead>Contato</TableHead>
+                  <TableHead>Follow-up</TableHead>
+                  <TableHead>Classificação</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
-              ) : filtered.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                    Nenhum contato encontrado.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filtered.map((p) => (
-                  <TableRow key={p.id} className="hover:bg-slate-50/80 transition-colors">
-                    <TableCell className="font-medium text-slate-900">
-                      <div className="flex flex-col">
-                        <span>{p.empresa}</span>
-                        {p.cnpj && (
-                          <span className="text-xs text-muted-foreground mt-0.5">{p.cnpj}</span>
-                        )}
-                        {p.tags && p.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1.5">
-                            {p.tags.map((tag) => (
-                              <span
-                                key={tag}
-                                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                      Carregando contatos...
                     </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span>{p.contato_nome}</span>
-                        {p.telefone && (
-                          <span className="text-xs text-muted-foreground mt-0.5">{p.telefone}</span>
-                        )}
-                      </div>
+                  </TableRow>
+                ) : filtered.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                      Nenhum contato encontrado.
                     </TableCell>
-                    <TableCell>
-                      {p.data_followup ? (
-                        <div
-                          className={cn(
-                            'flex items-center gap-1.5 text-xs font-medium',
-                            p.data_followup <= today &&
-                              ![
-                                'Fechado',
-                                'Contrato assinado',
-                                'Enviado para Implantação',
-                                'Treinamento agendado',
-                                'Cliente Efetivado',
-                              ].includes(p.status)
-                              ? 'text-amber-600'
-                              : 'text-muted-foreground',
+                  </TableRow>
+                ) : (
+                  filtered.map((p) => (
+                    <TableRow key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                      <TableCell className="font-medium text-slate-900">
+                        <div className="flex flex-col">
+                          <span>{p.empresa}</span>
+                          {p.cnpj && (
+                            <span className="text-xs text-muted-foreground mt-0.5">{p.cnpj}</span>
                           )}
-                        >
-                          <CalendarClock className="h-3.5 w-3.5" />
-                          {new Date(p.data_followup + 'T12:00:00Z').toLocaleDateString('pt-BR')}
+                          {p.tags && p.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                              {p.tags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
-                      <div
-                        className="text-[10px] text-muted-foreground mt-1"
-                        title="Última Interação"
-                      >
-                        Int: {formatDate(p.ultima_interacao)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        defaultValue={p.classificacao || 'Frio'}
-                        onValueChange={(val) => updateClassificacao(p.id, val, p.classificacao)}
-                      >
-                        <SelectTrigger
-                          className={cn(
-                            'h-8 w-[120px] border rounded-full text-xs font-semibold px-3',
-                            getClassificacaoColor(p.classificacao),
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span>{p.contato_nome}</span>
+                          {p.telefone && (
+                            <span className="text-xs text-muted-foreground mt-0.5">
+                              {p.telefone}
+                            </span>
                           )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {p.data_followup ? (
+                          <div
+                            className={cn(
+                              'flex items-center gap-1.5 text-xs font-medium',
+                              p.data_followup <= today &&
+                                !['Fechado', 'Cliente Efetivado', 'Perdido'].includes(p.status)
+                                ? 'text-amber-600'
+                                : 'text-muted-foreground',
+                            )}
+                          >
+                            <CalendarClock className="h-3.5 w-3.5" />
+                            {new Date(p.data_followup + 'T12:00:00Z').toLocaleDateString('pt-BR')}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
+                        <div
+                          className="text-[10px] text-muted-foreground mt-1"
+                          title="Última Interação"
                         >
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Frio">Frio</SelectItem>
-                          <SelectItem value="Morno">Morno</SelectItem>
-                          <SelectItem value="Quente">Quente</SelectItem>
-                          <SelectItem value="Muito Quente">Muito Quente</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        defaultValue={p.status}
-                        onValueChange={(val) => updateStatus(p.id, val, p.status)}
-                      >
-                        <SelectTrigger
-                          className={cn(
-                            'h-8 w-[150px] border rounded-full text-xs font-semibold px-3',
-                            getStatusColor(p.status),
-                          )}
+                          Int: {formatDate(p.ultima_interacao)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          defaultValue={p.classificacao || 'Frio'}
+                          onValueChange={(val) => updateClassificacao(p.id, val, p.classificacao)}
                         >
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[
-                            'Contato Inicial',
-                            'Em Negociação',
-                            'Aguardando Feedback',
-                            'Fechado',
-                            'Cliente Efetivado',
-                          ].includes(p.status) && (
-                            <SelectItem value={p.status} className="hidden">
-                              {p.status}
-                            </SelectItem>
+                          <SelectTrigger
+                            className={cn(
+                              'h-8 w-[120px] border rounded-full text-xs font-semibold px-3',
+                              getClassificacaoColor(p.classificacao),
+                            )}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Frio">Frio</SelectItem>
+                            <SelectItem value="Morno">Morno</SelectItem>
+                            <SelectItem value="Quente">Quente</SelectItem>
+                            <SelectItem value="Muito Quente">Muito Quente</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          defaultValue={p.status}
+                          onValueChange={(val) => updateStatus(p.id, val, p.status)}
+                        >
+                          <SelectTrigger
+                            className={cn(
+                              'h-8 w-[150px] border rounded-full text-xs font-semibold px-3',
+                              getStatusColor(p.status),
+                            )}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {![
+                              'Novo Lead',
+                              'Contato inicial',
+                              'Em negociação',
+                              'Proposta enviada',
+                              'Fechado',
+                              'Cliente Efetivado',
+                              'Perdido',
+                            ].includes(p.status) && (
+                              <SelectItem value={p.status} className="hidden">
+                                {p.status}
+                              </SelectItem>
+                            )}
+                            <SelectItem value="Novo Lead">Novo Lead</SelectItem>
+                            <SelectItem value="Contato inicial">Contato inicial</SelectItem>
+                            <SelectItem value="Em negociação">Em negociação</SelectItem>
+                            <SelectItem value="Proposta enviada">Proposta enviada</SelectItem>
+                            <SelectItem value="Fechado">Fechado</SelectItem>
+                            <SelectItem value="Cliente Efetivado">Cliente Efetivado</SelectItem>
+                            <SelectItem value="Perdido">Perdido</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {p.status !== 'Cliente Efetivado' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                              onClick={() => handleEfetivarCliente(p)}
+                              disabled={isSubmitting}
+                              title="Efetivar Cliente"
+                            >
+                              <UserCheck className="h-4 w-4" />
+                              <span className="hidden lg:inline">Efetivar</span>
+                            </Button>
                           )}
-                          <SelectItem value="Contato inicial">Contato inicial</SelectItem>
-                          <SelectItem value="Apresentação do sistema">
-                            Apresentação do sistema
-                          </SelectItem>
-                          <SelectItem value="Em negociação">Em negociação</SelectItem>
-                          <SelectItem value="aguardando documentos">
-                            aguardando documentos
-                          </SelectItem>
-                          <SelectItem value="contrato enviado para assinatura">
-                            contrato enviado para assinatura
-                          </SelectItem>
-                          <SelectItem value="Contrato assinado">Contrato assinado</SelectItem>
-                          <SelectItem value="Enviado para Implantação">
-                            Enviado para Implantação
-                          </SelectItem>
-                          <SelectItem value="Treinamento agendado">Treinamento agendado</SelectItem>
-                          <SelectItem value="Cliente Efetivado">Cliente Efetivado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {p.status !== 'Cliente Efetivado' && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                            onClick={() => handleEfetivarCliente(p)}
-                            disabled={isSubmitting}
-                            title="Efetivar Cliente"
+                            className="h-8 gap-1 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                            asChild
                           >
-                            <UserCheck className="h-4 w-4" />
-                            <span className="hidden lg:inline">Efetivar</span>
+                            <Link
+                              to={`/contratos?prospect=${encodeURIComponent(p.empresa)}&cnpj=${p.cnpj ? p.cnpj.replace(/\D/g, '') : ''}`}
+                            >
+                              <FileSignature className="h-4 w-4" />
+                              <span className="hidden lg:inline">Gerar Contrato</span>
+                            </Link>
                           </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 gap-1 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                          asChild
-                        >
-                          <Link
-                            to={`/contratos?prospect=${encodeURIComponent(p.empresa)}&cnpj=${p.cnpj ? p.cnpj.replace(/\D/g, '') : ''}`}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                            asChild
                           >
-                            <FileSignature className="h-4 w-4" />
-                            <span className="hidden lg:inline">Gerar Contrato</span>
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 gap-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                          asChild
-                        >
-                          <Link
-                            to={`/contratos?tab=cotacao&prospectId=${p.id}&prospect=${encodeURIComponent(p.empresa)}&contato=${encodeURIComponent(p.contato_nome)}`}
+                            <Link
+                              to={`/contratos?tab=cotacao&prospectId=${p.id}&prospect=${encodeURIComponent(p.empresa)}&contato=${encodeURIComponent(p.contato_nome)}`}
+                            >
+                              <FileText className="h-4 w-4" />
+                              <span className="hidden lg:inline">Gerar Proposta</span>
+                            </Link>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                            onClick={() => setEditingProspect(p)}
+                            title="Editar/Diagnóstico"
                           >
-                            <FileText className="h-4 w-4" />
-                            <span className="hidden lg:inline">Gerar Proposta</span>
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
-                          onClick={() => setEditingProspect(p)}
-                          title="Editar/Diagnóstico"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
-                          onClick={() => handleDelete(p.id)}
-                          title="Excluir"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                            onClick={() => handleDelete(p.id)}
+                            title="Excluir"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       <Dialog open={!!editingProspect} onOpenChange={(open) => !open && setEditingProspect(null)}>
         <DialogContent className="sm:max-w-[800px] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0">
