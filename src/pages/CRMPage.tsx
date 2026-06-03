@@ -9,6 +9,7 @@ import {
   Pencil,
   Trash2,
   FileText,
+  UserCheck,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -71,6 +72,94 @@ export default function CRMPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
+
+  const handleEfetivarCliente = async (p: CrmProspect) => {
+    if (!p.cnpj) {
+      return toast({
+        title: 'CNPJ obrigatório',
+        description: 'O prospecto precisa ter um CNPJ preenchido para ser efetivado.',
+        variant: 'destructive',
+      })
+    }
+
+    setIsSubmitting(true)
+
+    const { data: existingClient } = await supabase
+      .from('clientes')
+      .select('id')
+      .eq('cnpj', p.cnpj)
+      .maybeSingle()
+
+    if (existingClient) {
+      setIsSubmitting(false)
+      return toast({
+        title: 'Erro ao efetivar',
+        description: 'Já existe um cliente cadastrado com este CNPJ.',
+        variant: 'destructive',
+      })
+    }
+
+    const { data: newClient, error: clientError } = await supabase
+      .from('clientes')
+      .insert([
+        {
+          nome: p.empresa,
+          cnpj: p.cnpj,
+          email: p.email,
+          telefone: p.telefone,
+          endereco: p.endereco,
+          diagnostico: p.diagnostico,
+          tags: p.tags,
+          status: 'Ativo',
+        },
+      ])
+      .select()
+      .single()
+
+    if (clientError || !newClient) {
+      setIsSubmitting(false)
+      return toast({
+        title: 'Erro ao criar cliente',
+        description: clientError?.message || 'Erro desconhecido',
+        variant: 'destructive',
+      })
+    }
+
+    await supabase
+      .from('crm_prospects')
+      .update({ status: 'Cliente Efetivado', ultima_interacao: new Date().toISOString() })
+      .eq('id', p.id)
+
+    await supabase
+      .from('crm_propostas')
+      .update({ cliente_id: newClient.id })
+      .eq('prospect_id', p.id)
+
+    await supabase.from('crm_historico_interacoes').insert([
+      {
+        prospect_id: p.id,
+        tipo_contato: 'Sistema',
+        resumo: 'Conversão para Cliente',
+        detalhes: 'Prospecto convertido em cliente com sucesso.',
+      },
+    ])
+
+    setIsSubmitting(false)
+
+    toast({
+      title: 'Sucesso',
+      description: (
+        <div className="flex flex-col gap-2 mt-1">
+          <span>Prospecto convertido em cliente!</span>
+          <Link to={`/clientes`} className="text-indigo-600 underline font-medium">
+            Ver Cliente Efetivado
+          </Link>
+        </div>
+      ),
+    })
+
+    fetchProspects()
+  }
 
   const fetchProspects = async () => {
     setIsLoading(true)
@@ -251,6 +340,8 @@ export default function CRMPage() {
       return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200'
     if (s === 'Enviado para Implantação')
       return 'bg-cyan-100 text-cyan-800 hover:bg-cyan-200 border-cyan-200'
+    if (s === 'Cliente Efetivado')
+      return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200'
     if (s === 'Treinamento agendado')
       return 'bg-teal-100 text-teal-800 hover:bg-teal-200 border-teal-200'
     if (s === 'Aguardando Feedback')
@@ -275,6 +366,7 @@ export default function CRMPage() {
         'Contrato assinado',
         'Enviado para Implantação',
         'Treinamento agendado',
+        'Cliente Efetivado',
       ].includes(p.status),
   )
 
@@ -412,6 +504,7 @@ export default function CRMPage() {
                                 'Contrato assinado',
                                 'Enviado para Implantação',
                                 'Treinamento agendado',
+                                'Cliente Efetivado',
                               ].includes(p.status)
                               ? 'text-amber-600'
                               : 'text-muted-foreground',
@@ -470,6 +563,7 @@ export default function CRMPage() {
                             'Em Negociação',
                             'Aguardando Feedback',
                             'Fechado',
+                            'Cliente Efetivado',
                           ].includes(p.status) && (
                             <SelectItem value={p.status} className="hidden">
                               {p.status}
@@ -491,11 +585,25 @@ export default function CRMPage() {
                             Enviado para Implantação
                           </SelectItem>
                           <SelectItem value="Treinamento agendado">Treinamento agendado</SelectItem>
+                          <SelectItem value="Cliente Efetivado">Cliente Efetivado</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {p.status !== 'Cliente Efetivado' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                            onClick={() => handleEfetivarCliente(p)}
+                            disabled={isSubmitting}
+                            title="Efetivar Cliente"
+                          >
+                            <UserCheck className="h-4 w-4" />
+                            <span className="hidden lg:inline">Efetivar</span>
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"

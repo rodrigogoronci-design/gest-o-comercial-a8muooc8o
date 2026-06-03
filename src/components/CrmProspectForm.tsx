@@ -372,6 +372,7 @@ export function CrmProspectForm({
                       'Em Negociação',
                       'Aguardando Feedback',
                       'Fechado',
+                      'Cliente Efetivado',
                     ].includes(field.value) && (
                       <SelectItem value={field.value} className="hidden">
                         {field.value}
@@ -389,6 +390,7 @@ export function CrmProspectForm({
                       Enviado para Implantação
                     </SelectItem>
                     <SelectItem value="Treinamento agendado">Treinamento agendado</SelectItem>
+                    <SelectItem value="Cliente Efetivado">Cliente Efetivado</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
