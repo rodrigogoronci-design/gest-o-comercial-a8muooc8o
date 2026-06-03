@@ -71,6 +71,7 @@ export function ContractDocument({
   moduleGracePeriods = {},
   totalValueStandard = 0,
   prazosConcedidos,
+  customModulePrices = {},
 }: any) {
   return (
     <div className="p-8 sm:p-12 text-[12px] text-slate-800 font-serif leading-relaxed space-y-5 print:p-0 print:text-black">
@@ -328,6 +329,11 @@ export function ContractDocument({
                   )
                     return null
 
+                  const modPrice =
+                    customModulePrices && typeof customModulePrices[m.id] === 'number'
+                      ? customModulePrices[m.id]
+                      : m.price
+
                   return (
                     <tr
                       key={m.id}
@@ -347,7 +353,7 @@ export function ContractDocument({
                       </td>
                       <td className="border border-slate-300 p-1.5 text-center">{m.implHours}</td>
                       <td className="border border-slate-300 p-1.5 text-right">
-                        {m.price === 0 ? 'Incluso' : formatCurrency(m.price)}
+                        {modPrice === 0 ? 'Incluso' : formatCurrency(modPrice)}
                       </td>
                       <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
                         {selectedModules.includes(m.id) ? 'X' : ''}

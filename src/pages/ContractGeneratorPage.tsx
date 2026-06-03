@@ -98,6 +98,7 @@ export default function ContractGeneratorPage() {
   const [moduleGracePeriods, setModuleGracePeriods] = useState<Record<string, number>>({})
   const [prazosConcedidos, setPrazosConcedidos] = useState('')
 
+  const [customModulePrices, setCustomModulePrices] = useState<Record<string, number | ''>>({})
   const [isExtractingCompany, setIsExtractingCompany] = useState(false)
 
   const [availableProposals, setAvailableProposals] = useState<any[]>([])
@@ -255,6 +256,7 @@ export default function ContractGeneratorPage() {
     let newImplMode: 'remoto' | 'presencial' = 'remoto'
     let newImplValue = prop.valor_implantacao || 0
     const newGracePeriods: Record<string, number> = {}
+    const newCustomModulePrices: Record<string, number | ''> = {}
     let includeDiag = false
     let diagVisits: any[] = []
     let foundPlan = 'none'
@@ -275,6 +277,11 @@ export default function ContractGeneratorPage() {
           newModules.push(item.id)
           if (item.tem_gratuidade) {
             newGracePeriods[item.id] = item.periodo_gratuidade || 3
+          }
+          if (item.price !== undefined) {
+            newCustomModulePrices[item.id] = item.price
+          } else {
+            newCustomModulePrices[item.id] = mod.price
           }
         }
       } else if (item.id && item.id.startsWith('dfe-')) {
@@ -297,6 +304,7 @@ export default function ContractGeneratorPage() {
     setManualPlanPrice(newPlanPrice)
     setSelectedModules(newModules)
     setModuleGracePeriods(newGracePeriods)
+    setCustomModulePrices(newCustomModulePrices)
     setSelectedDfe(newDfe)
     setSelectedTrainings(newTrainings)
     setAdditionalPlates(newPlates)
@@ -341,9 +349,13 @@ export default function ContractGeneratorPage() {
         const m = MODULES.find((m) => m.id === id)
         if (!m) return acc
         if (moduleGracePeriods[id] && moduleGracePeriods[id] > 0) return acc
-        return acc + m.price
+        const price =
+          typeof customModulePrices[id] === 'number'
+            ? (customModulePrices[id] as number)
+            : m.price || 0
+        return acc + price
       }, 0),
-    [selectedModules, moduleGracePeriods],
+    [selectedModules, moduleGracePeriods, customModulePrices],
   )
 
   const additionalPlatesPrice = useMemo(() => {
@@ -463,10 +475,13 @@ export default function ContractGeneratorPage() {
     return [
       ...selectedModules
         .filter((id) => !MODULES.find((m) => m.id === id)?.isBasic)
-        .map((id) => ({
-          name: MODULES.find((m) => m.id === id)?.name,
-          price: MODULES.find((m) => m.id === id)?.price,
-        })),
+        .map((id) => {
+          const mod = MODULES.find((m) => m.id === id)
+          return {
+            name: mod?.name,
+            price: typeof customModulePrices[id] === 'number' ? customModulePrices[id] : mod?.price,
+          }
+        }),
       ...(selectedDfe !== 'dfe-none' ? [{ name: dfeData?.name, price: dfeData?.price }] : []),
       ...(additionalPlates > 0
         ? [
@@ -552,6 +567,7 @@ export default function ContractGeneratorPage() {
     prazosConcedidos,
     currentContractValue,
     isTreinamentoGratuito,
+    customModulePrices,
     // Addendum specific props
     clientName: name,
     valorTotalAtual: currentContractValue,
@@ -574,7 +590,14 @@ export default function ContractGeneratorPage() {
         ? 'Nenhum'
         : planData?.name || 'Plano Personalizado',
     selectedModulesData: selectedModules
-      .map((id) => MODULES.find((m) => m.id === id))
+      .map((id) => {
+        const m = MODULES.find((m) => m.id === id)
+        if (!m) return null
+        return {
+          ...m,
+          price: typeof customModulePrices[id] === 'number' ? customModulePrices[id] : m.price,
+        }
+      })
       .filter((m) => m && !m.isBasic),
     trainings: selectedTrainings.map((id) => {
       const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
@@ -679,7 +702,20 @@ export default function ContractGeneratorPage() {
   }
 
   const handleToggleModule = (id: string, checked: boolean) => {
-    setSelectedModules((prev) => (checked ? [...prev, id] : prev.filter((m) => m !== id)))
+    if (checked) {
+      setSelectedModules((prev) => [...prev, id])
+      const mod = MODULES.find((m) => m.id === id)
+      if (mod) {
+        setCustomModulePrices((prev) => ({ ...prev, [id]: mod.price }))
+      }
+    } else {
+      setSelectedModules((prev) => prev.filter((m) => m !== id))
+      setCustomModulePrices((prev) => {
+        const next = { ...prev }
+        delete next[id]
+        return next
+      })
+    }
   }
 
   const fetchFilialCnpjData = async (cnpjValue: string) => {
@@ -902,7 +938,7 @@ export default function ContractGeneratorPage() {
           return {
             id,
             name: m?.name,
-            price: m?.price,
+            price: typeof customModulePrices[id] === 'number' ? customModulePrices[id] : m?.price,
             implHours: m?.implHours || 0,
             tem_gratuidade: !!moduleGracePeriods[id],
             periodo_gratuidade: moduleGracePeriods[id] || 0,
@@ -1110,7 +1146,11 @@ export default function ContractGeneratorPage() {
         .filter((id) => !MODULES.find((m) => m.id === id)?.isBasic)
         .map((id) => {
           const mod = MODULES.find((m) => m.id === id)
-          return { name: mod?.name || id, price: mod?.price || 0 }
+          return {
+            name: mod?.name || id,
+            price:
+              typeof customModulePrices[id] === 'number' ? customModulePrices[id] : mod?.price || 0,
+          }
         })
       if (selectedDfe !== 'dfe-none' && dfeData) {
         adicionais.push({ name: dfeData.name, price: dfeData.price })
@@ -1647,7 +1687,28 @@ export default function ContractGeneratorPage() {
                               </Label>
                             </div>
                             {isChecked && m.price > 0 && (
-                              <div className="pl-6 pt-1 flex items-center gap-3 border-t border-slate-100 mt-1">
+                              <div className="pl-6 pt-1 flex items-center gap-3 border-t border-slate-100 mt-1 flex-wrap">
+                                <div className="flex items-center gap-2">
+                                  <Label
+                                    htmlFor={`price-${m.id}`}
+                                    className="text-[10px] text-slate-600"
+                                  >
+                                    Valor (R$)
+                                  </Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    id={`price-${m.id}`}
+                                    className="w-20 h-6 text-[10px] px-1 bg-slate-50 border-slate-200"
+                                    value={customModulePrices[m.id] ?? ''}
+                                    onChange={(e) => {
+                                      const val =
+                                        e.target.value === '' ? '' : parseFloat(e.target.value)
+                                      setCustomModulePrices((prev) => ({ ...prev, [m.id]: val }))
+                                    }}
+                                  />
+                                </div>
                                 <div className="flex items-center space-x-2">
                                   <Checkbox
                                     id={`grace-${m.id}`}
@@ -2386,7 +2447,28 @@ export default function ContractGeneratorPage() {
                               </Label>
                             </div>
                             {isChecked && m.price > 0 && (
-                              <div className="pl-6 pt-1 flex items-center gap-3 border-t border-slate-100 mt-1">
+                              <div className="pl-6 pt-1 flex items-center gap-3 border-t border-slate-100 mt-1 flex-wrap">
+                                <div className="flex items-center gap-2">
+                                  <Label
+                                    htmlFor={`quote-price-${m.id}`}
+                                    className="text-[10px] text-slate-600"
+                                  >
+                                    Valor (R$)
+                                  </Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    id={`quote-price-${m.id}`}
+                                    className="w-20 h-6 text-[10px] px-1 bg-slate-50 border-slate-200"
+                                    value={customModulePrices[m.id] ?? ''}
+                                    onChange={(e) => {
+                                      const val =
+                                        e.target.value === '' ? '' : parseFloat(e.target.value)
+                                      setCustomModulePrices((prev) => ({ ...prev, [m.id]: val }))
+                                    }}
+                                  />
+                                </div>
                                 <div className="flex items-center space-x-2">
                                   <Checkbox
                                     id={`quote-grace-${m.id}`}

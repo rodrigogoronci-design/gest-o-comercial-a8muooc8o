@@ -100,8 +100,18 @@ export function HistoricoAditivos({ clienteId }: { clienteId: string }) {
   const renderModulos = (modulos: any) => {
     if (!modulos) return 'N/A'
     if (Array.isArray(modulos)) {
-      if (modulos.length > 0 && typeof modulos[0] === 'object' && modulos[0].nome) {
-        return modulos.map((m: any) => m.nome).join(', ')
+      if (
+        modulos.length > 0 &&
+        typeof modulos[0] === 'object' &&
+        (modulos[0].nome || modulos[0].name)
+      ) {
+        return modulos
+          .map((m: any) => {
+            const name = m.nome || m.name
+            const price = m.price !== undefined ? formatCurrency(m.price) : ''
+            return price ? `${name} (${price})` : name
+          })
+          .join(', ')
       }
       return modulos.join(', ')
     }
