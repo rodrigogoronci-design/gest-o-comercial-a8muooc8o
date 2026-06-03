@@ -335,6 +335,156 @@ export default function ClientsPage() {
   const [flagNotifyImplantacao, setFlagNotifyImplantacao] = useState(false)
   const [flagNotifyFinanceiro, setFlagNotifyFinanceiro] = useState(false)
 
+  // Upsell Modal
+  const [isUpsellModalOpen, setIsUpsellModalOpen] = useState(false)
+  const [upsellModules, setUpsellModules] = useState<string[]>([])
+  const [upsellOneTimeValue, setUpsellOneTimeValue] = useState<number | ''>('')
+  const [upsellRecurringValue, setUpsellRecurringValue] = useState<number | ''>('')
+  const [upsellDate, setUpsellDate] = useState(new Date().toISOString().split('T')[0])
+  const [isSubmittingUpsell, setIsSubmittingUpsell] = useState(false)
+
+  useEffect(() => {
+    if (isUpsellModalOpen) {
+      const total = upsellModules
+        .map((id) => MODULES.find((m) => m.id === id)?.price || 0)
+        .reduce((a, b) => a + b, 0)
+      setUpsellRecurringValue(total)
+    }
+  }, [upsellModules, isUpsellModalOpen])
+
+  const handleSaveUpsell = async () => {
+    if (!viewingClient) return
+    if (upsellModules.length === 0) {
+      toast.error('Selecione ao menos um módulo.')
+      return
+    }
+
+    setIsSubmittingUpsell(true)
+    try {
+      const mods = upsellModules.map((id) => MODULES.find((m) => m.id === id)!).filter(Boolean)
+
+      const solicitacao = await createSolicitacao({
+        cliente_id: viewingClient.id,
+        tipo: 'Upsell',
+        descricao: `Proposta de Upsell: ${mods.map((m) => m.name).join(', ')}`,
+        valor: upsellRecurringValue === '' ? 0 : Number(upsellRecurringValue),
+        observacoes: `Valor de Implantação/Único: R$ ${upsellOneTimeValue === '' ? 0 : Number(upsellOneTimeValue).toFixed(2)}`,
+        status: 'Pendente',
+        data_solicitacao: upsellDate || null,
+      })
+
+      // The trigger creates the historico, we just update it with modulos and type
+      await supabase
+        .from('historico_contratos')
+        .update({
+          tipo: 'Upsell',
+          modulos: mods,
+        })
+        .eq('solicitacao_id', solicitacao.id)
+
+      toast.success('Proposta de Upsell gerada com sucesso!')
+      setIsUpsellModalOpen(false)
+      setUpsellModules([])
+      setUpsellOneTimeValue('')
+      setUpsellRecurringValue('')
+
+      loadSolicitacoes(viewingClient.id)
+      loadHistory(viewingClient.id)
+    } catch (error: any) {
+      console.error(error)
+      toast.error('Erro ao gerar upsell.')
+    } finally {
+      setIsSubmittingUpsell(false)
+    }
+  }
+
+  const updateSolicitacaoStatus = async (sol: any, newStatus: string) => {
+    if (!viewingClient) return
+    if (sol.status === newStatus) return
+
+    try {
+      await updateSolicitacao(sol.id, { status: newStatus })
+
+      if (newStatus === 'Validada' || newStatus === 'Cancelado') {
+        await createHistorico({
+          cliente_id: viewingClient.id,
+          tipo: `Proposta ${newStatus}`,
+          data_solicitacao: new Date().toISOString().split('T')[0],
+          observacoes: `A solicitação "${sol.tipo}" teve o status alterado para ${newStatus}.`,
+          valor_total: viewingClient.totalValue,
+        })
+      }
+
+      toast.success(`Status alterado para ${newStatus}`)
+      loadSolicitacoes(viewingClient.id)
+      loadHistory(viewingClient.id)
+    } catch (err) {
+      toast.error('Erro ao atualizar status')
+    }
+  }
+
+  const handleEfetivar = async (sol: any) => {
+    if (!viewingClient) return
+    if (!confirm('Deseja realmente efetivar esta solicitação?')) return
+
+    try {
+      let novoValorTotal = viewingClient.totalValue
+
+      if (sol.tipo === 'Upsell') {
+        const { data: hist } = await supabase
+          .from('historico_contratos')
+          .select('modulos, valor_adicional')
+          .eq('solicitacao_id', sol.id)
+          .maybeSingle()
+
+        const novosModulos = hist?.modulos || []
+
+        let currentModulosRaw = viewingClient.originalData?.modulos || {
+          plano_base: viewingClient.plano_base,
+          filiais: viewingClient.filiais,
+          adicionais: viewingClient.modules,
+        }
+
+        if (Array.isArray(currentModulosRaw)) {
+          currentModulosRaw = {
+            plano_base: viewingClient.plano_base,
+            filiais: viewingClient.filiais,
+            adicionais: currentModulosRaw,
+          }
+        }
+
+        const updatedAdicionais = [
+          ...(currentModulosRaw.adicionais || []),
+          ...novosModulos.map((m: any) => ({ name: m.name, price: m.price })),
+        ]
+        novoValorTotal = viewingClient.totalValue + (hist?.valor_adicional || sol.valor || 0)
+
+        await updateCliente(viewingClient.id, {
+          modulos: { ...currentModulosRaw, adicionais: updatedAdicionais },
+          valor_total: novoValorTotal,
+        })
+      }
+
+      await updateSolicitacao(sol.id, { status: 'Efetivado' })
+
+      await createHistorico({
+        cliente_id: viewingClient.id,
+        tipo: sol.tipo === 'Upsell' ? 'Upsell Efetivado' : 'Serviço Efetivado',
+        data_solicitacao: new Date().toISOString().split('T')[0],
+        observacoes: `A solicitação "${sol.tipo}" foi efetivada e o serviço iniciado/concluído.`,
+        valor_total: novoValorTotal,
+      })
+
+      toast.success('Solicitação efetivada com sucesso!')
+      loadClientes()
+      loadSolicitacoes(viewingClient.id)
+      loadHistory(viewingClient.id)
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao efetivar')
+    }
+  }
+
   const resetSolicitacaoForm = () => {
     setEditingSolicitacaoId(null)
     setSolicitacaoTipo('Treinamento')
@@ -2725,6 +2875,7 @@ Obrigada.`)
                   <SelectContent>
                     <SelectItem value="Treinamento">Treinamento</SelectItem>
                     <SelectItem value="Visita Técnica">Visita Técnica</SelectItem>
+                    <SelectItem value="Upsell">Upsell</SelectItem>
                     <SelectItem value="Outro">Outro</SelectItem>
                   </SelectContent>
                 </Select>
@@ -2921,6 +3072,113 @@ Obrigada.`)
               className="bg-indigo-600 hover:bg-indigo-700 text-white"
             >
               Gerar Proposta
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Gerar Upsell */}
+      <Dialog open={isUpsellModalOpen} onOpenChange={setIsUpsellModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Gerar Proposta de Upsell</DialogTitle>
+            <DialogDescription>
+              Selecione os módulos adicionais e defina os valores. Isso criará uma proposta
+              pendente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Data da Proposta</Label>
+              <Input
+                type="date"
+                value={upsellDate}
+                onChange={(e) => setUpsellDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Módulos Adicionais</Label>
+              <ScrollArea className="h-48 border rounded-md p-3 bg-slate-50">
+                <div className="space-y-3">
+                  {availableModulesForAddendum.length === 0 ? (
+                    <div className="text-sm text-slate-500">
+                      O cliente já possui todos os módulos.
+                    </div>
+                  ) : (
+                    availableModulesForAddendum.map((m) => {
+                      const isSelected = upsellModules.includes(m.id)
+                      return (
+                        <div
+                          key={m.id}
+                          className="flex items-center space-x-3 bg-white p-2 border rounded-md hover:bg-slate-50"
+                        >
+                          <Checkbox
+                            id={`up-mod-${m.id}`}
+                            checked={isSelected}
+                            onCheckedChange={(c) => {
+                              if (c) {
+                                setUpsellModules((prev) => [...prev, m.id])
+                              } else {
+                                setUpsellModules((prev) => prev.filter((id) => id !== m.id))
+                              }
+                            }}
+                          />
+                          <Label
+                            htmlFor={`up-mod-${m.id}`}
+                            className="flex-1 cursor-pointer font-medium text-sm flex justify-between"
+                          >
+                            <span>{m.name}</span>
+                            <span className="text-slate-500">
+                              {m.price > 0 ? formatCurrency(m.price) : 'Incluso'}
+                            </span>
+                          </Label>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Valor Único / Implantação (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0,00"
+                  value={upsellOneTimeValue}
+                  onChange={(e) =>
+                    setUpsellOneTimeValue(e.target.value === '' ? '' : parseFloat(e.target.value))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Acréscimo Mensal (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0,00"
+                  value={upsellRecurringValue}
+                  onChange={(e) =>
+                    setUpsellRecurringValue(e.target.value === '' ? '' : parseFloat(e.target.value))
+                  }
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsUpsellModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveUpsell}
+              disabled={isSubmittingUpsell || upsellModules.length === 0}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              {isSubmittingUpsell && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Criar Proposta
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -3766,6 +4024,14 @@ Obrigada.`)
                     <div className="flex flex-col gap-2 w-full sm:w-auto">
                       <div className="flex gap-2 w-full sm:justify-end">
                         <Button
+                          onClick={() => setIsUpsellModalOpen(true)}
+                          size="sm"
+                          variant="outline"
+                          className="bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 flex-1 sm:flex-none"
+                        >
+                          <Plus className="h-4 w-4 mr-2" /> Gerar Upsell
+                        </Button>
+                        <Button
                           onClick={() => setIsSetupTrainingProposalOpen(true)}
                           size="sm"
                           variant="outline"
@@ -3832,8 +4098,8 @@ Obrigada.`)
                           key={sol.id}
                           className="border border-slate-200 rounded-lg overflow-hidden shadow-sm"
                         >
-                          <div className="flex justify-between items-center bg-slate-50 p-3 border-b border-slate-200">
-                            <div className="flex items-center gap-2">
+                          <div className="flex justify-between items-center bg-slate-50 p-3 border-b border-slate-200 flex-wrap gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <Badge
                                 variant="outline"
                                 className={
@@ -3841,13 +4107,57 @@ Obrigada.`)
                                     ? 'bg-blue-50 text-blue-700 border-blue-200'
                                     : sol.tipo === 'Proposta de Treinamento'
                                       ? 'bg-purple-50 text-purple-700 border-purple-200'
-                                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                      : sol.tipo === 'Upsell'
+                                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                 }
                               >
                                 {sol.tipo}
                               </Badge>
-                              <span className="text-xs text-slate-500 font-medium">
-                                Solicitado em:{' '}
+
+                              <Select
+                                value={sol.status || 'Pendente'}
+                                onValueChange={(val) => updateSolicitacaoStatus(sol, val)}
+                                disabled={sol.status === 'Efetivado'}
+                              >
+                                <SelectTrigger
+                                  className={`h-6 text-xs font-medium border-0 shadow-none focus:ring-0 w-[110px] ${
+                                    sol.status === 'Validada'
+                                      ? 'bg-blue-100 text-blue-800'
+                                      : sol.status === 'Efetivado'
+                                        ? 'bg-emerald-100 text-emerald-800'
+                                        : sol.status === 'Em Análise'
+                                          ? 'bg-amber-100 text-amber-800'
+                                          : sol.status === 'Cancelado'
+                                            ? 'bg-red-100 text-red-800'
+                                            : 'bg-slate-200 text-slate-800'
+                                  }`}
+                                >
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Pendente">Pendente</SelectItem>
+                                  <SelectItem value="Em Análise">Em Análise</SelectItem>
+                                  <SelectItem value="Validada">Validada</SelectItem>
+                                  <SelectItem value="Efetivado" disabled>
+                                    Efetivado
+                                  </SelectItem>
+                                  <SelectItem value="Cancelado">Cancelado</SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              {sol.status === 'Validada' && (
+                                <Button
+                                  size="sm"
+                                  className="h-6 px-2 py-0 text-xs bg-emerald-600 hover:bg-emerald-700"
+                                  onClick={() => handleEfetivar(sol)}
+                                >
+                                  <CheckCircle className="h-3 w-3 mr-1" /> Efetivar
+                                </Button>
+                              )}
+
+                              <span className="text-xs text-slate-500 font-medium ml-2">
+                                Solicitado:{' '}
                                 {sol.data_solicitacao ? formatDate(sol.data_solicitacao) : 'N/I'}
                               </span>
                             </div>
