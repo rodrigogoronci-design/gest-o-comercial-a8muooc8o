@@ -166,7 +166,7 @@ export function ContractDocument({
                       {p.name} ({p.limit})
                     </td>
                     <td className="border border-slate-300 p-1.5 text-right">
-                      {formatCurrency(p.price)}
+                      {selectedPlan === p.id ? formatCurrency(planPrice) : formatCurrency(p.price)}
                     </td>
                     <td className="border border-slate-300 p-1.5 text-center">R$ 0,99</td>
                     <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
@@ -558,7 +558,13 @@ export function ContractDocument({
                 </tr>
                 <tr>
                   <td className="border border-slate-300 p-2 font-bold">
-                    Módulos ({selectedModules.length})
+                    Módulos (
+                    {
+                      selectedModules.filter(
+                        (id: string) => !MODULES.find((m) => m.id === id)?.isBasic,
+                      ).length
+                    }
+                    )
                   </td>
                   <td className="border border-slate-300 p-2 text-right">
                     {formatCurrency(modulesPrice)}
@@ -598,10 +604,16 @@ export function ContractDocument({
                   <>
                     <tr className="bg-slate-50 print:bg-slate-100">
                       <td className="border border-slate-300 p-2 font-bold text-right text-xs">
-                        Subtotal (Valor Original)
+                        Subtotal (Valor Calculado Padrão)
                       </td>
                       <td className="border border-slate-300 p-2 text-right font-bold">
-                        {formatCurrency(totalValue + calculatedDiscount)}
+                        {formatCurrency(
+                          (planPrice || 0) +
+                            (modulesPrice || 0) +
+                            (dfePrice || 0) +
+                            (additionalPlatesTotal || 0) +
+                            (additionalBranchesTotal || 0),
+                        )}
                       </td>
                     </tr>
                     <tr>
@@ -615,6 +627,30 @@ export function ContractDocument({
                       </td>
                     </tr>
                   </>
+                )}
+                {(planPrice || 0) +
+                  (modulesPrice || 0) +
+                  (dfePrice || 0) +
+                  (additionalPlatesTotal || 0) +
+                  (additionalBranchesTotal || 0) -
+                  calculatedDiscount !==
+                  totalValue && (
+                  <tr>
+                    <td className="border border-slate-300 p-2 font-bold text-orange-600 text-right">
+                      Ajuste Comercial / Valor Especial
+                    </td>
+                    <td className="border border-slate-300 p-2 text-right text-orange-600 font-medium">
+                      {formatCurrency(
+                        totalValue -
+                          ((planPrice || 0) +
+                            (modulesPrice || 0) +
+                            (dfePrice || 0) +
+                            (additionalPlatesTotal || 0) +
+                            (additionalBranchesTotal || 0) -
+                            calculatedDiscount),
+                      )}
+                    </td>
+                  </tr>
                 )}
                 <tr className="bg-[#1b4382]/5 print:bg-slate-200 text-[#1b4382] print:text-black">
                   <td className="border border-slate-300 p-2 font-bold text-right">

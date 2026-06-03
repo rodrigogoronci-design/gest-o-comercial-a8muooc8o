@@ -41,6 +41,14 @@ interface QuoteDocumentProps {
 
 const FEATURE_CATEGORIES = [
   {
+    title: 'Administração',
+    items: ['Configurações do usuário', 'Configurações de acesso', 'Integração de E-mail'],
+  },
+  {
+    title: 'Básico',
+    items: ['Matriz e Filiais', 'Clientes', 'Fornecedores', 'Veículos', 'Motoristas'],
+  },
+  {
     title: 'Carga',
     items: [
       'Emissão CT-e',
@@ -51,6 +59,14 @@ const FEATURE_CATEGORIES = [
     ],
   },
   {
+    title: 'Comercial',
+    items: ['Gestão de CRM', 'Tabelas de Frete', 'Cotações', 'Propostas Comerciais'],
+  },
+  {
+    title: 'Faturamento',
+    items: ['Geração de Faturas', 'Envio em Lote', 'Gestão de Boletos', 'Arquivo Remessa/Retorno'],
+  },
+  {
     title: 'Financeiro',
     items: [
       'Contas a Pagar/Receber',
@@ -59,22 +75,6 @@ const FEATURE_CATEGORIES = [
       'Fluxo de caixa',
       'DRE Gerencial',
     ],
-  },
-  {
-    title: 'Fiscal',
-    items: ['SPED Fiscal', 'Sintegra', 'Emissão NF-e', 'Nota Fiscal Eletrônica', 'Apuração ICMS'],
-  },
-  {
-    title: 'Básico',
-    items: ['Matriz e Filiais', 'Clientes', 'Fornecedores', 'Veículos', 'Motoristas'],
-  },
-  {
-    title: 'Administração',
-    items: ['Configurações do usuário', 'Configurações de acesso', 'Integração de E-mail'],
-  },
-  {
-    title: 'Controle de Viagem',
-    items: ['Registro de viagem', 'Adiantamento', 'Despesas da viagem', 'Acerto de contas'],
   },
 ]
 
@@ -215,7 +215,7 @@ export function QuoteDocument({
                   <td className="p-1.5">
                     <span className="font-semibold text-slate-800">{planName}</span>
                     <span className="text-[9px] block text-slate-500 mt-0.5">
-                      Administração, Básico, Carga, Faturamento e Financeiro
+                      Administração, Básico, Carga, Comercial, Faturamento e Financeiro
                     </span>
                   </td>
                   <td className="p-1.5 text-center font-medium">1</td>
@@ -240,46 +240,49 @@ export function QuoteDocument({
                   <td className="p-1.5 text-center text-slate-600">Mensalidade Atual</td>
                 </tr>
               )}
-              {selectedModulesData.map((m, idx) => {
-                const hasGrace = moduleGracePeriods[m.id] > 0
-                const graceMonths = moduleGracePeriods[m.id]
-                return (
-                  <tr key={`mod-${idx}`}>
-                    <td className="p-1.5">
-                      <span className="font-semibold text-slate-800">{m.name}</span>
-                      {hasGrace && (
-                        <span className="text-[9px] font-bold text-emerald-600 ml-2">
-                          (Isento por {graceMonths} meses)
-                        </span>
-                      )}
-                      {m.id === 'mod-edi' && (
-                        <span className="text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1">
-                          <strong>* EDI:</strong> Inclusão de Layout padrão Proceda para integração
-                          (arquivos NOTFIS para emissão de CT-e, envios de CONEMB, DOCCOB e OCOREN).
-                        </span>
-                      )}
-                      {m.description && !m.name?.toLowerCase().includes('torre de controle') && (
-                        <span className="text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1">
-                          {m.description}
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-1.5 text-center font-medium">1</td>
-                    <td className="p-1.5 text-right">{formatCurrency(m.price)}</td>
-                    <td className="p-1.5 text-right font-medium">
-                      {hasGrace ? (
-                        <span className="line-through text-slate-400 mr-1">
-                          {formatCurrency(m.price)}
-                        </span>
-                      ) : null}
-                      {hasGrace ? formatCurrency(0) : formatCurrency(m.price)}
-                    </td>
-                    <td className="p-1.5 text-center text-slate-600">
-                      {hasGrace ? `Isento por ${graceMonths} meses` : 'Mensalidade'}
-                    </td>
-                  </tr>
-                )
-              })}
+              {selectedModulesData
+                .filter((m) => !m.isBasic)
+                .map((m, idx) => {
+                  const hasGrace = moduleGracePeriods[m.id] > 0
+                  const graceMonths = moduleGracePeriods[m.id]
+                  return (
+                    <tr key={`mod-${idx}`}>
+                      <td className="p-1.5">
+                        <span className="font-semibold text-slate-800">{m.name}</span>
+                        {hasGrace && (
+                          <span className="text-[9px] font-bold text-emerald-600 ml-2">
+                            (Isento por {graceMonths} meses)
+                          </span>
+                        )}
+                        {m.id === 'mod-edi' && (
+                          <span className="text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1">
+                            <strong>* EDI:</strong> Inclusão de Layout padrão Proceda para
+                            integração (arquivos NOTFIS para emissão de CT-e, envios de CONEMB,
+                            DOCCOB e OCOREN).
+                          </span>
+                        )}
+                        {m.description && !m.name?.toLowerCase().includes('torre de controle') && (
+                          <span className="text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1">
+                            {m.description}
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-1.5 text-center font-medium">1</td>
+                      <td className="p-1.5 text-right">{formatCurrency(m.price)}</td>
+                      <td className="p-1.5 text-right font-medium">
+                        {hasGrace ? (
+                          <span className="line-through text-slate-400 mr-1">
+                            {formatCurrency(m.price)}
+                          </span>
+                        ) : null}
+                        {hasGrace ? formatCurrency(0) : formatCurrency(m.price)}
+                      </td>
+                      <td className="p-1.5 text-center text-slate-600">
+                        {hasGrace ? `Isento por ${graceMonths} meses` : 'Mensalidade'}
+                      </td>
+                    </tr>
+                  )
+                })}
 
               {includeFranchise && dfeData && (
                 <tr>
@@ -456,7 +459,15 @@ export function QuoteDocument({
                 <>
                   <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center text-slate-600 font-medium">
                     <span>Valor Original (Adicionais)</span>
-                    <span>{formatCurrency(totalValue + calculatedDiscount)}</span>
+                    <span>
+                      {formatCurrency(
+                        (planPrice || 0) +
+                          (modulesPrice || 0) +
+                          (dfePrice || 0) +
+                          (additionalPlatesTotal || 0) +
+                          (additionalBranchesTotal || 0),
+                      )}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center text-emerald-600 font-medium mt-1">
                     <span>
@@ -467,6 +478,28 @@ export function QuoteDocument({
                     <span>- {formatCurrency(calculatedDiscount)}</span>
                   </div>
                 </>
+              )}
+              {(planPrice || 0) +
+                (modulesPrice || 0) +
+                (dfePrice || 0) +
+                (additionalPlatesTotal || 0) +
+                (additionalBranchesTotal || 0) -
+                calculatedDiscount !==
+                totalValue && (
+                <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center text-orange-600 font-medium">
+                  <span>Ajuste Comercial nos Adicionais</span>
+                  <span>
+                    {formatCurrency(
+                      totalValue -
+                        ((planPrice || 0) +
+                          (modulesPrice || 0) +
+                          (dfePrice || 0) +
+                          (additionalPlatesTotal || 0) +
+                          (additionalBranchesTotal || 0) -
+                          calculatedDiscount),
+                    )}
+                  </span>
+                </div>
               )}
               <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
                 <span>Nova Mensalidade (Com Isenções)</span>
@@ -487,15 +520,17 @@ export function QuoteDocument({
                   <span className="font-medium">{formatCurrency(planPrice)}</span>
                 </div>
               )}
-              {selectedModulesData.map((m, idx) => (
-                <div
-                  key={`rec-mod-${idx}`}
-                  className="flex justify-between items-center text-slate-600"
-                >
-                  <span>{m.name}</span>
-                  <span className="font-medium">{formatCurrency(m.price)}</span>
-                </div>
-              ))}
+              {selectedModulesData
+                .filter((m) => !m.isBasic)
+                .map((m, idx) => (
+                  <div
+                    key={`rec-mod-${idx}`}
+                    className="flex justify-between items-center text-slate-600"
+                  >
+                    <span>{m.name}</span>
+                    <span className="font-medium">{formatCurrency(m.price)}</span>
+                  </div>
+                ))}
               {includeFranchise && dfeData && (
                 <div className="flex justify-between items-center text-slate-600">
                   <span>{dfeData.name || 'Franquia DF-e'}</span>
@@ -519,8 +554,16 @@ export function QuoteDocument({
               {calculatedDiscount > 0 && (
                 <>
                   <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center text-slate-600 font-medium">
-                    <span>Valor Original</span>
-                    <span>{formatCurrency(totalValue + calculatedDiscount)}</span>
+                    <span>Valor Calculado Padrão</span>
+                    <span>
+                      {formatCurrency(
+                        (planPrice || 0) +
+                          (modulesPrice || 0) +
+                          (dfePrice || 0) +
+                          (additionalPlatesTotal || 0) +
+                          (additionalBranchesTotal || 0),
+                      )}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center text-emerald-600 font-medium mt-1">
                     <span>
@@ -531,6 +574,28 @@ export function QuoteDocument({
                     <span>- {formatCurrency(calculatedDiscount)}</span>
                   </div>
                 </>
+              )}
+              {(planPrice || 0) +
+                (modulesPrice || 0) +
+                (dfePrice || 0) +
+                (additionalPlatesTotal || 0) +
+                (additionalBranchesTotal || 0) -
+                calculatedDiscount !==
+                totalValue && (
+                <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center text-orange-600 font-medium">
+                  <span>Ajuste Comercial / Valor Especial</span>
+                  <span>
+                    {formatCurrency(
+                      totalValue -
+                        ((planPrice || 0) +
+                          (modulesPrice || 0) +
+                          (dfePrice || 0) +
+                          (additionalPlatesTotal || 0) +
+                          (additionalBranchesTotal || 0) -
+                          calculatedDiscount),
+                    )}
+                  </span>
+                </div>
               )}
               <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
                 <span>Total Mensal Final</span>

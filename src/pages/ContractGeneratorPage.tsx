@@ -89,6 +89,9 @@ export default function ContractGeneratorPage() {
   const [newFilialCnpj, setNewFilialCnpj] = useState('')
   const [newFilialNome, setNewFilialNome] = useState('')
 
+  const [manualPlanPrice, setManualPlanPrice] = useState<string>('')
+  const [isPlanPriceManual, setIsPlanPriceManual] = useState(false)
+
   const [descontoMensalidade, setDescontoMensalidade] = useState<number>(0)
   const [tipoDesconto, setTipoDesconto] = useState<'valor' | 'percentual'>('valor')
   const [isencaoPeriodo, setIsencaoPeriodo] = useState<number>(0)
@@ -255,14 +258,24 @@ export default function ContractGeneratorPage() {
     let includeDiag = false
     let diagVisits: any[] = []
     let foundPlan = 'none'
+    let newPlanPriceManual = false
+    let newPlanPrice = ''
 
     items.forEach((item) => {
       if (item.type === 'plan' || PLANS.find((p) => p.id === item.id)) {
         foundPlan = item.id
+        const defPrice = PLANS.find((p) => p.id === item.id)?.price || 0
+        if (item.price !== undefined && item.price !== defPrice) {
+          newPlanPriceManual = true
+          newPlanPrice = item.price.toString()
+        }
       } else if (MODULES.find((m) => m.id === item.id)) {
-        newModules.push(item.id)
-        if (item.tem_gratuidade) {
-          newGracePeriods[item.id] = item.periodo_gratuidade || 3
+        const mod = MODULES.find((m) => m.id === item.id)
+        if (!mod?.isBasic) {
+          newModules.push(item.id)
+          if (item.tem_gratuidade) {
+            newGracePeriods[item.id] = item.periodo_gratuidade || 3
+          }
         }
       } else if (item.id && item.id.startsWith('dfe-')) {
         newDfe = item.id
@@ -280,6 +293,8 @@ export default function ContractGeneratorPage() {
     })
 
     setSelectedPlan(foundPlan)
+    setIsPlanPriceManual(newPlanPriceManual)
+    setManualPlanPrice(newPlanPrice)
     setSelectedModules(newModules)
     setModuleGracePeriods(newGracePeriods)
     setSelectedDfe(newDfe)
@@ -287,6 +302,13 @@ export default function ContractGeneratorPage() {
     setAdditionalPlates(newPlates)
     setImplMode(newImplMode)
     setManualImplValue(newImplValue.toString())
+    if (prop.valor_mensalidade !== undefined && prop.valor_mensalidade !== null) {
+      setIsMensalidadeManual(true)
+      setManualMensalidadeValue(prop.valor_mensalidade.toString())
+    } else {
+      setIsMensalidadeManual(false)
+      setManualMensalidadeValue('')
+    }
     setDescontoMensalidade(prop.desconto_mensalidade || 0)
     setTipoDesconto(prop.tipo_desconto || 'valor')
     setIsencaoPeriodo(prop.isencao_periodo || 0)
@@ -297,10 +319,14 @@ export default function ContractGeneratorPage() {
   }
 
   const planData = useMemo(() => PLANS.find((p) => p.id === selectedPlan), [selectedPlan])
-  const planPrice =
+  const defaultPlanPrice =
     selectedPlan === 'none' || (activeTab === 'cotacao' && quoteTargetType === 'cliente')
       ? 0
       : planData?.price || 0
+  const planPrice =
+    isPlanPriceManual && manualPlanPrice !== ''
+      ? parseFloat(manualPlanPrice) || 0
+      : defaultPlanPrice
   const dfeData = useMemo(() => DFE_TIERS.find((d) => d.id === selectedDfe), [selectedDfe])
   const dfePrice = dfeData?.price || 0
   const modulesPriceStandard = useMemo(
@@ -356,7 +382,20 @@ export default function ContractGeneratorPage() {
       ? (subtotalMensalidadeStandard * validDescontoMensalidade) / 100
       : validDescontoMensalidade
 
-  const totalValue = Math.max(0, subtotalMensalidade - calculatedDiscount)
+  const calculatedTotalValue = Math.max(0, subtotalMensalidade - calculatedDiscount)
+  const [manualMensalidadeValue, setManualMensalidadeValue] = useState<string>('')
+  const [isMensalidadeManual, setIsMensalidadeManual] = useState(false)
+
+  useEffect(() => {
+    if (!isMensalidadeManual) {
+      setManualMensalidadeValue(calculatedTotalValue.toString())
+    }
+  }, [calculatedTotalValue, isMensalidadeManual])
+
+  const totalValue =
+    isMensalidadeManual && manualMensalidadeValue !== ''
+      ? parseFloat(manualMensalidadeValue) || 0
+      : calculatedTotalValue
 
   const totalValueStandard = Math.max(0, subtotalMensalidadeStandard - calculatedDiscountStandard)
 
@@ -422,10 +461,12 @@ export default function ContractGeneratorPage() {
 
   const newItemsToContract = useMemo(() => {
     return [
-      ...selectedModules.map((id) => ({
-        name: MODULES.find((m) => m.id === id)?.name,
-        price: MODULES.find((m) => m.id === id)?.price,
-      })),
+      ...selectedModules
+        .filter((id) => !MODULES.find((m) => m.id === id)?.isBasic)
+        .map((id) => ({
+          name: MODULES.find((m) => m.id === id)?.name,
+          price: MODULES.find((m) => m.id === id)?.price,
+        })),
       ...(selectedDfe !== 'dfe-none' ? [{ name: dfeData?.name, price: dfeData?.price }] : []),
       ...(additionalPlates > 0
         ? [
@@ -534,7 +575,7 @@ export default function ContractGeneratorPage() {
         : planData?.name || 'Plano Personalizado',
     selectedModulesData: selectedModules
       .map((id) => MODULES.find((m) => m.id === id))
-      .filter(Boolean),
+      .filter((m) => m && !m.isBasic),
     trainings: selectedTrainings.map((id) => {
       const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
       return { id, name: t?.name, price: t?.price, isFree: isTreinamentoGratuito }
@@ -854,17 +895,19 @@ export default function ContractGeneratorPage() {
       ...(selectedPlan !== 'none'
         ? [{ id: selectedPlan, type: 'plan', name: planData?.name, price: planPrice }]
         : []),
-      ...selectedModules.map((id) => {
-        const m = MODULES.find((mod) => mod.id === id)
-        return {
-          id,
-          name: m?.name,
-          price: m?.price,
-          implHours: m?.implHours || 0,
-          tem_gratuidade: !!moduleGracePeriods[id],
-          periodo_gratuidade: moduleGracePeriods[id] || 0,
-        }
-      }),
+      ...selectedModules
+        .filter((id) => !MODULES.find((mod) => mod.id === id)?.isBasic)
+        .map((id) => {
+          const m = MODULES.find((mod) => mod.id === id)
+          return {
+            id,
+            name: m?.name,
+            price: m?.price,
+            implHours: m?.implHours || 0,
+            tem_gratuidade: !!moduleGracePeriods[id],
+            periodo_gratuidade: moduleGracePeriods[id] || 0,
+          }
+        }),
       ...(selectedDfe !== 'dfe-none' && dfeData
         ? [{ id: dfeData.id, name: dfeData.name, price: dfeData.price }]
         : []),
@@ -1063,10 +1106,12 @@ export default function ContractGeneratorPage() {
           ? existingClients?.find((c) => c.id === selectedGenClientId)
           : existingClients?.find((c) => c.cnpj.replace(/\D/g, '') === rawCnpj)
 
-      const adicionais = selectedModules.map((id) => {
-        const mod = MODULES.find((m) => m.id === id)
-        return { name: mod?.name || id, price: mod?.price || 0 }
-      })
+      const adicionais = selectedModules
+        .filter((id) => !MODULES.find((m) => m.id === id)?.isBasic)
+        .map((id) => {
+          const mod = MODULES.find((m) => m.id === id)
+          return { name: mod?.name || id, price: mod?.price || 0 }
+        })
       if (selectedDfe !== 'dfe-none' && dfeData) {
         adicionais.push({ name: dfeData.name, price: dfeData.price })
       }
@@ -1578,7 +1623,7 @@ export default function ContractGeneratorPage() {
                   <div className="space-y-3">
                     <Label className="text-sm font-bold">Módulos Adicionais</Label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {MODULES.map((m) => {
+                      {MODULES.filter((m) => !m.isBasic).map((m) => {
                         const isChecked = selectedModules.includes(m.id)
                         return (
                           <div
@@ -1797,6 +1842,74 @@ export default function ContractGeneratorPage() {
                             className="w-20 bg-slate-50 border h-9"
                           />
                         </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 mt-4 pt-4 border-t border-slate-100">
+                    <Label className="text-sm font-bold">Valor Total da Mensalidade (R$)</Label>
+                    <div className="flex gap-3 items-center flex-wrap">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={manualMensalidadeValue}
+                        onChange={(e) => {
+                          setIsMensalidadeManual(true)
+                          setManualMensalidadeValue(e.target.value)
+                        }}
+                        onBlur={(e) => {
+                          if (e.target.value === '') setIsMensalidadeManual(false)
+                        }}
+                        className="w-40 bg-white border"
+                      />
+                      {isMensalidadeManual && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setIsMensalidadeManual(false)
+                            setManualMensalidadeValue(calculatedTotalValue.toString())
+                          }}
+                          className="text-xs text-slate-500 hover:text-slate-700 h-9"
+                        >
+                          Restaurar Calculado ({formatCurrency(calculatedTotalValue)})
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 mt-4 pt-4 border-t border-slate-100">
+                    <Label className="text-sm font-bold">Valor Total da Mensalidade (R$)</Label>
+                    <div className="flex gap-3 items-center flex-wrap">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={manualMensalidadeValue}
+                        onChange={(e) => {
+                          setIsMensalidadeManual(true)
+                          setManualMensalidadeValue(e.target.value)
+                        }}
+                        onBlur={(e) => {
+                          if (e.target.value === '') setIsMensalidadeManual(false)
+                        }}
+                        className="w-40 bg-white border"
+                      />
+                      {isMensalidadeManual && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setIsMensalidadeManual(false)
+                            setManualMensalidadeValue(calculatedTotalValue.toString())
+                          }}
+                          className="text-xs text-slate-500 hover:text-slate-700 h-9"
+                        >
+                          Restaurar Calculado ({formatCurrency(calculatedTotalValue)})
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -2195,25 +2308,61 @@ export default function ContractGeneratorPage() {
                 <CardContent className="space-y-6">
                   <div className="space-y-3">
                     <Label className="text-sm font-bold">Plano Base</Label>
-                    <Select value={selectedPlan} onValueChange={setSelectedPlan}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Nenhum (Somente Módulos / Upsell)</SelectItem>
-                        {PLANS.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.name} - {formatCurrency(p.price)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex gap-4 items-start">
+                      <div className="flex-1">
+                        <Select
+                          value={selectedPlan}
+                          onValueChange={(val) => {
+                            setSelectedPlan(val)
+                            setIsPlanPriceManual(false)
+                            setManualPlanPrice('')
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nenhum (Somente Módulos / Upsell)</SelectItem>
+                            {PLANS.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.name} - {formatCurrency(p.price)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {selectedPlan !== 'none' && (
+                        <div className="w-32">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="Valor"
+                            value={isPlanPriceManual ? manualPlanPrice : defaultPlanPrice}
+                            onChange={(e) => {
+                              setIsPlanPriceManual(true)
+                              setManualPlanPrice(e.target.value)
+                            }}
+                            onBlur={(e) => {
+                              if (e.target.value === '') {
+                                setIsPlanPriceManual(false)
+                                setManualPlanPrice('')
+                              }
+                            }}
+                            className="bg-white border-slate-300 h-9"
+                          />
+                          <span className="text-[10px] text-slate-500 mt-1 block">
+                            Valor Mensal (R$)
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <Separator />
                   <div className="space-y-3">
                     <Label className="text-sm font-bold">Módulos Adicionais</Label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {MODULES.map((m) => {
+                      {MODULES.filter((m) => !m.isBasic).map((m) => {
                         const isChecked = selectedModules.includes(m.id)
                         return (
                           <div
