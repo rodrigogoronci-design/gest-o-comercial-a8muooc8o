@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Pencil, UserCheck, CalendarClock, MoreVertical } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Pencil, UserCheck, CalendarClock, MoreVertical, FileText, Paperclip } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { CrmProspect } from '@/pages/CRMPage'
@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { supabase } from '@/lib/supabase/client'
 
 interface CrmKanbanBoardProps {
   prospects: CrmProspect[]
@@ -35,6 +36,36 @@ export function CrmKanbanBoard({
   onEfetivar,
 }: CrmKanbanBoardProps) {
   const [draggedId, setDraggedId] = useState<string | null>(null)
+  const [proposalsByProspect, setProposalsByProspect] = useState<Record<string, number>>({})
+
+  const prospectIdsStr = prospects
+    .map((p) => p.id)
+    .sort()
+    .join(',')
+
+  useEffect(() => {
+    const fetchProposals = async () => {
+      if (prospects.length === 0) return
+
+      const prospectIds = prospects.map((p) => p.id)
+
+      const { data } = await supabase
+        .from('crm_propostas')
+        .select('prospect_id')
+        .in('prospect_id', prospectIds)
+
+      if (data) {
+        const counts: Record<string, number> = {}
+        data.forEach((p) => {
+          if (p.prospect_id) {
+            counts[p.prospect_id] = (counts[p.prospect_id] || 0) + 1
+          }
+        })
+        setProposalsByProspect(counts)
+      }
+    }
+    fetchProposals()
+  }, [prospectIdsStr])
 
   const handleDragStart = (e: React.DragEvent, prospectId: string) => {
     e.dataTransfer.setData('text/plain', prospectId)
@@ -114,8 +145,27 @@ export function CrmKanbanBoard({
                     )}
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <div className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 pr-2">
+                      <div className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 pr-2 flex items-center gap-2 flex-wrap">
                         {p.empresa}
+                        {proposalsByProspect[p.id] > 0 && (
+                          <div
+                            title="Possui proposta vinculada"
+                            className="bg-indigo-50 text-indigo-600 p-1 rounded-md border border-indigo-100 flex-shrink-0"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                          </div>
+                        )}
+                        {(p as any).proposta_url && (
+                          <div
+                            title="Proposta"
+                            className="bg-emerald-50 text-emerald-600 p-1 px-1.5 rounded-md border border-emerald-100 flex-shrink-0 flex items-center gap-1"
+                          >
+                            <Paperclip className="w-3.5 h-3.5" />
+                            <span className="text-[10px] font-medium hidden sm:inline leading-none">
+                              Proposta
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

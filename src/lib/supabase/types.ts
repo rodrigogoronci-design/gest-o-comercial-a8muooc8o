@@ -3328,7 +3328,7 @@ export const Constants = {
 //   contato_nome: text (not null)
 //   telefone: text (nullable)
 //   email: text (nullable)
-//   status: text (not null, default: 'Contato inicial'::text)
+//   status: text (not null, default: 'Novo Lead'::text)
 //   observacoes: text (nullable)
 //   ultima_interacao: timestamp with time zone (nullable, default: now())
 //   created_at: timestamp with time zone (nullable, default: now())

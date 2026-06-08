@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
+import { cn } from '@/lib/utils'
+import { CrmProspectPropostasTab } from './CrmProspectPropostasTab'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2, UploadCloud } from 'lucide-react'
+import { Loader2, UploadCloud, FileText, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -47,9 +49,14 @@ export function CrmProspectForm({
 }: {
   onSubmit: (v: ProspectFormValues) => void
   isSubmitting?: boolean
-  initialData?: Partial<ProspectFormValues>
+  initialData?: Partial<ProspectFormValues> & { id?: string }
 }) {
   const [isLoading, setIsLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState<'dados' | 'propostas'>('dados')
+  const [propostaUrl, setPropostaUrl] = useState<string | null>(
+    (initialData as any)?.proposta_url || null,
+  )
+  const [isUploadingProposta, setIsUploadingProposta] = useState(false)
   const { toast } = useToast()
   const form = useForm<ProspectFormValues>({
     resolver: zodResolver(prospectFormSchema),
@@ -224,235 +231,401 @@ export function CrmProspectForm({
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 py-2">
-        {!initialData && (
-          <div className="flex justify-between items-center mb-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
-            <div className="text-sm text-slate-600">
-              <span className="font-semibold block text-slate-800">Preenchimento Automático</span>
-              Importe o Cartão CNPJ em PDF para preencher os dados.
-            </div>
-            <div>
-              <Input
-                type="file"
-                accept="application/pdf"
-                className="hidden"
-                id="cnpj-upload"
-                onChange={handleFileUpload}
-                disabled={isLoading || isSubmitting}
-              />
-              <Label
-                htmlFor="cnpj-upload"
-                className="flex items-center gap-2 cursor-pointer bg-white hover:bg-slate-100 text-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors border shadow-sm"
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
-                ) : (
-                  <UploadCloud className="h-4 w-4 text-indigo-600" />
-                )}
-                Importar PDF
-              </Label>
-            </div>
-          </div>
-        )}
+    <div className="w-full">
+      {initialData && initialData.id && (
+        <div className="flex space-x-1 p-1 bg-slate-100 rounded-lg mb-4">
+          <button
+            type="button"
+            onClick={() => setActiveTab('dados')}
+            className={cn(
+              'flex-1 text-sm font-medium py-1.5 px-3 rounded-md transition-all',
+              activeTab === 'dados'
+                ? 'bg-white shadow-sm text-slate-900'
+                : 'text-slate-600 hover:text-slate-900',
+            )}
+          >
+            Dados do Lead
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('propostas')}
+            className={cn(
+              'flex-1 text-sm font-medium py-1.5 px-3 rounded-md transition-all',
+              activeTab === 'propostas'
+                ? 'bg-white shadow-sm text-slate-900'
+                : 'text-slate-600 hover:text-slate-900',
+            )}
+          >
+            Propostas
+          </button>
+        </div>
+      )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <FormField
-            control={form.control}
-            name="cnpj"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>CNPJ</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Input
-                      placeholder="00.000.000/0001-00"
-                      maxLength={18}
-                      {...field}
-                      onChange={(e) => {
-                        field.onChange(e)
-                        handleCnpjChange(e.target.value)
-                      }}
-                    />
-                    {isLoading && (
-                      <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
-                    )}
+      {activeTab === 'dados' ? (
+        <>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 py-2">
+              {!initialData && (
+                <div className="flex justify-between items-center mb-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  <div className="text-sm text-slate-600">
+                    <span className="font-semibold block text-slate-800">
+                      Preenchimento Automático
+                    </span>
+                    Importe o Cartão CNPJ em PDF para preencher os dados.
                   </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="empresa"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Empresa *</FormLabel>
-                <FormControl>
-                  <Input placeholder="Razão Social" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <FormField
-            control={form.control}
-            name="contato_nome"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Responsável *</FormLabel>
-                <FormControl>
-                  <Input placeholder="Nome" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="telefone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Telefone</FormLabel>
-                <FormControl>
-                  <Input placeholder="(00) 00000-0000" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>E-mail</FormLabel>
-                <FormControl>
-                  <Input placeholder="email@empresa.com" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="endereco"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Endereço</FormLabel>
-                <FormControl>
-                  <Input placeholder="Rua, Número, Cidade" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {![
-                      'Novo Lead',
-                      'Contato inicial',
-                      'Em negociação',
-                      'Proposta enviada',
-                      'Fechado',
-                      'Cliente Efetivado',
-                      'Perdido',
-                    ].includes(field.value) && (
-                      <SelectItem value={field.value} className="hidden">
-                        {field.value}
-                      </SelectItem>
-                    )}
-                    <SelectItem value="Novo Lead">Novo Lead</SelectItem>
-                    <SelectItem value="Contato inicial">Contato inicial</SelectItem>
-                    <SelectItem value="Em negociação">Em negociação</SelectItem>
-                    <SelectItem value="Proposta enviada">Proposta enviada</SelectItem>
-                    <SelectItem value="Fechado">Fechado</SelectItem>
-                    <SelectItem value="Cliente Efetivado">Cliente Efetivado</SelectItem>
-                    <SelectItem value="Perdido">Perdido</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="classificacao"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Classificação</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || 'Frio'}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Frio">Frio</SelectItem>
-                    <SelectItem value="Morno">Morno</SelectItem>
-                    <SelectItem value="Quente">Quente</SelectItem>
-                    <SelectItem value="Muito Quente">Muito Quente</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="data_followup"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Data Follow-up</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        <FormField
-          control={form.control}
-          name="observacoes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Observações</FormLabel>
-              <FormControl>
-                <Textarea
-                  className="resize-none min-h-[100px]"
-                  placeholder="Adicione notas ou histórico de follow-ups aqui..."
-                  {...field}
+                  <div>
+                    <Input
+                      type="file"
+                      accept="application/pdf"
+                      className="hidden"
+                      id="cnpj-upload"
+                      onChange={handleFileUpload}
+                      disabled={isLoading || isSubmitting}
+                    />
+                    <Label
+                      htmlFor="cnpj-upload"
+                      className="flex items-center gap-2 cursor-pointer bg-white hover:bg-slate-100 text-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors border shadow-sm"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                      ) : (
+                        <UploadCloud className="h-4 w-4 text-indigo-600" />
+                      )}
+                      Importar PDF
+                    </Label>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="cnpj"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CNPJ</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            placeholder="00.000.000/0001-00"
+                            maxLength={18}
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e)
+                              handleCnpjChange(e.target.value)
+                            }}
+                          />
+                          {isLoading && (
+                            <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+                          )}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+                <FormField
+                  control={form.control}
+                  name="empresa"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Empresa *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Razão Social" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="contato_nome"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Responsável *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nome" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="telefone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="(00) 00000-0000" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>E-mail</FormLabel>
+                      <FormControl>
+                        <Input placeholder="email@empresa.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="endereco"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Endereço</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Rua, Número, Cidade" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {![
+                            'Novo Lead',
+                            'Contato inicial',
+                            'Em negociação',
+                            'Proposta enviada',
+                            'Fechado',
+                            'Cliente Efetivado',
+                            'Perdido',
+                          ].includes(field.value) && (
+                            <SelectItem value={field.value} className="hidden">
+                              {field.value}
+                            </SelectItem>
+                          )}
+                          <SelectItem value="Novo Lead">Novo Lead</SelectItem>
+                          <SelectItem value="Contato inicial">Contato inicial</SelectItem>
+                          <SelectItem value="Em negociação">Em negociação</SelectItem>
+                          <SelectItem value="Proposta enviada">Proposta enviada</SelectItem>
+                          <SelectItem value="Fechado">Fechado</SelectItem>
+                          <SelectItem value="Cliente Efetivado">Cliente Efetivado</SelectItem>
+                          <SelectItem value="Perdido">Perdido</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="classificacao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Classificação</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value || 'Frio'}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Frio">Frio</SelectItem>
+                          <SelectItem value="Morno">Morno</SelectItem>
+                          <SelectItem value="Quente">Quente</SelectItem>
+                          <SelectItem value="Muito Quente">Muito Quente</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="data_followup"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data Follow-up</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={form.control}
+                name="observacoes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observações</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        className="resize-none min-h-[100px]"
+                        placeholder="Adicione notas ou histórico de follow-ups aqui..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="pt-2 flex justify-end">
+                <Button type="submit" disabled={isSubmitting || isLoading}>
+                  {isSubmitting ? 'Salvando...' : 'Salvar Contato'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+
+          {initialData?.id && (
+            <div className="mt-6 border-t border-slate-200 pt-4">
+              <h4 className="text-sm font-semibold text-slate-800 mb-3">Anexar Proposta</h4>
+              {propostaUrl ? (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-emerald-50 border border-emerald-100 p-3 rounded-lg gap-3">
+                  <div className="flex items-center gap-2 text-emerald-700 overflow-hidden">
+                    <FileText className="w-5 h-5 flex-shrink-0" />
+                    <span className="text-sm font-medium truncate" title={propostaUrl}>
+                      {propostaUrl.replace(
+                        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}-\d+-/,
+                        '',
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 bg-white border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
+                      onClick={async () => {
+                        try {
+                          const { data: publicUrlData } = supabase.storage
+                            .from('crm-attachments')
+                            .getPublicUrl(propostaUrl)
+                          window.open(publicUrlData.publicUrl, '_blank')
+                        } catch (e) {
+                          toast({ title: 'Erro ao abrir arquivo', variant: 'destructive' })
+                        }
+                      }}
+                    >
+                      <Eye className="w-4 h-4 mr-1.5" /> Visualizar Proposta
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={async () => {
+                        setIsUploadingProposta(true)
+                        try {
+                          await supabase.storage.from('crm-attachments').remove([propostaUrl])
+                          await supabase
+                            .from('crm_prospects')
+                            .update({ proposta_url: null })
+                            .eq('id', initialData.id)
+                          setPropostaUrl(null)
+                          toast({ title: 'Proposta removida com sucesso' })
+                        } catch (e: any) {
+                          toast({
+                            title: 'Erro ao remover',
+                            description: e.message,
+                            variant: 'destructive',
+                          })
+                        } finally {
+                          setIsUploadingProposta(false)
+                        }
+                      }}
+                      disabled={isUploadingProposta}
+                    >
+                      Remover
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <Input
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    id="proposta-upload"
+                    disabled={isUploadingProposta}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      setIsUploadingProposta(true)
+                      try {
+                        const fileName = `${initialData.id}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+                        const { error: uploadError } = await supabase.storage
+                          .from('crm-attachments')
+                          .upload(fileName, file)
+                        if (uploadError) throw uploadError
+
+                        const { error: dbError } = await supabase
+                          .from('crm_prospects')
+                          .update({ proposta_url: fileName })
+                          .eq('id', initialData.id)
+                        if (dbError) throw dbError
+
+                        setPropostaUrl(fileName)
+                        toast({ title: 'Proposta anexada com sucesso' })
+                      } catch (err: any) {
+                        toast({
+                          title: 'Erro ao anexar',
+                          description: err.message,
+                          variant: 'destructive',
+                        })
+                      } finally {
+                        setIsUploadingProposta(false)
+                        e.target.value = ''
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={isUploadingProposta}
+                    onClick={() => document.getElementById('proposta-upload')?.click()}
+                  >
+                    {isUploadingProposta ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <UploadCloud className="w-4 h-4 mr-2" />
+                    )}
+                    Fazer Upload
+                  </Button>
+                  <span className="text-sm text-slate-500">
+                    Adicione o documento de proposta (formato .pdf)
+                  </span>
+                </div>
+              )}
+            </div>
           )}
+        </>
+      ) : (
+        <CrmProspectPropostasTab
+          prospectId={initialData!.id!}
+          prospectName={initialData!.empresa || ''}
         />
-        <div className="pt-2 flex justify-end">
-          <Button type="submit" disabled={isSubmitting || isLoading}>
-            {isSubmitting ? 'Salvando...' : 'Salvar Contato'}
-          </Button>
-        </div>
-      </form>
-    </Form>
+      )}
+    </div>
   )
 }
