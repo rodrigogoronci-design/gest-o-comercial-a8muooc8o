@@ -519,7 +519,7 @@ export function CrmProspectForm({
                       onClick={async () => {
                         try {
                           const { data: publicUrlData } = supabase.storage
-                            .from('crm-attachments')
+                            .from('proposals')
                             .getPublicUrl(propostaUrl)
                           window.open(publicUrlData.publicUrl, '_blank')
                         } catch (e) {
@@ -529,6 +529,55 @@ export function CrmProspectForm({
                     >
                       <Eye className="w-4 h-4 mr-1.5" /> Visualizar Proposta
                     </Button>
+                    <Input
+                      type="file"
+                      accept=".pdf"
+                      className="hidden"
+                      id="proposta-replace"
+                      disabled={isUploadingProposta}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        setIsUploadingProposta(true)
+                        try {
+                          await supabase.storage.from('proposals').remove([propostaUrl])
+
+                          const fileName = `${initialData.id}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+                          const { error: uploadError } = await supabase.storage
+                            .from('proposals')
+                            .upload(fileName, file)
+                          if (uploadError) throw uploadError
+
+                          const { error: dbError } = await supabase
+                            .from('crm_prospects')
+                            .update({ proposta_url: fileName })
+                            .eq('id', initialData.id)
+                          if (dbError) throw dbError
+
+                          setPropostaUrl(fileName)
+                          toast({ title: 'Proposta substituída com sucesso' })
+                        } catch (err: any) {
+                          toast({
+                            title: 'Erro ao substituir',
+                            description: err.message,
+                            variant: 'destructive',
+                          })
+                        } finally {
+                          setIsUploadingProposta(false)
+                          e.target.value = ''
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 bg-white border-amber-200 text-amber-700 hover:bg-amber-100 hover:text-amber-800"
+                      onClick={() => document.getElementById('proposta-replace')?.click()}
+                      disabled={isUploadingProposta}
+                    >
+                      Substituir
+                    </Button>
                     <Button
                       type="button"
                       variant="ghost"
@@ -537,7 +586,7 @@ export function CrmProspectForm({
                       onClick={async () => {
                         setIsUploadingProposta(true)
                         try {
-                          await supabase.storage.from('crm-attachments').remove([propostaUrl])
+                          await supabase.storage.from('proposals').remove([propostaUrl])
                           await supabase
                             .from('crm_prospects')
                             .update({ proposta_url: null })
@@ -575,7 +624,7 @@ export function CrmProspectForm({
                       try {
                         const fileName = `${initialData.id}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
                         const { error: uploadError } = await supabase.storage
-                          .from('crm-attachments')
+                          .from('proposals')
                           .upload(fileName, file)
                         if (uploadError) throw uploadError
 

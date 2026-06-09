@@ -155,17 +155,6 @@ export function CrmKanbanBoard({
                             <FileText className="w-3.5 h-3.5" />
                           </div>
                         )}
-                        {(p as any).proposta_url && (
-                          <div
-                            title="Proposta"
-                            className="bg-emerald-50 text-emerald-600 p-1 px-1.5 rounded-md border border-emerald-100 flex-shrink-0 flex items-center gap-1"
-                          >
-                            <Paperclip className="w-3.5 h-3.5" />
-                            <span className="text-[10px] font-medium hidden sm:inline leading-none">
-                              Proposta
-                            </span>
-                          </div>
-                        )}
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -195,26 +184,37 @@ export function CrmKanbanBoard({
 
                     <div className="text-sm text-slate-600 mb-4">{p.contato_nome}</div>
 
-                    <div className="flex items-center justify-between mt-auto">
-                      {p.data_followup ? (
-                        <div
-                          className={cn(
-                            'flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded-md bg-slate-50 border',
-                            p.data_followup <= today &&
-                              !['Fechado', 'Cliente Efetivado', 'Perdido'].includes(p.status)
-                              ? 'text-amber-700 border-amber-200 bg-amber-50'
-                              : 'text-slate-600 border-slate-200',
-                          )}
-                        >
-                          <CalendarClock className="w-3.5 h-3.5" />
-                          {new Date(p.data_followup + 'T12:00:00Z').toLocaleDateString('pt-BR', {
-                            day: '2-digit',
-                            month: 'short',
-                          })}
-                        </div>
-                      ) : (
-                        <div />
-                      )}
+                    <div className="flex items-center justify-between mt-auto gap-2">
+                      <div className="flex items-center gap-2">
+                        {p.data_followup && (
+                          <div
+                            className={cn(
+                              'flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded-md bg-slate-50 border',
+                              p.data_followup <= today &&
+                                !['Fechado', 'Cliente Efetivado', 'Perdido'].includes(p.status)
+                                ? 'text-amber-700 border-amber-200 bg-amber-50'
+                                : 'text-slate-600 border-slate-200',
+                            )}
+                          >
+                            <CalendarClock className="w-3.5 h-3.5" />
+                            {new Date(p.data_followup + 'T12:00:00Z').toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: 'short',
+                            })}
+                          </div>
+                        )}
+                        {(p as any).proposta_url && (
+                          <div
+                            title="Proposta Anexada"
+                            className="bg-emerald-50 text-emerald-600 p-1 px-1.5 rounded-md border border-emerald-100 flex-shrink-0 flex items-center gap-1"
+                          >
+                            <Paperclip className="w-3.5 h-3.5" />
+                            <span className="text-[10px] font-medium hidden sm:inline leading-none">
+                              Proposta
+                            </span>
+                          </div>
+                        )}
+                      </div>
 
                       <span
                         className={cn(

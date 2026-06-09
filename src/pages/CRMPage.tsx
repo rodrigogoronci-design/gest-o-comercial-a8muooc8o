@@ -63,6 +63,7 @@ export type CrmProspect = {
   ultima_interacao: string
   diagnostico: any | null
   tags: string[] | null
+  proposta_url?: string | null
 }
 
 export default function CRMPage() {
