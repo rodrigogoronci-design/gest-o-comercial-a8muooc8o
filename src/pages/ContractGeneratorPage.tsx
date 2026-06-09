@@ -2011,7 +2011,7 @@ export default function ContractGeneratorPage() {
                           htmlFor="presencial"
                           className="cursor-pointer font-medium flex-1 h-full py-1"
                         >
-                          Presencial (R$ 170/h)
+                          Presencial (R$ 260/h)
                         </Label>
                       </div>
                     </RadioGroup>
@@ -2703,7 +2703,7 @@ export default function ContractGeneratorPage() {
                           htmlFor="presencial-quote"
                           className="cursor-pointer font-medium flex-1 h-full py-1"
                         >
-                          Presencial (R$ 170/h)
+                          Presencial (R$ 260/h)
                         </Label>
                       </div>
                     </RadioGroup>

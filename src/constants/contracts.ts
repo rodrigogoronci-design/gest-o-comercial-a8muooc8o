@@ -16,7 +16,7 @@ export const PLANS = [
 ]
 
 export const IMPLEMENTATION_RATES = {
-  presencial: 170.0,
+  presencial: 260.0,
   remoto: 130.0,
 }
 
