@@ -334,7 +334,9 @@ export default function ContractGeneratorPage() {
 
   const planData = useMemo(() => PLANS.find((p) => p.id === selectedPlan), [selectedPlan])
   const defaultPlanPrice =
-    selectedPlan === 'none' || (activeTab === 'cotacao' && quoteTargetType === 'cliente')
+    selectedPlan === 'none' ||
+    (activeTab === 'cotacao' && quoteTargetType === 'cliente') ||
+    (activeTab === 'gerar' && selectedGenTargetType === 'cliente')
       ? 0
       : planData?.price || 0
   const planPrice =
@@ -1338,6 +1340,16 @@ export default function ContractGeneratorPage() {
           console.error('Erro ao enviar email automático de aditivo', e)
         }
 
+        if (loadedProposalId && loadedProposalId !== 'none') {
+          await supabase.from('crm_propostas').update({
+            valor_mensalidade: totalValue,
+            valor_implantacao: implValue,
+            desconto_mensalidade: validDescontoMensalidade,
+            tipo_desconto: tipoDesconto,
+            isencao_periodo: isencaoPeriodo,
+          }).eq('id', loadedProposalId)
+        }
+
         toast({
           title: 'Cliente Atualizado',
           description: 'O contrato foi salvo e o aditivo enviado por e-mail.',
@@ -1398,6 +1410,17 @@ export default function ContractGeneratorPage() {
           } catch (e) {
             console.error('Erro ao enviar email automático de novo contrato', e)
           }
+        }
+
+        if (loadedProposalId && loadedProposalId !== 'none') {
+          await supabase.from('crm_propostas').update({
+            cliente_id: newClient.id,
+            valor_mensalidade: totalValue,
+            valor_implantacao: implValue,
+            desconto_mensalidade: validDescontoMensalidade,
+            tipo_desconto: tipoDesconto,
+            isencao_periodo: isencaoPeriodo,
+          }).eq('id', loadedProposalId)
         }
 
         toast({
@@ -1738,19 +1761,55 @@ export default function ContractGeneratorPage() {
                     <>
                       <div className="space-y-3">
                         <Label className="text-sm font-bold">Plano Base</Label>
-                        <Select value={selectedPlan} onValueChange={setSelectedPlan}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Nenhum (Somente Módulos / Upsell)</SelectItem>
-                            {PLANS.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>
-                                {p.name} - {formatCurrency(p.price)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="flex gap-4 items-start">
+                          <div className="flex-1">
+                            <Select
+                              value={selectedPlan}
+                              onValueChange={(val) => {
+                                setSelectedPlan(val)
+                                setIsPlanPriceManual(false)
+                                setManualPlanPrice('')
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Nenhum (Somente Módulos / Upsell)</SelectItem>
+                                {PLANS.map((p) => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    {p.name} - {formatCurrency(p.price)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {selectedPlan !== 'none' && (
+                            <div className="w-32">
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                placeholder="Valor"
+                                value={isPlanPriceManual ? manualPlanPrice : defaultPlanPrice}
+                                onChange={(e) => {
+                                  setIsPlanPriceManual(true)
+                                  setManualPlanPrice(e.target.value)
+                                }}
+                                onBlur={(e) => {
+                                  if (e.target.value === '') {
+                                    setIsPlanPriceManual(false)
+                                    setManualPlanPrice('')
+                                  }
+                                }}
+                                className="bg-white border-slate-300 h-9"
+                              />
+                              <span className="text-[10px] text-slate-500 mt-1 block">
+                                Valor Mensal (R$)
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <Separator />
                     </>
@@ -2036,40 +2095,6 @@ export default function ContractGeneratorPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-3 mt-4 pt-4 border-t border-slate-100">
-                    <Label className="text-sm font-bold">Valor Total da Mensalidade (R$)</Label>
-                    <div className="flex gap-3 items-center flex-wrap">
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
-                        value={manualMensalidadeValue}
-                        onChange={(e) => {
-                          setIsMensalidadeManual(true)
-                          setManualMensalidadeValue(e.target.value)
-                        }}
-                        onBlur={(e) => {
-                          if (e.target.value === '') setIsMensalidadeManual(false)
-                        }}
-                        className="w-40 bg-white border"
-                      />
-                      {isMensalidadeManual && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setIsMensalidadeManual(false)
-                            setManualMensalidadeValue(calculatedTotalValue.toString())
-                          }}
-                          className="text-xs text-slate-500 hover:text-slate-700 h-9"
-                        >
-                          Restaurar Calculado ({formatCurrency(calculatedTotalValue)})
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
                   <div className="space-y-3 mt-4">
                     <Label className="text-sm font-bold flex items-center gap-2 text-[#1e3a8a]">
                       <Gift className="w-4 h-4 text-orange-500" /> Prazos Concedidos / Condições
@@ -2112,9 +2137,7 @@ export default function ContractGeneratorPage() {
                     </RadioGroup>
 
                     <div className="mt-4 pt-2 border-t border-slate-100 space-y-2">
-                      <Label className="text-xs">
-                        Valor Personalizado (Visita Presencial de Diagnóstico)
-                      </Label>
+                      <Label className="text-xs">Valor Personalizado de Implantação</Label>
                       <div className="flex gap-3 items-center">
                         <Input
                           type="number"
@@ -2128,25 +2151,115 @@ export default function ContractGeneratorPage() {
                         </span>
                       </div>
                     </div>
+                  </div>
 
-                    <Separator className="my-4" />
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-sm font-bold">Treinamentos Adicionais</Label>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="treinamento-gratuito-gerar"
-                            checked={isTreinamentoGratuito}
-                            onCheckedChange={(c) => setIsTreinamentoGratuito(c as boolean)}
-                          />
-                          <Label
-                            htmlFor="treinamento-gratuito-gerar"
-                            className="text-xs cursor-pointer font-medium text-emerald-600"
-                          >
-                            Treinamento Gratuito
-                          </Label>
-                        </div>
+                  <Separator className="my-4" />
+
+                  <div className="space-y-3">
+                    <Label className="text-sm font-bold">Serviços Adicionais</Label>
+                    <div className="flex flex-col gap-2 border p-3 rounded-lg bg-slate-50 mb-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="gerar-diagnostic"
+                          checked={includeDiagnosticVisit}
+                          onCheckedChange={(c) => setIncludeDiagnosticVisit(c as boolean)}
+                        />
+                        <Label
+                          htmlFor="gerar-diagnostic"
+                          className="text-xs flex-1 cursor-pointer font-medium"
+                        >
+                          Adicionar Visita Presencial de Diagnóstico
+                        </Label>
                       </div>
+                      {includeDiagnosticVisit && (
+                        <div className="space-y-3 pt-2">
+                          {diagnosticVisits.map((visit, index) => (
+                            <div
+                              key={visit.id}
+                              className="pl-6 flex flex-col sm:flex-row gap-4 items-end"
+                            >
+                              <div className="flex-1">
+                                <Label className="text-sm font-semibold text-slate-700">
+                                  Valor da Visita
+                                </Label>
+                                <Input
+                                  type="number"
+                                  placeholder="Ex: 1500"
+                                  value={visit.value}
+                                  onChange={(e) => {
+                                    const newVisits = [...diagnosticVisits]
+                                    newVisits[index].value = e.target.value
+                                    setDiagnosticVisits(newVisits)
+                                  }}
+                                  className="w-full bg-white mt-1 text-base font-medium h-12 border-slate-300"
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <Label className="text-sm font-semibold text-slate-700">
+                                  Data da Visita
+                                </Label>
+                                <Input
+                                  type="date"
+                                  value={visit.date}
+                                  onChange={(e) => {
+                                    const newVisits = [...diagnosticVisits]
+                                    newVisits[index].date = e.target.value
+                                    setDiagnosticVisits(newVisits)
+                                  }}
+                                  className="w-full bg-white mt-1 text-base font-medium h-12 border-slate-300"
+                                />
+                              </div>
+                              {diagnosticVisits.length > 1 && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-12 w-12 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => {
+                                    setDiagnosticVisits(
+                                      diagnosticVisits.filter((v) => v.id !== visit.id),
+                                    )
+                                  }}
+                                >
+                                  <Trash className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                          <div className="pl-6">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs mt-2"
+                              onClick={() => {
+                                setDiagnosticVisits([
+                                  ...diagnosticVisits,
+                                  { id: Math.random().toString(), date: '', value: '' },
+                                ])
+                              }}
+                            >
+                              + Adicionar Outra Visita
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-bold">Treinamentos Adicionais</Label>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="treinamento-gratuito-gerar"
+                          checked={isTreinamentoGratuito}
+                          onCheckedChange={(c) => setIsTreinamentoGratuito(c as boolean)}
+                        />
+                        <Label
+                          htmlFor="treinamento-gratuito-gerar"
+                          className="text-xs cursor-pointer font-medium text-emerald-600"
+                        >
+                          Treinamento Gratuito
+                        </Label>
+                      </div>
+                    </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {PREDEFINED_TRAININGS.map((t) => (
                           <div
