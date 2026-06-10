@@ -515,23 +515,7 @@ export function ContractDocument({
             </p>
             <p>
               5.20) A CONTRATANTE poderá solicitar o cancelamento do contrato a qualquer momento,
-              desde que esteja adimplente com suas obrigações financeiras, considerando a concessão
-              de condições comerciais diferenciadas, especialmente: desconto mensal de R$ 460,00
-              (quatrocentos e sessenta reais) sobre o valor integral do plano, reduzindo-o de R$
-              2.460,00 (dois mil quatrocentos e sessenta reais) para R$ 2.000,00 (dois mil reais);
-              fica estabelecida a vigência mínima de 12 (doze) meses para manutenção das referidas
-              condições.
-              <br />
-              Em caso de cancelamento antecipado, antes do término do período de 12 (doze) meses, a
-              CONTRATANTE concorda com a cobrança proporcional dos valores referentes aos descontos
-              concedidos, considerando:
-              <br />I – a diferença mensal de R$ 460,00 (quatrocentos e sessenta reais),
-              multiplicada pelo número de meses restantes para o término do período de 12 (doze)
-              meses;
-              <br />
-              II – o valor integral do desconto concedido na taxa de implantação, no montante de R$
-              1.370,00 (mil trezentos e setenta reais), caso ainda não tenha sido integralmente
-              compensado pelo prazo contratual.
+              desde que esteja adimplente com suas obrigações financeiras.
             </p>
             <p>
               5.21) No caso da CONTRATANTE solicitar o cancelamento do contrato, a CONTRATADA
