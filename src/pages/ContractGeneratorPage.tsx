@@ -75,6 +75,8 @@ export default function ContractGeneratorPage() {
   const [name, setName] = useState(initialProspect)
   const [cnpj, setCnpj] = useState(initialCnpj ? formatCNPJ(initialCnpj) : '')
   const [address, setAddress] = useState('')
+  const [email, setEmail] = useState('')
+  const [telefone, setTelefone] = useState('')
   const [repName, setRepName] = useState('')
   const [repCpf, setRepCpf] = useState('')
   const [repRg, setRepRg] = useState('')
@@ -234,6 +236,8 @@ export default function ContractGeneratorPage() {
       setName(prop.clientes.nome)
       setCnpj(formatCNPJ(prop.clientes.cnpj || ''))
       setAddress(prop.clientes.endereco || '')
+      setEmail(prop.clientes.email || '')
+      setTelefone(prop.clientes.telefone || '')
       setRepName(prop.aos_cuidados_de || prop.clientes.rep_nome || '')
       setCurrentContractValue(prop.clientes.valor_total || 0)
       setCurrentClientModules(prop.clientes.modulos || { plano_base: '', adicionais: [] })
@@ -244,6 +248,8 @@ export default function ContractGeneratorPage() {
       setName(prospect.empresa || '')
       if (prospect.cnpj) setCnpj(formatCNPJ(prospect.cnpj))
       setAddress(prospect.endereco || '')
+      setEmail(prospect.email || '')
+      setTelefone(prospect.telefone || '')
       setRepName(prop.aos_cuidados_de || prospect.contato_nome || '')
     }
 
@@ -639,6 +645,54 @@ export default function ContractGeneratorPage() {
   const fetchCnpjData = async (cnpjValue: string) => {
     setIsLoadingCnpj(true)
     try {
+      const cnpjFormatted = formatCNPJ(cnpjValue)
+
+      const { data: clienteData } = await supabase
+        .from('clientes')
+        .select('*')
+        .or(`cnpj.eq.${cnpjValue},cnpj.eq.${cnpjFormatted}`)
+        .maybeSingle()
+
+      if (clienteData) {
+        setName(clienteData.nome || '')
+        setAddress(clienteData.endereco || '')
+        setEmail(clienteData.email || '')
+        setTelefone(clienteData.telefone || '')
+        setRepName(clienteData.rep_nome || '')
+        setRepCpf(clienteData.rep_cpf || '')
+        setRepRg(clienteData.rep_rg || '')
+        setAutoFilled(true)
+        setTimeout(() => setAutoFilled(false), 3000)
+        toast({
+          title: 'Cliente Encontrado',
+          description: 'Dados preenchidos a partir da base de Clientes.',
+          className: 'bg-emerald-600 text-white border-none',
+        })
+        return
+      }
+
+      const { data: prospectData } = await supabase
+        .from('crm_prospects')
+        .select('*')
+        .or(`cnpj.eq.${cnpjValue},cnpj.eq.${cnpjFormatted}`)
+        .maybeSingle()
+
+      if (prospectData) {
+        setName(prospectData.empresa || '')
+        setAddress(prospectData.endereco || '')
+        setEmail(prospectData.email || '')
+        setTelefone(prospectData.telefone || '')
+        setRepName(prospectData.contato_nome || '')
+        setAutoFilled(true)
+        setTimeout(() => setAutoFilled(false), 3000)
+        toast({
+          title: 'Prospect Encontrado',
+          description: 'Dados preenchidos a partir da base de Prospects.',
+          className: 'bg-emerald-600 text-white border-none',
+        })
+        return
+      }
+
       const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjValue}`)
       if (!res.ok) throw new Error('CNPJ não encontrado ou erro na consulta.')
       const data = await res.json()
@@ -661,6 +715,9 @@ export default function ContractGeneratorPage() {
 
       const fullAddress = [firstPart, secondPart.join(', ')].filter(Boolean).join(' - ')
       if (fullAddress) setAddress(fullAddress)
+
+      if (data.email) setEmail(data.email)
+      if (data.ddd_telefone_1) setTelefone(data.ddd_telefone_1)
 
       if (data.qsa && data.qsa.length > 0) {
         const socioAdmin =
@@ -696,6 +753,13 @@ export default function ContractGeneratorPage() {
     const rawValue = e.target.value.replace(/\D/g, '')
     if (rawValue.length <= 14) setCnpj(formatCNPJ(rawValue))
 
+    if (rawValue.length === 14) {
+      fetchCnpjData(rawValue)
+    }
+  }
+
+  const handleCnpjBlur = () => {
+    const rawValue = cnpj.replace(/\D/g, '')
     if (rawValue.length === 14) {
       fetchCnpjData(rawValue)
     }
@@ -812,6 +876,9 @@ export default function ContractGeneratorPage() {
 
               const fullAddress = [firstPart, secondPart.join(', ')].filter(Boolean).join(' - ')
               if (fullAddress) extractedData.endereco = fullAddress
+
+              if (data.email) setEmail(data.email)
+              if (data.ddd_telefone_1) setTelefone(data.ddd_telefone_1)
 
               if (data.qsa && data.qsa.length > 0 && !extractedData.repName) {
                 const socioAdmin =
@@ -1220,6 +1287,8 @@ export default function ContractGeneratorPage() {
         await updateCliente(existingClient.id, {
           nome: name,
           cnpj,
+          email,
+          telefone,
           endereco: address,
           rep_nome: repName,
           rep_cpf: repCpf,
@@ -1278,6 +1347,8 @@ export default function ContractGeneratorPage() {
         const newClient = await createCliente({
           nome: name,
           cnpj,
+          email,
+          telefone,
           endereco: address,
           rep_nome: repName,
           rep_cpf: repCpf,
@@ -1527,6 +1598,8 @@ export default function ContractGeneratorPage() {
                                 setName(c.nome)
                                 setCnpj(formatCNPJ(c.cnpj || ''))
                                 setAddress(c.endereco || '')
+                                setEmail(c.email || '')
+                                setTelefone(c.telefone || '')
                                 setRepName(c.rep_nome || '')
                                 setCurrentContractValue(c.valor_total || 0)
                                 setCurrentClientModules(
@@ -1537,6 +1610,8 @@ export default function ContractGeneratorPage() {
                               setName('')
                               setCnpj('')
                               setAddress('')
+                              setEmail('')
+                              setTelefone('')
                               setRepName('')
                               setCurrentContractValue(0)
                               setCurrentClientModules({ plano_base: '', adicionais: [] })
@@ -1590,9 +1665,29 @@ export default function ContractGeneratorPage() {
                     <Input
                       value={cnpj}
                       onChange={handleCnpjChange}
+                      onBlur={handleCnpjBlur}
                       className={inputHighlightClass}
                       disabled={isLoadingCnpj}
                     />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>E-mail</Label>
+                      <Input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className={inputHighlightClass}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Telefone</Label>
+                      <Input
+                        value={telefone}
+                        onChange={(e) => setTelefone(e.target.value)}
+                        className={inputHighlightClass}
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label>Endereço Completo</Label>
