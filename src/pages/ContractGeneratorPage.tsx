@@ -1341,13 +1341,16 @@ export default function ContractGeneratorPage() {
         }
 
         if (loadedProposalId && loadedProposalId !== 'none') {
-          await supabase.from('crm_propostas').update({
-            valor_mensalidade: totalValue,
-            valor_implantacao: implValue,
-            desconto_mensalidade: validDescontoMensalidade,
-            tipo_desconto: tipoDesconto,
-            isencao_periodo: isencaoPeriodo,
-          }).eq('id', loadedProposalId)
+          await supabase
+            .from('crm_propostas')
+            .update({
+              valor_mensalidade: totalValue,
+              valor_implantacao: implValue,
+              desconto_mensalidade: validDescontoMensalidade,
+              tipo_desconto: tipoDesconto,
+              isencao_periodo: isencaoPeriodo,
+            })
+            .eq('id', loadedProposalId)
         }
 
         toast({
@@ -1413,14 +1416,17 @@ export default function ContractGeneratorPage() {
         }
 
         if (loadedProposalId && loadedProposalId !== 'none') {
-          await supabase.from('crm_propostas').update({
-            cliente_id: newClient.id,
-            valor_mensalidade: totalValue,
-            valor_implantacao: implValue,
-            desconto_mensalidade: validDescontoMensalidade,
-            tipo_desconto: tipoDesconto,
-            isencao_periodo: isencaoPeriodo,
-          }).eq('id', loadedProposalId)
+          await supabase
+            .from('crm_propostas')
+            .update({
+              cliente_id: newClient.id,
+              valor_mensalidade: totalValue,
+              valor_implantacao: implValue,
+              desconto_mensalidade: validDescontoMensalidade,
+              tipo_desconto: tipoDesconto,
+              isencao_periodo: isencaoPeriodo,
+            })
+            .eq('id', loadedProposalId)
         }
 
         toast({
@@ -1775,7 +1781,9 @@ export default function ContractGeneratorPage() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="none">Nenhum (Somente Módulos / Upsell)</SelectItem>
+                                <SelectItem value="none">
+                                  Nenhum (Somente Módulos / Upsell)
+                                </SelectItem>
                                 {PLANS.map((p) => (
                                   <SelectItem key={p.id} value={p.id}>
                                     {p.name} - {formatCurrency(p.price)}
@@ -2260,42 +2268,41 @@ export default function ContractGeneratorPage() {
                         </Label>
                       </div>
                     </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {PREDEFINED_TRAININGS.map((t) => (
-                          <div
-                            key={t.id}
-                            className={cn(
-                              'flex items-center space-x-2 border p-2 rounded-lg transition-colors',
-                              isTreinamentoGratuito && selectedTrainings.includes(t.id)
-                                ? 'bg-emerald-50 border-emerald-200'
-                                : 'bg-slate-50 hover:bg-slate-100',
-                            )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {PREDEFINED_TRAININGS.map((t) => (
+                        <div
+                          key={t.id}
+                          className={cn(
+                            'flex items-center space-x-2 border p-2 rounded-lg transition-colors',
+                            isTreinamentoGratuito && selectedTrainings.includes(t.id)
+                              ? 'bg-emerald-50 border-emerald-200'
+                              : 'bg-slate-50 hover:bg-slate-100',
+                          )}
+                        >
+                          <Checkbox
+                            id={`train-gen-${t.id}`}
+                            checked={selectedTrainings.includes(t.id)}
+                            onCheckedChange={(c) => {
+                              setSelectedTrainings((prev) =>
+                                c ? [...prev, t.id] : prev.filter((id) => id !== t.id),
+                              )
+                            }}
+                          />
+                          <Label
+                            htmlFor={`train-gen-${t.id}`}
+                            className="text-xs flex-1 cursor-pointer font-medium"
                           >
-                            <Checkbox
-                              id={`train-gen-${t.id}`}
-                              checked={selectedTrainings.includes(t.id)}
-                              onCheckedChange={(c) => {
-                                setSelectedTrainings((prev) =>
-                                  c ? [...prev, t.id] : prev.filter((id) => id !== t.id),
-                                )
-                              }}
-                            />
-                            <Label
-                              htmlFor={`train-gen-${t.id}`}
-                              className="text-xs flex-1 cursor-pointer font-medium"
-                            >
-                              {t.name}
-                            </Label>
-                            <span className="text-xs font-semibold text-slate-600">
-                              {t.price > 0 && !isTreinamentoGratuito ? (
-                                formatCurrency(t.price)
-                              ) : (
-                                <span className="text-emerald-600 font-bold">Grátis</span>
-                              )}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+                            {t.name}
+                          </Label>
+                          <span className="text-xs font-semibold text-slate-600">
+                            {t.price > 0 && !isTreinamentoGratuito ? (
+                              formatCurrency(t.price)
+                            ) : (
+                              <span className="text-emerald-600 font-bold">Grátis</span>
+                            )}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
