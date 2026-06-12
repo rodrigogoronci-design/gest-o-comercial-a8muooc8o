@@ -1,6 +1,7 @@
 export const PLANS = [
   { id: 'tms-50', name: 'TMS-50', limit: 'Até 50', maxDocs: '50', price: 399.0 },
   { id: 'tms-100', name: 'TMS-100', limit: 'à 100', maxDocs: '100', price: 657.0 },
+  { id: 'tms-200', name: 'TMS-200', limit: 'à 200', maxDocs: '200', price: 585.0 },
   { id: 'tms-300', name: 'TMS-300', limit: 'à 300', maxDocs: '300', price: 877.0 },
   { id: 'tms-500', name: 'TMS-500', limit: 'à 500', maxDocs: '500', price: 1097.0 },
   { id: 'mts-1000', name: 'MTS-1000', limit: 'à 1000', maxDocs: '1000', price: 1427.0 },
