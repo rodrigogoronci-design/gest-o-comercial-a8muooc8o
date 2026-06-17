@@ -142,6 +142,7 @@ export default function ContractGeneratorPage() {
     { id: string; date: string; value: string }[]
   >([{ id: '1', date: '', value: '' }])
   const [selectedTrainings, setSelectedTrainings] = useState<string[]>([])
+  const [customTrainingPrices, setCustomTrainingPrices] = useState<Record<string, number | ''>>({})
   const [isTreinamentoGratuito, setIsTreinamentoGratuito] = useState(false)
 
   const [sendToImplementation, setSendToImplementation] = useState(false)
@@ -268,6 +269,7 @@ export default function ContractGeneratorPage() {
     let foundPlan = 'none'
     let newPlanPriceManual = false
     let newPlanPrice = ''
+    const newCustomTrainingPrices: Record<string, number | ''> = {}
 
     items.forEach((item) => {
       if (item.type === 'plan' || PLANS.find((p) => p.id === item.id)) {
@@ -294,6 +296,9 @@ export default function ContractGeneratorPage() {
         newDfe = item.id
       } else if (PREDEFINED_TRAININGS.find((t) => t.id === item.id)) {
         newTrainings.push(item.id)
+        if (item.price !== undefined) {
+          newCustomTrainingPrices[item.id] = item.price
+        }
       } else if (item.id === 'placas-adicionais') {
         newPlates = item.quantity || 0
       } else if (item.id === 'impl-details') {
@@ -313,6 +318,7 @@ export default function ContractGeneratorPage() {
     setCustomModulePrices(newCustomModulePrices)
     setSelectedDfe(newDfe)
     setSelectedTrainings(newTrainings)
+    setCustomTrainingPrices(newCustomTrainingPrices)
     setAdditionalPlates(newPlates)
     setImplMode(newImplMode)
     setManualImplValue(newImplValue.toString())
@@ -452,7 +458,9 @@ export default function ContractGeneratorPage() {
     }
     const trainingsValue = selectedTrainings.reduce((acc, id) => {
       const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
-      return acc + (t && !isTreinamentoGratuito ? t.price : 0)
+      const price =
+        typeof customTrainingPrices[id] === 'number' ? customTrainingPrices[id] : t?.price || 0
+      return acc + (!isTreinamentoGratuito ? price : 0)
     }, 0)
     value += trainingsValue
     return value
@@ -513,10 +521,15 @@ export default function ContractGeneratorPage() {
             price: parseFloat(v.value) || 0,
           }))
         : []),
-      ...selectedTrainings.map((id) => ({
-        name: `Treinamento: ${PREDEFINED_TRAININGS.find((t) => t.id === id)?.name}`,
-        price: PREDEFINED_TRAININGS.find((t) => t.id === id)?.price,
-      })),
+      ...selectedTrainings.map((id) => {
+        const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
+        const price =
+          typeof customTrainingPrices[id] === 'number' ? customTrainingPrices[id] : t?.price || 0
+        return {
+          name: `Treinamento: ${t?.name}`,
+          price,
+        }
+      }),
     ].filter((i) => i.name)
   }, [
     selectedModules,
@@ -553,7 +566,9 @@ export default function ContractGeneratorPage() {
     implValue,
     trainings: selectedTrainings.map((id) => {
       const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
-      return { id, name: t?.name, price: t?.price, isFree: isTreinamentoGratuito }
+      const price =
+        typeof customTrainingPrices[id] === 'number' ? customTrainingPrices[id] : t?.price || 0
+      return { id, name: t?.name, price, isFree: isTreinamentoGratuito }
     }),
     includeDiagnosticVisit,
     diagnosticVisits,
@@ -609,7 +624,9 @@ export default function ContractGeneratorPage() {
       .filter((m) => m && !m.isBasic),
     trainings: selectedTrainings.map((id) => {
       const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
-      return { id, name: t?.name, price: t?.price, isFree: isTreinamentoGratuito }
+      const price =
+        typeof customTrainingPrices[id] === 'number' ? customTrainingPrices[id] : t?.price || 0
+      return { id, name: t?.name, price, isFree: isTreinamentoGratuito }
     }),
     planPrice,
     modulesPrice,
@@ -1025,10 +1042,12 @@ export default function ContractGeneratorPage() {
         : []),
       ...selectedTrainings.map((id) => {
         const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
+        const price =
+          typeof customTrainingPrices[id] === 'number' ? customTrainingPrices[id] : t?.price || 0
         return {
           id,
           name: `Treinamento: ${t?.name}`,
-          price: t?.price || 0,
+          price,
           isFree: isTreinamentoGratuito,
         }
       }),
@@ -1221,6 +1240,18 @@ export default function ContractGeneratorPage() {
               typeof customModulePrices[id] === 'number' ? customModulePrices[id] : mod?.price || 0,
           }
         })
+
+      selectedTrainings.forEach((id) => {
+        const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
+        const price =
+          typeof customTrainingPrices[id] === 'number' ? customTrainingPrices[id] : t?.price || 0
+        adicionais.push({
+          name: `Treinamento: ${t?.name}`,
+          price: isTreinamentoGratuito ? 0 : price,
+          isFree: isTreinamentoGratuito,
+        } as any)
+      })
+
       if (selectedDfe !== 'dfe-none' && dfeData) {
         adicionais.push({ name: dfeData.name, price: dfeData.price })
       }
@@ -2269,40 +2300,82 @@ export default function ContractGeneratorPage() {
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {PREDEFINED_TRAININGS.map((t) => (
-                        <div
-                          key={t.id}
-                          className={cn(
-                            'flex items-center space-x-2 border p-2 rounded-lg transition-colors',
-                            isTreinamentoGratuito && selectedTrainings.includes(t.id)
-                              ? 'bg-emerald-50 border-emerald-200'
-                              : 'bg-slate-50 hover:bg-slate-100',
-                          )}
-                        >
-                          <Checkbox
-                            id={`train-gen-${t.id}`}
-                            checked={selectedTrainings.includes(t.id)}
-                            onCheckedChange={(c) => {
-                              setSelectedTrainings((prev) =>
-                                c ? [...prev, t.id] : prev.filter((id) => id !== t.id),
-                              )
-                            }}
-                          />
-                          <Label
-                            htmlFor={`train-gen-${t.id}`}
-                            className="text-xs flex-1 cursor-pointer font-medium"
-                          >
-                            {t.name}
-                          </Label>
-                          <span className="text-xs font-semibold text-slate-600">
-                            {t.price > 0 && !isTreinamentoGratuito ? (
-                              formatCurrency(t.price)
-                            ) : (
-                              <span className="text-emerald-600 font-bold">Grátis</span>
+                      {PREDEFINED_TRAININGS.map((t) => {
+                        const isChecked = selectedTrainings.includes(t.id)
+                        return (
+                          <div
+                            key={t.id}
+                            className={cn(
+                              'flex flex-col space-y-2 border p-2 rounded-lg transition-colors',
+                              isTreinamentoGratuito && isChecked
+                                ? 'bg-emerald-50 border-emerald-200'
+                                : 'bg-slate-50 hover:bg-slate-100',
                             )}
-                          </span>
-                        </div>
-                      ))}
+                          >
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`train-gen-${t.id}`}
+                                checked={isChecked}
+                                onCheckedChange={(c) => {
+                                  setSelectedTrainings((prev) =>
+                                    c ? [...prev, t.id] : prev.filter((id) => id !== t.id),
+                                  )
+                                  if (c) {
+                                    setCustomTrainingPrices((prev) => ({
+                                      ...prev,
+                                      [t.id]: t.price,
+                                    }))
+                                  } else {
+                                    setCustomTrainingPrices((prev) => {
+                                      const next = { ...prev }
+                                      delete next[t.id]
+                                      return next
+                                    })
+                                  }
+                                }}
+                              />
+                              <Label
+                                htmlFor={`train-gen-${t.id}`}
+                                className="text-xs flex-1 cursor-pointer font-medium"
+                              >
+                                {t.name}
+                              </Label>
+                              {!isChecked || isTreinamentoGratuito ? (
+                                <span className="text-xs font-semibold text-slate-600">
+                                  {t.price > 0 && !isTreinamentoGratuito ? (
+                                    formatCurrency(t.price)
+                                  ) : (
+                                    <span className="text-emerald-600 font-bold">Grátis</span>
+                                  )}
+                                </span>
+                              ) : null}
+                            </div>
+                            {isChecked && !isTreinamentoGratuito && (
+                              <div className="pl-6 flex items-center gap-2 border-t border-slate-100 pt-1">
+                                <Label
+                                  htmlFor={`price-train-gen-${t.id}`}
+                                  className="text-[10px] text-slate-600"
+                                >
+                                  Valor (R$)
+                                </Label>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  id={`price-train-gen-${t.id}`}
+                                  className="w-24 h-6 text-xs px-1 bg-white border-slate-200"
+                                  value={customTrainingPrices[t.id] ?? ''}
+                                  onChange={(e) => {
+                                    const val =
+                                      e.target.value === '' ? '' : parseFloat(e.target.value)
+                                    setCustomTrainingPrices((prev) => ({ ...prev, [t.id]: val }))
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
 
@@ -3055,40 +3128,85 @@ export default function ContractGeneratorPage() {
                           </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {PREDEFINED_TRAININGS.map((t) => (
-                            <div
-                              key={t.id}
-                              className={cn(
-                                'flex items-center space-x-2 border p-2 rounded-lg transition-colors',
-                                isTreinamentoGratuito && selectedTrainings.includes(t.id)
-                                  ? 'bg-emerald-50 border-emerald-200'
-                                  : 'bg-slate-50 hover:bg-slate-100',
-                              )}
-                            >
-                              <Checkbox
-                                id={`train-up-${t.id}`}
-                                checked={selectedTrainings.includes(t.id)}
-                                onCheckedChange={(c) => {
-                                  setSelectedTrainings((prev) =>
-                                    c ? [...prev, t.id] : prev.filter((id) => id !== t.id),
-                                  )
-                                }}
-                              />
-                              <Label
-                                htmlFor={`train-up-${t.id}`}
-                                className="text-xs flex-1 cursor-pointer font-medium"
-                              >
-                                {t.name}
-                              </Label>
-                              <span className="text-xs font-semibold text-slate-600">
-                                {t.price > 0 && !isTreinamentoGratuito ? (
-                                  formatCurrency(t.price)
-                                ) : (
-                                  <span className="text-emerald-600 font-bold">Grátis</span>
+                          {PREDEFINED_TRAININGS.map((t) => {
+                            const isChecked = selectedTrainings.includes(t.id)
+                            return (
+                              <div
+                                key={t.id}
+                                className={cn(
+                                  'flex flex-col space-y-2 border p-2 rounded-lg transition-colors',
+                                  isTreinamentoGratuito && isChecked
+                                    ? 'bg-emerald-50 border-emerald-200'
+                                    : 'bg-slate-50 hover:bg-slate-100',
                                 )}
-                              </span>
-                            </div>
-                          ))}
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`train-up-${t.id}`}
+                                    checked={isChecked}
+                                    onCheckedChange={(c) => {
+                                      setSelectedTrainings((prev) =>
+                                        c ? [...prev, t.id] : prev.filter((id) => id !== t.id),
+                                      )
+                                      if (c) {
+                                        setCustomTrainingPrices((prev) => ({
+                                          ...prev,
+                                          [t.id]: t.price,
+                                        }))
+                                      } else {
+                                        setCustomTrainingPrices((prev) => {
+                                          const next = { ...prev }
+                                          delete next[t.id]
+                                          return next
+                                        })
+                                      }
+                                    }}
+                                  />
+                                  <Label
+                                    htmlFor={`train-up-${t.id}`}
+                                    className="text-xs flex-1 cursor-pointer font-medium"
+                                  >
+                                    {t.name}
+                                  </Label>
+                                  {!isChecked || isTreinamentoGratuito ? (
+                                    <span className="text-xs font-semibold text-slate-600">
+                                      {t.price > 0 && !isTreinamentoGratuito ? (
+                                        formatCurrency(t.price)
+                                      ) : (
+                                        <span className="text-emerald-600 font-bold">Grátis</span>
+                                      )}
+                                    </span>
+                                  ) : null}
+                                </div>
+                                {isChecked && !isTreinamentoGratuito && (
+                                  <div className="pl-6 flex items-center gap-2 border-t border-slate-100 pt-1">
+                                    <Label
+                                      htmlFor={`price-train-up-${t.id}`}
+                                      className="text-[10px] text-slate-600"
+                                    >
+                                      Valor (R$)
+                                    </Label>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      id={`price-train-up-${t.id}`}
+                                      className="w-24 h-6 text-xs px-1 bg-white border-slate-200"
+                                      value={customTrainingPrices[t.id] ?? ''}
+                                      onChange={(e) => {
+                                        const val =
+                                          e.target.value === '' ? '' : parseFloat(e.target.value)
+                                        setCustomTrainingPrices((prev) => ({
+                                          ...prev,
+                                          [t.id]: val,
+                                        }))
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
                         </div>
                       </div>
                     </div>
@@ -3206,40 +3324,85 @@ export default function ContractGeneratorPage() {
                           </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {PREDEFINED_TRAININGS.map((t) => (
-                            <div
-                              key={t.id}
-                              className={cn(
-                                'flex items-center space-x-2 border p-2 rounded-lg transition-colors',
-                                isTreinamentoGratuito && selectedTrainings.includes(t.id)
-                                  ? 'bg-emerald-50 border-emerald-200'
-                                  : 'bg-slate-50 hover:bg-slate-100',
-                              )}
-                            >
-                              <Checkbox
-                                id={`train-prosp-${t.id}`}
-                                checked={selectedTrainings.includes(t.id)}
-                                onCheckedChange={(c) => {
-                                  setSelectedTrainings((prev) =>
-                                    c ? [...prev, t.id] : prev.filter((id) => id !== t.id),
-                                  )
-                                }}
-                              />
-                              <Label
-                                htmlFor={`train-prosp-${t.id}`}
-                                className="text-xs flex-1 cursor-pointer font-medium"
-                              >
-                                {t.name}
-                              </Label>
-                              <span className="text-xs font-semibold text-slate-600">
-                                {t.price > 0 && !isTreinamentoGratuito ? (
-                                  formatCurrency(t.price)
-                                ) : (
-                                  <span className="text-emerald-600 font-bold">Grátis</span>
+                          {PREDEFINED_TRAININGS.map((t) => {
+                            const isChecked = selectedTrainings.includes(t.id)
+                            return (
+                              <div
+                                key={t.id}
+                                className={cn(
+                                  'flex flex-col space-y-2 border p-2 rounded-lg transition-colors',
+                                  isTreinamentoGratuito && isChecked
+                                    ? 'bg-emerald-50 border-emerald-200'
+                                    : 'bg-slate-50 hover:bg-slate-100',
                                 )}
-                              </span>
-                            </div>
-                          ))}
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`train-prosp-${t.id}`}
+                                    checked={isChecked}
+                                    onCheckedChange={(c) => {
+                                      setSelectedTrainings((prev) =>
+                                        c ? [...prev, t.id] : prev.filter((id) => id !== t.id),
+                                      )
+                                      if (c) {
+                                        setCustomTrainingPrices((prev) => ({
+                                          ...prev,
+                                          [t.id]: t.price,
+                                        }))
+                                      } else {
+                                        setCustomTrainingPrices((prev) => {
+                                          const next = { ...prev }
+                                          delete next[t.id]
+                                          return next
+                                        })
+                                      }
+                                    }}
+                                  />
+                                  <Label
+                                    htmlFor={`train-prosp-${t.id}`}
+                                    className="text-xs flex-1 cursor-pointer font-medium"
+                                  >
+                                    {t.name}
+                                  </Label>
+                                  {!isChecked || isTreinamentoGratuito ? (
+                                    <span className="text-xs font-semibold text-slate-600">
+                                      {t.price > 0 && !isTreinamentoGratuito ? (
+                                        formatCurrency(t.price)
+                                      ) : (
+                                        <span className="text-emerald-600 font-bold">Grátis</span>
+                                      )}
+                                    </span>
+                                  ) : null}
+                                </div>
+                                {isChecked && !isTreinamentoGratuito && (
+                                  <div className="pl-6 flex items-center gap-2 border-t border-slate-100 pt-1">
+                                    <Label
+                                      htmlFor={`price-train-prosp-${t.id}`}
+                                      className="text-[10px] text-slate-600"
+                                    >
+                                      Valor (R$)
+                                    </Label>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      id={`price-train-prosp-${t.id}`}
+                                      className="w-24 h-6 text-xs px-1 bg-white border-slate-200"
+                                      value={customTrainingPrices[t.id] ?? ''}
+                                      onChange={(e) => {
+                                        const val =
+                                          e.target.value === '' ? '' : parseFloat(e.target.value)
+                                        setCustomTrainingPrices((prev) => ({
+                                          ...prev,
+                                          [t.id]: val,
+                                        }))
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
                         </div>
                       </div>
                     </div>

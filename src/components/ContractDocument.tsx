@@ -738,6 +738,11 @@ export function AddendumDocument({
       return {
         name: m.name || m.descricao || m.modulo || m.titulo || 'Item Adicional',
         price: Number(m.price || m.valor || m.valor_mensalidade || 0),
+        isTaxaUnica:
+          m.name?.toLowerCase().includes('treinamento') ||
+          m.tipo === 'taxa_unica' ||
+          m.isFree !== undefined,
+        isFree: m.isFree,
       }
     })
   } else if (modules && typeof modules === 'object') {
@@ -745,6 +750,11 @@ export function AddendumDocument({
       formattedModules = modules.adicionais.map((m: any) => ({
         name: m.name || m.descricao || 'Item Adicional',
         price: Number(m.price || m.valor || 0),
+        isTaxaUnica:
+          m.name?.toLowerCase().includes('treinamento') ||
+          m.tipo === 'taxa_unica' ||
+          m.isFree !== undefined,
+        isFree: m.isFree,
       }))
     }
     if (modules.filiais && typeof modules.filiais === 'number' && modules.filiais > 0) {
@@ -868,7 +878,13 @@ export function AddendumDocument({
                   <tr key={idx}>
                     <td className="border border-slate-300 p-2 whitespace-pre-line">{m.name}</td>
                     <td className="border border-slate-300 p-2 text-right">
-                      {m.price > 0 ? formatCurrency(m.price) : 'Incluso'}
+                      {m.isTaxaUnica
+                        ? m.isFree
+                          ? 'Grátis'
+                          : `${formatCurrency(m.price)} (Taxa Única)`
+                        : m.price > 0
+                          ? formatCurrency(m.price)
+                          : 'Incluso'}
                     </td>
                   </tr>
                 ))
@@ -900,7 +916,11 @@ export function AddendumDocument({
                 </td>
                 <td className="border border-slate-300 p-2 text-right text-emerald-700 print:text-black">
                   {formatCurrency(
-                    valorAdicional || formattedModules.reduce((acc, curr) => acc + curr.price, 0),
+                    valorAdicional ||
+                      formattedModules.reduce(
+                        (acc, curr) => acc + (curr.isTaxaUnica ? 0 : curr.price),
+                        0,
+                      ),
                   )}
                 </td>
               </tr>

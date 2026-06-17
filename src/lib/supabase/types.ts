@@ -2749,6 +2749,7 @@ export type Database = {
           data_solicitacao: string | null
           data_vencimento: string | null
           descricao: string
+          documento_url: string | null
           forma_pagamento: string | null
           id: string
           is_gratuito: boolean | null
@@ -2766,6 +2767,7 @@ export type Database = {
           data_solicitacao?: string | null
           data_vencimento?: string | null
           descricao: string
+          documento_url?: string | null
           forma_pagamento?: string | null
           id?: string
           is_gratuito?: boolean | null
@@ -2783,6 +2785,7 @@ export type Database = {
           data_solicitacao?: string | null
           data_vencimento?: string | null
           descricao?: string
+          documento_url?: string | null
           forma_pagamento?: string | null
           id?: string
           is_gratuito?: boolean | null
@@ -3667,6 +3670,7 @@ export const Constants = {
 //   prazos_concedidos: text (nullable)
 //   contato_nome: text (nullable)
 //   contato_telefone: text (nullable)
+//   documento_url: text (nullable)
 // Table: ticket_ai_summaries
 //   id: uuid (not null, default: gen_random_uuid())
 //   ticket_id: uuid (not null)
