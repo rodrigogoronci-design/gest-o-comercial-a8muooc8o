@@ -131,7 +131,7 @@ export interface ClienteRecord {
   created_at: string
   contrato_url?: string | null
   cobrancas?: { data_vencimento: string; valor: number }[] | null
-  documentos_urls?: { name: string; url: string }[] | null
+  documentos_urls?: { name: string; url: string; category?: string; uploaded_at?: string }[] | null
   diagnostico?: any
   tags?: string[]
   desconto_mensalidade?: number | null
@@ -329,6 +329,12 @@ export default function ClientsPage() {
   const [editingSolicitacaoId, setEditingSolicitacaoId] = useState<string | null>(null)
   const [solicitacaoContatoNome, setSolicitacaoContatoNome] = useState('')
   const [solicitacaoContatoTelefone, setSolicitacaoContatoTelefone] = useState('')
+  const [solicitacaoDocumentoFile, setSolicitacaoDocumentoFile] = useState<File | null>(null)
+  const [solicitacaoDocumentoUrl, setSolicitacaoDocumentoUrl] = useState<string>('')
+
+  const [isDocUploadOpen, setIsDocUploadOpen] = useState(false)
+  const [docUploadCategory, setDocUploadCategory] = useState('Cartão CNPJ')
+  const [docUploadFile, setDocUploadFile] = useState<File | null>(null)
 
   const { user } = useAuth()
 
@@ -501,6 +507,8 @@ export default function ClientsPage() {
     setSolicitacaoObservacoes('')
     setSolicitacaoContatoNome('')
     setSolicitacaoContatoTelefone('')
+    setSolicitacaoDocumentoFile(null)
+    setSolicitacaoDocumentoUrl('')
   }
 
   const [implementationEmailClient, setImplementationEmailClient] = useState<MergedClient | null>(
@@ -1015,57 +1023,50 @@ export default function ClientsPage() {
     setIsViewSheetOpen(true)
   }
 
-  const handleUploadDocs = async (e: React.ChangeEvent<HTMLInputElement>, clientId: string) => {
-    const files = e.target.files
-    if (!files || files.length === 0) return
-
+  const handleConfirmDocUpload = async () => {
+    if (!viewingClient || !docUploadFile) return
     setIsUploadingDocs(true)
     try {
-      const newDocs = []
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i]
-        const fileName = `${clientId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-        const { error: uploadError } = await supabase.storage
-          .from('documentos_clientes')
-          .upload(fileName, file, { upsert: true })
+      const file = docUploadFile
+      const fileName = `${viewingClient.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+      const { error: uploadError } = await supabase.storage
+        .from('client-files')
+        .upload(fileName, file, { upsert: true })
 
-        if (uploadError) throw uploadError
+      if (uploadError) throw uploadError
 
-        const { data: publicUrlData } = supabase.storage
-          .from('documentos_clientes')
-          .getPublicUrl(fileName)
+      const { data: publicUrlData } = supabase.storage.from('client-files').getPublicUrl(fileName)
 
-        newDocs.push({
-          name: file.name,
-          url: publicUrlData.publicUrl,
-        })
+      const newDoc = {
+        name: file.name,
+        url: publicUrlData.publicUrl,
+        category: docUploadCategory,
+        uploaded_at: new Date().toISOString(),
       }
 
-      const currentClient = clientes.find((c) => c.id === clientId)
+      const currentClient = clientes.find((c) => c.id === viewingClient.id)
       const currentDocs = currentClient?.documentos_urls || []
-      const updatedDocs = [...currentDocs, ...newDocs]
+      const updatedDocs = [...currentDocs, newDoc]
 
-      await updateCliente(clientId, { documentos_urls: updatedDocs })
-      toast.success('Documentos anexados com sucesso!')
+      await updateCliente(viewingClient.id, { documentos_urls: updatedDocs })
+      toast.success('Documento anexado com sucesso!')
       loadClientes()
 
-      if (viewingClient && viewingClient.id === clientId) {
-        setViewingClient({
-          ...viewingClient,
-          originalData: {
-            ...viewingClient.originalData!,
-            documentos_urls: updatedDocs,
-          },
-        })
-      }
+      setViewingClient({
+        ...viewingClient,
+        originalData: {
+          ...viewingClient.originalData!,
+          documentos_urls: updatedDocs,
+        },
+      })
+      setIsDocUploadOpen(false)
+      setDocUploadFile(null)
+      setDocUploadCategory('Cartão CNPJ')
     } catch (error: any) {
       console.error('Upload Error:', error)
       toast.error('Erro ao fazer upload: ' + (error.message || 'Falha desconhecida'))
     } finally {
       setIsUploadingDocs(false)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
     }
   }
 
@@ -1466,6 +1467,18 @@ Obrigada,`
 
     setIsSubmittingSolicitacao(true)
     try {
+      let docUrl = solicitacaoDocumentoUrl || null
+      if (solicitacaoDocumentoFile) {
+        const fileExt = solicitacaoDocumentoFile.name.split('.').pop()
+        const fileName = `${viewingClient.id}/${Date.now()}.${fileExt}`
+        const { error: uploadError } = await supabase.storage
+          .from('client-files')
+          .upload(fileName, solicitacaoDocumentoFile, { upsert: true })
+        if (uploadError) throw uploadError
+        const { data: publicUrlData } = supabase.storage.from('client-files').getPublicUrl(fileName)
+        docUrl = publicUrlData.publicUrl
+      }
+
       if (editingSolicitacaoId) {
         await updateSolicitacao(editingSolicitacaoId, {
           tipo: solicitacaoTipo,
@@ -1477,6 +1490,7 @@ Obrigada,`
           observacoes: solicitacaoObservacoes.trim() || null,
           contato_nome: solicitacaoContatoNome.trim() || null,
           contato_telefone: solicitacaoContatoTelefone.trim() || null,
+          documento_url: docUrl,
         })
         toast.success('Solicitação atualizada com sucesso!')
       } else {
@@ -1491,6 +1505,7 @@ Obrigada,`
           observacoes: solicitacaoObservacoes.trim() || null,
           contato_nome: solicitacaoContatoNome.trim() || null,
           contato_telefone: solicitacaoContatoTelefone.trim() || null,
+          documento_url: docUrl,
           status: 'Pendente',
         })
         toast.success('Solicitação registrada com sucesso!')
@@ -1520,6 +1535,8 @@ Obrigada,`
     setSolicitacaoObservacoes(sol.observacoes || '')
     setSolicitacaoContatoNome(sol.contato_nome || '')
     setSolicitacaoContatoTelefone(sol.contato_telefone || '')
+    setSolicitacaoDocumentoFile(null)
+    setSolicitacaoDocumentoUrl(sol.documento_url || '')
     setIsAddSolicitacaoOpen(true)
   }
 
@@ -2537,17 +2554,10 @@ Obrigada.`)
               Repositório de Documentos
             </h4>
             <div>
-              <input
-                type="file"
-                multiple
-                className="hidden"
-                id={`upload-doc-${client.id}`}
-                onChange={(e) => handleUploadDocs(e, client.id)}
-              />
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => document.getElementById(`upload-doc-${client.id}`)?.click()}
+                onClick={() => setIsDocUploadOpen(true)}
                 disabled={isUploadingDocs}
               >
                 {isUploadingDocs ? (
@@ -2555,7 +2565,7 @@ Obrigada.`)
                 ) : (
                   <Upload className="h-4 w-4 mr-2" />
                 )}
-                Anexar Documentos
+                Anexar Documento
               </Button>
             </div>
           </div>
@@ -2603,7 +2613,9 @@ Obrigada.`)
                     >
                       {doc.name}
                     </span>
-                    <span className="text-xs text-slate-400">Anexo Cadastral</span>
+                    <span className="text-xs text-slate-400">
+                      {doc.category || 'Anexo Cadastral'}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -2922,6 +2934,9 @@ Obrigada.`)
                     <SelectItem value="Treinamento">Treinamento</SelectItem>
                     <SelectItem value="Visita Técnica">Visita Técnica</SelectItem>
                     <SelectItem value="Upsell">Upsell</SelectItem>
+                    <SelectItem value="Alteração Cadastral">Alteração Cadastral</SelectItem>
+                    <SelectItem value="Inclusão de Módulo">Inclusão de Módulo</SelectItem>
+                    <SelectItem value="Reclamação">Reclamação</SelectItem>
                     <SelectItem value="Outro">Outro</SelectItem>
                   </SelectContent>
                 </Select>
@@ -3002,6 +3017,31 @@ Obrigada.`)
                   value={solicitacaoDataVencimento}
                   onChange={(e) => setSolicitacaoDataVencimento(e.target.value)}
                 />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Anexo (Opcional)</Label>
+              <div className="flex gap-2 items-center">
+                <Input
+                  type="file"
+                  onChange={(e) =>
+                    setSolicitacaoDocumentoFile(e.target.files ? e.target.files[0] : null)
+                  }
+                  className="flex-1"
+                />
+                {solicitacaoDocumentoUrl && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a
+                      href={solicitacaoDocumentoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1"
+                    >
+                      <Eye className="h-4 w-4" /> Ver Atual
+                    </a>
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -4011,7 +4051,7 @@ Obrigada.`)
                 <TabsTrigger value="resumo">Resumo & Gestão</TabsTrigger>
                 <TabsTrigger value="diagnostico">Diagnóstico</TabsTrigger>
                 <TabsTrigger value="contrato">Contrato Inicial</TabsTrigger>
-                <TabsTrigger value="solicitacoes">Treinamentos / Visitas</TabsTrigger>
+                <TabsTrigger value="solicitacoes">Histórico de Solicitações</TabsTrigger>
               </TabsList>
 
               <TabsContent value="resumo" className="mt-4 flex-1">
@@ -4118,10 +4158,11 @@ Obrigada.`)
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <div>
                       <h3 className="text-lg font-semibold text-slate-800">
-                        Solicitações de Serviço
+                        Histórico de Solicitações
                       </h3>
                       <p className="text-sm text-slate-500">
-                        Registre treinamentos e visitas técnicas para {viewingClient.name}
+                        Histórico de interações, alterações cadastrais, treinamentos e mais para{' '}
+                        {viewingClient.name}
                       </p>
                     </div>
                     <div className="flex flex-col gap-2 w-full sm:w-auto">
@@ -4210,9 +4251,13 @@ Obrigada.`)
                                     ? 'bg-blue-50 text-blue-700 border-blue-200'
                                     : sol.tipo === 'Proposta de Treinamento'
                                       ? 'bg-purple-50 text-purple-700 border-purple-200'
-                                      : sol.tipo === 'Upsell'
+                                      : sol.tipo === 'Upsell' || sol.tipo === 'Inclusão de Módulo'
                                         ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                        : sol.tipo === 'Alteração Cadastral'
+                                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                          : sol.tipo === 'Reclamação'
+                                            ? 'bg-red-50 text-red-700 border-red-200'
+                                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                 }
                               >
                                 {sol.tipo}
@@ -4354,6 +4399,25 @@ Obrigada.`)
                                     </span>
                                   )}
                                 </div>
+                              </div>
+                            )}
+
+                            {sol.documento_url && (
+                              <div className="mb-4">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  asChild
+                                  className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                                >
+                                  <a
+                                    href={sol.documento_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <FileText className="h-4 w-4 mr-2" /> Anexo
+                                  </a>
+                                </Button>
                               </div>
                             )}
 
@@ -4703,6 +4767,54 @@ Obrigada.`)
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={isDocUploadOpen} onOpenChange={setIsDocUploadOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Anexar Documento</DialogTitle>
+            <DialogDescription>
+              Selecione o arquivo e a categoria do documento para salvar no repositório do cliente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Categoria do Documento</Label>
+              <Select value={docUploadCategory} onValueChange={setDocUploadCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Cartão CNPJ">Cartão CNPJ</SelectItem>
+                  <SelectItem value="Contrato Social">Contrato Social</SelectItem>
+                  <SelectItem value="Certificado Digital">Certificado Digital</SelectItem>
+                  <SelectItem value="Inscrição Estadual">Inscrição Estadual</SelectItem>
+                  <SelectItem value="Outros">Outros</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Arquivo</Label>
+              <Input
+                type="file"
+                onChange={(e) => setDocUploadFile(e.target.files ? e.target.files[0] : null)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDocUploadOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmDocUpload}
+              disabled={!docUploadFile || isUploadingDocs}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              {isUploadingDocs && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Anexar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
