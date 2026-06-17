@@ -23,6 +23,8 @@ const filialSchema = z.object({
 export const propostaFormSchema = z.object({
   valor_implantacao: z.number().min(0),
   valor_mensalidade: z.number().min(0),
+  valor_anual: z.number().min(0).default(0),
+  tipo_cobranca: z.enum(['mensal', 'anual']).default('mensal'),
   desconto_mensalidade: z.number().min(0).default(0),
   tipo_desconto: z.enum(['valor', 'percentual']).default('valor'),
   isencao_periodo: z.number().min(0).default(0),
@@ -49,6 +51,8 @@ export function CrmPropostaForm({
     defaultValues: {
       valor_implantacao: initialData?.valor_implantacao || 0,
       valor_mensalidade: initialData?.valor_mensalidade || 0,
+      valor_anual: initialData?.valor_anual || 0,
+      tipo_cobranca: initialData?.tipo_cobranca || 'mensal',
       desconto_mensalidade: initialData?.desconto_mensalidade || 0,
       tipo_desconto: initialData?.tipo_desconto || 'valor',
       isencao_periodo: initialData?.isencao_periodo || 0,
@@ -84,7 +88,7 @@ export function CrmPropostaForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <FormField
             control={form.control}
             name="valor_implantacao"
@@ -105,24 +109,65 @@ export function CrmPropostaForm({
           />
           <FormField
             control={form.control}
-            name="valor_mensalidade"
+            name="tipo_cobranca"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Valor Mensalidade (R$)</FormLabel>
+                <FormLabel>Ciclo de Pagamento</FormLabel>
                 <FormControl>
-                  <Input
-                    type="number"
-                    step="0.01"
+                  <select
+                    className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                     {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                  />
+                  >
+                    <option value="mensal">Mensal</option>
+                    <option value="anual">Anual</option>
+                  </select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+          {form.watch('tipo_cobranca') === 'mensal' ? (
+            <FormField
+              control={form.control}
+              name="valor_mensalidade"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Valor Mensalidade (R$)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ) : (
+            <FormField
+              control={form.control}
+              name="valor_anual"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Valor Anual (R$)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
           <div className="space-y-2">
-            <FormLabel>Desconto Mensalidade</FormLabel>
+            <FormLabel>Desconto Recorrente</FormLabel>
             <div className="flex items-center gap-2">
               <FormField
                 control={form.control}
@@ -160,7 +205,9 @@ export function CrmPropostaForm({
             </div>
             <FormMessage />
           </div>
+        </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="isencao_periodo"
@@ -179,21 +226,21 @@ export function CrmPropostaForm({
               </FormItem>
             )}
           />
-        </div>
 
-        <FormField
-          control={form.control}
-          name="aos_cuidados_de"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Aos Cuidados De</FormLabel>
-              <FormControl>
-                <Input placeholder="Nome do responsável" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="aos_cuidados_de"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Aos Cuidados De</FormLabel>
+                <FormControl>
+                  <Input placeholder="Nome do responsável" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <div className="border-t pt-4 mt-4">
           <h3 className="font-semibold text-sm mb-4">Filiais Adicionais</h3>

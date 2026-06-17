@@ -37,6 +37,15 @@ interface QuoteDocumentProps {
   moduleGracePeriods?: Record<string, number>
   totalValueStandard?: number
   prazosConcedidos?: string
+  planBilling?: 'mensal' | 'anual'
+  planAnnualPrice?: number
+  dfeBilling?: 'mensal' | 'anual'
+  dfeAnnualPrice?: number
+  platesBilling?: 'mensal' | 'anual'
+  platesAnnualPrice?: number
+  branchesBilling?: 'mensal' | 'anual'
+  branchesAnnualPrice?: number
+  totalAnual?: number
 }
 
 const FEATURE_CATEGORIES = [
@@ -112,6 +121,15 @@ export function QuoteDocument({
   moduleGracePeriods = {},
   totalValueStandard = 0,
   prazosConcedidos,
+  planBilling = 'mensal',
+  planAnnualPrice = 0,
+  dfeBilling = 'mensal',
+  dfeAnnualPrice = 0,
+  platesBilling = 'mensal',
+  platesAnnualPrice = 0,
+  branchesBilling = 'mensal',
+  branchesAnnualPrice = 0,
+  totalAnual = 0,
 }: QuoteDocumentProps) {
   const showBasePlan =
     planName && planName !== 'Nenhum' && planName !== 'Nenhum (Somente Módulos / Upsell)'
@@ -206,7 +224,7 @@ export function QuoteDocument({
                 <th className="p-1.5 border-b border-slate-200 text-center">Qtd</th>
                 <th className="p-1.5 border-b border-slate-200 text-right">V. Unitário</th>
                 <th className="p-1.5 border-b border-slate-200 text-right">V. Total</th>
-                <th className="p-1.5 border-b border-slate-200 text-center">Pagamento</th>
+                <th className="p-1.5 border-b border-slate-200 text-center">Ciclo</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -219,9 +237,19 @@ export function QuoteDocument({
                     </span>
                   </td>
                   <td className="p-1.5 text-center font-medium">1</td>
-                  <td className="p-1.5 text-right">{formatCurrency(planPrice)}</td>
-                  <td className="p-1.5 text-right font-medium">{formatCurrency(planPrice)}</td>
-                  <td className="p-1.5 text-center text-slate-600">Mensalidade</td>
+                  <td className="p-1.5 text-right">
+                    {planBilling === 'anual'
+                      ? formatCurrency(planAnnualPrice)
+                      : formatCurrency(planPrice)}
+                  </td>
+                  <td className="p-1.5 text-right font-medium">
+                    {planBilling === 'anual'
+                      ? formatCurrency(planAnnualPrice)
+                      : formatCurrency(planPrice)}
+                  </td>
+                  <td className="p-1.5 text-center text-slate-600">
+                    {planBilling === 'anual' ? 'Anual' : 'Mensal'}
+                  </td>
                 </tr>
               )}
               {isUpsell && (currentClientValue || 0) > 0 && (
@@ -237,52 +265,56 @@ export function QuoteDocument({
                   <td className="p-1.5 text-right font-medium">
                     {formatCurrency(currentClientValue || 0)}
                   </td>
-                  <td className="p-1.5 text-center text-slate-600">Mensalidade Atual</td>
+                  <td className="p-1.5 text-center text-slate-600">Mensal</td>
                 </tr>
               )}
-              {selectedModulesData
-                .filter((m) => !m.isBasic)
-                .map((m, idx) => {
-                  const hasGrace = moduleGracePeriods[m.id] > 0
-                  const graceMonths = moduleGracePeriods[m.id]
-                  return (
-                    <tr key={`mod-${idx}`}>
-                      <td className="p-1.5">
-                        <span className="font-semibold text-slate-800">{m.name}</span>
-                        {hasGrace && (
-                          <span className="text-[9px] font-bold text-emerald-600 ml-2">
-                            (Isento por {graceMonths} meses)
-                          </span>
-                        )}
-                        {m.id === 'mod-edi' && (
-                          <span className="text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1">
-                            <strong>* EDI:</strong> Inclusão de Layout padrão Proceda para
-                            integração (arquivos NOTFIS para emissão de CT-e, envios de CONEMB,
-                            DOCCOB e OCOREN).
-                          </span>
-                        )}
-                        {m.description && !m.name?.toLowerCase().includes('torre de controle') && (
-                          <span className="text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1">
-                            {m.description}
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-1.5 text-center font-medium">1</td>
-                      <td className="p-1.5 text-right">{formatCurrency(m.price)}</td>
-                      <td className="p-1.5 text-right font-medium">
-                        {hasGrace ? (
-                          <span className="line-through text-slate-400 mr-1">
-                            {formatCurrency(m.price)}
-                          </span>
-                        ) : null}
-                        {hasGrace ? formatCurrency(0) : formatCurrency(m.price)}
-                      </td>
-                      <td className="p-1.5 text-center text-slate-600">
-                        {hasGrace ? `Isento por ${graceMonths} meses` : 'Mensalidade'}
-                      </td>
-                    </tr>
-                  )
-                })}
+              {selectedModulesData.map((m, idx) => {
+                const hasGrace = moduleGracePeriods[m.id] > 0
+                const graceMonths = moduleGracePeriods[m.id]
+                const cicle = m.billingCycle || 'mensal'
+                const p = cicle === 'anual' ? m.annualPrice : m.price
+
+                return (
+                  <tr key={`mod-${idx}`}>
+                    <td className="p-1.5">
+                      <span className="font-semibold text-slate-800">{m.name}</span>
+                      {hasGrace && (
+                        <span className="text-[9px] font-bold text-emerald-600 ml-2">
+                          (Isento por {graceMonths} meses)
+                        </span>
+                      )}
+                      {m.id === 'mod-edi' && (
+                        <span className="text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1">
+                          <strong>* EDI:</strong> Inclusão de Layout padrão Proceda para integração
+                          (arquivos NOTFIS para emissão de CT-e, envios de CONEMB, DOCCOB e OCOREN).
+                        </span>
+                      )}
+                      {m.description && !m.name?.toLowerCase().includes('torre de controle') && (
+                        <span className="text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1">
+                          {m.description}
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-1.5 text-center font-medium">1</td>
+                    <td className="p-1.5 text-right">{formatCurrency(p)}</td>
+                    <td className="p-1.5 text-right font-medium">
+                      {hasGrace ? (
+                        <span className="line-through text-slate-400 mr-1">
+                          {formatCurrency(p)}
+                        </span>
+                      ) : null}
+                      {hasGrace ? formatCurrency(0) : formatCurrency(p)}
+                    </td>
+                    <td className="p-1.5 text-center text-slate-600">
+                      {hasGrace
+                        ? `Isento por ${graceMonths} meses`
+                        : cicle === 'anual'
+                          ? 'Anual'
+                          : 'Mensal'}
+                    </td>
+                  </tr>
+                )
+              })}
 
               {includeFranchise && dfeData && (
                 <tr>
@@ -296,12 +328,20 @@ export function QuoteDocument({
                   </td>
                   <td className="p-1.5 text-center font-medium">1</td>
                   <td className="p-1.5 text-right">
-                    {dfePrice && dfePrice > 0 ? formatCurrency(dfePrice) : 'Incluso'}
+                    {(dfeBilling === 'anual' ? dfeAnnualPrice : dfePrice) &&
+                    (dfeBilling === 'anual' ? dfeAnnualPrice : dfePrice)! > 0
+                      ? formatCurrency(dfeBilling === 'anual' ? dfeAnnualPrice! : dfePrice!)
+                      : 'Incluso'}
                   </td>
                   <td className="p-1.5 text-right font-medium">
-                    {dfePrice && dfePrice > 0 ? formatCurrency(dfePrice) : 'Incluso'}
+                    {(dfeBilling === 'anual' ? dfeAnnualPrice : dfePrice) &&
+                    (dfeBilling === 'anual' ? dfeAnnualPrice : dfePrice)! > 0
+                      ? formatCurrency(dfeBilling === 'anual' ? dfeAnnualPrice! : dfePrice!)
+                      : 'Incluso'}
                   </td>
-                  <td className="p-1.5 text-center text-slate-600">Mensalidade</td>
+                  <td className="p-1.5 text-center text-slate-600">
+                    {dfeBilling === 'anual' ? 'Anual' : 'Mensal'}
+                  </td>
                 </tr>
               )}
 
@@ -314,11 +354,17 @@ export function QuoteDocument({
                     </span>
                   </td>
                   <td className="p-1.5 text-center font-medium">{additionalPlates}</td>
-                  <td className="p-1.5 text-right">{formatCurrency(additionalPlatesPrice || 0)}</td>
-                  <td className="p-1.5 text-right font-medium">
-                    {formatCurrency(additionalPlatesTotal || 0)}
+                  <td className="p-1.5 text-right">
+                    {platesBilling === 'anual' ? '-' : formatCurrency(additionalPlatesPrice || 0)}
                   </td>
-                  <td className="p-1.5 text-center text-slate-600">Mensalidade</td>
+                  <td className="p-1.5 text-right font-medium">
+                    {formatCurrency(
+                      platesBilling === 'anual' ? platesAnnualPrice : additionalPlatesTotal || 0,
+                    )}
+                  </td>
+                  <td className="p-1.5 text-center text-slate-600">
+                    {platesBilling === 'anual' ? 'Anual' : 'Mensal'}
+                  </td>
                 </tr>
               )}
 
@@ -332,12 +378,20 @@ export function QuoteDocument({
                   </td>
                   <td className="p-1.5 text-center font-medium">{additionalBranches}</td>
                   <td className="p-1.5 text-right">
-                    {formatCurrency(additionalBranchesPrice || 199)}
+                    {branchesBilling === 'anual'
+                      ? '-'
+                      : formatCurrency(additionalBranchesPrice || 199)}
                   </td>
                   <td className="p-1.5 text-right font-medium">
-                    {formatCurrency(additionalBranchesTotal || 0)}
+                    {formatCurrency(
+                      branchesBilling === 'anual'
+                        ? branchesAnnualPrice
+                        : additionalBranchesTotal || 0,
+                    )}
                   </td>
-                  <td className="p-1.5 text-center text-slate-600">Mensalidade</td>
+                  <td className="p-1.5 text-center text-slate-600">
+                    {branchesBilling === 'anual' ? 'Anual' : 'Mensal'}
+                  </td>
                 </tr>
               )}
 
@@ -452,69 +506,37 @@ export function QuoteDocument({
                 <span className="font-medium">{formatCurrency(currentClientValue || 0)}</span>
               </div>
               <div className="flex justify-between items-center text-slate-600">
-                <span>Valor dos Adicionais (Upsell)</span>
+                <span>Valor dos Adicionais (Upsell Mensal)</span>
                 <span className="font-medium">{formatCurrency(totalValue)}</span>
               </div>
-              {calculatedDiscount > 0 && (
-                <>
-                  <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center text-slate-600 font-medium">
-                    <span>Valor Original (Adicionais)</span>
-                    <span>
-                      {formatCurrency(
-                        (planPrice || 0) +
-                          (modulesPrice || 0) +
-                          (dfePrice || 0) +
-                          (additionalPlatesTotal || 0) +
-                          (additionalBranchesTotal || 0),
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-emerald-600 font-medium mt-1">
-                    <span>
-                      Desconto Aplicado{' '}
-                      {tipoDesconto === 'percentual' ? `(${descontoMensalidade}%)` : ''}
-                    </span>
-                    <span>- {formatCurrency(calculatedDiscount)}</span>
-                  </div>
-                </>
-              )}
-              {(planPrice || 0) +
-                (modulesPrice || 0) +
-                (dfePrice || 0) +
-                (additionalPlatesTotal || 0) +
-                (additionalBranchesTotal || 0) -
-                calculatedDiscount !==
-                totalValue && (
-                <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center text-orange-600 font-medium">
-                  <span>Ajuste Comercial nos Adicionais</span>
-                  <span>
-                    {formatCurrency(
-                      totalValue -
-                        ((planPrice || 0) +
-                          (modulesPrice || 0) +
-                          (dfePrice || 0) +
-                          (additionalPlatesTotal || 0) +
-                          (additionalBranchesTotal || 0) -
-                          calculatedDiscount),
-                    )}
-                  </span>
-                </div>
-              )}
               <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
                 <span>Nova Mensalidade</span>
                 <span>{formatCurrency((currentClientValue || 0) + totalValue)}</span>
               </div>
+
+              {totalAnual! > 0 && (
+                <>
+                  <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between items-center text-slate-600">
+                    <span>Valor dos Adicionais (Upsell Anual)</span>
+                    <span className="font-medium">{formatCurrency(totalAnual!)}</span>
+                  </div>
+                  <div className="flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
+                    <span>Novo Valor Anual (Adicionais)</span>
+                    <span>{formatCurrency(totalAnual!)}</span>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <div className="space-y-1.5 text-[10px]">
-              {showBasePlan && (
+              {showBasePlan && planBilling === 'mensal' && (
                 <div className="flex justify-between items-center text-slate-600">
-                  <span>Plano Base</span>
+                  <span>Plano Base (Mensal)</span>
                   <span className="font-medium">{formatCurrency(planPrice)}</span>
                 </div>
               )}
               {selectedModulesData
-                .filter((m) => !m.isBasic)
+                .filter((m) => m.billingCycle !== 'anual')
                 .map((m, idx) => (
                   <div
                     key={`rec-mod-${idx}`}
@@ -524,19 +546,19 @@ export function QuoteDocument({
                     <span className="font-medium">{formatCurrency(m.price)}</span>
                   </div>
                 ))}
-              {includeFranchise && dfeData && (
+              {includeFranchise && dfeData && dfeBilling === 'mensal' && (
                 <div className="flex justify-between items-center text-slate-600">
                   <span>{dfeData.name || 'Franquia DF-e'}</span>
                   <span className="font-medium">{formatCurrency(dfePrice || 0)}</span>
                 </div>
               )}
-              {!!additionalPlates && additionalPlates > 0 && (
+              {!!additionalPlates && additionalPlates > 0 && platesBilling === 'mensal' && (
                 <div className="flex justify-between items-center text-slate-600">
                   <span>Placas Adicionais ({additionalPlates})</span>
                   <span className="font-medium">{formatCurrency(additionalPlatesTotal || 0)}</span>
                 </div>
               )}
-              {!!additionalBranches && additionalBranches > 0 && (
+              {!!additionalBranches && additionalBranches > 0 && branchesBilling === 'mensal' && (
                 <div className="flex justify-between items-center text-slate-600">
                   <span>Filiais Adicionais ({additionalBranches})</span>
                   <span className="font-medium">
@@ -547,16 +569,8 @@ export function QuoteDocument({
               {calculatedDiscount > 0 && (
                 <>
                   <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center text-slate-600 font-medium">
-                    <span>Valor Calculado Padrão</span>
-                    <span>
-                      {formatCurrency(
-                        (planPrice || 0) +
-                          (modulesPrice || 0) +
-                          (dfePrice || 0) +
-                          (additionalPlatesTotal || 0) +
-                          (additionalBranchesTotal || 0),
-                      )}
-                    </span>
+                    <span>Valor Calculado Mensal Padrão</span>
+                    <span>{formatCurrency(totalValueStandard || 0)}</span>
                   </div>
                   <div className="flex justify-between items-center text-emerald-600 font-medium mt-1">
                     <span>
@@ -567,24 +581,12 @@ export function QuoteDocument({
                   </div>
                 </>
               )}
-              {(planPrice || 0) +
-                (modulesPrice || 0) +
-                (dfePrice || 0) +
-                (additionalPlatesTotal || 0) +
-                (additionalBranchesTotal || 0) -
-                calculatedDiscount !==
-                totalValue && (
+              {totalValue !== Math.max(0, (totalValueStandard || 0) - calculatedDiscount) && (
                 <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center text-orange-600 font-medium">
-                  <span>Ajuste Comercial / Valor Especial</span>
+                  <span>Ajuste Comercial Mensal</span>
                   <span>
                     {formatCurrency(
-                      totalValue -
-                        ((planPrice || 0) +
-                          (modulesPrice || 0) +
-                          (dfePrice || 0) +
-                          (additionalPlatesTotal || 0) +
-                          (additionalBranchesTotal || 0) -
-                          calculatedDiscount),
+                      totalValue - Math.max(0, (totalValueStandard || 0) - calculatedDiscount),
                     )}
                   </span>
                 </div>
@@ -593,6 +595,19 @@ export function QuoteDocument({
                 <span>Total Mensal Final</span>
                 <span>{formatCurrency(totalValue)}</span>
               </div>
+
+              {totalAnual! > 0 && (
+                <>
+                  <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between items-center text-slate-600">
+                    <span>Itens Anuais (Total)</span>
+                    <span className="font-medium">{formatCurrency(totalAnual!)}</span>
+                  </div>
+                  <div className="flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
+                    <span>Total Anual Final</span>
+                    <span>{formatCurrency(totalAnual!)}</span>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

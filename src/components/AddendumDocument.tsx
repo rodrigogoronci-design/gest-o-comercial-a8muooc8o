@@ -1,261 +1,272 @@
-import React from 'react'
-import { formatCurrency } from '@/lib/formatters'
-import { MODULES } from '@/constants/contracts'
-import logoUrl from '@/assets/logomarca-service-fde06.png'
+import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
+import logoUrl from '@/assets/logomarca-service-ea011.png'
 
-export function AddendumDocument(props: any) {
-  const {
-    name,
-    cnpj,
-    address,
-    repName,
-    repCpf,
-    repRg,
-    selectedModules,
-    selectedDfe,
-    dfeData,
-    dfePrice,
-    totalValue,
-    totalValueStandard,
-    valor_mensalidade,
-    valor_total,
-    implMode,
-    implValue,
-    trainings,
-    additionalPlates,
-    additionalPlatesTotal,
-    additionalBranches,
-    additionalBranchesTotal,
-    calculatedDiscount,
-    isencaoPeriodo,
-    moduleGracePeriods,
-    prazosConcedidos,
-    currentContractValue,
-    date = new Date().toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    }),
-  } = props
+export function AddendumDocument({
+  clientName,
+  cnpj,
+  dataSolicitacao,
+  modules,
+  valorAdicional,
+  valorAnualAdicional,
+  valorTotalAtual,
+  tipo,
+  observacoes,
+  prazosConcedidos,
+}: any) {
+  let formattedModules: Array<{
+    name: string
+    price: number
+    billingCycle?: string
+    isTaxaUnica?: boolean
+    isFree?: boolean
+  }> = []
 
-  const currentContract = Number(currentContractValue ?? valor_total ?? 0)
-  const newTotalMensal = Number(valor_mensalidade ?? totalValueStandard ?? 0)
-  const discount = Number(calculatedDiscount ?? 0)
-
-  let finalTotalMensal = Number(totalValue ?? 0)
-  if (finalTotalMensal === 0 && newTotalMensal > 0 && discount === 0) {
-    finalTotalMensal = newTotalMensal
-  } else if (finalTotalMensal === 0 && newTotalMensal > 0 && discount > 0) {
-    finalTotalMensal = Math.max(0, newTotalMensal - discount)
+  if (Array.isArray(modules)) {
+    formattedModules = modules.map((m: any) => {
+      if (typeof m === 'string') return { name: m, price: 0 }
+      return {
+        name: m.name || m.descricao || m.modulo || m.titulo || 'Item Adicional',
+        price: Number(
+          m.billingCycle === 'anual'
+            ? m.annualPrice
+            : m.price || m.valor || m.valor_mensalidade || 0,
+        ),
+        billingCycle: m.billingCycle || 'mensal',
+        isTaxaUnica:
+          m.name?.toLowerCase().includes('treinamento') ||
+          m.tipo === 'taxa_unica' ||
+          m.isFree !== undefined,
+        isFree: m.isFree,
+      }
+    })
+  } else if (modules && typeof modules === 'object') {
+    if (Array.isArray(modules.adicionais)) {
+      formattedModules = modules.adicionais.map((m: any) => ({
+        name: m.name || m.descricao || 'Item Adicional',
+        price: Number(m.billingCycle === 'anual' ? m.annualPrice : m.price || m.valor || 0),
+        billingCycle: m.billingCycle || 'mensal',
+        isTaxaUnica:
+          m.name?.toLowerCase().includes('treinamento') ||
+          m.tipo === 'taxa_unica' ||
+          m.isFree !== undefined,
+        isFree: m.isFree,
+      }))
+    }
+    if (modules.filiais && typeof modules.filiais === 'number' && modules.filiais > 0) {
+      formattedModules.push({
+        name: `Inclusão de Filiais Adicionais (${modules.filiais} unidade${modules.filiais > 1 ? 's' : ''})`,
+        price: modules.filiais * 199,
+        billingCycle: 'mensal',
+      })
+    }
+    if (Array.isArray(modules.filiais_detalhes)) {
+      modules.filiais_detalhes.forEach((f: any) => {
+        const branchName = f.nome ? ` - ${f.nome}` : ''
+        formattedModules.push({
+          name: `Inclusão de Filial${branchName} - CNPJ: ${f.cnpj || 'Nova Unidade'}${f.isentar ? ' (Isenta)' : ''}`,
+          price: f.isentar ? 0 : Number(f.price || f.valor || 199),
+          billingCycle: 'mensal',
+        })
+        if (f.dfe || f.dfe_ativo) {
+          formattedModules.push({
+            name: `Ativação de DF-e (Filial${branchName}: ${f.cnpj || 'Nova Unidade'})`,
+            price: Number(f.dfe_price || f.dfe_valor || 0),
+            billingCycle: 'mensal',
+          })
+        }
+      })
+    }
   }
 
-  const finalSum = currentContract + finalTotalMensal
+  // Fallback para observações do histórico se os módulos estiverem vazios
+  if (formattedModules.length === 0 && (observacoes || tipo)) {
+    if (
+      tipo === 'Aditivo de Filial' ||
+      (observacoes && observacoes.includes('Adição de Filial:'))
+    ) {
+      const cnpjMatch = observacoes?.match(/CNPJ:\s*([\d.\-/]+)/)
+      const dfeMatch = observacoes?.match(/DF-e:\s*Sim/)
 
-  const currentPlan = props.currentClientModules?.plano_base || 'Plano Atual (Não Especificado)'
-  const currentAdicionais = Array.isArray(props.currentClientModules?.adicionais)
-    ? props.currentClientModules.adicionais
-    : []
+      const extractedCnpj = cnpjMatch ? cnpjMatch[1] : '[CNPJ]'
+      const total = Number(valorAdicional || 0)
+      const basePrice = dfeMatch && total > 49.9 ? total - 49.9 : total
 
-  const hasNoNewItems =
-    (!selectedModules || selectedModules.length === 0) &&
-    (!trainings || trainings.length === 0) &&
-    additionalPlates === 0 &&
-    additionalBranches === 0 &&
-    selectedDfe === 'dfe-none'
+      formattedModules.push({
+        name: `inclusão de uma nova filial - CNPJ ${extractedCnpj}`,
+        price: basePrice > 0 ? basePrice : 199,
+        billingCycle: 'mensal',
+      })
+
+      if (dfeMatch) {
+        formattedModules.push({
+          name: `inclusão do DF-e para a filial - CNPJ ${extractedCnpj}`,
+          price: 49.9,
+          billingCycle: 'mensal',
+        })
+      }
+    } else {
+      formattedModules.push({
+        name: observacoes || tipo || 'Adição de Serviços Contratuais',
+        price: Number(valorAdicional || 0),
+        billingCycle: 'mensal',
+      })
+    }
+  }
 
   return (
-    <div className="bg-white text-black p-10 text-sm max-w-[210mm] mx-auto border border-slate-200 shadow-sm print:shadow-none print:border-none print:p-0 font-sans leading-relaxed">
-      {/* HEADER */}
-      <div className="flex flex-col items-center mb-8 border-b-2 border-slate-800 pb-6 print:break-inside-avoid">
-        <img
-          src={logoUrl}
-          alt="Service Logic Logo"
-          className="h-16 mb-4 object-contain print:h-20"
-        />
-        <h1 className="text-xl font-bold uppercase tracking-wider text-center print:text-black">
-          Termo Aditivo de Contrato de Prestação de Serviços
-        </h1>
+    <div className="p-8 sm:p-12 text-[12px] text-slate-800 font-serif leading-relaxed space-y-5 bg-white print:p-0 print:text-black">
+      <div className="flex flex-col items-center mb-8 border-b-2 border-[#f37021] print:border-black pb-6">
+        <div className="flex w-full justify-between items-center mb-6">
+          <img src={logoUrl} alt="Service Logic" className="h-16 object-contain" />
+          <h1 className="text-sm font-bold uppercase w-2/3 text-right leading-tight text-[#1b4382] print:text-black">
+            ADITIVO CONTRATUAL DE INCLUSÃO DE MÓDULOS
+          </h1>
+        </div>
       </div>
 
       <div className="space-y-6 text-justify">
-        {/* 1. DAS PARTES */}
-        <section className="print:break-inside-avoid">
-          <h2 className="font-bold text-base mb-2">1. QUALIFICAÇÃO DAS PARTES</h2>
-          <div className="space-y-2">
-            <p>
-              <span className="font-bold">CONTRATADA:</span> CONTACTO SOLUÇÕES EM TECNOLOGIA - LTDA,
-              pessoa jurídica de direito privado, inscrita no CNPJ sob o nº 27.751.577/0001-91, com
-              sede na Rua Paulo de Vasconcelos, nº 429, Maria Ortiz, Vitória-ES - CEP 29.070-364.
-            </p>
-            <p>
-              <span className="font-bold">CONTRATANTE:</span> {name || '__________________________'}
-              , inscrita no CNPJ sob o nº {cnpj || '______________'}, com sede em{' '}
-              {address || '__________________________'}, neste ato representada por{' '}
-              {repName || '__________________________'}, CPF {repCpf || '______________'}, RG{' '}
-              {repRg || '______________'}.
-            </p>
-          </div>
-        </section>
-
-        {/* 2. DO OBJETO E COMPARAÇÃO */}
-        <section className="print:break-inside-avoid">
-          <h2 className="font-bold text-base mb-2">2. DO OBJETO</h2>
-          <p className="mb-4">
-            O presente termo aditivo tem por objeto a inclusão de novos módulos, franquias e/ou
-            serviços ao contrato principal de prestação de serviços de licença de uso de software
-            firmado entre as partes, passando a vigorar com a nova configuração descrita abaixo:
-          </p>
-
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="border border-slate-300 p-4">
-              <h3 className="font-bold text-sm mb-2 text-slate-800">Configuração Atual (De)</h3>
-              <ul className="list-disc pl-4 text-sm space-y-1">
-                <li>
-                  <strong>Plano Base:</strong> {currentPlan}
-                </li>
-                {currentAdicionais.map((item: any, idx: number) => (
-                  <li key={idx}>Módulo: {item.name || item.id}</li>
-                ))}
-                {currentAdicionais.length === 0 && <li>Sem módulos adicionais</li>}
-              </ul>
-            </div>
-
-            <div className="border border-slate-300 p-4">
-              <h3 className="font-bold text-sm mb-2 text-slate-800">
-                Configuração Adicionada (Para)
-              </h3>
-              <ul className="list-disc pl-4 text-sm space-y-1">
-                {selectedModules &&
-                  selectedModules.map((id: string) => {
-                    const m = MODULES.find((mod) => mod.id === id)
-                    if (!m) return null
-                    return (
-                      <li key={m.id}>
-                        {m.name} - {formatCurrency(m.price)} / mês
-                      </li>
-                    )
-                  })}
-                {dfeData && dfeData.id !== 'dfe-none' && (
-                  <li>
-                    Pacote DF-e: {dfeData.name} - {formatCurrency(dfePrice)} / mês
-                  </li>
-                )}
-                {additionalPlates > 0 && (
-                  <li>
-                    Placas Adicionais: {additionalPlates} placa(s) -{' '}
-                    {formatCurrency(additionalPlatesTotal)} / mês
-                  </li>
-                )}
-                {additionalBranches > 0 && (
-                  <li>
-                    Filiais Adicionais: {additionalBranches} filial(is) -{' '}
-                    {formatCurrency(additionalBranchesTotal)} / mês
-                  </li>
-                )}
-                {trainings &&
-                  trainings.length > 0 &&
-                  trainings.map((t: any) => (
-                    <li key={t.id}>
-                      Treinamento Adicional: {t.name} -{' '}
-                      {t.isFree ? 'CORTESIA' : formatCurrency(t.price)}
-                    </li>
-                  ))}
-                {hasNoNewItems && <li className="italic text-slate-500">Nenhum item adicional.</li>}
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        {/* 3. DOS VALORES E CONDIÇÕES COMERCIAIS */}
-        <section className="print:break-inside-avoid">
-          <h2 className="font-bold text-base mb-2">3. DOS VALORES E CONDIÇÕES FINANCEIRAS</h2>
-          <p className="mb-3">
-            Em decorrência das adições especificadas na Cláusula 2, os valores contratuais mensais
-            passam a compor o seguinte quadro financeiro consolidado:
-          </p>
-
-          <table className="w-full text-left border-collapse border border-slate-300 mb-4">
-            <tbody className="divide-y divide-slate-300 text-sm">
-              <tr>
-                <td className="p-3 border-r border-slate-300 w-2/3">
-                  Valor da Mensalidade do Contrato Atual
-                </td>
-                <td className="p-3 font-medium">{formatCurrency(currentContract)}</td>
-              </tr>
-              <tr>
-                <td className="p-3 border-r border-slate-300">Valor dos Novos Serviços/Módulos</td>
-                <td className="p-3 font-medium">{formatCurrency(newTotalMensal)}</td>
-              </tr>
-              {discount > 0 && (
-                <tr>
-                  <td className="p-3 border-r border-slate-300 text-red-600">
-                    Desconto Concedido nos Novos Itens
-                  </td>
-                  <td className="p-3 text-red-600 font-medium">- {formatCurrency(discount)}</td>
-                </tr>
-              )}
-              <tr className="bg-slate-100 font-bold">
-                <td className="p-3 border-r border-slate-300 uppercase">
-                  Novo Valor Mensal Consolidado
-                </td>
-                <td className="p-3">{formatCurrency(finalSum)}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          {implValue > 0 && (
-            <p className="mb-3 text-sm">
-              Fica ajustado o pagamento de <strong>{formatCurrency(implValue)}</strong> referente à
-              taxa única de serviços de implantação/treinamento (Modalidade:{' '}
-              {implMode === 'remoto' ? 'Remota' : 'Presencial'}).
-            </p>
-          )}
-
-          {isencaoPeriodo > 0 && (
-            <p className="mb-3 text-sm font-bold bg-yellow-50 p-3 border border-yellow-200">
-              Concede-se o período de carência/isenção de {isencaoPeriodo}{' '}
-              {isencaoPeriodo === 1 ? 'mês' : 'meses'} sobre os novos itens contratados. O valor da
-              nova mensalidade passará a ser de {formatCurrency(finalSum)} após o período de
-              gratuidade. Durante o período de carência, será cobrado apenas o valor do contrato
-              atual de {formatCurrency(currentContract)}.
-            </p>
-          )}
-
-          {prazosConcedidos && (
-            <p className="mb-3 text-sm">
-              <span className="font-bold">Condições Especiais: </span>
-              {prazosConcedidos}
-            </p>
-          )}
-        </section>
-
-        {/* 4. DISPOSIÇÕES GERAIS */}
-        <section className="print:break-inside-avoid">
-          <h2 className="font-bold text-base mb-2">4. DAS DISPOSIÇÕES GERAIS</h2>
-          <p>
-            Permanecem inalteradas e em pleno vigor todas as demais cláusulas e condições do
-            Contrato Principal de Licença de Uso de Software firmado entre as partes que não tenham
-            sido expressamente modificadas pelo presente instrumento aditivo.
-          </p>
-        </section>
-
-        <p className="text-center mt-12 mb-16">
-          {date
-            ? `Vitória/ES, ${date}.`
-            : `Vitória/ES, ${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.`}
+        <p>
+          Pelo presente instrumento de aditamento ao contrato original de licença de uso e prestação
+          de serviços, as partes abaixo qualificadas:
         </p>
 
-        {/* ASSINATURAS */}
-        <div className="flex flex-col sm:flex-row justify-between gap-12 mt-12 pb-8 print:break-inside-avoid">
-          <div className="flex-1 text-center">
-            <div className="border-t border-black w-full mb-2"></div>
-            <p className="font-bold text-sm uppercase">CONTACTO SOLUÇÕES EM TECNOLOGIA - LTDA</p>
-            <p className="text-xs">CNPJ: 27.751.577/0001-91</p>
+        <div>
+          <p className="mb-2">
+            <strong>CONTRATADA:</strong> CONTACTO SOLUÇÕES EM TECNOLOGIA - LTDA, pessoa jurídica de
+            direito privado, inscrita no CNPJ sob o nº 27.751.577/0001-91, com sede na Rua Paulo de
+            Vasconcelos, nº 429, Maria Ortiz, Vitoria-ES - CEP 29.070-364.
+          </p>
+          <p>
+            <strong>CONTRATANTE:</strong> <strong>{clientName || '[NOME DO CLIENTE]'}</strong>,
+            inscrita no CNPJ sob o nº <strong>{cnpj ? formatCNPJ(cnpj) : '[CNPJ]'}</strong>.
+          </p>
+        </div>
+
+        <div>
+          <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+            1. DO OBJETO DO ADITIVO
+          </h3>
+          <p className="mb-4">
+            O presente aditivo tem por objeto formalizar a inclusão de novos módulos ao sistema
+            TMS-SERVICE LOGIC, solicitados pela CONTRATANTE e efetivados no dia{' '}
+            <strong>{dataSolicitacao ? formatDate(dataSolicitacao) : '[DATA]'}</strong>, os quais
+            passam a integrar as condições do contrato principal.
+          </p>
+        </div>
+
+        <div>
+          <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+            2. DOS SERVIÇOS E MÓDULOS ADICIONADOS
+          </h3>
+          <p className="mb-3">
+            A CONTRATANTE adere expressamente aos seguintes itens e serviços adicionais:
+          </p>
+
+          <table className="w-full text-xs border-collapse border border-slate-300 mb-6">
+            <thead>
+              <tr className="bg-[#1b4382] text-white print:bg-slate-200 print:text-black">
+                <th className="border border-slate-300 p-2 text-left">
+                  Descrição do Item / Serviço
+                </th>
+                <th className="border border-slate-300 p-2 text-center w-24">Ciclo</th>
+                <th className="border border-slate-300 p-2 text-right w-40">Valor Adicional</th>
+              </tr>
+            </thead>
+            <tbody>
+              {formattedModules.length > 0 ? (
+                formattedModules.map((m: any, idx: number) => (
+                  <tr key={idx}>
+                    <td className="border border-slate-300 p-2 whitespace-pre-line">{m.name}</td>
+                    <td className="border border-slate-300 p-2 text-center">
+                      {m.isTaxaUnica ? 'Único' : m.billingCycle === 'anual' ? 'Anual' : 'Mensal'}
+                    </td>
+                    <td className="border border-slate-300 p-2 text-right">
+                      {m.isTaxaUnica
+                        ? m.isFree
+                          ? 'Grátis'
+                          : `${formatCurrency(m.price)}`
+                        : m.price > 0
+                          ? formatCurrency(m.price)
+                          : 'Incluso'}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={3}
+                    className="border border-slate-300 p-2 text-center text-slate-500 italic"
+                  >
+                    Especificação de serviços constará nos autos de histórico do contrato principal.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+            <tfoot>
+              <tr className="bg-[#1b4382]/10 print:bg-slate-100 font-bold">
+                <td colSpan={2} className="border border-slate-300 p-2 text-right">
+                  Acréscimo Total na Mensalidade
+                </td>
+                <td className="border border-slate-300 p-2 text-right text-emerald-700 print:text-black">
+                  {formatCurrency(valorAdicional || 0)}
+                </td>
+              </tr>
+              {Number(valorAnualAdicional) > 0 && (
+                <tr className="bg-[#1b4382]/10 print:bg-slate-100 font-bold">
+                  <td colSpan={2} className="border border-slate-300 p-2 text-right">
+                    Acréscimo Total Anual
+                  </td>
+                  <td className="border border-slate-300 p-2 text-right text-emerald-700 print:text-black">
+                    {formatCurrency(valorAnualAdicional)}
+                  </td>
+                </tr>
+              )}
+              <tr className="bg-[#1b4382]/20 print:bg-slate-200 font-bold">
+                <td colSpan={2} className="border border-slate-300 p-2 text-right">
+                  Novo Valor Total do Contrato (Mensal)
+                </td>
+                <td className="border border-slate-300 p-2 text-right text-[#1b4382] print:text-black">
+                  {formatCurrency(valorTotalAtual || 0)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        {prazosConcedidos && (
+          <div>
+            <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+              3. CONDIÇÕES ESPECIAIS / PRAZOS CONCEDIDOS
+            </h3>
+            <p className="mb-4">{prazosConcedidos}</p>
           </div>
-          <div className="flex-1 text-center">
-            <div className="border-t border-black w-full mb-2"></div>
-            <p className="font-bold text-sm uppercase">{name || 'CONTRATANTE'}</p>
-            <p className="text-xs">CNPJ: {cnpj || '___.___.___/____-__'}</p>
+        )}
+
+        <div>
+          <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+            {prazosConcedidos ? '4' : '3'}. DISPOSIÇÕES GERAIS
+          </h3>
+          <p className="mb-4">
+            Permanecem inalteradas e em pleno vigor as demais cláusulas e condições estabelecidas no
+            Contrato Principal, que não tenham sido expressamente modificadas por este instrumento.
+          </p>
+        </div>
+
+        <div className="mt-20 text-center space-y-12">
+          <p>E por estarem justos e contratados, assinam eletronicamente o presente Aditivo.</p>
+          <div className="grid grid-cols-2 gap-8 mt-12">
+            <div className="border-t border-[#1b4382] pt-2 text-center print:border-black">
+              <p className="font-bold text-[#1b4382] print:text-black">
+                CONTACTO SOLUÇÕES EM TECNOLOGIA - LTDA
+              </p>
+              <p className="text-[11px] text-slate-500">CONTRATADA</p>
+            </div>
+            <div className="border-t border-[#1b4382] pt-2 text-center print:border-black">
+              <p className="font-bold uppercase text-[#1b4382] print:text-black">
+                {clientName || '[NOME DA EMPRESA]'}
+              </p>
+              <p className="text-[11px] text-slate-500">CONTRATANTE</p>
+            </div>
           </div>
         </div>
       </div>
