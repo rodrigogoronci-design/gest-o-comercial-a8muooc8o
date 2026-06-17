@@ -473,7 +473,6 @@ export function QuoteDocument({
                     <span>
                       Desconto Aplicado{' '}
                       {tipoDesconto === 'percentual' ? `(${descontoMensalidade}%)` : ''}
-                      {isencaoPeriodo > 0 ? ` (Isenção: ${isencaoPeriodo} meses)` : ''}
                     </span>
                     <span>- {formatCurrency(calculatedDiscount)}</span>
                   </div>
@@ -502,15 +501,9 @@ export function QuoteDocument({
                 </div>
               )}
               <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
-                <span>Nova Mensalidade (Com Isenções)</span>
+                <span>Nova Mensalidade</span>
                 <span>{formatCurrency((currentClientValue || 0) + totalValue)}</span>
               </div>
-              {totalValue !== totalValueStandard && (
-                <div className="flex justify-between items-center font-medium text-slate-500 text-[10px] mt-1">
-                  <span>Nova Mensalidade (Após isenções)</span>
-                  <span>{formatCurrency((currentClientValue || 0) + totalValueStandard)}</span>
-                </div>
-              )}
             </div>
           ) : (
             <div className="space-y-1.5 text-[10px]">
@@ -569,7 +562,6 @@ export function QuoteDocument({
                     <span>
                       Desconto Aplicado{' '}
                       {tipoDesconto === 'percentual' ? `(${descontoMensalidade}%)` : ''}
-                      {isencaoPeriodo > 0 ? ` (Isenção: ${isencaoPeriodo} meses)` : ''}
                     </span>
                     <span>- {formatCurrency(calculatedDiscount)}</span>
                   </div>
@@ -601,12 +593,6 @@ export function QuoteDocument({
                 <span>Total Mensal Final</span>
                 <span>{formatCurrency(totalValue)}</span>
               </div>
-              {totalValue !== totalValueStandard && (
-                <div className="flex justify-between items-center font-medium text-slate-500 text-[10px] mt-1">
-                  <span>Total Padrão (Após isenções)</span>
-                  <span>{formatCurrency(totalValueStandard)}</span>
-                </div>
-              )}
             </div>
           )}
         </div>

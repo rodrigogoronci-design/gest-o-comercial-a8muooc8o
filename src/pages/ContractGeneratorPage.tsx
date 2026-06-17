@@ -2394,11 +2394,6 @@ export default function ContractGeneratorPage() {
                         <span className="text-xl font-bold text-indigo-800">
                           +{formatCurrency(totalValue)}
                         </span>
-                        {isencaoPeriodo > 0 && (
-                          <span className="text-xs text-indigo-600 mt-1 font-medium block">
-                            Inclui isenção de {isencaoPeriodo} meses
-                          </span>
-                        )}
                       </div>
                       <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-lg">
                         <h4 className="font-bold text-sm mb-2 text-emerald-700">
@@ -2427,11 +2422,6 @@ export default function ContractGeneratorPage() {
                           <span className="text-xl font-bold text-indigo-800">
                             {formatCurrency(totalValue)}
                           </span>
-                          {isencaoPeriodo > 0 && (
-                            <span className="text-xs text-indigo-600 mt-1 font-medium">
-                              Inclui isenção de {isencaoPeriodo} meses
-                            </span>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -3423,11 +3413,6 @@ export default function ContractGeneratorPage() {
                         <span className="text-xl font-bold text-indigo-800">
                           +{formatCurrency(totalValue)}
                         </span>
-                        {isencaoPeriodo > 0 && (
-                          <span className="text-xs text-indigo-600 mt-1 font-medium block">
-                            Inclui isenção de {isencaoPeriodo} meses
-                          </span>
-                        )}
                       </div>
                       <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-lg">
                         <h4 className="font-bold text-sm mb-2 text-emerald-700">
@@ -3456,11 +3441,6 @@ export default function ContractGeneratorPage() {
                           <span className="text-xl font-bold text-indigo-800">
                             {formatCurrency(totalValue)}
                           </span>
-                          {isencaoPeriodo > 0 && (
-                            <span className="text-xs text-indigo-600 mt-1 font-medium">
-                              Inclui isenção de {isencaoPeriodo} meses
-                            </span>
-                          )}
                         </div>
                       </div>
                     </div>
