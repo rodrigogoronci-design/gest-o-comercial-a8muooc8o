@@ -72,6 +72,7 @@ export default function CRMPage() {
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingProspect, setEditingProspect] = useState<CrmProspect | null>(null)
+  const [editingTab, setEditingTab] = useState<string>('dados')
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
@@ -434,7 +435,10 @@ export default function CRMPage() {
         <CrmKanbanBoard
           prospects={filtered}
           onUpdateStatus={updateStatus}
-          onEdit={setEditingProspect}
+          onEdit={(p, tab = 'dados') => {
+            setEditingProspect(p)
+            setEditingTab(tab)
+          }}
           onDelete={handleDelete}
           onEfetivar={handleEfetivarCliente}
         />
@@ -509,10 +513,13 @@ export default function CRMPage() {
                           <div
                             className={cn(
                               'flex items-center gap-1.5 text-xs font-medium',
-                              p.data_followup <= today &&
+                              p.data_followup < today &&
                                 !['Fechado', 'Cliente Efetivado', 'Perdido'].includes(p.status)
-                                ? 'text-amber-600'
-                                : 'text-muted-foreground',
+                                ? 'text-red-600'
+                                : p.data_followup === today &&
+                                    !['Fechado', 'Cliente Efetivado', 'Perdido'].includes(p.status)
+                                  ? 'text-amber-600'
+                                  : 'text-muted-foreground',
                             )}
                           >
                             <CalendarClock className="h-3.5 w-3.5" />
@@ -631,7 +638,10 @@ export default function CRMPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
-                            onClick={() => setEditingProspect(p)}
+                            onClick={() => {
+                              setEditingProspect(p)
+                              setEditingTab('dados')
+                            }}
                             title="Editar/Diagnóstico"
                           >
                             <Pencil className="h-4 w-4" />
@@ -665,7 +675,7 @@ export default function CRMPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-hidden p-6 pt-4 bg-slate-50/30">
-            <Tabs defaultValue="dados" className="h-full flex flex-col">
+            <Tabs value={editingTab} onValueChange={setEditingTab} className="h-full flex flex-col">
               <TabsList className="grid w-full grid-cols-3 mb-4 shrink-0 bg-slate-100">
                 <TabsTrigger value="dados">Dados Básicos</TabsTrigger>
                 <TabsTrigger value="diagnostico">Diagnóstico</TabsTrigger>

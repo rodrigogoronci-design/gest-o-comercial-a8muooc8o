@@ -1,20 +1,33 @@
 import { useState, useEffect } from 'react'
-import { Pencil, UserCheck, CalendarClock, MoreVertical, FileText, Paperclip } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import {
+  Pencil,
+  UserCheck,
+  CalendarClock,
+  MoreVertical,
+  FileText,
+  Paperclip,
+  FileSignature,
+  Trash2,
+  MessageSquarePlus,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { formatDate } from '@/lib/formatters'
 import type { CrmProspect } from '@/pages/CRMPage'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
 import { supabase } from '@/lib/supabase/client'
 
 interface CrmKanbanBoardProps {
   prospects: CrmProspect[]
   onUpdateStatus: (id: string, newStatus: string, oldStatus: string) => void
-  onEdit: (prospect: CrmProspect) => void
+  onEdit: (prospect: CrmProspect, tab?: string) => void
   onDelete: (id: string) => void
   onEfetivar: (prospect: CrmProspect) => void
 }
@@ -144,15 +157,34 @@ export function CrmKanbanBoard({
                       draggedId === p.id && 'opacity-50',
                     )}
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 pr-2 flex items-center gap-2 flex-wrap">
-                        {p.empresa}
-                        {proposalsByProspect[p.id] > 0 && (
-                          <div
-                            title="Possui proposta vinculada"
-                            className="bg-indigo-50 text-indigo-600 p-1 rounded-md border border-indigo-100 flex-shrink-0"
-                          >
-                            <FileText className="w-3.5 h-3.5" />
+                    <div className="flex justify-between items-start mb-1">
+                      <div className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 pr-2 flex flex-col gap-1 w-full">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span>{p.empresa}</span>
+                          {p.cnpj && (
+                            <span className="text-[10px] font-normal text-muted-foreground">
+                              {p.cnpj}
+                            </span>
+                          )}
+                          {proposalsByProspect[p.id] > 0 && (
+                            <div
+                              title="Possui proposta vinculada"
+                              className="bg-indigo-50 text-indigo-600 p-1 rounded-md border border-indigo-100 flex-shrink-0"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                            </div>
+                          )}
+                        </div>
+                        {p.tags && p.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-0.5">
+                            {p.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100"
+                              >
+                                {tag}
+                              </span>
+                            ))}
                           </div>
                         )}
                       </div>
@@ -166,9 +198,13 @@ export function CrmKanbanBoard({
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40">
-                          <DropdownMenuItem onClick={() => onEdit(p)}>
-                            <Pencil className="mr-2 h-4 w-4" /> Editar
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={() => onEdit(p, 'dados')}>
+                            <Pencil className="mr-2 h-4 w-4" /> Editar / Detalhes
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onEdit(p, 'historico')}>
+                            <MessageSquarePlus className="mr-2 h-4 w-4 text-blue-600" />{' '}
+                            <span className="text-blue-600">Registrar Interação</span>
                           </DropdownMenuItem>
                           {p.status !== 'Cliente Efetivado' && (
                             <DropdownMenuItem
@@ -178,52 +214,92 @@ export function CrmKanbanBoard({
                               <UserCheck className="mr-2 h-4 w-4" /> Efetivar Cliente
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem asChild>
+                            <Link
+                              to={`/contratos?tab=cotacao&prospectId=${p.id}&prospect=${encodeURIComponent(p.empresa)}&contato=${encodeURIComponent(p.contato_nome)}`}
+                              className="cursor-pointer w-full flex items-center"
+                            >
+                              <FileText className="mr-2 h-4 w-4 text-orange-600" />{' '}
+                              <span className="text-orange-600">Gerar Proposta</span>
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link
+                              to={`/contratos?prospect=${encodeURIComponent(p.empresa)}&cnpj=${p.cnpj ? p.cnpj.replace(/\D/g, '') : ''}`}
+                              className="cursor-pointer w-full flex items-center"
+                            >
+                              <FileSignature className="mr-2 h-4 w-4 text-indigo-600" />{' '}
+                              <span className="text-indigo-600">Gerar Contrato</span>
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => onDelete(p.id)}
+                            className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Excluir Prospecto
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
 
-                    <div className="text-sm text-slate-600 mb-4">{p.contato_nome}</div>
+                    <div className="text-sm text-slate-600 mb-3">{p.contato_nome}</div>
 
-                    <div className="flex items-center justify-between mt-auto gap-2">
-                      <div className="flex items-center gap-2">
-                        {p.data_followup && (
-                          <div
-                            className={cn(
-                              'flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded-md bg-slate-50 border',
-                              p.data_followup <= today &&
-                                !['Fechado', 'Cliente Efetivado', 'Perdido'].includes(p.status)
-                                ? 'text-amber-700 border-amber-200 bg-amber-50'
-                                : 'text-slate-600 border-slate-200',
-                            )}
-                          >
-                            <CalendarClock className="w-3.5 h-3.5" />
-                            {new Date(p.data_followup + 'T12:00:00Z').toLocaleDateString('pt-BR', {
-                              day: '2-digit',
-                              month: 'short',
-                            })}
-                          </div>
-                        )}
-                        {(p as any).proposta_url && (
-                          <div
-                            title="Proposta Anexada"
-                            className="bg-emerald-50 text-emerald-600 p-1 px-1.5 rounded-md border border-emerald-100 flex-shrink-0 flex items-center gap-1"
-                          >
-                            <Paperclip className="w-3.5 h-3.5" />
-                            <span className="text-[10px] font-medium hidden sm:inline leading-none">
-                              Proposta
-                            </span>
-                          </div>
-                        )}
+                    <div className="flex flex-col gap-2 mt-auto">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          {p.data_followup && (
+                            <div
+                              className={cn(
+                                'flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded-md bg-slate-50 border',
+                                p.data_followup < today &&
+                                  !['Fechado', 'Cliente Efetivado', 'Perdido'].includes(p.status)
+                                  ? 'text-red-700 border-red-200 bg-red-50'
+                                  : p.data_followup === today &&
+                                      !['Fechado', 'Cliente Efetivado', 'Perdido'].includes(
+                                        p.status,
+                                      )
+                                    ? 'text-amber-700 border-amber-200 bg-amber-50'
+                                    : 'text-slate-600 border-slate-200',
+                              )}
+                            >
+                              <CalendarClock className="w-3.5 h-3.5" />
+                              {new Date(p.data_followup + 'T12:00:00Z').toLocaleDateString(
+                                'pt-BR',
+                                {
+                                  day: '2-digit',
+                                  month: 'short',
+                                },
+                              )}
+                            </div>
+                          )}
+                          {(p as any).proposta_url && (
+                            <div
+                              title="Proposta Anexada"
+                              className="bg-emerald-50 text-emerald-600 p-1 px-1.5 rounded-md border border-emerald-100 flex-shrink-0 flex items-center gap-1"
+                            >
+                              <Paperclip className="w-3.5 h-3.5" />
+                              <span className="text-[10px] font-medium hidden sm:inline leading-none">
+                                Proposta
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        <span
+                          className={cn(
+                            'text-[10px] px-2 py-1 rounded-full border font-semibold tracking-wide whitespace-nowrap uppercase',
+                            getClassificacaoColor(p.classificacao),
+                          )}
+                        >
+                          {p.classificacao || 'Frio'}
+                        </span>
                       </div>
 
-                      <span
-                        className={cn(
-                          'text-[10px] px-2 py-1 rounded-full border font-semibold tracking-wide whitespace-nowrap uppercase',
-                          getClassificacaoColor(p.classificacao),
-                        )}
-                      >
-                        {p.classificacao || 'Frio'}
-                      </span>
+                      <div className="text-[10px] text-muted-foreground flex items-center justify-between">
+                        <span title="Última Interação">Int: {formatDate(p.ultima_interacao)}</span>
+                      </div>
                     </div>
                   </div>
                 ))
