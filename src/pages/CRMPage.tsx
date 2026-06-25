@@ -90,14 +90,16 @@ export default function CRMPage() {
   const { user } = useAuth()
 
   const toggleExpand = (id: string) => {
-    setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }))
+    setExpandedRows((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
   const handleUpdatePropostaInline = async (id: string, updates: any) => {
     try {
       const { error } = await supabase.from('crm_propostas').update(updates).eq('id', id)
       if (error) throw error
-      setAllProposals(prev => prev.map(prop => prop.id === id ? { ...prop, ...updates } : prop))
+      setAllProposals((prev) =>
+        prev.map((prop) => (prop.id === id ? { ...prop, ...updates } : prop)),
+      )
       toast({ title: 'Proposta atualizada' })
     } catch (e: any) {
       toast({ title: 'Erro', description: e.message, variant: 'destructive' })
@@ -164,13 +166,13 @@ export default function CRMPage() {
         .order('created_at', { ascending: false })
         .limit(1)
         .single()
-        
+
       if (latestProposal) {
         await supabase
           .from('crm_propostas')
           .update({
             status_negociacao: 'Enviada',
-            data_envio: new Date().toISOString()
+            data_envio: new Date().toISOString(),
           })
           .eq('id', latestProposal.id)
       }
@@ -275,13 +277,15 @@ export default function CRMPage() {
       .select('*')
       .order('ultima_interacao', { ascending: false })
     if (!error && data) setProspects(data as CrmProspect[])
-    
+
     const { data: propsData } = await supabase
       .from('crm_propostas')
-      .select('id, prospect_id, data_proposta, valor_mensalidade, valor_implantacao, status_negociacao, data_envio')
+      .select(
+        'id, prospect_id, data_proposta, valor_mensalidade, valor_implantacao, status_negociacao, data_envio',
+      )
       .order('created_at', { ascending: false })
     if (propsData) setAllProposals(propsData)
-      
+
     setIsLoading(false)
   }
 
@@ -588,269 +592,311 @@ export default function CRMPage() {
                   </TableRow>
                 ) : (
                   filtered.map((p) => {
-                    const props = allProposals.filter(prop => prop.prospect_id === p.id)
+                    const props = allProposals.filter((prop) => prop.prospect_id === p.id)
                     const hasProps = props.length > 0
                     const isExpanded = expandedRows[p.id]
 
                     return (
-                    <React.Fragment key={p.id}>
-                    <TableRow className="hover:bg-slate-50/80 transition-colors">
-                      <TableCell className="font-medium text-slate-900">
-                        <div className="flex items-start gap-2">
-                          {hasProps ? (
-                            <button onClick={() => toggleExpand(p.id)} className="mt-0.5 text-slate-400 hover:text-indigo-600 transition-colors">
-                              {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                            </button>
-                          ) : (
-                            <div className="w-4" />
-                          )}
-                          <div className="flex flex-col">
-                            <span>{p.empresa}</span>
-                          {p.cnpj && (
-                            <span className="text-xs text-muted-foreground mt-0.5">{p.cnpj}</span>
-                          )}
-                          {p.tags && p.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-1.5">
-                              {p.tags.map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100"
+                      <React.Fragment key={p.id}>
+                        <TableRow className="hover:bg-slate-50/80 transition-colors">
+                          <TableCell className="font-medium text-slate-900">
+                            <div className="flex items-start gap-2">
+                              {hasProps ? (
+                                <button
+                                  onClick={() => toggleExpand(p.id)}
+                                  className="mt-0.5 text-slate-400 hover:text-indigo-600 transition-colors"
                                 >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span>{p.contato_nome}</span>
-                          {p.telefone && (
-                            <span className="text-xs text-muted-foreground mt-0.5">
-                              {p.telefone}
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {p.data_followup ? (
-                          <div
-                            className={cn(
-                              'flex items-center gap-1.5 text-xs font-medium',
-                              p.data_followup < today &&
-                                !['Fechado', 'Cliente Efetivado', 'Perdido'].includes(p.status)
-                                ? 'text-red-600'
-                                : p.data_followup === today &&
-                                    !['Fechado', 'Cliente Efetivado', 'Perdido'].includes(p.status)
-                                  ? 'text-amber-600'
-                                  : 'text-muted-foreground',
-                            )}
-                          >
-                            <CalendarClock className="h-3.5 w-3.5" />
-                            {new Date(p.data_followup + 'T12:00:00Z').toLocaleDateString('pt-BR')}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">-</span>
-                        )}
-                        <div
-                          className="text-[10px] text-muted-foreground mt-1"
-                          title="Última Interação"
-                        >
-                          Int: {formatDate(p.ultima_interacao)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          defaultValue={p.classificacao || 'Frio'}
-                          onValueChange={(val) => updateClassificacao(p.id, val, p.classificacao)}
-                        >
-                          <SelectTrigger
-                            className={cn(
-                              'h-8 w-[120px] border rounded-full text-xs font-semibold px-3',
-                              getClassificacaoColor(p.classificacao),
-                            )}
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Frio">Frio</SelectItem>
-                            <SelectItem value="Morno">Morno</SelectItem>
-                            <SelectItem value="Quente">Quente</SelectItem>
-                            <SelectItem value="Muito Quente">Muito Quente</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          defaultValue={p.status}
-                          onValueChange={(val) => updateStatus(p.id, val, p.status)}
-                        >
-                          <SelectTrigger
-                            className={cn(
-                              'h-8 w-[150px] border rounded-full text-xs font-semibold px-3',
-                              getStatusColor(p.status),
-                            )}
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {![
-                              'Novo Lead',
-                              'Contato inicial',
-                              'Em negociação',
-                              'Proposta enviada',
-                              'Fechado',
-                              'Cliente Efetivado',
-                              'Perdido',
-                            ].includes(p.status) && (
-                              <SelectItem value={p.status} className="hidden">
-                                {p.status}
-                              </SelectItem>
-                            )}
-                            <SelectItem value="Novo Lead">Novo Lead</SelectItem>
-                            <SelectItem value="Contato inicial">Contato inicial</SelectItem>
-                            <SelectItem value="Em negociação">Em negociação</SelectItem>
-                            <SelectItem value="Proposta enviada">Proposta enviada</SelectItem>
-                            <SelectItem value="Fechado">Fechado</SelectItem>
-                            <SelectItem value="Cliente Efetivado">Cliente Efetivado</SelectItem>
-                            <SelectItem value="Perdido">Perdido</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {p.status !== 'Cliente Efetivado' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                              onClick={() => handleEfetivarCliente(p)}
-                              disabled={isSubmitting}
-                              title="Efetivar Cliente"
-                            >
-                              <UserCheck className="h-4 w-4" />
-                              <span className="hidden lg:inline">Efetivar</span>
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 gap-1 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                            asChild
-                          >
-                            <Link
-                              to={`/contratos?prospect=${encodeURIComponent(p.empresa)}&cnpj=${p.cnpj ? p.cnpj.replace(/\D/g, '') : ''}`}
-                            >
-                              <FileSignature className="h-4 w-4" />
-                              <span className="hidden lg:inline">Gerar Contrato</span>
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 gap-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                            asChild
-                          >
-                            <Link
-                              to={`/contratos?tab=cotacao&prospectId=${p.id}&prospect=${encodeURIComponent(p.empresa)}&contato=${encodeURIComponent(p.contato_nome)}`}
-                            >
-                              <FileText className="h-4 w-4" />
-                              <span className="hidden lg:inline">Gerar Proposta</span>
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
-                            onClick={() => handleSendProposalClick(p)}
-                            title="Enviar Proposta por E-mail"
-                          >
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
-                            onClick={() => {
-                              setEditingProspect(p)
-                              setEditingTab('dados')
-                            }}
-                            title="Editar/Diagnóstico"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
-                            onClick={() => handleDelete(p.id)}
-                            title="Excluir"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                    {isExpanded && (
-                      <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
-                        <TableCell colSpan={6} className="p-0">
-                          <div className="py-3 px-10 border-b border-slate-100 bg-indigo-50/30">
-                            <h4 className="text-xs font-semibold text-slate-600 uppercase mb-3 tracking-wider flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> Propostas Geradas</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                              {props.map(prop => (
-                                <div key={prop.id} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex flex-col gap-2">
-                                  <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-                                    <span className="text-sm font-medium text-slate-800">
-                                      Data: {new Date(prop.data_proposta + 'T12:00:00Z').toLocaleDateString('pt-BR')}
-                                    </span>
-                                    <span className="text-xs font-semibold text-indigo-600">
-                                      {prop.valor_mensalidade?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} /mês
-                                    </span>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-3 mt-1">
-                                    <div className="space-y-1">
-                                      <span className="text-[10px] uppercase text-slate-500 font-medium">Status</span>
-                                      <Select
-                                        value={prop.status_negociacao || 'Gerada'}
-                                        onValueChange={(val) => handleUpdatePropostaInline(prop.id, { status_negociacao: val })}
+                                  {isExpanded ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                  )}
+                                </button>
+                              ) : (
+                                <div className="w-4" />
+                              )}
+                              <div className="flex flex-col">
+                                <span>{p.empresa}</span>
+                                {p.cnpj && (
+                                  <span className="text-xs text-muted-foreground mt-0.5">
+                                    {p.cnpj}
+                                  </span>
+                                )}
+                                {p.tags && p.tags.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1.5">
+                                    {p.tags.map((tag) => (
+                                      <span
+                                        key={tag}
+                                        className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100"
                                       >
-                                        <SelectTrigger className="h-7 text-xs bg-slate-50">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="Gerada">Gerada</SelectItem>
-                                          <SelectItem value="Enviada">Enviada</SelectItem>
-                                          <SelectItem value="Em Análise">Em Análise</SelectItem>
-                                          <SelectItem value="Aprovada">Aprovada</SelectItem>
-                                          <SelectItem value="Recusada">Recusada</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                    <div className="space-y-1">
-                                      <span className="text-[10px] uppercase text-slate-500 font-medium">Envio</span>
-                                      <Input
-                                        type="date"
-                                        className="h-7 text-xs bg-slate-50 px-2"
-                                        value={prop.data_envio ? prop.data_envio.split('T')[0] : ''}
-                                        onChange={(e) => {
-                                          const val = e.target.value
-                                          handleUpdatePropostaInline(prop.id, { data_envio: val ? new Date(val + 'T12:00:00Z').toISOString() : null })
-                                        }}
-                                      />
-                                    </div>
+                                        {tag}
+                                      </span>
+                                    ))}
                                   </div>
-                                </div>
-                              ))}
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                    </React.Fragment>
-                  );
-                })
-              )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span>{p.contato_nome}</span>
+                              {p.telefone && (
+                                <span className="text-xs text-muted-foreground mt-0.5">
+                                  {p.telefone}
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {p.data_followup ? (
+                              <div
+                                className={cn(
+                                  'flex items-center gap-1.5 text-xs font-medium',
+                                  p.data_followup < today &&
+                                    !['Fechado', 'Cliente Efetivado', 'Perdido'].includes(p.status)
+                                    ? 'text-red-600'
+                                    : p.data_followup === today &&
+                                        !['Fechado', 'Cliente Efetivado', 'Perdido'].includes(
+                                          p.status,
+                                        )
+                                      ? 'text-amber-600'
+                                      : 'text-muted-foreground',
+                                )}
+                              >
+                                <CalendarClock className="h-3.5 w-3.5" />
+                                {new Date(p.data_followup + 'T12:00:00Z').toLocaleDateString(
+                                  'pt-BR',
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">-</span>
+                            )}
+                            <div
+                              className="text-[10px] text-muted-foreground mt-1"
+                              title="Última Interação"
+                            >
+                              Int: {formatDate(p.ultima_interacao)}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              defaultValue={p.classificacao || 'Frio'}
+                              onValueChange={(val) =>
+                                updateClassificacao(p.id, val, p.classificacao)
+                              }
+                            >
+                              <SelectTrigger
+                                className={cn(
+                                  'h-8 w-[120px] border rounded-full text-xs font-semibold px-3',
+                                  getClassificacaoColor(p.classificacao),
+                                )}
+                              >
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Frio">Frio</SelectItem>
+                                <SelectItem value="Morno">Morno</SelectItem>
+                                <SelectItem value="Quente">Quente</SelectItem>
+                                <SelectItem value="Muito Quente">Muito Quente</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              defaultValue={p.status}
+                              onValueChange={(val) => updateStatus(p.id, val, p.status)}
+                            >
+                              <SelectTrigger
+                                className={cn(
+                                  'h-8 w-[150px] border rounded-full text-xs font-semibold px-3',
+                                  getStatusColor(p.status),
+                                )}
+                              >
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {![
+                                  'Novo Lead',
+                                  'Contato inicial',
+                                  'Em negociação',
+                                  'Proposta enviada',
+                                  'Fechado',
+                                  'Cliente Efetivado',
+                                  'Perdido',
+                                ].includes(p.status) && (
+                                  <SelectItem value={p.status} className="hidden">
+                                    {p.status}
+                                  </SelectItem>
+                                )}
+                                <SelectItem value="Novo Lead">Novo Lead</SelectItem>
+                                <SelectItem value="Contato inicial">Contato inicial</SelectItem>
+                                <SelectItem value="Em negociação">Em negociação</SelectItem>
+                                <SelectItem value="Proposta enviada">Proposta enviada</SelectItem>
+                                <SelectItem value="Fechado">Fechado</SelectItem>
+                                <SelectItem value="Cliente Efetivado">Cliente Efetivado</SelectItem>
+                                <SelectItem value="Perdido">Perdido</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              {p.status !== 'Cliente Efetivado' && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                  onClick={() => handleEfetivarCliente(p)}
+                                  disabled={isSubmitting}
+                                  title="Efetivar Cliente"
+                                >
+                                  <UserCheck className="h-4 w-4" />
+                                  <span className="hidden lg:inline">Efetivar</span>
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 gap-1 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                                asChild
+                              >
+                                <Link
+                                  to={`/contratos?prospect=${encodeURIComponent(p.empresa)}&cnpj=${p.cnpj ? p.cnpj.replace(/\D/g, '') : ''}`}
+                                >
+                                  <FileSignature className="h-4 w-4" />
+                                  <span className="hidden lg:inline">Gerar Contrato</span>
+                                </Link>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 gap-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                asChild
+                              >
+                                <Link
+                                  to={`/contratos?tab=cotacao&prospectId=${p.id}&prospect=${encodeURIComponent(p.empresa)}&contato=${encodeURIComponent(p.contato_nome)}`}
+                                >
+                                  <FileText className="h-4 w-4" />
+                                  <span className="hidden lg:inline">Gerar Proposta</span>
+                                </Link>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
+                                onClick={() => handleSendProposalClick(p)}
+                                title="Enviar Proposta por E-mail"
+                              >
+                                <Mail className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                                onClick={() => {
+                                  setEditingProspect(p)
+                                  setEditingTab('dados')
+                                }}
+                                title="Editar/Diagnóstico"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                                onClick={() => handleDelete(p.id)}
+                                title="Excluir"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        {isExpanded && (
+                          <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+                            <TableCell colSpan={6} className="p-0">
+                              <div className="py-3 px-10 border-b border-slate-100 bg-indigo-50/30">
+                                <h4 className="text-xs font-semibold text-slate-600 uppercase mb-3 tracking-wider flex items-center gap-1.5">
+                                  <FileText className="w-3.5 h-3.5" /> Propostas Geradas
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                  {props.map((prop) => (
+                                    <div
+                                      key={prop.id}
+                                      className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex flex-col gap-2"
+                                    >
+                                      <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                                        <span className="text-sm font-medium text-slate-800">
+                                          Data:{' '}
+                                          {new Date(
+                                            prop.data_proposta + 'T12:00:00Z',
+                                          ).toLocaleDateString('pt-BR')}
+                                        </span>
+                                        <span className="text-xs font-semibold text-indigo-600">
+                                          {prop.valor_mensalidade?.toLocaleString('pt-BR', {
+                                            style: 'currency',
+                                            currency: 'BRL',
+                                          })}{' '}
+                                          /mês
+                                        </span>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-3 mt-1">
+                                        <div className="space-y-1">
+                                          <span className="text-[10px] uppercase text-slate-500 font-medium">
+                                            Status
+                                          </span>
+                                          <Select
+                                            value={prop.status_negociacao || 'Gerada'}
+                                            onValueChange={(val) =>
+                                              handleUpdatePropostaInline(prop.id, {
+                                                status_negociacao: val,
+                                              })
+                                            }
+                                          >
+                                            <SelectTrigger className="h-7 text-xs bg-slate-50">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="Gerada">Gerada</SelectItem>
+                                              <SelectItem value="Enviada">Enviada</SelectItem>
+                                              <SelectItem value="Em Análise">Em Análise</SelectItem>
+                                              <SelectItem value="Aprovada">Aprovada</SelectItem>
+                                              <SelectItem value="Recusada">Recusada</SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                        <div className="space-y-1">
+                                          <span className="text-[10px] uppercase text-slate-500 font-medium">
+                                            Envio
+                                          </span>
+                                          <Input
+                                            type="date"
+                                            className="h-7 text-xs bg-slate-50 px-2"
+                                            value={
+                                              prop.data_envio ? prop.data_envio.split('T')[0] : ''
+                                            }
+                                            onChange={(e) => {
+                                              const val = e.target.value
+                                              handleUpdatePropostaInline(prop.id, {
+                                                data_envio: val
+                                                  ? new Date(val + 'T12:00:00Z').toISOString()
+                                                  : null,
+                                              })
+                                            }}
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
+                    )
+                  })
+                )}
               </TableBody>
             </Table>
           </CardContent>
