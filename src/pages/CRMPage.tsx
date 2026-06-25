@@ -12,7 +12,10 @@ import {
   UserCheck,
   Mail,
   Send,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react'
+import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
@@ -72,6 +75,8 @@ export type CrmProspect = {
 
 export default function CRMPage() {
   const [prospects, setProspects] = useState<CrmProspect[]>([])
+  const [allProposals, setAllProposals] = useState<any[]>([])
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -83,6 +88,21 @@ export default function CRMPage() {
   const [sendingEmail, setSendingEmail] = useState(false)
   const { toast } = useToast()
   const { user } = useAuth()
+
+  const toggleExpand = (id: string) => {
+    setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  const handleUpdatePropostaInline = async (id: string, updates: any) => {
+    try {
+      const { error } = await supabase.from('crm_propostas').update(updates).eq('id', id)
+      if (error) throw error
+      setAllProposals(prev => prev.map(prop => prop.id === id ? { ...prop, ...updates } : prop))
+      toast({ title: 'Proposta atualizada' })
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' })
+    }
+  }
 
   const handleSendProposalClick = (p: CrmProspect) => {
     if (!p.email) {
@@ -135,6 +155,25 @@ export default function CRMPage() {
           detalhes: 'Proposta comercial enviada por e-mail com sucesso.',
         },
       ])
+
+      // Auto update latest proposal status and sent date
+      const { data: latestProposal } = await supabase
+        .from('crm_propostas')
+        .select('id')
+        .eq('prospect_id', sendingProposal.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+        
+      if (latestProposal) {
+        await supabase
+          .from('crm_propostas')
+          .update({
+            status_negociacao: 'Enviada',
+            data_envio: new Date().toISOString()
+          })
+          .eq('id', latestProposal.id)
+      }
 
       setSendingProposal(null)
       fetchProspects()
@@ -236,6 +275,13 @@ export default function CRMPage() {
       .select('*')
       .order('ultima_interacao', { ascending: false })
     if (!error && data) setProspects(data as CrmProspect[])
+    
+    const { data: propsData } = await supabase
+      .from('crm_propostas')
+      .select('id, prospect_id, data_proposta, valor_mensalidade, valor_implantacao, status_negociacao, data_envio')
+      .order('created_at', { ascending: false })
+    if (propsData) setAllProposals(propsData)
+      
     setIsLoading(false)
   }
 
@@ -541,11 +587,25 @@ export default function CRMPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map((p) => (
-                    <TableRow key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                  filtered.map((p) => {
+                    const props = allProposals.filter(prop => prop.prospect_id === p.id)
+                    const hasProps = props.length > 0
+                    const isExpanded = expandedRows[p.id]
+
+                    return (
+                    <React.Fragment key={p.id}>
+                    <TableRow className="hover:bg-slate-50/80 transition-colors">
                       <TableCell className="font-medium text-slate-900">
-                        <div className="flex flex-col">
-                          <span>{p.empresa}</span>
+                        <div className="flex items-start gap-2">
+                          {hasProps ? (
+                            <button onClick={() => toggleExpand(p.id)} className="mt-0.5 text-slate-400 hover:text-indigo-600 transition-colors">
+                              {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            </button>
+                          ) : (
+                            <div className="w-4" />
+                          )}
+                          <div className="flex flex-col">
+                            <span>{p.empresa}</span>
                           {p.cnpj && (
                             <span className="text-xs text-muted-foreground mt-0.5">{p.cnpj}</span>
                           )}
@@ -732,8 +792,65 @@ export default function CRMPage() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
+                    {isExpanded && (
+                      <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+                        <TableCell colSpan={6} className="p-0">
+                          <div className="py-3 px-10 border-b border-slate-100 bg-indigo-50/30">
+                            <h4 className="text-xs font-semibold text-slate-600 uppercase mb-3 tracking-wider flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> Propostas Geradas</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {props.map(prop => (
+                                <div key={prop.id} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex flex-col gap-2">
+                                  <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                                    <span className="text-sm font-medium text-slate-800">
+                                      Data: {new Date(prop.data_proposta + 'T12:00:00Z').toLocaleDateString('pt-BR')}
+                                    </span>
+                                    <span className="text-xs font-semibold text-indigo-600">
+                                      {prop.valor_mensalidade?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} /mês
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-3 mt-1">
+                                    <div className="space-y-1">
+                                      <span className="text-[10px] uppercase text-slate-500 font-medium">Status</span>
+                                      <Select
+                                        value={prop.status_negociacao || 'Gerada'}
+                                        onValueChange={(val) => handleUpdatePropostaInline(prop.id, { status_negociacao: val })}
+                                      >
+                                        <SelectTrigger className="h-7 text-xs bg-slate-50">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="Gerada">Gerada</SelectItem>
+                                          <SelectItem value="Enviada">Enviada</SelectItem>
+                                          <SelectItem value="Em Análise">Em Análise</SelectItem>
+                                          <SelectItem value="Aprovada">Aprovada</SelectItem>
+                                          <SelectItem value="Recusada">Recusada</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div className="space-y-1">
+                                      <span className="text-[10px] uppercase text-slate-500 font-medium">Envio</span>
+                                      <Input
+                                        type="date"
+                                        className="h-7 text-xs bg-slate-50 px-2"
+                                        value={prop.data_envio ? prop.data_envio.split('T')[0] : ''}
+                                        onChange={(e) => {
+                                          const val = e.target.value
+                                          handleUpdatePropostaInline(prop.id, { data_envio: val ? new Date(val + 'T12:00:00Z').toISOString() : null })
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    </React.Fragment>
+                  );
+                })
+              )}
               </TableBody>
             </Table>
           </CardContent>

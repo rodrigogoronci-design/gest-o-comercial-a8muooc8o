@@ -1190,6 +1190,8 @@ export type Database = {
           cobrar_filiais: boolean | null
           created_at: string
           data_proposta: string
+          data_envio: string | null
+          status_negociacao: string | null
           desconto_mensalidade: number | null
           filiais_detalhes: Json | null
           id: string
@@ -1212,6 +1214,8 @@ export type Database = {
           cobrar_filiais?: boolean | null
           created_at?: string
           data_proposta?: string
+          data_envio?: string | null
+          status_negociacao?: string | null
           desconto_mensalidade?: number | null
           filiais_detalhes?: Json | null
           id?: string
@@ -1234,6 +1238,8 @@ export type Database = {
           cobrar_filiais?: boolean | null
           created_at?: string
           data_proposta?: string
+          data_envio?: string | null
+          status_negociacao?: string | null
           desconto_mensalidade?: number | null
           filiais_detalhes?: Json | null
           id?: string

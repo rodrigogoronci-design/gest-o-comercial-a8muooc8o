@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react'
 import { ArrowLeft, Plus, Eye, FileText, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase/client'
 import { CrmPropostaForm, type PropostaFormValues } from './CrmPropostaForm'
@@ -36,6 +44,19 @@ export function CrmProspectPropostasTab({
     }
   }, [prospectId, viewState])
 
+  const handleUpdateProposta = async (id: string, updates: any) => {
+    try {
+      const { error } = await supabase.from('crm_propostas').update(updates).eq('id', id)
+
+      if (error) throw error
+
+      setPropostas((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)))
+      toast({ title: 'Proposta atualizada com sucesso' })
+    } catch (e: any) {
+      toast({ title: 'Erro ao atualizar', description: e.message, variant: 'destructive' })
+    }
+  }
+
   const handleCreateProposta = async (values: PropostaFormValues) => {
     setIsSubmitting(true)
     try {
@@ -54,6 +75,7 @@ export function CrmProspectPropostasTab({
         aos_cuidados_de: values.aos_cuidados_de || prospectName,
         itens: values.itens || [],
         data_proposta: new Date().toISOString().split('T')[0],
+        status_negociacao: 'Gerada',
       })
 
       if (error) throw error
@@ -208,46 +230,85 @@ export function CrmProspectPropostasTab({
           {propostas.map((p) => (
             <div
               key={p.id}
-              className="p-4 border border-slate-200 rounded-xl bg-white flex justify-between items-center shadow-sm hover:border-indigo-200 hover:shadow-md transition-all group"
+              className="p-4 border border-slate-200 rounded-xl bg-white flex flex-col gap-3 shadow-sm hover:border-indigo-200 hover:shadow-md transition-all group"
             >
-              <div className="flex gap-4 items-center">
-                <div className="bg-indigo-50 w-10 h-10 rounded-full flex items-center justify-center text-indigo-600 flex-shrink-0">
-                  <FileText className="w-5 h-5" />
+              <div className="flex justify-between items-start">
+                <div className="flex gap-4 items-center">
+                  <div className="bg-indigo-50 w-10 h-10 rounded-full flex items-center justify-center text-indigo-600 flex-shrink-0">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-slate-900 text-sm mb-0.5">
+                      Proposta de{' '}
+                      {new Date(p.data_proposta + 'T12:00:00Z').toLocaleDateString('pt-BR')}
+                    </div>
+                    <div className="text-xs text-slate-500 flex items-center gap-2">
+                      <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-medium">
+                        Mensal:{' '}
+                        {p.valor_mensalidade?.toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        })}
+                      </span>
+                      <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-medium">
+                        Implantação:{' '}
+                        {p.valor_implantacao?.toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        })}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-semibold text-slate-900 text-sm mb-0.5">
-                    Proposta de{' '}
-                    {new Date(p.data_proposta + 'T12:00:00Z').toLocaleDateString('pt-BR')}
-                  </div>
-                  <div className="text-xs text-slate-500 flex items-center gap-2">
-                    <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-medium">
-                      Mensal:{' '}
-                      {p.valor_mensalidade?.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      })}
-                    </span>
-                    <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-medium">
-                      Implantação:{' '}
-                      {p.valor_implantacao?.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      })}
-                    </span>
-                  </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedProposta(p)
+                    setViewState('view')
+                  }}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                >
+                  <Eye className="h-4 w-4 mr-1.5" /> Ver
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 mt-1">
+                <div className="space-y-1">
+                  <span className="text-[11px] font-medium text-slate-500 uppercase">Status</span>
+                  <Select
+                    value={p.status_negociacao || 'Gerada'}
+                    onValueChange={(val) => handleUpdateProposta(p.id, { status_negociacao: val })}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Gerada">Gerada</SelectItem>
+                      <SelectItem value="Enviada">Enviada</SelectItem>
+                      <SelectItem value="Em Análise">Em Análise</SelectItem>
+                      <SelectItem value="Aprovada">Aprovada</SelectItem>
+                      <SelectItem value="Recusada">Recusada</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[11px] font-medium text-slate-500 uppercase">
+                    Data de Envio
+                  </span>
+                  <Input
+                    type="date"
+                    className="h-8 text-xs"
+                    value={p.data_envio ? p.data_envio.split('T')[0] : ''}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      handleUpdateProposta(p.id, {
+                        data_envio: val ? new Date(val + 'T12:00:00Z').toISOString() : null,
+                      })
+                    }}
+                  />
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSelectedProposta(p)
-                  setViewState('view')
-                }}
-                className="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-              >
-                <Eye className="h-4 w-4 mr-1.5" /> Ver
-              </Button>
             </div>
           ))}
         </div>
