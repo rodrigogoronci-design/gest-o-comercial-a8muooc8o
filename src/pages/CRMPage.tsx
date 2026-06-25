@@ -10,6 +10,8 @@ import {
   Trash2,
   FileText,
   UserCheck,
+  Mail,
+  Send,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -33,6 +35,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -40,6 +43,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/hooks/use-auth'
 import { formatDate } from '@/lib/formatters'
 import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -75,7 +79,67 @@ export default function CRMPage() {
   const [editingTab, setEditingTab] = useState<string>('dados')
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [sendingProposal, setSendingProposal] = useState<CrmProspect | null>(null)
+  const [sendingEmail, setSendingEmail] = useState(false)
   const { toast } = useToast()
+  const { user } = useAuth()
+
+  const handleSendProposalClick = (p: CrmProspect) => {
+    if (!p.email) {
+      toast({
+        title: 'E-mail não cadastrado',
+        description:
+          'Por favor, edite o prospecto e adicione um e-mail antes de enviar a proposta.',
+        variant: 'destructive',
+      })
+      return
+    }
+    setSendingProposal(p)
+  }
+
+  const handleConfirmSendProposal = async () => {
+    if (!sendingProposal) return
+    setSendingEmail(true)
+
+    const senderName = user?.user_metadata?.name || 'Comercial'
+
+    const { error } = await supabase.functions.invoke('send-crm-proposal', {
+      body: {
+        to: sendingProposal.email,
+        companyName: sendingProposal.empresa,
+        contactName: sendingProposal.contato_nome,
+        senderName: senderName,
+        proposalUrl: sendingProposal.proposta_url,
+      },
+    })
+
+    setSendingEmail(false)
+
+    if (error) {
+      toast({
+        title: 'Falha ao enviar e-mail',
+        description: error.message || 'Ocorreu um erro desconhecido.',
+        variant: 'destructive',
+      })
+    } else {
+      toast({
+        title: 'Sucesso',
+        description: 'E-mail enviado com sucesso!',
+      })
+
+      await supabase.from('crm_historico_interacoes').insert([
+        {
+          prospect_id: sendingProposal.id,
+          tipo_contato: 'E-mail',
+          resumo: 'Envio de Proposta',
+          detalhes: 'Proposta comercial enviada por e-mail com sucesso.',
+        },
+      ])
+
+      setSendingProposal(null)
+      fetchProspects()
+    }
+  }
 
   const handleEfetivarCliente = async (p: CrmProspect) => {
     if (!p.cnpj) {
@@ -441,6 +505,7 @@ export default function CRMPage() {
           }}
           onDelete={handleDelete}
           onEfetivar={handleEfetivarCliente}
+          onSendProposal={handleSendProposalClick}
         />
       ) : (
         <Card className="border-slate-200/60 shadow-sm">
@@ -637,6 +702,15 @@ export default function CRMPage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-8 w-8 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
+                            onClick={() => handleSendProposalClick(p)}
+                            title="Enviar Proposta por E-mail"
+                          >
+                            <Mail className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
                             onClick={() => {
                               setEditingProspect(p)
@@ -730,6 +804,75 @@ export default function CRMPage() {
               </TabsContent>
             </Tabs>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!sendingProposal} onOpenChange={(open) => !open && setSendingProposal(null)}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Enviar Proposta por E-mail</DialogTitle>
+            <DialogDescription>
+              Revise a mensagem padrão antes de enviar para{' '}
+              <strong>{sendingProposal?.empresa}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          {sendingProposal && (
+            <div className="space-y-4 py-4">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-slate-700">Destinatário:</span>
+                <Input value={sendingProposal.email || ''} readOnly className="bg-slate-50" />
+              </div>
+
+              {!sendingProposal.proposta_url && (
+                <Alert className="bg-amber-50 border-amber-200 text-amber-800">
+                  <AlertTitle className="text-sm font-semibold">Atenção!</AlertTitle>
+                  <AlertDescription className="text-xs">
+                    Este prospecto ainda não possui uma proposta (PDF ou Link) vinculada. O e-mail
+                    será enviado sem o link do anexo.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-slate-700">
+                  Pré-visualização do e-mail:
+                </span>
+                <div className="border border-slate-200 rounded-md p-4 bg-slate-50 text-sm whitespace-pre-wrap font-sans text-slate-800 h-64 overflow-y-auto">
+                  <strong>Assunto:</strong> Proposta Comercial – {sendingProposal.empresa}
+                  {'\n'}
+                  <hr className="my-2 border-slate-200" />
+                  Prezado(a) {sendingProposal.contato_nome},{'\n\n'}
+                  Espero que esteja bem.{'\n\n'}
+                  Conforme alinhado em nossa conversa e apresentação do sistema, segue em anexo a
+                  sua proposta comercial com a solução mais adequada para a sua operação.{'\n\n'}A
+                  cotação foi elaborada com base nas informações levantadas durante nosso
+                  atendimento e contempla as melhores condições disponíveis no momento.{'\n\n'}
+                  Caso tenha qualquer dúvida ou precise de algum ajuste na proposta, estou à
+                  disposição para te auxiliar.{'\n\n'}
+                  Fico no aguardo do seu retorno para darmos sequência.{'\n\n'}
+                  {sendingProposal.proposta_url &&
+                    `Link para a proposta: ${sendingProposal.proposta_url}\n\n`}
+                  Atenciosamente,{'\n'}
+                  {user?.user_metadata?.name || 'Comercial'}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setSendingProposal(null)}
+              disabled={sendingEmail}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmSendProposal} disabled={sendingEmail} className="gap-2">
+              <Send className="h-4 w-4" />
+              {sendingEmail ? 'Enviando...' : 'Enviar E-mail'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -10,6 +10,7 @@ import {
   FileSignature,
   Trash2,
   MessageSquarePlus,
+  Mail,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -30,6 +31,7 @@ interface CrmKanbanBoardProps {
   onEdit: (prospect: CrmProspect, tab?: string) => void
   onDelete: (id: string) => void
   onEfetivar: (prospect: CrmProspect) => void
+  onSendProposal?: (prospect: CrmProspect) => void
 }
 
 const KANBAN_COLUMNS = [
@@ -47,6 +49,7 @@ export function CrmKanbanBoard({
   onUpdateStatus,
   onEdit,
   onEfetivar,
+  onSendProposal,
 }: CrmKanbanBoardProps) {
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [proposalsByProspect, setProposalsByProspect] = useState<Record<string, number>>({})
@@ -224,6 +227,12 @@ export function CrmKanbanBoard({
                               <span className="text-orange-600">Gerar Proposta</span>
                             </Link>
                           </DropdownMenuItem>
+                          {onSendProposal && (
+                            <DropdownMenuItem onClick={() => onSendProposal(p)}>
+                              <Mail className="mr-2 h-4 w-4 text-slate-600" />{' '}
+                              <span className="text-slate-600">Enviar Proposta</span>
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem asChild>
                             <Link
                               to={`/contratos?prospect=${encodeURIComponent(p.empresa)}&cnpj=${p.cnpj ? p.cnpj.replace(/\D/g, '') : ''}`}
