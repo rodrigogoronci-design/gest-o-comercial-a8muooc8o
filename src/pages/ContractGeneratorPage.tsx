@@ -96,23 +96,11 @@ export default function ContractGeneratorPage() {
   const [filiaisDfe, setFiliaisDfe] = useState<{ id: string; cnpj: string; nome: string }[]>([])
 
   useEffect(() => {
-    if (!cobrarDfePorFilial) return
-    setFiliaisDfe((prev) => {
-      if (prev.length === quantidadeFiliaisDfe) return prev
-      if (prev.length < quantidadeFiliaisDfe) {
-        const toAdd = quantidadeFiliaisDfe - prev.length
-        return [
-          ...prev,
-          ...Array.from({ length: toAdd }).map(() => ({
-            id: Math.random().toString(),
-            cnpj: '',
-            nome: '',
-          })),
-        ]
-      }
-      return prev.slice(0, quantidadeFiliaisDfe)
-    })
-  }, [quantidadeFiliaisDfe, cobrarDfePorFilial])
+    if (cobrarDfePorFilial && filiaisDfe.length === 0) {
+      setFiliaisDfe([{ id: Math.random().toString(), cnpj: '', nome: '' }])
+      setQuantidadeFiliaisDfe(1)
+    }
+  }, [cobrarDfePorFilial])
 
   const [manualPlanPrice, setManualPlanPrice] = useState<string>('')
   const [isPlanPriceManual, setIsPlanPriceManual] = useState(false)
@@ -2082,11 +2070,9 @@ export default function ContractGeneratorPage() {
                                 <Input
                                   type="number"
                                   min="1"
-                                  value={quantidadeFiliaisDfe}
-                                  onChange={(e) =>
-                                    setQuantidadeFiliaisDfe(parseInt(e.target.value) || 1)
-                                  }
-                                  className="w-20 h-8 bg-white"
+                                  value={filiaisDfe.length}
+                                  readOnly
+                                  className="w-20 h-8 bg-slate-50 cursor-not-allowed"
                                 />
                               </div>
                             )}
@@ -2094,12 +2080,31 @@ export default function ContractGeneratorPage() {
 
                           {cobrarDfePorFilial && (
                             <div className="space-y-3 pt-3 border-t">
-                              <Label className="text-xs font-bold text-slate-700">
-                                CNPJs das Filiais Vinculadas
-                              </Label>
+                              <div className="flex items-center justify-between">
+                                <Label className="text-xs font-bold text-slate-700">
+                                  CNPJs das Filiais Vinculadas
+                                </Label>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setFiliaisDfe([
+                                      ...filiaisDfe,
+                                      { id: Math.random().toString(), cnpj: '', nome: '' },
+                                    ])
+                                    setQuantidadeFiliaisDfe(filiaisDfe.length + 1)
+                                  }}
+                                >
+                                  + Adicionar Filial
+                                </Button>
+                              </div>
                               <div className="grid gap-3">
                                 {filiaisDfe.map((f, index) => (
-                                  <div key={f.id} className="flex flex-col sm:flex-row gap-3">
+                                  <div
+                                    key={f.id}
+                                    className="flex flex-col sm:flex-row gap-3 items-center"
+                                  >
                                     <div className="flex-1">
                                       <Input
                                         placeholder="CNPJ"
@@ -2132,7 +2137,7 @@ export default function ContractGeneratorPage() {
                                         className="h-8 text-xs bg-white"
                                       />
                                     </div>
-                                    <div className="flex-[2]">
+                                    <div className="flex-[2] flex gap-2 items-center">
                                       <Input
                                         placeholder="Nome/Identificação da Filial"
                                         value={f.nome}
@@ -2143,6 +2148,19 @@ export default function ContractGeneratorPage() {
                                         }}
                                         className="h-8 text-xs bg-white"
                                       />
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => {
+                                          const next = filiaisDfe.filter((_, i) => i !== index)
+                                          setFiliaisDfe(next)
+                                          setQuantidadeFiliaisDfe(next.length)
+                                        }}
+                                        className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0"
+                                      >
+                                        <Trash className="w-4 h-4" />
+                                      </Button>
                                     </div>
                                   </div>
                                 ))}
@@ -3029,11 +3047,9 @@ export default function ContractGeneratorPage() {
                                 <Input
                                   type="number"
                                   min="1"
-                                  value={quantidadeFiliaisDfe}
-                                  onChange={(e) =>
-                                    setQuantidadeFiliaisDfe(parseInt(e.target.value) || 1)
-                                  }
-                                  className="w-20 h-8 bg-white"
+                                  value={filiaisDfe.length}
+                                  readOnly
+                                  className="w-20 h-8 bg-slate-50 cursor-not-allowed"
                                 />
                               </div>
                             )}
@@ -3041,12 +3057,31 @@ export default function ContractGeneratorPage() {
 
                           {cobrarDfePorFilial && (
                             <div className="space-y-3 pt-3 border-t">
-                              <Label className="text-xs font-bold text-slate-700">
-                                CNPJs das Filiais Vinculadas
-                              </Label>
+                              <div className="flex items-center justify-between">
+                                <Label className="text-xs font-bold text-slate-700">
+                                  CNPJs das Filiais Vinculadas
+                                </Label>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setFiliaisDfe([
+                                      ...filiaisDfe,
+                                      { id: Math.random().toString(), cnpj: '', nome: '' },
+                                    ])
+                                    setQuantidadeFiliaisDfe(filiaisDfe.length + 1)
+                                  }}
+                                >
+                                  + Adicionar Filial
+                                </Button>
+                              </div>
                               <div className="grid gap-3">
                                 {filiaisDfe.map((f, index) => (
-                                  <div key={f.id} className="flex flex-col sm:flex-row gap-3">
+                                  <div
+                                    key={f.id}
+                                    className="flex flex-col sm:flex-row gap-3 items-center"
+                                  >
                                     <div className="flex-1">
                                       <Input
                                         placeholder="CNPJ"
@@ -3079,7 +3114,7 @@ export default function ContractGeneratorPage() {
                                         className="h-8 text-xs bg-white"
                                       />
                                     </div>
-                                    <div className="flex-[2]">
+                                    <div className="flex-[2] flex gap-2 items-center">
                                       <Input
                                         placeholder="Nome/Identificação da Filial"
                                         value={f.nome}
@@ -3090,6 +3125,19 @@ export default function ContractGeneratorPage() {
                                         }}
                                         className="h-8 text-xs bg-white"
                                       />
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => {
+                                          const next = filiaisDfe.filter((_, i) => i !== index)
+                                          setFiliaisDfe(next)
+                                          setQuantidadeFiliaisDfe(next.length)
+                                        }}
+                                        className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0"
+                                      >
+                                        <Trash className="w-4 h-4" />
+                                      </Button>
                                     </div>
                                   </div>
                                 ))}

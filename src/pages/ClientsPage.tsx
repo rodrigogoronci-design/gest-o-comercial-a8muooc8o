@@ -138,6 +138,9 @@ export interface ClienteRecord {
   tags?: string[]
   desconto_mensalidade?: number | null
   tipo_desconto?: string | null
+  filiais_detalhes?: any
+  quantidade_filiais?: number | null
+  cobrar_filiais?: boolean | null
 }
 
 type ModuleItem = { name: string; price: number }
@@ -592,6 +595,14 @@ export default function ClientsPage() {
       await updateCliente(viewingClient.id, {
         modulos: updatedModulos,
         valor_total: novoValorTotal,
+        filiais_detalhes:
+          viewingClient.originalData?.filiais_detalhes?.filter(
+            (f: any) => f.cnpj.replace(/\D/g, '') !== extractedCnpj,
+          ) || [],
+        quantidade_filiais: Math.max(
+          0,
+          (viewingClient.originalData?.quantidade_filiais || 0) - (extractedCnpj ? 1 : 0),
+        ),
       })
 
       await createHistorico({
@@ -1315,6 +1326,8 @@ Obrigada,`
       await updateCliente(viewingClient.id, {
         modulos: updatedModulos,
         valor_total: novoValorTotal,
+        filiais_detalhes: [...(viewingClient.originalData?.filiais_detalhes || []), novaFilial],
+        quantidade_filiais: (viewingClient.originalData?.quantidade_filiais || 0) + 1,
       })
 
       const modulosAditivo = [

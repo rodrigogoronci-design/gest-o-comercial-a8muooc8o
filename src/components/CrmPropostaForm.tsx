@@ -71,21 +71,14 @@ export function CrmPropostaForm({
     name: 'filiais_detalhes',
   })
 
-  const watchQuantidade = form.watch('quantidade_filiais')
+  const cobrarFiliais = form.watch('cobrar_filiais')
 
-  // Sync array of fields based on the number input
   useEffect(() => {
-    const currentLength = fields.length
-    if (watchQuantidade > currentLength) {
-      for (let i = currentLength; i < watchQuantidade; i++) {
-        append({ nome: `Filial ${i + 1}`, cnpj: '' })
-      }
-    } else if (watchQuantidade < currentLength && watchQuantidade >= 0) {
-      for (let i = currentLength - 1; i >= watchQuantidade; i--) {
-        remove(i)
-      }
+    if (cobrarFiliais && fields.length === 0) {
+      append({ nome: '', cnpj: '' })
+      form.setValue('quantidade_filiais', 1)
     }
-  }, [watchQuantidade, append, remove, fields.length])
+  }, [cobrarFiliais])
 
   return (
     <Form {...form}>
