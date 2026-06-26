@@ -113,6 +113,7 @@ import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { DiagnosticoOperacional } from '@/components/DiagnosticoOperacional'
 import { useAuth } from '@/hooks/use-auth'
+import { CrmProspectPropostasTab } from '@/components/CrmProspectPropostasTab'
 
 export interface ClienteRecord {
   id: string
@@ -4048,11 +4049,12 @@ Obrigada.`)
 
           {viewingClient && (
             <Tabs defaultValue="resumo" className="mt-6 w-full h-full flex flex-col">
-              <TabsList className="grid w-full max-w-2xl grid-cols-4 bg-white border border-slate-200">
+              <TabsList className="grid w-full max-w-3xl grid-cols-5 bg-white border border-slate-200">
                 <TabsTrigger value="resumo">Resumo & Gestão</TabsTrigger>
                 <TabsTrigger value="diagnostico">Diagnóstico</TabsTrigger>
                 <TabsTrigger value="contrato">Contrato Inicial</TabsTrigger>
-                <TabsTrigger value="solicitacoes">Histórico de Solicitações</TabsTrigger>
+                <TabsTrigger value="solicitacoes">Solicitações</TabsTrigger>
+                <TabsTrigger value="propostas">Propostas</TabsTrigger>
               </TabsList>
 
               <TabsContent value="resumo" className="mt-4 flex-1">
@@ -4151,6 +4153,18 @@ Obrigada.`)
                   </div>
                 </ScrollArea>
               </TabsContent>
+              <TabsContent
+                value="propostas"
+                className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4"
+              >
+                <ScrollArea className="h-[calc(100vh-14rem)] pr-4">
+                  <CrmProspectPropostasTab
+                    clienteId={viewingClient.id}
+                    prospectName={viewingClient.name}
+                  />
+                </ScrollArea>
+              </TabsContent>
+
               <TabsContent
                 value="solicitacoes"
                 className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4"

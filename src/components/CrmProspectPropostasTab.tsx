@@ -12,55 +12,69 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase/client'
 import { CrmPropostaForm, type PropostaFormValues } from './CrmPropostaForm'
-import { CrmProposalEmailDialog } from './CrmProposalEmailDialog'
 
 export function CrmProspectPropostasTab({
   prospectId,
+  clienteId,
   prospectName,
 }: {
-  prospectId: string
+  prospectId?: string
+  clienteId?: string
   prospectName: string
 }) {
   const [propostas, setPropostas] = useState<any[]>([])
-  const [prospect, setProspect] = useState<any>(null)
+  const [entityData, setEntityData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [viewState, setViewState] = useState<'list' | 'create' | 'view'>('list')
   const [selectedProposta, setSelectedProposta] = useState<any>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const [emailModalOpen, setEmailModalOpen] = useState(false)
-  const [propostaForEmail, setPropostaForEmail] = useState<any>(null)
-
   const { toast } = useToast()
 
   const loadPropostas = async () => {
     setLoading(true)
-    const { data: prospectData } = await supabase
-      .from('crm_prospects')
-      .select('*')
-      .eq('id', prospectId)
-      .single()
+    if (prospectId) {
+      const { data: prospectData } = await supabase
+        .from('crm_prospects')
+        .select('*')
+        .eq('id', prospectId)
+        .single()
+      if (prospectData) setEntityData(prospectData)
 
-    if (prospectData) {
-      setProspect(prospectData)
+      const { data } = await supabase
+        .from('crm_propostas')
+        .select('*')
+        .eq('prospect_id', prospectId)
+        .order('created_at', { ascending: false })
+      if (data) setPropostas(data)
+    } else if (clienteId) {
+      const { data: clienteData } = await supabase
+        .from('clientes')
+        .select('*')
+        .eq('id', clienteId)
+        .single()
+      if (clienteData) setEntityData(clienteData)
+
+      const { data } = await supabase
+        .from('crm_propostas')
+        .select('*')
+        .eq('cliente_id', clienteId)
+        .order('created_at', { ascending: false })
+      if (data) setPropostas(data)
     }
-
-    const { data } = await supabase
-      .from('crm_propostas')
-      .select('*')
-      .eq('prospect_id', prospectId)
-      .order('created_at', { ascending: false })
-    if (data) setPropostas(data)
     setLoading(false)
   }
 
-  const handleOpenEmailModal = (proposta: any) => {
-    setPropostaForEmail(proposta)
-    setEmailModalOpen(true)
-  }
+  const handleOpenEmailModal = (p: any) => {
+    const subject = encodeURIComponent(`Proposta Comercial - ${prospectName}`)
+    const body = encodeURIComponent(
+      `Olá ${p.aos_cuidados_de || prospectName},\n\nSegue o link para acesso à nossa proposta comercial:\n${p.documento_url || 'Documento não anexado'}\n\nFicamos à disposição para qualquer dúvida.\n\nAtenciosamente,`,
+    )
+    const email = entityData?.email || ''
 
-  const handleEmailSuccess = async (propostaId: string) => {
-    await handleUpdateProposta(propostaId, {
+    window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank')
+
+    handleUpdateProposta(p.id, {
       status_negociacao: 'Enviada',
       data_envio: new Date().toISOString(),
     })
@@ -70,7 +84,7 @@ export function CrmProspectPropostasTab({
     if (viewState === 'list') {
       loadPropostas()
     }
-  }, [prospectId, viewState])
+  }, [prospectId, clienteId, viewState])
 
   const handleUpdateProposta = async (id: string, updates: any) => {
     try {
@@ -89,11 +103,12 @@ export function CrmProspectPropostasTab({
     setIsSubmitting(true)
     try {
       let documento_url = null
+      const targetId = prospectId || clienteId || 'general'
 
       if (file) {
         const fileExt = file.name.split('.').pop()
         const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
-        const filePath = `${prospectId}/${fileName}`
+        const filePath = `${targetId}/${fileName}`
 
         const { error: uploadError } = await supabase.storage
           .from('proposals')
@@ -108,10 +123,13 @@ export function CrmProspectPropostasTab({
 
       const { data: userData } = await supabase.auth.getUser()
       const { error } = await supabase.from('crm_propostas').insert({
-        prospect_id: prospectId,
+        prospect_id: prospectId || null,
+        cliente_id: clienteId || null,
         user_id: userData.user?.id,
         valor_implantacao: values.valor_implantacao,
         valor_mensalidade: values.valor_mensalidade,
+        valor_anual: values.valor_anual,
+        tipo_cobranca: values.tipo_cobranca,
         desconto_mensalidade: values.desconto_mensalidade,
         tipo_desconto: values.tipo_desconto,
         isencao_periodo: values.isencao_periodo,
@@ -127,10 +145,10 @@ export function CrmProspectPropostasTab({
 
       if (error) throw error
 
-      toast({ title: 'Proposta criada com sucesso' })
+      toast({ title: 'Proposta salva com sucesso!' })
       setViewState('list')
     } catch (e: any) {
-      toast({ title: 'Erro ao criar proposta', description: e.message, variant: 'destructive' })
+      toast({ title: 'Erro ao salvar proposta', description: e.message, variant: 'destructive' })
     } finally {
       setIsSubmitting(false)
     }
@@ -296,7 +314,7 @@ export function CrmProspectPropostasTab({
           <FileText className="h-10 w-10 text-slate-300 mb-3" />
           <p className="font-medium text-slate-700 mb-1">Nenhuma proposta encontrada</p>
           <p className="text-sm text-slate-500 max-w-[250px]">
-            Gere uma nova proposta para vincular a este lead no CRM.
+            Gere uma nova proposta para vincular a este {clienteId ? 'cliente' : 'lead'}.
           </p>
         </div>
       ) : (
@@ -340,6 +358,7 @@ export function CrmProspectPropostasTab({
                     size="sm"
                     onClick={() => handleOpenEmailModal(p)}
                     className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-8 px-2"
+                    disabled={!p.documento_url}
                   >
                     <Send className="h-4 w-4 mr-1.5" />
                     Enviar
@@ -407,14 +426,6 @@ export function CrmProspectPropostasTab({
           ))}
         </div>
       )}
-
-      <CrmProposalEmailDialog
-        open={emailModalOpen}
-        onOpenChange={setEmailModalOpen}
-        prospect={prospect}
-        proposta={propostaForEmail}
-        onSuccess={handleEmailSuccess}
-      />
     </div>
   )
 }
