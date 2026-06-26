@@ -1187,7 +1187,10 @@ export default function ContractGeneratorPage() {
             itens: proposalItems,
             valor_mensalidade: totalValue,
             valor_implantacao: implValue,
-            quantidade_filiais: totalBranchesCount,
+            quantidade_filiais:
+              cobrarDfePorFilial && finalFiliaisDetalhes.length > 0
+                ? finalFiliaisDetalhes.length
+                : totalBranchesCount,
             filiais_detalhes: finalFiliaisDetalhes,
             cobrar_filiais: cobrarDfePorFilial,
             prazos_concedidos: prazosConcedidos,
@@ -1258,7 +1261,10 @@ export default function ContractGeneratorPage() {
             itens: proposalItems,
             valor_mensalidade: totalValue,
             valor_implantacao: implValue,
-            quantidade_filiais: totalBranchesCount,
+            quantidade_filiais:
+              cobrarDfePorFilial && finalFiliaisDetalhes.length > 0
+                ? finalFiliaisDetalhes.length
+                : totalBranchesCount,
             filiais_detalhes: finalFiliaisDetalhes,
             cobrar_filiais: cobrarDfePorFilial,
             prazos_concedidos: prazosConcedidos,
@@ -1421,6 +1427,9 @@ export default function ContractGeneratorPage() {
               : 'Ativo',
           filiais_detalhes: [...(existingClient.filiais_detalhes || []), ...finalFiliaisDetalhes],
           cobrar_filiais: cobrarDfePorFilial,
+          quantidade_filiais: cobrarDfePorFilial
+            ? [...(existingClient.filiais_detalhes || []), ...finalFiliaisDetalhes].length
+            : (existingClient.quantidade_filiais || 0) + additionalBranches,
         } as any)
 
         await createHistorico({

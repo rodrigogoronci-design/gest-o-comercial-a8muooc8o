@@ -292,7 +292,9 @@ export function CrmPropostaForm({
                         type="number"
                         min="0"
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        value={fields.length}
+                        readOnly
+                        className="bg-slate-50 cursor-not-allowed"
                       />
                     </FormControl>
                     <FormMessage />
@@ -302,14 +304,70 @@ export function CrmPropostaForm({
             )}
           </div>
 
-          {form.watch('cobrar_filiais') && fields.length > 0 && (
+          {form.watch('cobrar_filiais') && (
             <div className="space-y-3">
-              <FormLabel className="text-sm font-bold">CNPJs das Filiais Vinculadas</FormLabel>
+              <div className="flex items-center justify-between">
+                <FormLabel className="text-sm font-bold">CNPJs das Filiais Vinculadas</FormLabel>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    append({ nome: '', cnpj: '' })
+                    form.setValue('quantidade_filiais', fields.length + 1)
+                  }}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    className="mr-2 h-4 w-4"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="M12 5v14" />
+                  </svg>
+                  Adicionar Filial
+                </Button>
+              </div>
               {fields.map((field, index) => (
                 <div
                   key={field.id}
-                  className="grid grid-cols-2 gap-4 p-3 bg-slate-50 rounded-md border"
+                  className="relative grid grid-cols-2 gap-4 p-3 bg-slate-50 rounded-md border mt-2"
                 >
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute -top-3 -right-3 h-6 w-6 rounded-full bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 z-10"
+                    onClick={() => {
+                      remove(index)
+                      form.setValue('quantidade_filiais', fields.length - 1)
+                    }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M3 6h18" />
+                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                      <line x1="10" x2="10" y1="11" y2="17" />
+                      <line x1="14" x2="14" y1="11" y2="17" />
+                    </svg>
+                  </Button>
                   <FormField
                     control={form.control}
                     name={`filiais_detalhes.${index}.nome`}
