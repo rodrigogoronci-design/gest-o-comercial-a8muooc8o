@@ -702,7 +702,7 @@ export default function ContractGeneratorPage() {
     additionalBranchesPrice,
     additionalBranchesTotal,
     filiais,
-    filiaisDfe,
+    filiaisDfe: filiaisVinculadas,
     descontoMensalidade: validDescontoMensalidade,
     tipoDesconto,
     calculatedDiscount,
