@@ -12,6 +12,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase/client'
 import { CrmPropostaForm, type PropostaFormValues } from './CrmPropostaForm'
+import { CrmProposalEmailDialog } from './CrmProposalEmailDialog'
 
 export function CrmProspectPropostasTab({
   prospectId,
@@ -26,7 +27,10 @@ export function CrmProspectPropostasTab({
   const [viewState, setViewState] = useState<'list' | 'create' | 'view'>('list')
   const [selectedProposta, setSelectedProposta] = useState<any>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [sendingEmailId, setSendingEmailId] = useState<string | null>(null)
+
+  const [emailModalOpen, setEmailModalOpen] = useState(false)
+  const [propostaForEmail, setPropostaForEmail] = useState<any>(null)
+
   const { toast } = useToast()
 
   const loadPropostas = async () => {
@@ -50,47 +54,16 @@ export function CrmProspectPropostasTab({
     setLoading(false)
   }
 
-  const handleSendEmail = async (proposta: any) => {
-    if (!prospect?.email) {
-      toast({
-        title: 'Aviso',
-        description: 'O prospect não possui e-mail cadastrado.',
-        variant: 'destructive',
-      })
-      return
-    }
+  const handleOpenEmailModal = (proposta: any) => {
+    setPropostaForEmail(proposta)
+    setEmailModalOpen(true)
+  }
 
-    setSendingEmailId(proposta.id)
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      const senderName = user?.user_metadata?.name || 'Comercial'
-
-      const { data, error } = await supabase.functions.invoke('send-crm-proposal', {
-        body: {
-          to: prospect.email,
-          companyName: prospect.empresa,
-          contactName: proposta.aos_cuidados_de || prospect.contato_nome,
-          senderName: senderName,
-          proposalId: proposta.id,
-          proposalUrl: proposta.documento_url || prospect.proposta_url || undefined,
-        },
-      })
-
-      if (error) throw error
-
-      toast({ title: 'E-mail enviado com sucesso!' })
-
-      await handleUpdateProposta(proposta.id, {
-        status_negociacao: 'Enviada',
-        data_envio: new Date().toISOString(),
-      })
-    } catch (e: any) {
-      toast({ title: 'Erro ao enviar e-mail', description: e.message, variant: 'destructive' })
-    } finally {
-      setSendingEmailId(null)
-    }
+  const handleEmailSuccess = async (propostaId: string) => {
+    await handleUpdateProposta(propostaId, {
+      status_negociacao: 'Enviada',
+      data_envio: new Date().toISOString(),
+    })
   }
 
   useEffect(() => {
@@ -225,7 +198,7 @@ export function CrmProspectPropostasTab({
             </span>
           </div>
 
-          {selectedProposta.documento_url && (
+          {selectedProposta.documento_url ? (
             <div className="col-span-2 pt-2">
               <span className="text-slate-500 block mb-1 text-xs uppercase tracking-wider">
                 Documento
@@ -239,6 +212,16 @@ export function CrmProspectPropostasTab({
                 <FileText className="h-4 w-4" />
                 Visualizar Proposta em PDF
               </a>
+            </div>
+          ) : (
+            <div className="col-span-2 pt-2">
+              <span className="text-slate-500 block mb-1 text-xs uppercase tracking-wider">
+                Documento
+              </span>
+              <span className="text-red-500 text-sm font-medium flex items-center gap-1">
+                <FileText className="h-4 w-4" />
+                Arquivo não encontrado no armazenamento
+              </span>
             </div>
           )}
 
@@ -355,15 +338,10 @@ export function CrmProspectPropostasTab({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleSendEmail(p)}
-                    disabled={sendingEmailId === p.id}
+                    onClick={() => handleOpenEmailModal(p)}
                     className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-8 px-2"
                   >
-                    {sendingEmailId === p.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4 mr-1.5" />
-                    )}
+                    <Send className="h-4 w-4 mr-1.5" />
                     Enviar
                   </Button>
                   <Button
@@ -429,6 +407,14 @@ export function CrmProspectPropostasTab({
           ))}
         </div>
       )}
+
+      <CrmProposalEmailDialog
+        open={emailModalOpen}
+        onOpenChange={setEmailModalOpen}
+        prospect={prospect}
+        proposta={propostaForEmail}
+        onSuccess={handleEmailSuccess}
+      />
     </div>
   )
 }
