@@ -189,7 +189,9 @@ export default function ContractGeneratorPage() {
     const fetchClientes = async () => {
       const { data } = await supabase
         .from('clientes')
-        .select('id, nome, rep_nome, valor_total, modulos, cnpj, endereco')
+        .select(
+          'id, nome, rep_nome, valor_total, modulos, cnpj, endereco, email, telefone, cobrar_filiais, quantidade_filiais, filiais_detalhes',
+        )
         .order('nome')
       if (data) setClientes(data)
     }
@@ -1413,11 +1415,9 @@ export default function ContractGeneratorPage() {
             : sendToImplementation
               ? 'Enviado p/ Implantação'
               : 'Ativo',
-          filiais_detalhes: [...(existingClient.filiais_detalhes || []), ...finalFiliaisDetalhes],
+          filiais_detalhes: finalFiliaisDetalhes,
           cobrar_filiais: cobrarDfePorFilial,
-          quantidade_filiais: cobrarDfePorFilial
-            ? [...(existingClient.filiais_detalhes || []), ...finalFiliaisDetalhes].length
-            : (existingClient.quantidade_filiais || 0) + additionalBranches,
+          quantidade_filiais: finalFiliaisDetalhes.length,
         } as any)
 
         await createHistorico({
@@ -1491,6 +1491,7 @@ export default function ContractGeneratorPage() {
               : 'Ativo',
           filiais_detalhes: finalFiliaisDetalhes,
           cobrar_filiais: cobrarDfePorFilial,
+          quantidade_filiais: finalFiliaisDetalhes.length,
         } as any)
 
         await createHistorico({
@@ -1743,6 +1744,28 @@ export default function ContractGeneratorPage() {
                                 setCurrentClientModules(
                                   c.modulos || { plano_base: '', adicionais: [] },
                                 )
+                                if (c.cobrar_filiais) {
+                                  setCobrarDfePorFilial(true)
+                                  setQuantidadeFiliaisDfe(c.quantidade_filiais || 1)
+                                  setFiliaisDfe(
+                                    (c.filiais_detalhes || []).map((f: any) => ({
+                                      id: Math.random().toString(),
+                                      cnpj: f.cnpj || '',
+                                      nome: f.nome || '',
+                                    })),
+                                  )
+                                } else {
+                                  setCobrarDfePorFilial(false)
+                                  setFiliaisDfe([])
+                                  setFiliais(
+                                    (c.filiais_detalhes || []).map((f: any) => ({
+                                      id: Math.random().toString(),
+                                      cnpj: f.cnpj || '',
+                                      nome: f.nome || '',
+                                      isentar: f.isentar || false,
+                                    })),
+                                  )
+                                }
                               }
                             } else {
                               setName('')
@@ -2803,6 +2826,28 @@ export default function ContractGeneratorPage() {
                             if (c) {
                               setQuoteEmpresa(c.nome)
                               setQuoteContato(c.rep_nome || '')
+                              if (c.cobrar_filiais) {
+                                setCobrarDfePorFilial(true)
+                                setQuantidadeFiliaisDfe(c.quantidade_filiais || 1)
+                                setFiliaisDfe(
+                                  (c.filiais_detalhes || []).map((f: any) => ({
+                                    id: Math.random().toString(),
+                                    cnpj: f.cnpj || '',
+                                    nome: f.nome || '',
+                                  })),
+                                )
+                              } else {
+                                setCobrarDfePorFilial(false)
+                                setFiliaisDfe([])
+                                setFiliais(
+                                  (c.filiais_detalhes || []).map((f: any) => ({
+                                    id: Math.random().toString(),
+                                    cnpj: f.cnpj || '',
+                                    nome: f.nome || '',
+                                    isentar: f.isentar || false,
+                                  })),
+                                )
+                              }
                             }
                           } else {
                             setQuoteEmpresa('')

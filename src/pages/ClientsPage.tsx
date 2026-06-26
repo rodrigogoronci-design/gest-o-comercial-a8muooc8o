@@ -76,7 +76,7 @@ import {
   updateSolicitacao,
 } from '@/services/solicitacoes_servico'
 import { z } from 'zod'
-import { useForm } from 'react-hook-form'
+import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Form,
@@ -279,6 +279,17 @@ const clientSchema = z.object({
   valor_total: z.number().min(0, 'Valor inválido'),
   desconto_mensalidade: z.number().min(0).optional().default(0),
   tipo_desconto: z.enum(['valor', 'percentual']).optional().default('valor'),
+  cobrar_filiais: z.boolean().optional().default(false),
+  quantidade_filiais: z.number().min(0).default(0),
+  filiais_detalhes: z
+    .array(
+      z.object({
+        nome: z.string().optional(),
+        cnpj: z.string().min(14, 'CNPJ inválido'),
+      }),
+    )
+    .optional()
+    .default([]),
 })
 
 type ClientFormValues = z.infer<typeof clientSchema>
@@ -806,7 +817,19 @@ export default function ClientsPage() {
       valor_total: 0,
       desconto_mensalidade: 0,
       tipo_desconto: 'valor',
+      cobrar_filiais: false,
+      quantidade_filiais: 0,
+      filiais_detalhes: [],
     },
+  })
+
+  const {
+    fields: filiaisFields,
+    append: appendFilial,
+    remove: removeFilial,
+  } = useFieldArray({
+    control: form.control,
+    name: 'filiais_detalhes',
   })
 
   const watchPlanoBase = form.watch('plano_base')
@@ -1004,6 +1027,9 @@ export default function ClientsPage() {
       valor_total: 0,
       desconto_mensalidade: 0,
       tipo_desconto: 'valor',
+      cobrar_filiais: false,
+      quantidade_filiais: 0,
+      filiais_detalhes: [],
     })
     setIsSheetOpen(true)
   }
@@ -1027,6 +1053,12 @@ export default function ClientsPage() {
       valor_total: client.totalValue || 0,
       desconto_mensalidade: client.desconto_mensalidade || 0,
       tipo_desconto: client.tipo_desconto || 'valor',
+      cobrar_filiais: client.originalData?.cobrar_filiais || false,
+      quantidade_filiais:
+        client.originalData?.quantidade_filiais ||
+        client.originalData?.filiais_detalhes?.length ||
+        0,
+      filiais_detalhes: client.originalData?.filiais_detalhes || [],
     })
     setIsSheetOpen(true)
   }
@@ -1228,6 +1260,9 @@ Obrigada,`
       valor_total: data.valor_total,
       desconto_mensalidade: data.desconto_mensalidade,
       tipo_desconto: data.tipo_desconto,
+      cobrar_filiais: data.cobrar_filiais,
+      quantidade_filiais: data.quantidade_filiais,
+      filiais_detalhes: data.filiais_detalhes,
       modulos: {
         plano_base: data.plano_base,
         filiais: data.filiais,
@@ -3781,6 +3816,155 @@ Obrigada.`)
                         </FormItem>
                       )}
                     />
+                  </div>
+
+                  <div className="border-t pt-4 mt-4 pb-2">
+                    <h3 className="font-semibold text-sm mb-4">Filiais Vinculadas (DF-e)</h3>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <FormField
+                        control={form.control}
+                        name="cobrar_filiais"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-white">
+                            <div className="space-y-0.5">
+                              <FormLabel>Cobrar por Filiais</FormLabel>
+                              <div className="text-[11px] text-muted-foreground">
+                                Aplicar custos no total do contrato
+                              </div>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={(c) => {
+                                  field.onChange(c)
+                                  if (!c) {
+                                    form.setValue('quantidade_filiais', 0)
+                                    form.setValue('filiais_detalhes', [])
+                                  }
+                                }}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      {form.watch('cobrar_filiais') && (
+                        <FormField
+                          control={form.control}
+                          name="quantidade_filiais"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Quantidade de Filiais</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  {...field}
+                                  value={filiaisFields.length}
+                                  readOnly
+                                  className="bg-slate-50 cursor-not-allowed"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                    </div>
+
+                    {form.watch('cobrar_filiais') && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <FormLabel className="text-sm font-bold">
+                            CNPJs das Filiais Vinculadas
+                          </FormLabel>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              appendFilial({ nome: '', cnpj: '' })
+                              form.setValue('quantidade_filiais', filiaisFields.length + 1)
+                            }}
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Adicionar Filial
+                          </Button>
+                        </div>
+                        {filiaisFields.map((field, index) => (
+                          <div
+                            key={field.id}
+                            className="relative grid grid-cols-2 gap-4 p-3 bg-slate-50 rounded-md border mt-2"
+                          >
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute -top-3 -right-3 h-6 w-6 rounded-full bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 z-10"
+                              onClick={() => {
+                                removeFilial(index)
+                                form.setValue('quantidade_filiais', filiaisFields.length - 1)
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                            <FormField
+                              control={form.control}
+                              name={`filiais_detalhes.${index}.nome`}
+                              render={({ field: nameField }) => (
+                                <FormItem>
+                                  <FormLabel>Nome da Filial {index + 1}</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Nome da Filial" {...nameField} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`filiais_detalhes.${index}.cnpj`}
+                              render={({ field: cnpjField }) => (
+                                <FormItem>
+                                  <FormLabel>CNPJ da Filial {index + 1}</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      placeholder="00.000.000/0000-00"
+                                      {...cnpjField}
+                                      onChange={(e) => {
+                                        const raw = e.target.value.replace(/\D/g, '')
+                                        const formatted =
+                                          raw.length <= 14 ? formatCNPJ(raw) : e.target.value
+                                        cnpjField.onChange(formatted)
+
+                                        if (raw.length === 14) {
+                                          fetch(`https://brasilapi.com.br/api/cnpj/v1/${raw}`)
+                                            .then((res) => res.json())
+                                            .then((data) => {
+                                              if (
+                                                data.razao_social &&
+                                                !form.getValues(`filiais_detalhes.${index}.nome`)
+                                              ) {
+                                                form.setValue(
+                                                  `filiais_detalhes.${index}.nome`,
+                                                  data.razao_social,
+                                                )
+                                              }
+                                            })
+                                            .catch(() => {})
+                                        }
+                                      }}
+                                      maxLength={18}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <FormField
