@@ -342,7 +342,7 @@ export function CrmPropostaForm({
                     className="absolute -top-3 -right-3 h-6 px-2 text-[10px] rounded-full z-10"
                     onClick={() => {
                       remove(index)
-                      form.setValue('quantidade_filiais', fields.length - 1)
+                      form.setValue('quantidade_filiais', Math.max(0, fields.length - 1))
                     }}
                   >
                     Remover

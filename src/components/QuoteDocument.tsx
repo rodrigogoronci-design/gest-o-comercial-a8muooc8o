@@ -49,6 +49,7 @@ interface QuoteDocumentProps {
   branchesBilling?: 'mensal' | 'anual'
   branchesAnnualPrice?: number
   totalAnual?: number
+  filiaisDfe?: { id?: string; cnpj?: string; nome?: string }[]
 }
 
 const FEATURE_CATEGORIES = [
@@ -136,6 +137,7 @@ export function QuoteDocument({
   branchesBilling = 'mensal',
   branchesAnnualPrice = 0,
   totalAnual = 0,
+  filiaisDfe = [],
 }: QuoteDocumentProps) {
   const showBasePlan =
     planName && planName !== 'Nenhum' && planName !== 'Nenhum (Somente Módulos / Upsell)'
@@ -498,6 +500,31 @@ export function QuoteDocument({
           </h3>
           <div className="bg-slate-50 p-2.5 rounded border border-slate-200 text-xs text-slate-700 text-justify">
             {prazosConcedidos}
+          </div>
+        </div>
+      )}
+
+      {cobrarDfePorFilial && filiaisDfe && filiaisDfe.length > 0 && (
+        <div className="mb-4">
+          <h3 className="font-bold text-xs text-[#1e3a8a] mb-2 flex items-center gap-1.5">
+            <div className="w-1.5 h-3 bg-orange-500 rounded-full" />
+            Filiais Consideradas na Franquia DF-e
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {filiaisDfe.map((f, i) => (
+              <div
+                key={i}
+                className="bg-slate-50 p-2 rounded border border-slate-200 shadow-sm text-[10px]"
+              >
+                <p
+                  className="font-bold text-slate-800 truncate"
+                  title={f.nome || 'Filial não identificada'}
+                >
+                  {f.nome || 'Filial não identificada'}
+                </p>
+                <p className="text-slate-600 mt-0.5">CNPJ: {f.cnpj || 'Não informado'}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}

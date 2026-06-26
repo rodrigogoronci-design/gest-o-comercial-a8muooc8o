@@ -2059,6 +2059,11 @@ export default function ContractGeneratorPage() {
                               if (!c) {
                                 setQuantidadeFiliais(1)
                                 setFiliaisVinculadas([])
+                              } else if (filiaisVinculadas.length === 0) {
+                                setQuantidadeFiliais(1)
+                                setFiliaisVinculadas([
+                                  { id: Math.random().toString(), cnpj: '', nome: '' },
+                                ])
                               }
                             }}
                           />
@@ -3058,6 +3063,11 @@ export default function ContractGeneratorPage() {
                               if (!c) {
                                 setQuantidadeFiliais(1)
                                 setFiliaisVinculadas([])
+                              } else if (filiaisVinculadas.length === 0) {
+                                setQuantidadeFiliais(1)
+                                setFiliaisVinculadas([
+                                  { id: Math.random().toString(), cnpj: '', nome: '' },
+                                ])
                               }
                             }}
                           />
