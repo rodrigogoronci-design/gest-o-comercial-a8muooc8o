@@ -93,6 +93,26 @@ export default function ContractGeneratorPage() {
 
   const [cobrarDfePorFilial, setCobrarDfePorFilial] = useState(false)
   const [quantidadeFiliaisDfe, setQuantidadeFiliaisDfe] = useState<number>(1)
+  const [filiaisDfe, setFiliaisDfe] = useState<{ id: string; cnpj: string; nome: string }[]>([])
+
+  useEffect(() => {
+    if (!cobrarDfePorFilial) return
+    setFiliaisDfe((prev) => {
+      if (prev.length === quantidadeFiliaisDfe) return prev
+      if (prev.length < quantidadeFiliaisDfe) {
+        const toAdd = quantidadeFiliaisDfe - prev.length
+        return [
+          ...prev,
+          ...Array.from({ length: toAdd }).map(() => ({
+            id: Math.random().toString(),
+            cnpj: '',
+            nome: '',
+          })),
+        ]
+      }
+      return prev.slice(0, quantidadeFiliaisDfe)
+    })
+  }, [quantidadeFiliaisDfe, cobrarDfePorFilial])
 
   const [manualPlanPrice, setManualPlanPrice] = useState<string>('')
   const [isPlanPriceManual, setIsPlanPriceManual] = useState(false)
@@ -274,8 +294,31 @@ export default function ContractGeneratorPage() {
     let newPlanPrice = ''
     const newCustomTrainingPrices: Record<string, number | ''> = {}
 
-    setCobrarDfePorFilial(prop.cobrar_filiais || false)
-    setQuantidadeFiliaisDfe(prop.quantidade_filiais || 1)
+    const fDetalhes = prop.filiais_detalhes || []
+    if (prop.cobrar_filiais) {
+      setCobrarDfePorFilial(true)
+      setQuantidadeFiliaisDfe(prop.quantidade_filiais || 1)
+      setFiliaisDfe(
+        fDetalhes.map((f: any) => ({
+          id: Math.random().toString(),
+          cnpj: f.cnpj || '',
+          nome: f.nome || '',
+        })),
+      )
+      setFiliais([])
+    } else {
+      setCobrarDfePorFilial(false)
+      setQuantidadeFiliaisDfe(1)
+      setFiliaisDfe([])
+      setFiliais(
+        fDetalhes.map((f: any) => ({
+          id: Math.random().toString(),
+          cnpj: f.cnpj || '',
+          nome: f.nome || '',
+          isentar: f.isentar || false,
+        })),
+      )
+    }
 
     items.forEach((item) => {
       if (item.type === 'plan' || PLANS.find((p) => p.id === item.id)) {
@@ -434,6 +477,9 @@ export default function ContractGeneratorPage() {
       : calculatedTotalValue
 
   const totalValueStandard = Math.max(0, subtotalMensalidadeStandard - calculatedDiscountStandard)
+
+  const totalBranchesCount = (cobrarDfePorFilial ? quantidadeFiliaisDfe : 0) + additionalBranches
+  const finalFiliaisDetalhes = [...(cobrarDfePorFilial ? filiaisDfe : []), ...filiais]
 
   const implRate =
     implMode === 'remoto' ? IMPLEMENTATION_RATES.remoto : IMPLEMENTATION_RATES.presencial
@@ -594,6 +640,7 @@ export default function ContractGeneratorPage() {
     additionalBranchesPrice,
     additionalBranchesTotal,
     filiais,
+    filiaisDfe,
     descontoMensalidade: validDescontoMensalidade,
     tipoDesconto,
     calculatedDiscount,
@@ -665,6 +712,7 @@ export default function ContractGeneratorPage() {
     additionalBranchesPrice,
     additionalBranchesTotal,
     filiais,
+    filiaisDfe,
     descontoMensalidade: validDescontoMensalidade,
     tipoDesconto,
     calculatedDiscount,
@@ -1139,8 +1187,8 @@ export default function ContractGeneratorPage() {
             itens: proposalItems,
             valor_mensalidade: totalValue,
             valor_implantacao: implValue,
-            quantidade_filiais: cobrarDfePorFilial ? quantidadeFiliaisDfe : additionalBranches,
-            filiais_detalhes: filiais,
+            quantidade_filiais: totalBranchesCount,
+            filiais_detalhes: finalFiliaisDetalhes,
             cobrar_filiais: cobrarDfePorFilial,
             prazos_concedidos: prazosConcedidos,
           } as any)
@@ -1210,8 +1258,8 @@ export default function ContractGeneratorPage() {
             itens: proposalItems,
             valor_mensalidade: totalValue,
             valor_implantacao: implValue,
-            quantidade_filiais: cobrarDfePorFilial ? quantidadeFiliaisDfe : additionalBranches,
-            filiais_detalhes: filiais,
+            quantidade_filiais: totalBranchesCount,
+            filiais_detalhes: finalFiliaisDetalhes,
             cobrar_filiais: cobrarDfePorFilial,
             prazos_concedidos: prazosConcedidos,
           } as any)
@@ -1371,7 +1419,7 @@ export default function ContractGeneratorPage() {
             : sendToImplementation
               ? 'Enviado p/ Implantação'
               : 'Ativo',
-          filiais_detalhes: [...(existingClient.filiais_detalhes || []), ...filiais],
+          filiais_detalhes: [...(existingClient.filiais_detalhes || []), ...finalFiliaisDetalhes],
           cobrar_filiais: cobrarDfePorFilial,
         } as any)
 
@@ -1444,7 +1492,7 @@ export default function ContractGeneratorPage() {
             : sendToImplementation
               ? 'Enviado p/ Implantação'
               : 'Ativo',
-          filiais_detalhes: filiais,
+          filiais_detalhes: finalFiliaisDetalhes,
           cobrar_filiais: cobrarDfePorFilial,
         } as any)
 
@@ -1996,34 +2044,100 @@ export default function ContractGeneratorPage() {
                       </Select>
 
                       {selectedDfe !== 'dfe-none' && (
-                        <div className="flex items-center gap-4 bg-slate-50 border p-2 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="cobrar-dfe-filial"
-                              checked={cobrarDfePorFilial}
-                              onCheckedChange={(c) => setCobrarDfePorFilial(c as boolean)}
-                            />
-                            <Label
-                              htmlFor="cobrar-dfe-filial"
-                              className="text-xs cursor-pointer font-medium text-slate-700"
-                            >
-                              Cobrar DF-E por Filial
-                            </Label>
-                          </div>
-                          {cobrarDfePorFilial && (
-                            <div className="flex items-center gap-2 border-l pl-4">
-                              <Label className="text-xs font-medium text-slate-600">
-                                Qtd. Filiais:
-                              </Label>
-                              <Input
-                                type="number"
-                                min="1"
-                                value={quantidadeFiliaisDfe}
-                                onChange={(e) =>
-                                  setQuantidadeFiliaisDfe(parseInt(e.target.value) || 1)
-                                }
-                                className="w-20 h-8 bg-white"
+                        <div className="flex flex-col gap-4 bg-slate-50 border p-3 rounded-lg w-full">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="cobrar-dfe-filial"
+                                checked={cobrarDfePorFilial}
+                                onCheckedChange={(c) => {
+                                  setCobrarDfePorFilial(c as boolean)
+                                  if (!c) {
+                                    setQuantidadeFiliaisDfe(1)
+                                    setFiliaisDfe([])
+                                  }
+                                }}
                               />
+                              <Label
+                                htmlFor="cobrar-dfe-filial"
+                                className="text-xs cursor-pointer font-medium text-slate-700"
+                              >
+                                Cobrar DF-E por Filial
+                              </Label>
+                            </div>
+                            {cobrarDfePorFilial && (
+                              <div className="flex items-center gap-2 border-l pl-4">
+                                <Label className="text-xs font-medium text-slate-600">
+                                  Qtd. Filiais:
+                                </Label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={quantidadeFiliaisDfe}
+                                  onChange={(e) =>
+                                    setQuantidadeFiliaisDfe(parseInt(e.target.value) || 1)
+                                  }
+                                  className="w-20 h-8 bg-white"
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {cobrarDfePorFilial && (
+                            <div className="space-y-3 pt-3 border-t">
+                              <Label className="text-xs font-bold text-slate-700">
+                                CNPJs das Filiais Vinculadas
+                              </Label>
+                              <div className="grid gap-3">
+                                {filiaisDfe.map((f, index) => (
+                                  <div key={f.id} className="flex flex-col sm:flex-row gap-3">
+                                    <div className="flex-1">
+                                      <Input
+                                        placeholder="CNPJ"
+                                        value={f.cnpj}
+                                        onChange={(e) => {
+                                          const raw = e.target.value.replace(/\D/g, '')
+                                          const formatted =
+                                            raw.length <= 14 ? formatCNPJ(raw) : e.target.value
+                                          const next = [...filiaisDfe]
+                                          next[index].cnpj = formatted
+                                          setFiliaisDfe(next)
+
+                                          if (raw.length === 14) {
+                                            fetch(`https://brasilapi.com.br/api/cnpj/v1/${raw}`)
+                                              .then((res) => res.json())
+                                              .then((data) => {
+                                                if (data.razao_social) {
+                                                  setFiliaisDfe((prev) => {
+                                                    const nextUpdate = [...prev]
+                                                    if (!nextUpdate[index].nome) {
+                                                      nextUpdate[index].nome = data.razao_social
+                                                    }
+                                                    return nextUpdate
+                                                  })
+                                                }
+                                              })
+                                              .catch(() => {})
+                                          }
+                                        }}
+                                        className="h-8 text-xs bg-white"
+                                      />
+                                    </div>
+                                    <div className="flex-[2]">
+                                      <Input
+                                        placeholder="Nome/Identificação da Filial"
+                                        value={f.nome}
+                                        onChange={(e) => {
+                                          const next = [...filiaisDfe]
+                                          next[index].nome = e.target.value
+                                          setFiliaisDfe(next)
+                                        }}
+                                        className="h-8 text-xs bg-white"
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -2877,34 +2991,100 @@ export default function ContractGeneratorPage() {
                       </Select>
 
                       {selectedDfe !== 'dfe-none' && (
-                        <div className="flex items-center gap-4 bg-slate-50 border p-2 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="cobrar-dfe-filial-quote"
-                              checked={cobrarDfePorFilial}
-                              onCheckedChange={(c) => setCobrarDfePorFilial(c as boolean)}
-                            />
-                            <Label
-                              htmlFor="cobrar-dfe-filial-quote"
-                              className="text-xs cursor-pointer font-medium text-slate-700"
-                            >
-                              Cobrar DF-E por Filial
-                            </Label>
-                          </div>
-                          {cobrarDfePorFilial && (
-                            <div className="flex items-center gap-2 border-l pl-4">
-                              <Label className="text-xs font-medium text-slate-600">
-                                Qtd. Filiais:
-                              </Label>
-                              <Input
-                                type="number"
-                                min="1"
-                                value={quantidadeFiliaisDfe}
-                                onChange={(e) =>
-                                  setQuantidadeFiliaisDfe(parseInt(e.target.value) || 1)
-                                }
-                                className="w-20 h-8 bg-white"
+                        <div className="flex flex-col gap-4 bg-slate-50 border p-3 rounded-lg w-full">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="cobrar-dfe-filial-quote"
+                                checked={cobrarDfePorFilial}
+                                onCheckedChange={(c) => {
+                                  setCobrarDfePorFilial(c as boolean)
+                                  if (!c) {
+                                    setQuantidadeFiliaisDfe(1)
+                                    setFiliaisDfe([])
+                                  }
+                                }}
                               />
+                              <Label
+                                htmlFor="cobrar-dfe-filial-quote"
+                                className="text-xs cursor-pointer font-medium text-slate-700"
+                              >
+                                Cobrar DF-E por Filial
+                              </Label>
+                            </div>
+                            {cobrarDfePorFilial && (
+                              <div className="flex items-center gap-2 border-l pl-4">
+                                <Label className="text-xs font-medium text-slate-600">
+                                  Qtd. Filiais:
+                                </Label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={quantidadeFiliaisDfe}
+                                  onChange={(e) =>
+                                    setQuantidadeFiliaisDfe(parseInt(e.target.value) || 1)
+                                  }
+                                  className="w-20 h-8 bg-white"
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {cobrarDfePorFilial && (
+                            <div className="space-y-3 pt-3 border-t">
+                              <Label className="text-xs font-bold text-slate-700">
+                                CNPJs das Filiais Vinculadas
+                              </Label>
+                              <div className="grid gap-3">
+                                {filiaisDfe.map((f, index) => (
+                                  <div key={f.id} className="flex flex-col sm:flex-row gap-3">
+                                    <div className="flex-1">
+                                      <Input
+                                        placeholder="CNPJ"
+                                        value={f.cnpj}
+                                        onChange={(e) => {
+                                          const raw = e.target.value.replace(/\D/g, '')
+                                          const formatted =
+                                            raw.length <= 14 ? formatCNPJ(raw) : e.target.value
+                                          const next = [...filiaisDfe]
+                                          next[index].cnpj = formatted
+                                          setFiliaisDfe(next)
+
+                                          if (raw.length === 14) {
+                                            fetch(`https://brasilapi.com.br/api/cnpj/v1/${raw}`)
+                                              .then((res) => res.json())
+                                              .then((data) => {
+                                                if (data.razao_social) {
+                                                  setFiliaisDfe((prev) => {
+                                                    const nextUpdate = [...prev]
+                                                    if (!nextUpdate[index].nome) {
+                                                      nextUpdate[index].nome = data.razao_social
+                                                    }
+                                                    return nextUpdate
+                                                  })
+                                                }
+                                              })
+                                              .catch(() => {})
+                                          }
+                                        }}
+                                        className="h-8 text-xs bg-white"
+                                      />
+                                    </div>
+                                    <div className="flex-[2]">
+                                      <Input
+                                        placeholder="Nome/Identificação da Filial"
+                                        value={f.nome}
+                                        onChange={(e) => {
+                                          const next = [...filiaisDfe]
+                                          next[index].nome = e.target.value
+                                          setFiliaisDfe(next)
+                                        }}
+                                        className="h-8 text-xs bg-white"
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>

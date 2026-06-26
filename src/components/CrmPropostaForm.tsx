@@ -255,25 +255,6 @@ export function CrmPropostaForm({
           <div className="grid grid-cols-2 gap-4 mb-4">
             <FormField
               control={form.control}
-              name="quantidade_filiais"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quantidade de Filiais</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min="0"
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="cobrar_filiais"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-white">
@@ -284,56 +265,107 @@ export function CrmPropostaForm({
                     </div>
                   </div>
                   <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={(c) => {
+                        field.onChange(c)
+                        if (!c) {
+                          form.setValue('quantidade_filiais', 0)
+                          form.setValue('filiais_detalhes', [])
+                        }
+                      }}
+                    />
                   </FormControl>
                 </FormItem>
               )}
             />
+
+            {form.watch('cobrar_filiais') && (
+              <FormField
+                control={form.control}
+                name="quantidade_filiais"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantidade de Filiais</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="0"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </div>
 
-          <div className="space-y-3">
-            {fields.map((field, index) => (
-              <div
-                key={field.id}
-                className="grid grid-cols-2 gap-4 p-3 bg-slate-50 rounded-md border"
-              >
-                <FormField
-                  control={form.control}
-                  name={`filiais_detalhes.${index}.nome`}
-                  render={({ field: nameField }) => (
-                    <FormItem>
-                      <FormLabel>Nome da Filial {index + 1}</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nome da Filial" {...nameField} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`filiais_detalhes.${index}.cnpj`}
-                  render={({ field: cnpjField }) => (
-                    <FormItem>
-                      <FormLabel>CNPJ da Filial {index + 1}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="00.000.000/0000-00"
-                          {...cnpjField}
-                          onChange={(e) => {
-                            const formatted = formatCNPJ(e.target.value)
-                            cnpjField.onChange(formatted)
-                          }}
-                          maxLength={18}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            ))}
-          </div>
+          {form.watch('cobrar_filiais') && fields.length > 0 && (
+            <div className="space-y-3">
+              <FormLabel className="text-sm font-bold">CNPJs das Filiais Vinculadas</FormLabel>
+              {fields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="grid grid-cols-2 gap-4 p-3 bg-slate-50 rounded-md border"
+                >
+                  <FormField
+                    control={form.control}
+                    name={`filiais_detalhes.${index}.nome`}
+                    render={({ field: nameField }) => (
+                      <FormItem>
+                        <FormLabel>Nome da Filial {index + 1}</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome da Filial" {...nameField} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`filiais_detalhes.${index}.cnpj`}
+                    render={({ field: cnpjField }) => (
+                      <FormItem>
+                        <FormLabel>CNPJ da Filial {index + 1}</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="00.000.000/0000-00"
+                            {...cnpjField}
+                            onChange={(e) => {
+                              const raw = e.target.value.replace(/\D/g, '')
+                              const formatted = raw.length <= 14 ? formatCNPJ(raw) : e.target.value
+                              cnpjField.onChange(formatted)
+
+                              if (raw.length === 14) {
+                                fetch(`https://brasilapi.com.br/api/cnpj/v1/${raw}`)
+                                  .then((res) => res.json())
+                                  .then((data) => {
+                                    if (
+                                      data.razao_social &&
+                                      !form.getValues(`filiais_detalhes.${index}.nome`)
+                                    ) {
+                                      form.setValue(
+                                        `filiais_detalhes.${index}.nome`,
+                                        data.razao_social,
+                                      )
+                                    }
+                                  })
+                                  .catch(() => {})
+                              }
+                            }}
+                            maxLength={18}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="pt-4 flex justify-end">
