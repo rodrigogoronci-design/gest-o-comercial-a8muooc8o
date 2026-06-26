@@ -91,6 +91,9 @@ export default function ContractGeneratorPage() {
   const [newFilialCnpj, setNewFilialCnpj] = useState('')
   const [newFilialNome, setNewFilialNome] = useState('')
 
+  const [cobrarDfePorFilial, setCobrarDfePorFilial] = useState(false)
+  const [quantidadeFiliaisDfe, setQuantidadeFiliaisDfe] = useState<number>(1)
+
   const [manualPlanPrice, setManualPlanPrice] = useState<string>('')
   const [isPlanPriceManual, setIsPlanPriceManual] = useState(false)
 
@@ -271,6 +274,9 @@ export default function ContractGeneratorPage() {
     let newPlanPrice = ''
     const newCustomTrainingPrices: Record<string, number | ''> = {}
 
+    setCobrarDfePorFilial(prop.cobrar_filiais || false)
+    setQuantidadeFiliaisDfe(prop.quantidade_filiais || 1)
+
     items.forEach((item) => {
       if (item.type === 'plan' || PLANS.find((p) => p.id === item.id)) {
         foundPlan = item.id
@@ -350,7 +356,11 @@ export default function ContractGeneratorPage() {
       ? parseFloat(manualPlanPrice) || 0
       : defaultPlanPrice
   const dfeData = useMemo(() => DFE_TIERS.find((d) => d.id === selectedDfe), [selectedDfe])
-  const dfePrice = dfeData?.price || 0
+  const baseDfePrice = dfeData?.price || 0
+  const dfePrice =
+    cobrarDfePorFilial && quantidadeFiliaisDfe > 0
+      ? baseDfePrice * quantidadeFiliaisDfe
+      : baseDfePrice
   const modulesPriceStandard = useMemo(
     () =>
       selectedModules.reduce((acc, id) => acc + (MODULES.find((m) => m.id === id)?.price || 0), 0),
@@ -558,7 +568,10 @@ export default function ContractGeneratorPage() {
     modulesPrice,
     selectedDfe,
     dfeData,
+    baseDfePrice,
     dfePrice,
+    cobrarDfePorFilial,
+    quantidadeFiliaisDfe,
     totalValue,
     implMode,
     implRate,
@@ -1111,24 +1124,34 @@ export default function ContractGeneratorPage() {
         })
         if (error) throw error
 
-        await supabase.from('crm_propostas').insert({
-          cliente_id: selectedClientId,
-          prospect_id: null,
-          user_id: (await supabase.auth.getUser()).data.user?.id,
-          data_proposta: new Date().toISOString().split('T')[0],
-          aos_cuidados_de: quoteContato,
-          desconto_mensalidade: validDescontoMensalidade,
-          tipo_desconto: tipoDesconto,
-          isencao_periodo: isencaoPeriodo,
-          is_gratuito: isTreinamentoGratuito,
-          itens: proposalItems,
-          valor_mensalidade: totalValue,
-          valor_implantacao: implValue,
-          quantidade_filiais: additionalBranches,
-          filiais_detalhes: filiais,
-          cobrar_filiais: !filiais.every((f) => f.isentar),
-          prazos_concedidos: prazosConcedidos,
-        } as any)
+        const { data: insertedUpsell } = await supabase
+          .from('crm_propostas')
+          .insert({
+            cliente_id: selectedClientId,
+            prospect_id: null,
+            user_id: (await supabase.auth.getUser()).data.user?.id,
+            data_proposta: new Date().toISOString().split('T')[0],
+            aos_cuidados_de: quoteContato,
+            desconto_mensalidade: validDescontoMensalidade,
+            tipo_desconto: tipoDesconto,
+            isencao_periodo: isencaoPeriodo,
+            is_gratuito: isTreinamentoGratuito,
+            itens: proposalItems,
+            valor_mensalidade: totalValue,
+            valor_implantacao: implValue,
+            quantidade_filiais: cobrarDfePorFilial ? quantidadeFiliaisDfe : additionalBranches,
+            filiais_detalhes: filiais,
+            cobrar_filiais: cobrarDfePorFilial,
+            prazos_concedidos: prazosConcedidos,
+          } as any)
+          .select()
+          .single()
+
+        if (insertedUpsell) {
+          supabase.functions
+            .invoke('send-crm-proposal', { body: { proposalId: insertedUpsell.id } })
+            .catch(console.error)
+        }
 
         try {
           const clientData = clientes.find((c) => c.id === selectedClientId)
@@ -1173,24 +1196,34 @@ export default function ContractGeneratorPage() {
           prospectId = data.id
         }
 
-        const { error } = await supabase.from('crm_propostas').insert({
-          prospect_id: prospectId,
-          user_id: (await supabase.auth.getUser()).data.user?.id,
-          data_proposta: new Date().toISOString().split('T')[0],
-          aos_cuidados_de: quoteContato,
-          desconto_mensalidade: validDescontoMensalidade,
-          tipo_desconto: tipoDesconto,
-          isencao_periodo: isencaoPeriodo,
-          is_gratuito: isTreinamentoGratuito,
-          itens: proposalItems,
-          valor_mensalidade: totalValue,
-          valor_implantacao: implValue,
-          quantidade_filiais: additionalBranches,
-          filiais_detalhes: filiais,
-          cobrar_filiais: !filiais.every((f) => f.isentar),
-          prazos_concedidos: prazosConcedidos,
-        } as any)
+        const { data: insertedProspect, error } = await supabase
+          .from('crm_propostas')
+          .insert({
+            prospect_id: prospectId,
+            user_id: (await supabase.auth.getUser()).data.user?.id,
+            data_proposta: new Date().toISOString().split('T')[0],
+            aos_cuidados_de: quoteContato,
+            desconto_mensalidade: validDescontoMensalidade,
+            tipo_desconto: tipoDesconto,
+            isencao_periodo: isencaoPeriodo,
+            is_gratuito: isTreinamentoGratuito,
+            itens: proposalItems,
+            valor_mensalidade: totalValue,
+            valor_implantacao: implValue,
+            quantidade_filiais: cobrarDfePorFilial ? quantidadeFiliaisDfe : additionalBranches,
+            filiais_detalhes: filiais,
+            cobrar_filiais: cobrarDfePorFilial,
+            prazos_concedidos: prazosConcedidos,
+          } as any)
+          .select()
+          .single()
         if (error) throw error
+
+        if (insertedProspect) {
+          supabase.functions
+            .invoke('send-crm-proposal', { body: { proposalId: insertedProspect.id } })
+            .catch(console.error)
+        }
 
         toast({
           title: 'Cotação salva!',
@@ -1339,7 +1372,7 @@ export default function ContractGeneratorPage() {
               ? 'Enviado p/ Implantação'
               : 'Ativo',
           filiais_detalhes: [...(existingClient.filiais_detalhes || []), ...filiais],
-          cobrar_filiais: !filiais.every((f) => f.isentar),
+          cobrar_filiais: cobrarDfePorFilial,
         } as any)
 
         await createHistorico({
@@ -1412,7 +1445,7 @@ export default function ContractGeneratorPage() {
               ? 'Enviado p/ Implantação'
               : 'Ativo',
           filiais_detalhes: filiais,
-          cobrar_filiais: !filiais.every((f) => f.isentar),
+          cobrar_filiais: cobrarDfePorFilial,
         } as any)
 
         await createHistorico({
@@ -1948,18 +1981,54 @@ export default function ContractGeneratorPage() {
                   </div>
                   <div className="space-y-3 mt-4">
                     <Label className="text-sm font-bold">Franquia de Emissões (DF-e)</Label>
-                    <Select value={selectedDfe} onValueChange={setSelectedDfe}>
-                      <SelectTrigger className="bg-slate-50 border">
-                        <SelectValue placeholder="Selecione um pacote DF-e..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {DFE_TIERS.map((tier) => (
-                          <SelectItem key={tier.id} value={tier.id}>
-                            {tier.name} {tier.price > 0 ? `- ${formatCurrency(tier.price)}` : ''}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+                      <Select value={selectedDfe} onValueChange={setSelectedDfe}>
+                        <SelectTrigger className="w-full sm:w-64 bg-slate-50 border">
+                          <SelectValue placeholder="Selecione um pacote DF-e..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DFE_TIERS.map((tier) => (
+                            <SelectItem key={tier.id} value={tier.id}>
+                              {tier.name} {tier.price > 0 ? `- ${formatCurrency(tier.price)}` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {selectedDfe !== 'dfe-none' && (
+                        <div className="flex items-center gap-4 bg-slate-50 border p-2 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="cobrar-dfe-filial"
+                              checked={cobrarDfePorFilial}
+                              onCheckedChange={(c) => setCobrarDfePorFilial(c as boolean)}
+                            />
+                            <Label
+                              htmlFor="cobrar-dfe-filial"
+                              className="text-xs cursor-pointer font-medium text-slate-700"
+                            >
+                              Cobrar DF-E por Filial
+                            </Label>
+                          </div>
+                          {cobrarDfePorFilial && (
+                            <div className="flex items-center gap-2 border-l pl-4">
+                              <Label className="text-xs font-medium text-slate-600">
+                                Qtd. Filiais:
+                              </Label>
+                              <Input
+                                type="number"
+                                min="1"
+                                value={quantidadeFiliaisDfe}
+                                onChange={(e) =>
+                                  setQuantidadeFiliaisDfe(parseInt(e.target.value) || 1)
+                                }
+                                className="w-20 h-8 bg-white"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-3 mt-4">
                     <Label className="text-sm font-bold">Placas Adicionais Frota</Label>
@@ -2793,18 +2862,54 @@ export default function ContractGeneratorPage() {
                   </div>
                   <div className="space-y-3 mt-4">
                     <Label className="text-sm font-bold">Franquia de Emissões (DF-e)</Label>
-                    <Select value={selectedDfe} onValueChange={setSelectedDfe}>
-                      <SelectTrigger className="bg-slate-50 border">
-                        <SelectValue placeholder="Selecione um pacote DF-e..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {DFE_TIERS.map((tier) => (
-                          <SelectItem key={tier.id} value={tier.id}>
-                            {tier.name} {tier.price > 0 ? `- ${formatCurrency(tier.price)}` : ''}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+                      <Select value={selectedDfe} onValueChange={setSelectedDfe}>
+                        <SelectTrigger className="w-full sm:w-64 bg-slate-50 border">
+                          <SelectValue placeholder="Selecione um pacote DF-e..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DFE_TIERS.map((tier) => (
+                            <SelectItem key={tier.id} value={tier.id}>
+                              {tier.name} {tier.price > 0 ? `- ${formatCurrency(tier.price)}` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {selectedDfe !== 'dfe-none' && (
+                        <div className="flex items-center gap-4 bg-slate-50 border p-2 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="cobrar-dfe-filial-quote"
+                              checked={cobrarDfePorFilial}
+                              onCheckedChange={(c) => setCobrarDfePorFilial(c as boolean)}
+                            />
+                            <Label
+                              htmlFor="cobrar-dfe-filial-quote"
+                              className="text-xs cursor-pointer font-medium text-slate-700"
+                            >
+                              Cobrar DF-E por Filial
+                            </Label>
+                          </div>
+                          {cobrarDfePorFilial && (
+                            <div className="flex items-center gap-2 border-l pl-4">
+                              <Label className="text-xs font-medium text-slate-600">
+                                Qtd. Filiais:
+                              </Label>
+                              <Input
+                                type="number"
+                                min="1"
+                                value={quantidadeFiliaisDfe}
+                                onChange={(e) =>
+                                  setQuantidadeFiliaisDfe(parseInt(e.target.value) || 1)
+                                }
+                                className="w-20 h-8 bg-white"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-3 mt-4">
                     <Label className="text-sm font-bold">Placas Adicionais Frota</Label>

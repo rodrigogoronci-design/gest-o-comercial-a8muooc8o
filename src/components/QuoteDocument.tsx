@@ -37,6 +37,9 @@ interface QuoteDocumentProps {
   moduleGracePeriods?: Record<string, number>
   totalValueStandard?: number
   prazosConcedidos?: string
+  cobrarDfePorFilial?: boolean
+  quantidadeFiliaisDfe?: number
+  baseDfePrice?: number
   planBilling?: 'mensal' | 'anual'
   planAnnualPrice?: number
   dfeBilling?: 'mensal' | 'anual'
@@ -121,6 +124,9 @@ export function QuoteDocument({
   moduleGracePeriods = {},
   totalValueStandard = 0,
   prazosConcedidos,
+  cobrarDfePorFilial = false,
+  quantidadeFiliaisDfe = 1,
+  baseDfePrice = 0,
   planBilling = 'mensal',
   planAnnualPrice = 0,
   dfeBilling = 'mensal',
@@ -321,16 +327,19 @@ export function QuoteDocument({
                   <td className="p-1.5">
                     <span className="font-semibold text-slate-800">
                       {dfeData.name || 'Franquia de Emissões (DF-e)'}
+                      {cobrarDfePorFilial ? ` (Por Filial: ${quantidadeFiliaisDfe}x)` : ''}
                     </span>
                     <span className="text-[9px] block text-slate-500 mt-0.5">
                       Pacote de emissões eletrônicas
                     </span>
                   </td>
-                  <td className="p-1.5 text-center font-medium">1</td>
+                  <td className="p-1.5 text-center font-medium">
+                    {cobrarDfePorFilial ? quantidadeFiliaisDfe : 1}
+                  </td>
                   <td className="p-1.5 text-right">
-                    {(dfeBilling === 'anual' ? dfeAnnualPrice : dfePrice) &&
-                    (dfeBilling === 'anual' ? dfeAnnualPrice : dfePrice)! > 0
-                      ? formatCurrency(dfeBilling === 'anual' ? dfeAnnualPrice! : dfePrice!)
+                    {(dfeBilling === 'anual' ? dfeAnnualPrice : baseDfePrice) &&
+                    (dfeBilling === 'anual' ? dfeAnnualPrice : baseDfePrice)! > 0
+                      ? formatCurrency(dfeBilling === 'anual' ? dfeAnnualPrice! : baseDfePrice!)
                       : 'Incluso'}
                   </td>
                   <td className="p-1.5 text-right font-medium">

@@ -78,6 +78,8 @@ export function ContractDocument({
   customModuleAnnualPrices = {},
   dfeBilling = 'mensal',
   dfeAnnualPrice = 0,
+  cobrarDfePorFilial = false,
+  quantidadeFiliaisDfe = 1,
   platesBilling = 'mensal',
   platesAnnualPrice = 0,
   branchesBilling = 'mensal',
@@ -608,6 +610,7 @@ export function ContractDocument({
                   <tr>
                     <td className="border border-slate-300 p-2 font-bold">
                       {dfeData?.name || 'Franquia DF-e'} (Mensal)
+                      {cobrarDfePorFilial ? ` - Por Filial (${quantidadeFiliaisDfe}x)` : ''}
                     </td>
                     <td className="border border-slate-300 p-2 text-right">
                       {formatCurrency(dfePrice || 0)}
