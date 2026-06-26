@@ -243,8 +243,6 @@ export function CrmPropostaForm({
         </div>
 
         <div className="border-t pt-4 mt-4">
-          <h3 className="font-semibold text-sm mb-4">Filiais Adicionais</h3>
-
           <div className="grid grid-cols-2 gap-4 mb-4">
             <FormField
               control={form.control}
@@ -252,7 +250,9 @@ export function CrmPropostaForm({
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-white">
                   <div className="space-y-0.5">
-                    <FormLabel>Cobrar por Filiais</FormLabel>
+                    <FormLabel className="text-sm font-bold text-slate-700">
+                      Cobrar por Filial
+                    </FormLabel>
                     <div className="text-[11px] text-muted-foreground">
                       Aplicar custos no total do contrato
                     </div>
@@ -298,9 +298,11 @@ export function CrmPropostaForm({
           </div>
 
           {form.watch('cobrar_filiais') && (
-            <div className="space-y-3">
+            <div className="space-y-3 bg-slate-50 border p-4 rounded-lg">
               <div className="flex items-center justify-between">
-                <FormLabel className="text-sm font-bold">CNPJs das Filiais Vinculadas</FormLabel>
+                <FormLabel className="text-sm font-bold text-slate-700">
+                  Inclusão de Filiais
+                </FormLabel>
                 <Button
                   type="button"
                   variant="outline"
@@ -335,31 +337,15 @@ export function CrmPropostaForm({
                 >
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute -top-3 -right-3 h-6 w-6 rounded-full bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 z-10"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute -top-3 -right-3 h-6 px-2 text-[10px] rounded-full z-10"
                     onClick={() => {
                       remove(index)
                       form.setValue('quantidade_filiais', fields.length - 1)
                     }}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M3 6h18" />
-                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                      <line x1="10" x2="10" y1="11" y2="17" />
-                      <line x1="14" x2="14" y1="11" y2="17" />
-                    </svg>
+                    Remover
                   </Button>
                   <FormField
                     control={form.control}

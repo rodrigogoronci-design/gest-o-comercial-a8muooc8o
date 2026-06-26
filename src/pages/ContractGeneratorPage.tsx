@@ -91,16 +91,18 @@ export default function ContractGeneratorPage() {
   const [newFilialCnpj, setNewFilialCnpj] = useState('')
   const [newFilialNome, setNewFilialNome] = useState('')
 
-  const [cobrarDfePorFilial, setCobrarDfePorFilial] = useState(false)
-  const [quantidadeFiliaisDfe, setQuantidadeFiliaisDfe] = useState<number>(1)
-  const [filiaisDfe, setFiliaisDfe] = useState<{ id: string; cnpj: string; nome: string }[]>([])
+  const [cobrarPorFilial, setCobrarPorFilial] = useState(false)
+  const [quantidadeFiliais, setQuantidadeFiliais] = useState<number>(1)
+  const [filiaisVinculadas, setFiliaisVinculadas] = useState<
+    { id: string; cnpj: string; nome: string }[]
+  >([])
 
   useEffect(() => {
-    if (cobrarDfePorFilial && filiaisDfe.length === 0) {
-      setFiliaisDfe([{ id: Math.random().toString(), cnpj: '', nome: '' }])
-      setQuantidadeFiliaisDfe(1)
+    if (cobrarPorFilial && filiaisVinculadas.length === 0) {
+      setFiliaisVinculadas([{ id: Math.random().toString(), cnpj: '', nome: '' }])
+      setQuantidadeFiliais(1)
     }
-  }, [cobrarDfePorFilial])
+  }, [cobrarPorFilial])
 
   const [manualPlanPrice, setManualPlanPrice] = useState<string>('')
   const [isPlanPriceManual, setIsPlanPriceManual] = useState(false)
@@ -286,9 +288,9 @@ export default function ContractGeneratorPage() {
 
     const fDetalhes = prop.filiais_detalhes || []
     if (prop.cobrar_filiais) {
-      setCobrarDfePorFilial(true)
-      setQuantidadeFiliaisDfe(prop.quantidade_filiais || 1)
-      setFiliaisDfe(
+      setCobrarPorFilial(true)
+      setQuantidadeFiliais(prop.quantidade_filiais || 1)
+      setFiliaisVinculadas(
         fDetalhes.map((f: any) => ({
           id: Math.random().toString(),
           cnpj: f.cnpj || '',
@@ -297,9 +299,9 @@ export default function ContractGeneratorPage() {
       )
       setFiliais([])
     } else {
-      setCobrarDfePorFilial(false)
-      setQuantidadeFiliaisDfe(1)
-      setFiliaisDfe([])
+      setCobrarPorFilial(false)
+      setQuantidadeFiliais(1)
+      setFiliaisVinculadas([])
       setFiliais(
         fDetalhes.map((f: any) => ({
           id: Math.random().toString(),
@@ -391,9 +393,7 @@ export default function ContractGeneratorPage() {
   const dfeData = useMemo(() => DFE_TIERS.find((d) => d.id === selectedDfe), [selectedDfe])
   const baseDfePrice = dfeData?.price || 0
   const dfePrice =
-    cobrarDfePorFilial && quantidadeFiliaisDfe > 0
-      ? baseDfePrice * quantidadeFiliaisDfe
-      : baseDfePrice
+    cobrarPorFilial && quantidadeFiliais > 0 ? baseDfePrice * quantidadeFiliais : baseDfePrice
   const modulesPriceStandard = useMemo(
     () =>
       selectedModules.reduce((acc, id) => acc + (MODULES.find((m) => m.id === id)?.price || 0), 0),
@@ -468,8 +468,8 @@ export default function ContractGeneratorPage() {
 
   const totalValueStandard = Math.max(0, subtotalMensalidadeStandard - calculatedDiscountStandard)
 
-  const totalBranchesCount = (cobrarDfePorFilial ? quantidadeFiliaisDfe : 0) + additionalBranches
-  const finalFiliaisDetalhes = [...(cobrarDfePorFilial ? filiaisDfe : []), ...filiais]
+  const totalBranchesCount = (cobrarPorFilial ? quantidadeFiliais : 0) + additionalBranches
+  const finalFiliaisDetalhes = [...(cobrarPorFilial ? filiaisVinculadas : []), ...filiais]
 
   const implRate =
     implMode === 'remoto' ? IMPLEMENTATION_RATES.remoto : IMPLEMENTATION_RATES.presencial
@@ -606,8 +606,8 @@ export default function ContractGeneratorPage() {
     dfeData,
     baseDfePrice,
     dfePrice,
-    cobrarDfePorFilial,
-    quantidadeFiliaisDfe,
+    cobrarDfePorFilial: cobrarPorFilial,
+    quantidadeFiliaisDfe: quantidadeFiliais,
     totalValue,
     implMode,
     implRate,
@@ -630,7 +630,7 @@ export default function ContractGeneratorPage() {
     additionalBranchesPrice,
     additionalBranchesTotal,
     filiais,
-    filiaisDfe,
+    filiaisDfe: filiaisVinculadas,
     descontoMensalidade: validDescontoMensalidade,
     tipoDesconto,
     calculatedDiscount,
@@ -1178,11 +1178,11 @@ export default function ContractGeneratorPage() {
             valor_mensalidade: totalValue,
             valor_implantacao: implValue,
             quantidade_filiais:
-              cobrarDfePorFilial && finalFiliaisDetalhes.length > 0
+              cobrarPorFilial && finalFiliaisDetalhes.length > 0
                 ? finalFiliaisDetalhes.length
                 : totalBranchesCount,
             filiais_detalhes: finalFiliaisDetalhes,
-            cobrar_filiais: cobrarDfePorFilial,
+            cobrar_filiais: cobrarPorFilial,
             prazos_concedidos: prazosConcedidos,
           } as any)
           .select()
@@ -1252,11 +1252,11 @@ export default function ContractGeneratorPage() {
             valor_mensalidade: totalValue,
             valor_implantacao: implValue,
             quantidade_filiais:
-              cobrarDfePorFilial && finalFiliaisDetalhes.length > 0
+              cobrarPorFilial && finalFiliaisDetalhes.length > 0
                 ? finalFiliaisDetalhes.length
                 : totalBranchesCount,
             filiais_detalhes: finalFiliaisDetalhes,
-            cobrar_filiais: cobrarDfePorFilial,
+            cobrar_filiais: cobrarPorFilial,
             prazos_concedidos: prazosConcedidos,
           } as any)
           .select()
@@ -1416,7 +1416,7 @@ export default function ContractGeneratorPage() {
               ? 'Enviado p/ Implantação'
               : 'Ativo',
           filiais_detalhes: finalFiliaisDetalhes,
-          cobrar_filiais: cobrarDfePorFilial,
+          cobrar_filiais: cobrarPorFilial,
           quantidade_filiais: finalFiliaisDetalhes.length,
         } as any)
 
@@ -1490,7 +1490,7 @@ export default function ContractGeneratorPage() {
               ? 'Enviado p/ Implantação'
               : 'Ativo',
           filiais_detalhes: finalFiliaisDetalhes,
-          cobrar_filiais: cobrarDfePorFilial,
+          cobrar_filiais: cobrarPorFilial,
           quantidade_filiais: finalFiliaisDetalhes.length,
         } as any)
 
@@ -1745,9 +1745,9 @@ export default function ContractGeneratorPage() {
                                   c.modulos || { plano_base: '', adicionais: [] },
                                 )
                                 if (c.cobrar_filiais) {
-                                  setCobrarDfePorFilial(true)
-                                  setQuantidadeFiliaisDfe(c.quantidade_filiais || 1)
-                                  setFiliaisDfe(
+                                  setCobrarPorFilial(true)
+                                  setQuantidadeFiliais(c.quantidade_filiais || 1)
+                                  setFiliaisVinculadas(
                                     (c.filiais_detalhes || []).map((f: any) => ({
                                       id: Math.random().toString(),
                                       cnpj: f.cnpj || '',
@@ -1755,8 +1755,8 @@ export default function ContractGeneratorPage() {
                                     })),
                                   )
                                 } else {
-                                  setCobrarDfePorFilial(false)
-                                  setFiliaisDfe([])
+                                  setCobrarPorFilial(false)
+                                  setFiliaisVinculadas([])
                                   setFiliais(
                                     (c.filiais_detalhes || []).map((f: any) => ({
                                       id: Math.random().toString(),
@@ -2048,6 +2048,136 @@ export default function ContractGeneratorPage() {
                     </div>
                   </div>
                   <div className="space-y-3 mt-4">
+                    <div className="flex flex-col gap-4 bg-white border border-slate-200 p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="cobrar-filial"
+                            checked={cobrarPorFilial}
+                            onCheckedChange={(c) => {
+                              setCobrarPorFilial(c as boolean)
+                              if (!c) {
+                                setQuantidadeFiliais(1)
+                                setFiliaisVinculadas([])
+                              }
+                            }}
+                          />
+                          <Label
+                            htmlFor="cobrar-filial"
+                            className="text-sm cursor-pointer font-bold text-slate-700"
+                          >
+                            Cobrar por Filial
+                          </Label>
+                        </div>
+                        {cobrarPorFilial && (
+                          <div className="flex items-center gap-2 border-l pl-4">
+                            <Label className="text-xs font-medium text-slate-600">
+                              Qtd. Filiais:
+                            </Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              value={filiaisVinculadas.length}
+                              readOnly
+                              className="w-20 h-8 bg-slate-50 cursor-not-allowed"
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {cobrarPorFilial && (
+                        <div className="space-y-3 pt-3 border-t">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-sm font-bold text-slate-700">
+                              Inclusão de Filiais
+                            </Label>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setFiliaisVinculadas([
+                                  ...filiaisVinculadas,
+                                  { id: Math.random().toString(), cnpj: '', nome: '' },
+                                ])
+                                setQuantidadeFiliais(filiaisVinculadas.length + 1)
+                              }}
+                            >
+                              + Adicionar Filial
+                            </Button>
+                          </div>
+                          <div className="grid gap-3">
+                            {filiaisVinculadas.map((f, index) => (
+                              <div
+                                key={f.id}
+                                className="flex flex-col sm:flex-row gap-3 items-center"
+                              >
+                                <div className="flex-1">
+                                  <Input
+                                    placeholder="CNPJ"
+                                    value={f.cnpj}
+                                    onChange={(e) => {
+                                      const raw = e.target.value.replace(/\D/g, '')
+                                      const formatted =
+                                        raw.length <= 14 ? formatCNPJ(raw) : e.target.value
+                                      const next = [...filiaisVinculadas]
+                                      next[index].cnpj = formatted
+                                      setFiliaisVinculadas(next)
+
+                                      if (raw.length === 14) {
+                                        fetch(`https://brasilapi.com.br/api/cnpj/v1/${raw}`)
+                                          .then((res) => res.json())
+                                          .then((data) => {
+                                            if (data.razao_social) {
+                                              setFiliaisVinculadas((prev) => {
+                                                const nextUpdate = [...prev]
+                                                if (!nextUpdate[index].nome) {
+                                                  nextUpdate[index].nome = data.razao_social
+                                                }
+                                                return nextUpdate
+                                              })
+                                            }
+                                          })
+                                          .catch(() => {})
+                                      }
+                                    }}
+                                    className="h-8 text-xs bg-white"
+                                  />
+                                </div>
+                                <div className="flex-[2] flex gap-2 items-center">
+                                  <Input
+                                    placeholder="Nome/Identificação da Filial"
+                                    value={f.nome}
+                                    onChange={(e) => {
+                                      const next = [...filiaisVinculadas]
+                                      next[index].nome = e.target.value
+                                      setFiliaisVinculadas(next)
+                                    }}
+                                    className="h-8 text-xs bg-white"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      const next = filiaisVinculadas.filter((_, i) => i !== index)
+                                      setFiliaisVinculadas(next)
+                                      setQuantidadeFiliais(next.length)
+                                    }}
+                                    className="h-8 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0"
+                                  >
+                                    Remover
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 mt-4">
                     <Label className="text-sm font-bold">Franquia de Emissões (DF-e)</Label>
                     <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
                       <Select value={selectedDfe} onValueChange={setSelectedDfe}>
@@ -2062,136 +2192,6 @@ export default function ContractGeneratorPage() {
                           ))}
                         </SelectContent>
                       </Select>
-
-                      {selectedDfe !== 'dfe-none' && (
-                        <div className="flex flex-col gap-4 bg-slate-50 border p-3 rounded-lg w-full">
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center space-x-2">
-                              <Checkbox
-                                id="cobrar-dfe-filial"
-                                checked={cobrarDfePorFilial}
-                                onCheckedChange={(c) => {
-                                  setCobrarDfePorFilial(c as boolean)
-                                  if (!c) {
-                                    setQuantidadeFiliaisDfe(1)
-                                    setFiliaisDfe([])
-                                  }
-                                }}
-                              />
-                              <Label
-                                htmlFor="cobrar-dfe-filial"
-                                className="text-xs cursor-pointer font-medium text-slate-700"
-                              >
-                                Cobrar DF-E por Filial
-                              </Label>
-                            </div>
-                            {cobrarDfePorFilial && (
-                              <div className="flex items-center gap-2 border-l pl-4">
-                                <Label className="text-xs font-medium text-slate-600">
-                                  Qtd. Filiais:
-                                </Label>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  value={filiaisDfe.length}
-                                  readOnly
-                                  className="w-20 h-8 bg-slate-50 cursor-not-allowed"
-                                />
-                              </div>
-                            )}
-                          </div>
-
-                          {cobrarDfePorFilial && (
-                            <div className="space-y-3 pt-3 border-t">
-                              <div className="flex items-center justify-between">
-                                <Label className="text-xs font-bold text-slate-700">
-                                  CNPJs das Filiais Vinculadas
-                                </Label>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setFiliaisDfe([
-                                      ...filiaisDfe,
-                                      { id: Math.random().toString(), cnpj: '', nome: '' },
-                                    ])
-                                    setQuantidadeFiliaisDfe(filiaisDfe.length + 1)
-                                  }}
-                                >
-                                  + Adicionar Filial
-                                </Button>
-                              </div>
-                              <div className="grid gap-3">
-                                {filiaisDfe.map((f, index) => (
-                                  <div
-                                    key={f.id}
-                                    className="flex flex-col sm:flex-row gap-3 items-center"
-                                  >
-                                    <div className="flex-1">
-                                      <Input
-                                        placeholder="CNPJ"
-                                        value={f.cnpj}
-                                        onChange={(e) => {
-                                          const raw = e.target.value.replace(/\D/g, '')
-                                          const formatted =
-                                            raw.length <= 14 ? formatCNPJ(raw) : e.target.value
-                                          const next = [...filiaisDfe]
-                                          next[index].cnpj = formatted
-                                          setFiliaisDfe(next)
-
-                                          if (raw.length === 14) {
-                                            fetch(`https://brasilapi.com.br/api/cnpj/v1/${raw}`)
-                                              .then((res) => res.json())
-                                              .then((data) => {
-                                                if (data.razao_social) {
-                                                  setFiliaisDfe((prev) => {
-                                                    const nextUpdate = [...prev]
-                                                    if (!nextUpdate[index].nome) {
-                                                      nextUpdate[index].nome = data.razao_social
-                                                    }
-                                                    return nextUpdate
-                                                  })
-                                                }
-                                              })
-                                              .catch(() => {})
-                                          }
-                                        }}
-                                        className="h-8 text-xs bg-white"
-                                      />
-                                    </div>
-                                    <div className="flex-[2] flex gap-2 items-center">
-                                      <Input
-                                        placeholder="Nome/Identificação da Filial"
-                                        value={f.nome}
-                                        onChange={(e) => {
-                                          const next = [...filiaisDfe]
-                                          next[index].nome = e.target.value
-                                          setFiliaisDfe(next)
-                                        }}
-                                        className="h-8 text-xs bg-white"
-                                      />
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => {
-                                          const next = filiaisDfe.filter((_, i) => i !== index)
-                                          setFiliaisDfe(next)
-                                          setQuantidadeFiliaisDfe(next.length)
-                                        }}
-                                        className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0"
-                                      >
-                                        <Trash className="w-4 h-4" />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
                   </div>
                   <div className="space-y-3 mt-4">
@@ -2827,9 +2827,9 @@ export default function ContractGeneratorPage() {
                               setQuoteEmpresa(c.nome)
                               setQuoteContato(c.rep_nome || '')
                               if (c.cobrar_filiais) {
-                                setCobrarDfePorFilial(true)
-                                setQuantidadeFiliaisDfe(c.quantidade_filiais || 1)
-                                setFiliaisDfe(
+                                setCobrarPorFilial(true)
+                                setQuantidadeFiliais(c.quantidade_filiais || 1)
+                                setFiliaisVinculadas(
                                   (c.filiais_detalhes || []).map((f: any) => ({
                                     id: Math.random().toString(),
                                     cnpj: f.cnpj || '',
@@ -2837,8 +2837,8 @@ export default function ContractGeneratorPage() {
                                   })),
                                 )
                               } else {
-                                setCobrarDfePorFilial(false)
-                                setFiliaisDfe([])
+                                setCobrarPorFilial(false)
+                                setFiliaisVinculadas([])
                                 setFiliais(
                                   (c.filiais_detalhes || []).map((f: any) => ({
                                     id: Math.random().toString(),
@@ -3047,6 +3047,136 @@ export default function ContractGeneratorPage() {
                     </div>
                   </div>
                   <div className="space-y-3 mt-4">
+                    <div className="flex flex-col gap-4 bg-white border border-slate-200 p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="cobrar-filial-quote"
+                            checked={cobrarPorFilial}
+                            onCheckedChange={(c) => {
+                              setCobrarPorFilial(c as boolean)
+                              if (!c) {
+                                setQuantidadeFiliais(1)
+                                setFiliaisVinculadas([])
+                              }
+                            }}
+                          />
+                          <Label
+                            htmlFor="cobrar-filial-quote"
+                            className="text-sm cursor-pointer font-bold text-slate-700"
+                          >
+                            Cobrar por Filial
+                          </Label>
+                        </div>
+                        {cobrarPorFilial && (
+                          <div className="flex items-center gap-2 border-l pl-4">
+                            <Label className="text-xs font-medium text-slate-600">
+                              Qtd. Filiais:
+                            </Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              value={filiaisVinculadas.length}
+                              readOnly
+                              className="w-20 h-8 bg-slate-50 cursor-not-allowed"
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {cobrarPorFilial && (
+                        <div className="space-y-3 pt-3 border-t">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-sm font-bold text-slate-700">
+                              Inclusão de Filiais
+                            </Label>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setFiliaisVinculadas([
+                                  ...filiaisVinculadas,
+                                  { id: Math.random().toString(), cnpj: '', nome: '' },
+                                ])
+                                setQuantidadeFiliais(filiaisVinculadas.length + 1)
+                              }}
+                            >
+                              + Adicionar Filial
+                            </Button>
+                          </div>
+                          <div className="grid gap-3">
+                            {filiaisVinculadas.map((f, index) => (
+                              <div
+                                key={f.id}
+                                className="flex flex-col sm:flex-row gap-3 items-center"
+                              >
+                                <div className="flex-1">
+                                  <Input
+                                    placeholder="CNPJ"
+                                    value={f.cnpj}
+                                    onChange={(e) => {
+                                      const raw = e.target.value.replace(/\D/g, '')
+                                      const formatted =
+                                        raw.length <= 14 ? formatCNPJ(raw) : e.target.value
+                                      const next = [...filiaisVinculadas]
+                                      next[index].cnpj = formatted
+                                      setFiliaisVinculadas(next)
+
+                                      if (raw.length === 14) {
+                                        fetch(`https://brasilapi.com.br/api/cnpj/v1/${raw}`)
+                                          .then((res) => res.json())
+                                          .then((data) => {
+                                            if (data.razao_social) {
+                                              setFiliaisVinculadas((prev) => {
+                                                const nextUpdate = [...prev]
+                                                if (!nextUpdate[index].nome) {
+                                                  nextUpdate[index].nome = data.razao_social
+                                                }
+                                                return nextUpdate
+                                              })
+                                            }
+                                          })
+                                          .catch(() => {})
+                                      }
+                                    }}
+                                    className="h-8 text-xs bg-white"
+                                  />
+                                </div>
+                                <div className="flex-[2] flex gap-2 items-center">
+                                  <Input
+                                    placeholder="Nome/Identificação da Filial"
+                                    value={f.nome}
+                                    onChange={(e) => {
+                                      const next = [...filiaisVinculadas]
+                                      next[index].nome = e.target.value
+                                      setFiliaisVinculadas(next)
+                                    }}
+                                    className="h-8 text-xs bg-white"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      const next = filiaisVinculadas.filter((_, i) => i !== index)
+                                      setFiliaisVinculadas(next)
+                                      setQuantidadeFiliais(next.length)
+                                    }}
+                                    className="h-8 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0"
+                                  >
+                                    Remover
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 mt-4">
                     <Label className="text-sm font-bold">Franquia de Emissões (DF-e)</Label>
                     <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
                       <Select value={selectedDfe} onValueChange={setSelectedDfe}>
@@ -3061,136 +3191,6 @@ export default function ContractGeneratorPage() {
                           ))}
                         </SelectContent>
                       </Select>
-
-                      {selectedDfe !== 'dfe-none' && (
-                        <div className="flex flex-col gap-4 bg-slate-50 border p-3 rounded-lg w-full">
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center space-x-2">
-                              <Checkbox
-                                id="cobrar-dfe-filial-quote"
-                                checked={cobrarDfePorFilial}
-                                onCheckedChange={(c) => {
-                                  setCobrarDfePorFilial(c as boolean)
-                                  if (!c) {
-                                    setQuantidadeFiliaisDfe(1)
-                                    setFiliaisDfe([])
-                                  }
-                                }}
-                              />
-                              <Label
-                                htmlFor="cobrar-dfe-filial-quote"
-                                className="text-xs cursor-pointer font-medium text-slate-700"
-                              >
-                                Cobrar DF-E por Filial
-                              </Label>
-                            </div>
-                            {cobrarDfePorFilial && (
-                              <div className="flex items-center gap-2 border-l pl-4">
-                                <Label className="text-xs font-medium text-slate-600">
-                                  Qtd. Filiais:
-                                </Label>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  value={filiaisDfe.length}
-                                  readOnly
-                                  className="w-20 h-8 bg-slate-50 cursor-not-allowed"
-                                />
-                              </div>
-                            )}
-                          </div>
-
-                          {cobrarDfePorFilial && (
-                            <div className="space-y-3 pt-3 border-t">
-                              <div className="flex items-center justify-between">
-                                <Label className="text-xs font-bold text-slate-700">
-                                  CNPJs das Filiais Vinculadas
-                                </Label>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setFiliaisDfe([
-                                      ...filiaisDfe,
-                                      { id: Math.random().toString(), cnpj: '', nome: '' },
-                                    ])
-                                    setQuantidadeFiliaisDfe(filiaisDfe.length + 1)
-                                  }}
-                                >
-                                  + Adicionar Filial
-                                </Button>
-                              </div>
-                              <div className="grid gap-3">
-                                {filiaisDfe.map((f, index) => (
-                                  <div
-                                    key={f.id}
-                                    className="flex flex-col sm:flex-row gap-3 items-center"
-                                  >
-                                    <div className="flex-1">
-                                      <Input
-                                        placeholder="CNPJ"
-                                        value={f.cnpj}
-                                        onChange={(e) => {
-                                          const raw = e.target.value.replace(/\D/g, '')
-                                          const formatted =
-                                            raw.length <= 14 ? formatCNPJ(raw) : e.target.value
-                                          const next = [...filiaisDfe]
-                                          next[index].cnpj = formatted
-                                          setFiliaisDfe(next)
-
-                                          if (raw.length === 14) {
-                                            fetch(`https://brasilapi.com.br/api/cnpj/v1/${raw}`)
-                                              .then((res) => res.json())
-                                              .then((data) => {
-                                                if (data.razao_social) {
-                                                  setFiliaisDfe((prev) => {
-                                                    const nextUpdate = [...prev]
-                                                    if (!nextUpdate[index].nome) {
-                                                      nextUpdate[index].nome = data.razao_social
-                                                    }
-                                                    return nextUpdate
-                                                  })
-                                                }
-                                              })
-                                              .catch(() => {})
-                                          }
-                                        }}
-                                        className="h-8 text-xs bg-white"
-                                      />
-                                    </div>
-                                    <div className="flex-[2] flex gap-2 items-center">
-                                      <Input
-                                        placeholder="Nome/Identificação da Filial"
-                                        value={f.nome}
-                                        onChange={(e) => {
-                                          const next = [...filiaisDfe]
-                                          next[index].nome = e.target.value
-                                          setFiliaisDfe(next)
-                                        }}
-                                        className="h-8 text-xs bg-white"
-                                      />
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => {
-                                          const next = filiaisDfe.filter((_, i) => i !== index)
-                                          setFiliaisDfe(next)
-                                          setQuantidadeFiliaisDfe(next.length)
-                                        }}
-                                        className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0"
-                                      >
-                                        <Trash className="w-4 h-4" />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
                   </div>
                   <div className="space-y-3 mt-4">
