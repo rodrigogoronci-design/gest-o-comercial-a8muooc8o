@@ -1,4 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { Buffer } from 'node:buffer'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,9 +16,31 @@ Deno.serve(async (req: Request) => {
 
   try {
     const body = await req.json().catch(() => ({}))
-    const { to, companyName, contactName, senderName, proposalUrl } = body
+    const { to, companyName, contactName, senderName, proposalId, proposalUrl: fallbackUrl } = body
 
     if (!to) throw new Error('E-mail do destinatário não informado.')
+
+    let actualProposalUrl = fallbackUrl
+
+    if (proposalId) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
+      const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
+      const reqAuthHeader = req.headers.get('Authorization')
+
+      const supabase = createClient(supabaseUrl, supabaseKey, {
+        global: { headers: reqAuthHeader ? { Authorization: reqAuthHeader } : {} },
+      })
+
+      const { data: proposal } = await supabase
+        .from('crm_propostas')
+        .select('documento_url')
+        .eq('id', proposalId)
+        .single()
+
+      if (proposal?.documento_url) {
+        actualProposalUrl = proposal.documento_url
+      }
+    }
 
     const subject = `Proposta Comercial – ${companyName}`
 
@@ -30,13 +54,30 @@ A cotação foi elaborada com base nas informações levantadas durante nosso at
 
 Caso tenha qualquer dúvida ou precise de algum ajuste na proposta, estou à disposição para te auxiliar.
 
-Fico no aguardo do seu retorno para darmos sequência.`
+Fico no aguardo do seu retorno para darmos sequência.
 
-    if (proposalUrl) {
-      emailBody += `\n\nLink para a proposta: ${proposalUrl}`
+Atenciosamente,
+${senderName || 'Comercial'}`
+
+    const attachments = []
+
+    if (actualProposalUrl) {
+      console.log('Fetching attachment from:', actualProposalUrl)
+      const fileRes = await fetch(actualProposalUrl)
+      if (fileRes.ok) {
+        const arrayBuffer = await fileRes.arrayBuffer()
+        const content = Buffer.from(arrayBuffer).toString('base64')
+        const safeName = companyName.replace(/[^a-z0-9]/gi, '_')
+        attachments.push({
+          filename: `Proposta_${safeName}.pdf`,
+          content: content,
+        })
+      } else {
+        console.error('Failed to fetch proposal document:', fileRes.statusText)
+        // If we fail to fetch, fallback to including the link
+        emailBody += `\n\nLink para a proposta: ${actualProposalUrl}`
+      }
     }
-
-    emailBody += `\n\nAtenciosamente,\n${senderName || 'Comercial'}`
 
     const resendApiKey = Deno.env.get('RESEND_API_KEY')
 
@@ -52,6 +93,7 @@ Fico no aguardo do seu retorno para darmos sequência.`
           to: [to],
           subject: subject,
           html: `<div style="font-family: sans-serif; color: #333; line-height: 1.6;"><p>${emailBody.replace(/\n/g, '<br/>')}</p></div>`,
+          attachments: attachments.length > 0 ? attachments : undefined,
         }),
       })
 
@@ -64,6 +106,7 @@ Fico no aguardo do seu retorno para darmos sequência.`
         to,
         subject,
         body: emailBody,
+        attachmentsCount: attachments.length,
       })
     }
 

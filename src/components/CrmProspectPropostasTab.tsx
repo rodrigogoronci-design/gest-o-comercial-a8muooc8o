@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Plus, Eye, FileText, Loader2 } from 'lucide-react'
+import { ArrowLeft, Plus, Eye, FileText, Loader2, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -21,21 +21,76 @@ export function CrmProspectPropostasTab({
   prospectName: string
 }) {
   const [propostas, setPropostas] = useState<any[]>([])
+  const [prospect, setProspect] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [viewState, setViewState] = useState<'list' | 'create' | 'view'>('list')
   const [selectedProposta, setSelectedProposta] = useState<any>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [sendingEmailId, setSendingEmailId] = useState<string | null>(null)
   const { toast } = useToast()
 
   const loadPropostas = async () => {
     setLoading(true)
+    const { data: prospectData } = await supabase
+      .from('crm_prospects')
+      .select('*')
+      .eq('id', prospectId)
+      .single()
+
+    if (prospectData) {
+      setProspect(prospectData)
+    }
+
     const { data } = await supabase
       .from('crm_propostas')
       .select('*')
       .eq('prospect_id', prospectId)
-      .order('data_proposta', { ascending: false })
+      .order('created_at', { ascending: false })
     if (data) setPropostas(data)
     setLoading(false)
+  }
+
+  const handleSendEmail = async (proposta: any) => {
+    if (!prospect?.email) {
+      toast({
+        title: 'Aviso',
+        description: 'O prospect não possui e-mail cadastrado.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setSendingEmailId(proposta.id)
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      const senderName = user?.user_metadata?.name || 'Comercial'
+
+      const { data, error } = await supabase.functions.invoke('send-crm-proposal', {
+        body: {
+          to: prospect.email,
+          companyName: prospect.empresa,
+          contactName: proposta.aos_cuidados_de || prospect.contato_nome,
+          senderName: senderName,
+          proposalId: proposta.id,
+          proposalUrl: proposta.documento_url || prospect.proposta_url || undefined,
+        },
+      })
+
+      if (error) throw error
+
+      toast({ title: 'E-mail enviado com sucesso!' })
+
+      await handleUpdateProposta(proposta.id, {
+        status_negociacao: 'Enviada',
+        data_envio: new Date().toISOString(),
+      })
+    } catch (e: any) {
+      toast({ title: 'Erro ao enviar e-mail', description: e.message, variant: 'destructive' })
+    } finally {
+      setSendingEmailId(null)
+    }
   }
 
   useEffect(() => {
@@ -57,9 +112,27 @@ export function CrmProspectPropostasTab({
     }
   }
 
-  const handleCreateProposta = async (values: PropostaFormValues) => {
+  const handleCreateProposta = async (values: PropostaFormValues, file: File | null) => {
     setIsSubmitting(true)
     try {
+      let documento_url = null
+
+      if (file) {
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
+        const filePath = `${prospectId}/${fileName}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('proposals')
+          .upload(filePath, file)
+
+        if (uploadError) throw uploadError
+
+        const { data: publicUrlData } = supabase.storage.from('proposals').getPublicUrl(filePath)
+
+        documento_url = publicUrlData.publicUrl
+      }
+
       const { data: userData } = await supabase.auth.getUser()
       const { error } = await supabase.from('crm_propostas').insert({
         prospect_id: prospectId,
@@ -76,6 +149,7 @@ export function CrmProspectPropostasTab({
         itens: values.itens || [],
         data_proposta: new Date().toISOString().split('T')[0],
         status_negociacao: 'Gerada',
+        documento_url,
       })
 
       if (error) throw error
@@ -150,6 +224,23 @@ export function CrmProspectPropostasTab({
               })}
             </span>
           </div>
+
+          {selectedProposta.documento_url && (
+            <div className="col-span-2 pt-2">
+              <span className="text-slate-500 block mb-1 text-xs uppercase tracking-wider">
+                Documento
+              </span>
+              <a
+                href={selectedProposta.documento_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center gap-1"
+              >
+                <FileText className="h-4 w-4" />
+                Visualizar Proposta em PDF
+              </a>
+            </div>
+          )}
 
           {selectedProposta.desconto_mensalidade > 0 && (
             <div className="col-span-2 pt-2">
@@ -260,17 +351,33 @@ export function CrmProspectPropostasTab({
                     </div>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedProposta(p)
-                    setViewState('view')
-                  }}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                >
-                  <Eye className="h-4 w-4 mr-1.5" /> Ver
-                </Button>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSendEmail(p)}
+                    disabled={sendingEmailId === p.id}
+                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-8 px-2"
+                  >
+                    {sendingEmailId === p.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4 mr-1.5" />
+                    )}
+                    Enviar
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedProposta(p)
+                      setViewState('view')
+                    }}
+                    className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 h-8 px-2"
+                  >
+                    <Eye className="h-4 w-4 mr-1.5" /> Ver
+                  </Button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 mt-1">
@@ -297,13 +404,22 @@ export function CrmProspectPropostasTab({
                     Data de Envio
                   </span>
                   <Input
-                    type="date"
+                    type="datetime-local"
                     className="h-8 text-xs"
-                    value={p.data_envio ? p.data_envio.split('T')[0] : ''}
+                    value={
+                      p.data_envio
+                        ? new Date(
+                            new Date(p.data_envio).getTime() -
+                              new Date().getTimezoneOffset() * 60000,
+                          )
+                            .toISOString()
+                            .slice(0, 16)
+                        : ''
+                    }
                     onChange={(e) => {
                       const val = e.target.value
                       handleUpdateProposta(p.id, {
-                        data_envio: val ? new Date(val + 'T12:00:00Z').toISOString() : null,
+                        data_envio: val ? new Date(val).toISOString() : null,
                       })
                     }}
                   />

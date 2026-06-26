@@ -1189,10 +1189,10 @@ export type Database = {
           cliente_id: string | null
           cobrar_filiais: boolean | null
           created_at: string
-          data_proposta: string
           data_envio: string | null
-          status_negociacao: string | null
+          data_proposta: string
           desconto_mensalidade: number | null
+          documento_url: string | null
           filiais_detalhes: Json | null
           id: string
           is_gratuito: boolean | null
@@ -1201,6 +1201,7 @@ export type Database = {
           prazos_concedidos: string | null
           prospect_id: string | null
           quantidade_filiais: number
+          status_negociacao: string | null
           tipo_cobranca: string | null
           tipo_desconto: string
           user_id: string | null
@@ -1213,10 +1214,10 @@ export type Database = {
           cliente_id?: string | null
           cobrar_filiais?: boolean | null
           created_at?: string
-          data_proposta?: string
           data_envio?: string | null
-          status_negociacao?: string | null
+          data_proposta?: string
           desconto_mensalidade?: number | null
+          documento_url?: string | null
           filiais_detalhes?: Json | null
           id?: string
           is_gratuito?: boolean | null
@@ -1225,6 +1226,7 @@ export type Database = {
           prazos_concedidos?: string | null
           prospect_id?: string | null
           quantidade_filiais?: number
+          status_negociacao?: string | null
           tipo_cobranca?: string | null
           tipo_desconto?: string
           user_id?: string | null
@@ -1237,10 +1239,10 @@ export type Database = {
           cliente_id?: string | null
           cobrar_filiais?: boolean | null
           created_at?: string
-          data_proposta?: string
           data_envio?: string | null
-          status_negociacao?: string | null
+          data_proposta?: string
           desconto_mensalidade?: number | null
+          documento_url?: string | null
           filiais_detalhes?: Json | null
           id?: string
           is_gratuito?: boolean | null
@@ -1249,6 +1251,7 @@ export type Database = {
           prazos_concedidos?: string | null
           prospect_id?: string | null
           quantidade_filiais?: number
+          status_negociacao?: string | null
           tipo_cobranca?: string | null
           tipo_desconto?: string
           user_id?: string | null

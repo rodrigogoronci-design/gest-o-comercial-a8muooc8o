@@ -54,6 +54,7 @@ import { CrmProspectForm, ProspectFormValues } from '@/components/CrmProspectFor
 import { CrmDiagnosticoForm } from '@/components/CrmDiagnosticoForm'
 import { CrmHistorico } from '@/components/CrmHistorico'
 import { CrmKanbanBoard } from '@/components/CrmKanbanBoard'
+import { CrmProspectPropostasTab } from '@/components/CrmProspectPropostasTab'
 
 export type CrmProspect = {
   id: string
@@ -84,7 +85,10 @@ export default function CRMPage() {
   const [editingTab, setEditingTab] = useState<string>('dados')
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [sendingProposal, setSendingProposal] = useState<CrmProspect | null>(null)
+  const [sendingEmailData, setSendingEmailData] = useState<{
+    prospect: CrmProspect
+    proposal: any | null
+  } | null>(null)
   const [sendingEmail, setSendingEmail] = useState(false)
   const { toast } = useToast()
   const { user } = useAuth()
@@ -116,22 +120,27 @@ export default function CRMPage() {
       })
       return
     }
-    setSendingProposal(p)
+    const props = allProposals.filter((prop) => prop.prospect_id === p.id)
+    const latestProp = props.length > 0 ? props[0] : null
+
+    setSendingEmailData({ prospect: p, proposal: latestProp })
   }
 
   const handleConfirmSendProposal = async () => {
-    if (!sendingProposal) return
+    if (!sendingEmailData) return
+    const { prospect, proposal } = sendingEmailData
     setSendingEmail(true)
 
     const senderName = user?.user_metadata?.name || 'Comercial'
 
     const { error } = await supabase.functions.invoke('send-crm-proposal', {
       body: {
-        to: sendingProposal.email,
-        companyName: sendingProposal.empresa,
-        contactName: sendingProposal.contato_nome,
+        to: prospect.email,
+        companyName: prospect.empresa,
+        contactName: prospect.contato_nome,
         senderName: senderName,
-        proposalUrl: sendingProposal.proposta_url,
+        proposalId: proposal?.id,
+        proposalUrl: proposal?.documento_url || prospect.proposta_url,
       },
     })
 
@@ -151,33 +160,24 @@ export default function CRMPage() {
 
       await supabase.from('crm_historico_interacoes').insert([
         {
-          prospect_id: sendingProposal.id,
+          prospect_id: prospect.id,
           tipo_contato: 'E-mail',
           resumo: 'Envio de Proposta',
           detalhes: 'Proposta comercial enviada por e-mail com sucesso.',
         },
       ])
 
-      // Auto update latest proposal status and sent date
-      const { data: latestProposal } = await supabase
-        .from('crm_propostas')
-        .select('id')
-        .eq('prospect_id', sendingProposal.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-
-      if (latestProposal) {
+      if (proposal?.id) {
         await supabase
           .from('crm_propostas')
           .update({
             status_negociacao: 'Enviada',
             data_envio: new Date().toISOString(),
           })
-          .eq('id', latestProposal.id)
+          .eq('id', proposal.id)
       }
 
-      setSendingProposal(null)
+      setSendingEmailData(null)
       fetchProspects()
     }
   }
@@ -281,7 +281,7 @@ export default function CRMPage() {
     const { data: propsData } = await supabase
       .from('crm_propostas')
       .select(
-        'id, prospect_id, data_proposta, valor_mensalidade, valor_implantacao, status_negociacao, data_envio',
+        'id, prospect_id, data_proposta, valor_mensalidade, valor_implantacao, status_negociacao, data_envio, documento_url',
       )
       .order('created_at', { ascending: false })
     if (propsData) setAllProposals(propsData)
@@ -913,10 +913,11 @@ export default function CRMPage() {
           </DialogHeader>
           <div className="flex-1 overflow-hidden p-6 pt-4 bg-slate-50/30">
             <Tabs value={editingTab} onValueChange={setEditingTab} className="h-full flex flex-col">
-              <TabsList className="grid w-full grid-cols-3 mb-4 shrink-0 bg-slate-100">
+              <TabsList className="grid w-full grid-cols-4 mb-4 shrink-0 bg-slate-100">
                 <TabsTrigger value="dados">Dados Básicos</TabsTrigger>
                 <TabsTrigger value="diagnostico">Diagnóstico</TabsTrigger>
                 <TabsTrigger value="historico">Histórico</TabsTrigger>
+                <TabsTrigger value="propostas">Propostas</TabsTrigger>
               </TabsList>
 
               <TabsContent
@@ -965,34 +966,60 @@ export default function CRMPage() {
               >
                 {editingProspect && <CrmHistorico prospectId={editingProspect.id} />}
               </TabsContent>
+
+              <TabsContent
+                value="propostas"
+                className="flex-1 overflow-y-auto pr-2 pb-4 focus-visible:outline-none"
+              >
+                {editingProspect && (
+                  <CrmProspectPropostasTab
+                    prospectId={editingProspect.id}
+                    prospectName={editingProspect.empresa}
+                  />
+                )}
+              </TabsContent>
             </Tabs>
           </div>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!sendingProposal} onOpenChange={(open) => !open && setSendingProposal(null)}>
+      <Dialog open={!!sendingEmailData} onOpenChange={(open) => !open && setSendingEmailData(null)}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Enviar Proposta por E-mail</DialogTitle>
             <DialogDescription>
               Revise a mensagem padrão antes de enviar para{' '}
-              <strong>{sendingProposal?.empresa}</strong>.
+              <strong>{sendingEmailData?.prospect.empresa}</strong>.
             </DialogDescription>
           </DialogHeader>
 
-          {sendingProposal && (
+          {sendingEmailData && (
             <div className="space-y-4 py-4">
               <div className="flex flex-col gap-1.5">
                 <span className="text-sm font-medium text-slate-700">Destinatário:</span>
-                <Input value={sendingProposal.email || ''} readOnly className="bg-slate-50" />
+                <Input
+                  value={sendingEmailData.prospect.email || ''}
+                  readOnly
+                  className="bg-slate-50"
+                />
               </div>
 
-              {!sendingProposal.proposta_url && (
+              {!(
+                sendingEmailData.proposal?.documento_url || sendingEmailData.prospect.proposta_url
+              ) ? (
                 <Alert className="bg-amber-50 border-amber-200 text-amber-800">
                   <AlertTitle className="text-sm font-semibold">Atenção!</AlertTitle>
                   <AlertDescription className="text-xs">
                     Este prospecto ainda não possui uma proposta (PDF ou Link) vinculada. O e-mail
                     será enviado sem o link do anexo.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Alert className="bg-emerald-50 border-emerald-200 text-emerald-800">
+                  <AlertTitle className="text-sm font-semibold">Documento Anexado</AlertTitle>
+                  <AlertDescription className="text-xs flex items-center gap-1">
+                    <FileText className="h-3.5 w-3.5" />O PDF da proposta será anexado
+                    automaticamente ao e-mail.
                   </AlertDescription>
                 </Alert>
               )}
@@ -1002,10 +1029,10 @@ export default function CRMPage() {
                   Pré-visualização do e-mail:
                 </span>
                 <div className="border border-slate-200 rounded-md p-4 bg-slate-50 text-sm whitespace-pre-wrap font-sans text-slate-800 h-64 overflow-y-auto">
-                  <strong>Assunto:</strong> Proposta Comercial – {sendingProposal.empresa}
+                  <strong>Assunto:</strong> Proposta Comercial – {sendingEmailData.prospect.empresa}
                   {'\n'}
                   <hr className="my-2 border-slate-200" />
-                  Prezado(a) {sendingProposal.contato_nome},{'\n\n'}
+                  Prezado(a) {sendingEmailData.prospect.contato_nome},{'\n\n'}
                   Espero que esteja bem.{'\n\n'}
                   Conforme alinhado em nossa conversa e apresentação do sistema, segue em anexo a
                   sua proposta comercial com a solução mais adequada para a sua operação.{'\n\n'}A
@@ -1014,8 +1041,6 @@ export default function CRMPage() {
                   Caso tenha qualquer dúvida ou precise de algum ajuste na proposta, estou à
                   disposição para te auxiliar.{'\n\n'}
                   Fico no aguardo do seu retorno para darmos sequência.{'\n\n'}
-                  {sendingProposal.proposta_url &&
-                    `Link para a proposta: ${sendingProposal.proposta_url}\n\n`}
                   Atenciosamente,{'\n'}
                   {user?.user_metadata?.name || 'Comercial'}
                 </div>
@@ -1026,7 +1051,7 @@ export default function CRMPage() {
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setSendingProposal(null)}
+              onClick={() => setSendingEmailData(null)}
               disabled={sendingEmail}
             >
               Cancelar

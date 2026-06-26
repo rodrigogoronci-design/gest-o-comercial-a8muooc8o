@@ -42,10 +42,12 @@ export function CrmPropostaForm({
   isSubmitting,
   initialData,
 }: {
-  onSubmit: (v: PropostaFormValues) => void
+  onSubmit: (v: PropostaFormValues, file: File | null) => void
   isSubmitting?: boolean
   initialData?: Partial<PropostaFormValues>
 }) {
+  const [file, setFile] = useState<File | null>(null)
+
   const form = useForm<PropostaFormValues>({
     resolver: zodResolver(propostaFormSchema),
     defaultValues: {
@@ -87,7 +89,7 @@ export function CrmPropostaForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit((v) => onSubmit(v, file))} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <FormField
             control={form.control}
@@ -240,6 +242,11 @@ export function CrmPropostaForm({
               </FormItem>
             )}
           />
+        </div>
+
+        <div className="space-y-2">
+          <FormLabel>Documento da Proposta (PDF)</FormLabel>
+          <Input type="file" accept=".pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} />
         </div>
 
         <div className="border-t pt-4 mt-4">
