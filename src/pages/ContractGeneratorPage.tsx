@@ -289,7 +289,7 @@ export default function ContractGeneratorPage() {
     const fDetalhes = prop.filiais_detalhes || []
     if (prop.cobrar_filiais) {
       setCobrarPorFilial(true)
-      setQuantidadeFiliais(prop.quantidade_filiais || 1)
+      setQuantidadeFiliais(fDetalhes.length || 1)
       setFiliaisVinculadas(
         fDetalhes.map((f: any) => ({
           id: Math.random().toString(),
@@ -393,7 +393,9 @@ export default function ContractGeneratorPage() {
   const dfeData = useMemo(() => DFE_TIERS.find((d) => d.id === selectedDfe), [selectedDfe])
   const baseDfePrice = dfeData?.price || 0
   const dfePrice =
-    cobrarPorFilial && quantidadeFiliais > 0 ? baseDfePrice * quantidadeFiliais : baseDfePrice
+    cobrarPorFilial && filiaisVinculadas.length > 0
+      ? baseDfePrice * filiaisVinculadas.length
+      : baseDfePrice
   const modulesPriceStandard = useMemo(
     () =>
       selectedModules.reduce((acc, id) => acc + (MODULES.find((m) => m.id === id)?.price || 0), 0),
@@ -468,8 +470,10 @@ export default function ContractGeneratorPage() {
 
   const totalValueStandard = Math.max(0, subtotalMensalidadeStandard - calculatedDiscountStandard)
 
-  const totalBranchesCount = (cobrarPorFilial ? quantidadeFiliais : 0) + additionalBranches
-  const finalFiliaisDetalhes = [...(cobrarPorFilial ? filiaisVinculadas : []), ...filiais]
+  const totalBranchesCount = (cobrarPorFilial ? filiaisVinculadas.length : 0) + additionalBranches
+  const finalFiliaisDetalhes = [...(cobrarPorFilial ? filiaisVinculadas : []), ...filiais].filter(
+    (f) => f.cnpj && f.cnpj.replace(/\D/g, '').length > 0,
+  )
 
   const implRate =
     implMode === 'remoto' ? IMPLEMENTATION_RATES.remoto : IMPLEMENTATION_RATES.presencial
@@ -607,7 +611,7 @@ export default function ContractGeneratorPage() {
     baseDfePrice,
     dfePrice,
     cobrarDfePorFilial: cobrarPorFilial,
-    quantidadeFiliaisDfe: quantidadeFiliais,
+    quantidadeFiliaisDfe: filiaisVinculadas.length,
     totalValue,
     implMode,
     implRate,
@@ -702,7 +706,12 @@ export default function ContractGeneratorPage() {
     additionalBranchesPrice,
     additionalBranchesTotal,
     filiais,
-    filiaisDfe: filiaisVinculadas,
+    filiaisDfe: filiaisVinculadas.filter((f) => f.cnpj && f.cnpj.replace(/\D/g, '').length > 0),
+    cobrarDfePorFilial: cobrarPorFilial,
+    quantidadeFiliaisDfe: filiaisVinculadas.filter(
+      (f) => f.cnpj && f.cnpj.replace(/\D/g, '').length > 0,
+    ).length,
+    baseDfePrice,
     descontoMensalidade: validDescontoMensalidade,
     tipoDesconto,
     calculatedDiscount,
@@ -1064,6 +1073,18 @@ export default function ContractGeneratorPage() {
       return
     }
 
+    if (
+      cobrarPorFilial &&
+      !filiaisVinculadas.some((f) => f.cnpj && f.cnpj.replace(/\D/g, '').length > 0)
+    ) {
+      toast({
+        title: 'Atenção',
+        description: 'Ao cobrar por filial, adicione pelo menos uma filial com CNPJ válido.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     const proposalItems = [
       ...(selectedPlan !== 'none'
         ? [{ id: selectedPlan, type: 'plan', name: planData?.name, price: planPrice }]
@@ -1292,6 +1313,18 @@ export default function ContractGeneratorPage() {
       toast({
         title: 'Atenção',
         description: 'Preencha a Razão Social e CNPJ.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    if (
+      cobrarPorFilial &&
+      !filiaisVinculadas.some((f) => f.cnpj && f.cnpj.replace(/\D/g, '').length > 0)
+    ) {
+      toast({
+        title: 'Atenção',
+        description: 'Ao cobrar por filial, adicione pelo menos uma filial com CNPJ válido.',
         variant: 'destructive',
       })
       return

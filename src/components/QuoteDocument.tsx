@@ -511,20 +511,22 @@ export function QuoteDocument({
             Filiais Consideradas na Franquia DF-e
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            {filiaisDfe.map((f, i) => (
-              <div
-                key={i}
-                className="bg-slate-50 p-2 rounded border border-slate-200 shadow-sm text-[10px]"
-              >
-                <p
-                  className="font-bold text-slate-800 truncate"
-                  title={f.nome || 'Filial não identificada'}
+            {filiaisDfe
+              .filter((f) => f.cnpj)
+              .map((f, i) => (
+                <div
+                  key={i}
+                  className="bg-slate-50 p-2 rounded border border-slate-200 shadow-sm text-[10px]"
                 >
-                  {f.nome || 'Filial não identificada'}
-                </p>
-                <p className="text-slate-600 mt-0.5">CNPJ: {f.cnpj || 'Não informado'}</p>
-              </div>
-            ))}
+                  <p
+                    className="font-bold text-slate-800 truncate"
+                    title={f.nome || 'Filial não identificada'}
+                  >
+                    {f.nome || 'Filial não identificada'}
+                  </p>
+                  <p className="text-slate-600 mt-0.5">CNPJ: {f.cnpj}</p>
+                </div>
+              ))}
           </div>
         </div>
       )}
@@ -584,7 +586,10 @@ export function QuoteDocument({
                 ))}
               {includeFranchise && dfeData && dfeBilling === 'mensal' && (
                 <div className="flex justify-between items-center text-slate-600">
-                  <span>{dfeData.name || 'Franquia DF-e'}</span>
+                  <span>
+                    {dfeData.name || 'Franquia DF-e'}
+                    {cobrarDfePorFilial ? ` (${quantidadeFiliaisDfe} filiais)` : ''}
+                  </span>
                   <span className="font-medium">{formatCurrency(dfePrice || 0)}</span>
                 </div>
               )}
