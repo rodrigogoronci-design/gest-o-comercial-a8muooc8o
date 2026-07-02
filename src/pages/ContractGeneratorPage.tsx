@@ -1841,6 +1841,42 @@ export default function ContractGeneratorPage() {
                     )}
                   </div>
 
+                  {isAddendum && cobrarPorFilial && filiaisVinculadas.length > 0 && (
+                    <div className="bg-gradient-to-r from-slate-50 to-indigo-50 border border-indigo-200 rounded-lg p-4 space-y-3">
+                      <div className="text-sm font-bold text-indigo-700">
+                        Comparativo de Valores — Aditivo de Inclusão de Filiais
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="bg-white rounded-lg p-3 border border-slate-200">
+                          <div className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">
+                            Valor Atual
+                          </div>
+                          <div className="text-lg font-bold text-slate-800">
+                            {formatCurrency(currentContractValue || 0)}
+                          </div>
+                        </div>
+                        <div className="bg-white rounded-lg p-3 border border-amber-200 flex flex-col items-center justify-center">
+                          <div className="text-xs text-amber-600 font-medium uppercase tracking-wide mb-1">
+                            {filiaisVinculadas.length} Filial(is) × R$ 199,00
+                          </div>
+                          <div className="text-lg font-bold text-amber-600">
+                            + {formatCurrency(filiaisVinculadas.length * 199)}
+                          </div>
+                        </div>
+                        <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-300">
+                          <div className="text-xs text-indigo-600 font-medium uppercase tracking-wide mb-1">
+                            Novo Valor
+                          </div>
+                          <div className="text-lg font-bold text-indigo-700">
+                            {formatCurrency(
+                              (currentContractValue || 0) + filiaisVinculadas.length * 199,
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label>Razão Social</Label>
                     <Input
@@ -2214,6 +2250,32 @@ export default function ContractGeneratorPage() {
                       )}
                     </div>
                   </div>
+
+                  {isAddendum &&
+                    cobrarPorFilial &&
+                    filiaisVinculadas.some((f) => f.cnpj || f.nome) && (
+                      <div className="space-y-2 mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <Label className="text-sm font-bold text-amber-800">
+                          Descrição do Item (Gerada Automaticamente)
+                        </Label>
+                        <div className="bg-white border border-amber-200 rounded-md p-3 text-xs text-slate-700 whitespace-pre-line font-mono">
+                          {filiaisVinculadas
+                            .filter((f) => f.cnpj || f.nome)
+                            .map(
+                              (f) =>
+                                `Referente à inclusão da filial ${f.nome || '[Nome da Filial]'} - CNPJ: ${f.cnpj || '[CNPJ]'}`,
+                            )
+                            .join('\n')}
+                        </div>
+                        {filiaisVinculadas.some(
+                          (f) => f.cnpj && f.cnpj.replace(/\D/g, '').length !== 14,
+                        ) && (
+                          <div className="text-xs text-red-600">
+                            CNPJ deve conter 14 dígitos. Verifique os campos destacados.
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                   <div className="space-y-3 mt-4">
                     <Label className="text-sm font-bold">Franquia de Emissões (DF-e)</Label>

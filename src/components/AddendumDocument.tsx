@@ -61,9 +61,10 @@ export function AddendumDocument({
     }
     if (Array.isArray(modules.filiais_detalhes)) {
       modules.filiais_detalhes.forEach((f: any) => {
-        const branchName = f.nome ? ` - ${f.nome}` : ''
+        const branchName = f.nome || '[Nome da Filial]'
+        const branchCnpj = f.cnpj || '[CNPJ]'
         formattedModules.push({
-          name: `Inclusão de Filial${branchName} - CNPJ: ${f.cnpj || 'Nova Unidade'}${f.isentar ? ' (Isenta)' : ''}`,
+          name: `Referente à inclusão da filial ${branchName} - CNPJ: ${branchCnpj}${f.isentar ? ' (Isenta)' : ''}`,
           price: f.isentar ? 0 : Number(f.price || f.valor || 199),
           billingCycle: 'mensal',
         })
@@ -92,7 +93,7 @@ export function AddendumDocument({
       const basePrice = dfeMatch && total > 49.9 ? total - 49.9 : total
 
       formattedModules.push({
-        name: `inclusão de uma nova filial - CNPJ ${extractedCnpj}`,
+        name: `Referente à inclusão da filial - CNPJ: ${extractedCnpj}`,
         price: basePrice > 0 ? basePrice : 199,
         billingCycle: 'mensal',
       })
