@@ -87,6 +87,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
