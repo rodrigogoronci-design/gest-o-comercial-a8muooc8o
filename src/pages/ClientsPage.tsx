@@ -568,9 +568,10 @@ export default function ClientsPage() {
             (f: any) => f.cnpj.replace(/\D/g, '') === extractedCnpj,
           )
 
-         if (filialToRemove) {
-          if (filialToRemove.dfe_incluso) {
-            const dfeName = 'DF-e (Filial: ' + (filialToRemove.nome || '') + ')'              const dfeMod = updatedAdicionais.find(
+          if (filialToRemove) {
+            if (filialToRemove.dfe_incluso) {
+              const dfeName = 'DF-e (Filial: ' + (filialToRemove.nome || '') + ')'
+              const dfeMod = updatedAdicionais.find(
                 (m: any) => (typeof m === 'string' ? m : m.name) === dfeName,
               )
               if (dfeMod) {
@@ -632,7 +633,8 @@ export default function ClientsPage() {
 
       const parsedModules = (viewingClient.modules || []).filter((m) => {
         if ((m.name || '') === moduleToRemove.name) return false
-        if (isFilial && (m.name || '').includes(extractedCnpj) && (m.name || '').startsWith('DF-e')) return false
+        if (isFilial && (m.name || '').includes(extractedCnpj) && (m.name || '').startsWith('DF-e'))
+          return false
         return true
       })
 
@@ -690,8 +692,9 @@ export default function ClientsPage() {
         let updatedFiliaisDet = [...(currentModulosRaw.filiais_detalhes || [])]
 
         if (historyRecord.tipo === 'Aditivo de Módulos' && historyRecord.modulos) {
-          const removedNames = (Array.isArray(historyRecord.modulos) ? historyRecord.modulos : []).map((m: any) =>            typeof m === 'string' ? m : m.name,
-          )
+          const removedNames = (
+            Array.isArray(historyRecord.modulos) ? historyRecord.modulos : []
+          ).map((m: any) => (typeof m === 'string' ? m : m.name))
           updatedAdicionais = updatedAdicionais.filter((m: any) => {
             const name = typeof m === 'string' ? m : m.name
             return !removedNames.includes(name)
@@ -718,7 +721,8 @@ export default function ClientsPage() {
               updatedAdicionais = updatedAdicionais.filter((m: any) => {
                 const name = typeof m === 'string' ? m : m.name
                 return !(
-                  (name || '').includes('Filial:') && (name || '').replace(/\D/g, '').includes(extractedCnpj)
+                  (name || '').includes('Filial:') &&
+                  (name || '').replace(/\D/g, '').includes(extractedCnpj)
                 )
               })
             }
@@ -2358,7 +2362,9 @@ Obrigada.`)
                           <div
                             className={cn(
                               'w-1.5 h-1.5 rounded-full shrink-0',
-                              (mod.name || '').includes('Filial') ? 'bg-amber-400' : 'bg-emerald-400',
+                              (mod.name || '').includes('Filial')
+                                ? 'bg-amber-400'
+                                : 'bg-emerald-400',
                             )}
                           ></div>
                           <span
@@ -2426,7 +2432,9 @@ Obrigada.`)
                       <div className="flex justify-between items-center bg-emerald-50 border border-emerald-100 p-2.5 rounded-md mt-2">
                         <span className="font-bold text-xs text-emerald-800">Total Somado</span>
                         <span className="text-sm font-bold text-emerald-700">
-                          {formatCurrency(client.cobrancas.reduce((acc, c) => acc + (c.valor || 0), 0))}
+                          {formatCurrency(
+                            client.cobrancas.reduce((acc, c) => acc + (c.valor || 0), 0),
+                          )}
                         </span>
                       </div>
                     )}
