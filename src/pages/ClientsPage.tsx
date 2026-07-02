@@ -557,10 +557,10 @@ export default function ClientsPage() {
 
       let priceToDeduct = moduleToRemove.price
       let extractedCnpj = ''
-      const isFilial = moduleToRemove.name.startsWith('Filial: ')
+      const isFilial = (moduleToRemove.name || '').startsWith('Filial: ')
 
       if (isFilial) {
-        const cnpjMatch = moduleToRemove.name.match(/\(([\d.\-/]+)\)/)
+        const cnpjMatch = (moduleToRemove.name || '').match(/\(([\d.\-/]+)\)/)
         if (cnpjMatch && cnpjMatch[1]) {
           extractedCnpj = cnpjMatch[1].replace(/\D/g, '')
 
@@ -568,10 +568,9 @@ export default function ClientsPage() {
             (f: any) => f.cnpj.replace(/\D/g, '') === extractedCnpj,
           )
 
-          if (filialToRemove) {
-            if (filialToRemove.dfe_incluso) {
-              const dfeName = 'DF-e (Filial: ' + filialToRemove.nome + ')'
-              const dfeMod = updatedAdicionais.find(
+         if (filialToRemove) {
+          if (filialToRemove.dfe_incluso) {
+            const dfeName = 'DF-e (Filial: ' + (filialToRemove.nome || '') + ')'              const dfeMod = updatedAdicionais.find(
                 (m: any) => (typeof m === 'string' ? m : m.name) === dfeName,
               )
               if (dfeMod) {
@@ -609,7 +608,7 @@ export default function ClientsPage() {
         valor_total: novoValorTotal,
         filiais_detalhes:
           viewingClient.originalData?.filiais_detalhes?.filter(
-            (f: any) => f.cnpj.replace(/\D/g, '') !== extractedCnpj,
+            (f: any) => (f.cnpj || '').replace(/\D/g, '') !== extractedCnpj,
           ) || [],
         quantidade_filiais: Math.max(
           0,
@@ -631,9 +630,9 @@ export default function ClientsPage() {
       loadClientes()
       loadHistory(viewingClient.id)
 
-      const parsedModules = viewingClient.modules.filter((m) => {
-        if (m.name === moduleToRemove.name) return false
-        if (isFilial && m.name.includes(extractedCnpj) && m.name.startsWith('DF-e')) return false
+      const parsedModules = (viewingClient.modules || []).filter((m) => {
+        if ((m.name || '') === moduleToRemove.name) return false
+        if (isFilial && (m.name || '').includes(extractedCnpj) && (m.name || '').startsWith('DF-e')) return false
         return true
       })
 
@@ -691,8 +690,7 @@ export default function ClientsPage() {
         let updatedFiliaisDet = [...(currentModulosRaw.filiais_detalhes || [])]
 
         if (historyRecord.tipo === 'Aditivo de Módulos' && historyRecord.modulos) {
-          const removedNames = historyRecord.modulos.map((m: any) =>
-            typeof m === 'string' ? m : m.name,
+          const removedNames = (Array.isArray(historyRecord.modulos) ? historyRecord.modulos : []).map((m: any) =>            typeof m === 'string' ? m : m.name,
           )
           updatedAdicionais = updatedAdicionais.filter((m: any) => {
             const name = typeof m === 'string' ? m : m.name
@@ -706,11 +704,11 @@ export default function ClientsPage() {
             const extractedCnpj = cnpjMatch[1].replace(/\D/g, '')
 
             const filialToRemove = updatedFiliaisDet.find(
-              (f: any) => f.cnpj.replace(/\D/g, '') === extractedCnpj,
+              (f: any) => (f.cnpj || '').replace(/\D/g, '') === extractedCnpj,
             )
             if (filialToRemove) {
-              const filialName = `Filial: ${filialToRemove.nome} (${formatCNPJ(filialToRemove.cnpj)})`
-              const dfeName = `DF-e (Filial: ${filialToRemove.nome})`
+              const filialName = `Filial: ${filialToRemove.nome || ''} (${formatCNPJ(filialToRemove.cnpj || '')})`
+              const dfeName = `DF-e (Filial: ${filialToRemove.nome || ''})`
 
               updatedAdicionais = updatedAdicionais.filter((m: any) => {
                 const name = typeof m === 'string' ? m : m.name
@@ -720,13 +718,13 @@ export default function ClientsPage() {
               updatedAdicionais = updatedAdicionais.filter((m: any) => {
                 const name = typeof m === 'string' ? m : m.name
                 return !(
-                  name.includes('Filial:') && name.replace(/\D/g, '').includes(extractedCnpj)
+                  (name || '').includes('Filial:') && (name || '').replace(/\D/g, '').includes(extractedCnpj)
                 )
               })
             }
 
             updatedFiliaisDet = updatedFiliaisDet.filter(
-              (f: any) => f.cnpj.replace(/\D/g, '') !== extractedCnpj,
+              (f: any) => (f.cnpj || '').replace(/\D/g, '') !== extractedCnpj,
             )
             novoValorTotal -= historyRecord.valor_adicional || 0
             changed = true
@@ -748,7 +746,7 @@ export default function ClientsPage() {
 
           const formatMod = (m: any): ModuleItem | null => {
             if (!m) return null
-            const mName = typeof m === 'string' ? m : m.name || ''
+            const mName = typeof m === 'string' ? m : String(m?.name || '')
             if (!mName) return null
             const mPrice = typeof m === 'string' ? undefined : m.price
             const modDef = MODULES.find(
@@ -2164,7 +2162,7 @@ Obrigada.`)
       const clientReceipts = receipts.filter(
         (r) =>
           r.cliente_id === c.id ||
-          (r.cnpj && r.cnpj.replace(/\D/g, '') === c.cnpj.replace(/\D/g, '')),
+          (r.cnpj && r.cnpj.replace(/\D/g, '') === (c.cnpj || '').replace(/\D/g, '')),
       )
       const stats = calculateFinancialScore(clientReceipts)
 
@@ -2271,7 +2269,7 @@ Obrigada.`)
     })
 
   const availableModulesForAddendum = MODULES.filter(
-    (m) => !viewingClient?.modules.some((existing) => existing.name === m.name),
+    (m) => !(viewingClient?.modules || []).some((existing) => existing.name === m.name),
   )
 
   const ClientDetailsPanel = ({ client }: { client: MergedClient }) => {
@@ -2345,13 +2343,13 @@ Obrigada.`)
                 </div>
               ) : null}
 
-              {client.modules.length > 0 && (
+              {(client.modules || []).length > 0 && (
                 <div className="mt-2">
                   <span className="text-xs font-bold text-slate-400 uppercase mb-2 block">
                     Serviços e Módulos Detalhados
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {client.modules.map((mod, idx) => (
+                    {(client.modules || []).map((mod, idx) => (
                       <div
                         key={`${mod.name}-${idx}`}
                         className="flex justify-between items-center bg-white border border-slate-200 p-2.5 rounded-md group/mod"
@@ -2360,7 +2358,7 @@ Obrigada.`)
                           <div
                             className={cn(
                               'w-1.5 h-1.5 rounded-full shrink-0',
-                              mod.name.includes('Filial') ? 'bg-amber-400' : 'bg-emerald-400',
+                              (mod.name || '').includes('Filial') ? 'bg-amber-400' : 'bg-emerald-400',
                             )}
                           ></div>
                           <span
@@ -2392,14 +2390,14 @@ Obrigada.`)
 
               {!plan &&
                 (!client.filiais || client.filiais === 0) &&
-                client.modules.length === 0 &&
+                (client.modules || []).length === 0 &&
                 (!client.cobrancas || client.cobrancas.length === 0) && (
                   <div className="text-sm text-slate-500 text-center py-6 bg-slate-50 rounded-md border border-dashed border-slate-200">
                     Nenhum plano ou módulo selecionado para este cliente.
                   </div>
                 )}
 
-              {client.cobrancas && client.cobrancas.length > 0 && (
+              {Array.isArray(client.cobrancas) && client.cobrancas.length > 0 && (
                 <div className="mt-4">
                   <span className="text-xs font-bold text-slate-400 uppercase mb-2 block">
                     Mensalidades / Cobranças Programadas
@@ -2414,7 +2412,7 @@ Obrigada.`)
                           <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
                           <span className="font-medium text-xs text-slate-700">
                             Vencimento:{' '}
-                            {cob.data_vencimento.includes('-')
+                            {(cob.data_vencimento || '').includes('-')
                               ? formatDate(cob.data_vencimento)
                               : cob.data_vencimento}
                           </span>
@@ -2428,7 +2426,7 @@ Obrigada.`)
                       <div className="flex justify-between items-center bg-emerald-50 border border-emerald-100 p-2.5 rounded-md mt-2">
                         <span className="font-bold text-xs text-emerald-800">Total Somado</span>
                         <span className="text-sm font-bold text-emerald-700">
-                          {formatCurrency(client.cobrancas.reduce((acc, c) => acc + c.valor, 0))}
+                          {formatCurrency(client.cobrancas.reduce((acc, c) => acc + (c.valor || 0), 0))}
                         </span>
                       </div>
                     )}
@@ -2531,7 +2529,7 @@ Obrigada.`)
                             {h.plano}
                           </div>
                         )}
-                        {h.modulos && h.modulos.length > 0 && (
+                        {Array.isArray(h.modulos) && h.modulos.length > 0 && (
                           <div className="mt-2">
                             <span className="font-medium text-slate-800 block mb-1">
                               {h.tipo === 'Contrato Inicial'
