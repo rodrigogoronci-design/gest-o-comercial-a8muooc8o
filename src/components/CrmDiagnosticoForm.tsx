@@ -5,7 +5,9 @@ import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
@@ -20,7 +22,20 @@ type PlanoSaude = {
   descricao: string
   codigo: string
   valor_titular: number | null
+  com_coparticipacao: boolean | null
+  padrao: boolean | null
 }
+
+type PlanGroupConfig = {
+  label: string
+  filter: (p: PlanoSaude) => boolean
+}
+
+const PLAN_GROUPS: PlanGroupConfig[] = [
+  { label: 'Planos Padrão', filter: (p) => !!p.padrao },
+  { label: 'Sem Coparticipação', filter: (p) => !p.padrao && !p.com_coparticipacao },
+  { label: 'Com Coparticipação', filter: (p) => !p.padrao && !!p.com_coparticipacao },
+]
 
 export function CrmDiagnosticoForm({
   prospectId,
@@ -54,7 +69,7 @@ export function CrmDiagnosticoForm({
     const fetchPlanos = async () => {
       const { data, error } = await supabase
         .from('planos_saude')
-        .select('id, descricao, codigo, valor_titular')
+        .select('id, descricao, codigo, valor_titular, com_coparticipacao, padrao')
         .order('descricao', { ascending: true })
       if (!error && data) {
         setPlanos(data as PlanoSaude[])
@@ -302,15 +317,28 @@ export function CrmDiagnosticoForm({
                         Nenhum plano cadastrado
                       </SelectItem>
                     ) : (
-                      planos.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.descricao}
-                          {p.codigo ? ` (${p.codigo})` : ''}
-                          {p.valor_titular != null && p.valor_titular > 0
-                            ? ` — ${formatCurrency(p.valor_titular)}/mês`
-                            : ''}
-                        </SelectItem>
-                      ))
+                      <>
+                        {PLAN_GROUPS.map((group) => {
+                          const items = planos.filter(group.filter)
+                          if (items.length === 0) return null
+                          return (
+                            <SelectGroup key={group.label}>
+                              <SelectLabel className="text-xs font-semibold text-slate-500">
+                                {group.label}
+                              </SelectLabel>
+                              {items.map((p) => (
+                                <SelectItem key={p.id} value={p.id}>
+                                  {p.descricao}
+                                  {p.codigo ? ` (${p.codigo})` : ''}
+                                  {p.valor_titular != null && p.valor_titular > 0
+                                    ? ` — ${formatCurrency(p.valor_titular)}/mês`
+                                    : ''}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          )
+                        })}
+                      </>
                     )}
                   </SelectContent>
                 </Select>

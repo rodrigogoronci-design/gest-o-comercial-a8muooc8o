@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/formatters'
 import { PLANS, MODULES, DFE_TIERS } from '@/constants/contracts'
+import { PlanosSaudeSection } from '@/components/PlanosSaudeSection'
 
 export default function PlansPage() {
   return (
@@ -177,6 +178,8 @@ export default function PlansPage() {
           ))}
         </div>
       </div>
+
+      <PlanosSaudeSection />
     </div>
   )
 }
