@@ -39,6 +39,7 @@ const KANBAN_COLUMNS = [
   'Contato inicial',
   'Em negociação',
   'Proposta enviada',
+  'Enviado para Implantação',
   'Cliente Efetivado',
   'Perdido',
 ]
@@ -262,12 +263,18 @@ export function CrmKanbanBoard({
                               className={cn(
                                 'flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded-md bg-slate-50 border',
                                 p.data_followup < today &&
-                                  !['Fechado', 'Cliente Efetivado', 'Perdido'].includes(p.status)
+                                  ![
+                                    'Enviado para Implantação',
+                                    'Cliente Efetivado',
+                                    'Perdido',
+                                  ].includes(p.status)
                                   ? 'text-red-700 border-red-200 bg-red-50'
                                   : p.data_followup === today &&
-                                      !['Fechado', 'Cliente Efetivado', 'Perdido'].includes(
-                                        p.status,
-                                      )
+                                      ![
+                                        'Enviado para Implantação',
+                                        'Cliente Efetivado',
+                                        'Perdido',
+                                      ].includes(p.status)
                                     ? 'text-amber-700 border-amber-200 bg-amber-50'
                                     : 'text-slate-600 border-slate-200',
                               )}
@@ -307,6 +314,14 @@ export function CrmKanbanBoard({
 
                       <div className="text-[10px] text-muted-foreground flex items-center justify-between">
                         <span title="Última Interação">Int: {formatDate(p.ultima_interacao)}</span>
+                        {p.data_assinatura && (
+                          <span
+                            className="text-emerald-600 font-medium"
+                            title="Data da Assinatura do Contrato"
+                          >
+                            Assinatura: {formatDate(p.data_assinatura)}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -72,6 +72,7 @@ export type CrmProspect = {
   diagnostico: any | null
   tags: string[] | null
   proposta_url?: string | null
+  data_assinatura?: string | null
 }
 
 export default function CRMPage() {
@@ -307,6 +308,7 @@ export default function CRMPage() {
         classificacao: values.classificacao || 'Frio',
         data_followup: values.data_followup || null,
         observacoes: values.observacoes || null,
+        data_assinatura: values.data_assinatura || null,
       },
     ])
     setIsSubmitting(false)
@@ -339,6 +341,7 @@ export default function CRMPage() {
         classificacao: values.classificacao || 'Frio',
         data_followup: values.data_followup || null,
         observacoes: values.observacoes || null,
+        data_assinatura: values.data_assinatura || null,
         ultima_interacao:
           statusChanged || classifChanged
             ? new Date().toISOString()
@@ -453,6 +456,8 @@ export default function CRMPage() {
       return 'bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-200'
     if (s === 'Proposta enviada')
       return 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200 border-indigo-200'
+    if (s === 'Enviado para Implantação')
+      return 'bg-teal-100 text-teal-800 hover:bg-teal-200 border-teal-200'
     if (s === 'Contrato assinado')
       return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200'
     if (s === 'Cliente Efetivado')
@@ -473,7 +478,7 @@ export default function CRMPage() {
     (p) =>
       p.data_followup &&
       p.data_followup <= today &&
-      !['Fechado', 'Cliente Efetivado', 'Perdido'].includes(p.status),
+      !['Enviado para Implantação', 'Cliente Efetivado', 'Perdido'].includes(p.status),
   )
 
   return (
@@ -653,12 +658,18 @@ export default function CRMPage() {
                                 className={cn(
                                   'flex items-center gap-1.5 text-xs font-medium',
                                   p.data_followup < today &&
-                                    !['Fechado', 'Cliente Efetivado', 'Perdido'].includes(p.status)
+                                    ![
+                                      'Enviado para Implantação',
+                                      'Cliente Efetivado',
+                                      'Perdido',
+                                    ].includes(p.status)
                                     ? 'text-red-600'
                                     : p.data_followup === today &&
-                                        !['Fechado', 'Cliente Efetivado', 'Perdido'].includes(
-                                          p.status,
-                                        )
+                                        ![
+                                          'Enviado para Implantação',
+                                          'Cliente Efetivado',
+                                          'Perdido',
+                                        ].includes(p.status)
                                       ? 'text-amber-600'
                                       : 'text-muted-foreground',
                                 )}
@@ -677,6 +688,14 @@ export default function CRMPage() {
                             >
                               Int: {formatDate(p.ultima_interacao)}
                             </div>
+                            {p.data_assinatura && (
+                              <div
+                                className="text-[10px] text-emerald-600 font-medium mt-0.5"
+                                title="Data da Assinatura do Contrato"
+                              >
+                                Assinatura: {formatDate(p.data_assinatura)}
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Select
@@ -720,7 +739,7 @@ export default function CRMPage() {
                                   'Contato inicial',
                                   'Em negociação',
                                   'Proposta enviada',
-                                  'Fechado',
+                                  'Enviado para Implantação',
                                   'Cliente Efetivado',
                                   'Perdido',
                                 ].includes(p.status) && (
@@ -732,6 +751,9 @@ export default function CRMPage() {
                                 <SelectItem value="Contato inicial">Contato inicial</SelectItem>
                                 <SelectItem value="Em negociação">Em negociação</SelectItem>
                                 <SelectItem value="Proposta enviada">Proposta enviada</SelectItem>
+                                <SelectItem value="Enviado para Implantação">
+                                  Enviado para Implantação
+                                </SelectItem>
                                 <SelectItem value="Cliente Efetivado">Cliente Efetivado</SelectItem>
                                 <SelectItem value="Perdido">Perdido</SelectItem>
                               </SelectContent>
@@ -938,6 +960,7 @@ export default function CRMPage() {
                       classificacao: editingProspect.classificacao || 'Frio',
                       data_followup: editingProspect.data_followup || '',
                       observacoes: editingProspect.observacoes || '',
+                      data_assinatura: editingProspect.data_assinatura || '',
                     }}
                   />
                 )}

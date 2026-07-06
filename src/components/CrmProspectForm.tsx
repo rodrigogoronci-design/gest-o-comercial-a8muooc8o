@@ -38,6 +38,7 @@ export const prospectFormSchema = z.object({
   classificacao: z.string().optional(),
   data_followup: z.string().optional(),
   observacoes: z.string().optional(),
+  data_assinatura: z.string().optional(),
 })
 
 export type ProspectFormValues = z.infer<typeof prospectFormSchema>
@@ -71,6 +72,7 @@ export function CrmProspectForm({
       classificacao: 'Frio',
       data_followup: '',
       observacoes: '',
+      data_assinatura: '',
     },
   })
 
@@ -87,6 +89,7 @@ export function CrmProspectForm({
         classificacao: initialData.classificacao || 'Frio',
         data_followup: initialData.data_followup || '',
         observacoes: initialData.observacoes || '',
+        data_assinatura: initialData.data_assinatura || '',
       })
     }
   }, [initialData, form])
@@ -413,7 +416,7 @@ export function CrmProspectForm({
                             'Contato inicial',
                             'Em negociação',
                             'Proposta enviada',
-                            'Fechado',
+                            'Enviado para Implantação',
                             'Cliente Efetivado',
                             'Perdido',
                           ].includes(field.value) && (
@@ -425,6 +428,9 @@ export function CrmProspectForm({
                           <SelectItem value="Contato inicial">Contato inicial</SelectItem>
                           <SelectItem value="Em negociação">Em negociação</SelectItem>
                           <SelectItem value="Proposta enviada">Proposta enviada</SelectItem>
+                          <SelectItem value="Enviado para Implantação">
+                            Enviado para Implantação
+                          </SelectItem>
                           <SelectItem value="Cliente Efetivado">Cliente Efetivado</SelectItem>
                           <SelectItem value="Perdido">Perdido</SelectItem>
                         </SelectContent>
@@ -470,6 +476,19 @@ export function CrmProspectForm({
                   )}
                 />
               </div>
+              <FormField
+                control={form.control}
+                name="data_assinatura"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data da Assinatura do Contrato</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="observacoes"
