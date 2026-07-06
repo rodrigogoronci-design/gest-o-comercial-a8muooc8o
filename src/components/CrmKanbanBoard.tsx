@@ -39,7 +39,6 @@ const KANBAN_COLUMNS = [
   'Contato inicial',
   'Em negociação',
   'Proposta enviada',
-  'Fechado',
   'Cliente Efetivado',
   'Perdido',
 ]

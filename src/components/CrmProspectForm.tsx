@@ -425,7 +425,6 @@ export function CrmProspectForm({
                           <SelectItem value="Contato inicial">Contato inicial</SelectItem>
                           <SelectItem value="Em negociação">Em negociação</SelectItem>
                           <SelectItem value="Proposta enviada">Proposta enviada</SelectItem>
-                          <SelectItem value="Fechado">Fechado</SelectItem>
                           <SelectItem value="Cliente Efetivado">Cliente Efetivado</SelectItem>
                           <SelectItem value="Perdido">Perdido</SelectItem>
                         </SelectContent>

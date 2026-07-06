@@ -453,7 +453,7 @@ export default function CRMPage() {
       return 'bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-200'
     if (s === 'Proposta enviada')
       return 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200 border-indigo-200'
-    if (s === 'Contrato assinado' || s === 'Fechado')
+    if (s === 'Contrato assinado')
       return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200'
     if (s === 'Cliente Efetivado')
       return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200'
@@ -732,7 +732,6 @@ export default function CRMPage() {
                                 <SelectItem value="Contato inicial">Contato inicial</SelectItem>
                                 <SelectItem value="Em negociação">Em negociação</SelectItem>
                                 <SelectItem value="Proposta enviada">Proposta enviada</SelectItem>
-                                <SelectItem value="Fechado">Fechado</SelectItem>
                                 <SelectItem value="Cliente Efetivado">Cliente Efetivado</SelectItem>
                                 <SelectItem value="Perdido">Perdido</SelectItem>
                               </SelectContent>
