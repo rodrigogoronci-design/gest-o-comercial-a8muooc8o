@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase/client'
+import { formatCurrency } from '@/lib/formatters'
 
 type PlanoSaude = {
   id: string
@@ -42,6 +43,12 @@ export function CrmDiagnosticoForm({
   const [isLoadingPlanos, setIsLoadingPlanos] = useState(true)
   const [uploadingField, setUploadingField] = useState<string | null>(null)
   const { toast } = useToast()
+
+  useEffect(() => {
+    setSelectedPlanoId(initialPlanoId || '')
+    setPropostaUrl(initialPropostaUrl || null)
+    setContratoUrl(initialContratoUrl || null)
+  }, [initialPlanoId, initialPropostaUrl, initialContratoUrl])
 
   useEffect(() => {
     const fetchPlanos = async () => {
@@ -297,7 +304,11 @@ export function CrmDiagnosticoForm({
                     ) : (
                       planos.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
-                          {p.descricao} {p.codigo ? `(${p.codigo})` : ''}
+                          {p.descricao}
+                          {p.codigo ? ` (${p.codigo})` : ''}
+                          {p.valor_titular != null && p.valor_titular > 0
+                            ? ` — ${formatCurrency(p.valor_titular)}/mês`
+                            : ''}
                         </SelectItem>
                       ))
                     )}

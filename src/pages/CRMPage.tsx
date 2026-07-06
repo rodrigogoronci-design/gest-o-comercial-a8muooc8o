@@ -1032,6 +1032,7 @@ export default function CRMPage() {
               >
                 {editingProspect && (
                   <CrmDiagnosticoForm
+                    key={editingProspect.id}
                     prospectId={editingProspect.id}
                     initialPlanoId={editingProspect.plano_id}
                     initialPropostaUrl={editingProspect.proposta_url}
