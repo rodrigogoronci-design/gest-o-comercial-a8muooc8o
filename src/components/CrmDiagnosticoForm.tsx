@@ -116,6 +116,8 @@ export function CrmDiagnosticoForm({
   )
   const [observacoes, setObservacoes] = useState('')
   const [valorImplantacao, setValorImplantacao] = useState(0)
+  const [descontoMensalidade, setDescontoMensalidade] = useState(0)
+  const [tipoDesconto, setTipoDesconto] = useState('valor')
   const [propostaUrl, setPropostaUrl] = useState<string | null>(null)
   const [contratoUrl, setContratoUrl] = useState<string | null>(null)
 
@@ -193,6 +195,9 @@ export function CrmDiagnosticoForm({
           }
           if (diag.observacoes) setObservacoes(diag.observacoes)
           if (diag.valor_implantacao !== undefined) setValorImplantacao(diag.valor_implantacao)
+          if (diag.desconto_mensalidade !== undefined)
+            setDescontoMensalidade(diag.desconto_mensalidade)
+          if (diag.tipo_desconto !== undefined) setTipoDesconto(diag.tipo_desconto)
         } else if (initialPlanoId) {
           const plan = activePlans.find((p) => p.id === initialPlanoId)
           if (plan) {
@@ -285,7 +290,10 @@ export function CrmDiagnosticoForm({
         plano_selecionado: planoSelecionado,
         modulos_adicionais: Object.values(modulosSelecionados),
         valor_total_mensal: totalValue,
+        valor_total: totalValue,
         valor_implantacao: valorImplantacao,
+        desconto_mensalidade: descontoMensalidade,
+        tipo_desconto: tipoDesconto,
         observacoes,
       }
 
@@ -491,6 +499,29 @@ export function CrmDiagnosticoForm({
                 onChange={(e) => setValorImplantacao(Number(e.target.value))}
                 className="h-8 text-sm"
               />
+            </div>
+            <div className="space-y-1">
+              <span className="text-sm text-muted-foreground">Desconto Mensalidade (R$)</span>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={descontoMensalidade}
+                onChange={(e) => setDescontoMensalidade(Number(e.target.value))}
+                className="h-8 text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <span className="text-sm text-muted-foreground">Tipo de Desconto</span>
+              <Select value={tipoDesconto} onValueChange={setTipoDesconto}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="valor">Valor (R$)</SelectItem>
+                  <SelectItem value="percentual">Percentual (%)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="pt-4 border-t border-primary/10 flex justify-between items-center">
               <span className="font-semibold text-primary">Valor Total Mensal</span>

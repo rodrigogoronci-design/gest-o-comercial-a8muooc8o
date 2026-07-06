@@ -215,7 +215,9 @@ export default function CRMPage() {
           tags: p.tags,
           contrato_url: p.contrato_assinado_url,
           valor_implantacao: diagExisting.valor_implantacao || 0,
-          valor_total: diagExisting.valor_total_mensal || 0,
+          valor_total: diagExisting.valor_total || diagExisting.valor_total_mensal || 0,
+          desconto_mensalidade: diagExisting.desconto_mensalidade || 0,
+          tipo_desconto: diagExisting.tipo_desconto || 'valor',
           modulos: modulosExisting,
           plano_id: p.plano_id || null,
         })
@@ -226,6 +228,7 @@ export default function CRMPage() {
           status: 'Cliente Efetivado',
           ultima_interacao: new Date().toISOString(),
           data_assinatura: new Date().toISOString().split('T')[0],
+          cliente_id: p.cliente_id,
         })
         .eq('id', p.id)
       await supabase
@@ -296,7 +299,9 @@ export default function CRMPage() {
           contrato_url: p.contrato_assinado_url,
           documentos_urls: p.proposta_url ? [p.proposta_url] : [],
           valor_implantacao: diag.valor_implantacao || 0,
-          valor_total: diag.valor_total_mensal || 0,
+          valor_total: diag.valor_total || diag.valor_total_mensal || 0,
+          desconto_mensalidade: diag.desconto_mensalidade || 0,
+          tipo_desconto: diag.tipo_desconto || 'valor',
           modulos: modulosFromDiag,
           plano_id: p.plano_id || null,
         },
@@ -319,6 +324,7 @@ export default function CRMPage() {
         status: 'Cliente Efetivado',
         ultima_interacao: new Date().toISOString(),
         data_assinatura: new Date().toISOString().split('T')[0],
+        cliente_id: newClient.id,
       })
       .eq('id', p.id)
 
