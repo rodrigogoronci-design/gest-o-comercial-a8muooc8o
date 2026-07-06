@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useForm } from 'react-hook-form'
 import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,169 +18,262 @@ import { formatCurrency } from '@/lib/formatters'
 import { Loader2, Save } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const FALLBACK_PLANS = [
-  { codigo: 'ERP-NONE', descricao: 'Nenhum (Somente Módulos / Upsell)', preco: 0 },
-  { codigo: 'ERP-TMS-50', descricao: 'TMS-50', preco: 399 },
-  { codigo: 'ERP-TMS-100', descricao: 'TMS-100', preco: 657 },
-  { codigo: 'ERP-TMS-200', descricao: 'TMS-200', preco: 585 },
-  { codigo: 'ERP-TMS-300', descricao: 'TMS-300', preco: 877 },
-  { codigo: 'ERP-TMS-500', descricao: 'TMS-500', preco: 1097 },
-  { codigo: 'ERP-MTS-1000', descricao: 'MTS-1000', preco: 1427 },
-  { codigo: 'ERP-TMS-3000', descricao: 'TMS-3000', preco: 1757 },
-  { codigo: 'ERP-TMS-5000', descricao: 'TMS-5000', preco: 2087 },
-  { codigo: 'ERP-TMS-5000-PLUS', descricao: 'TMS-5000+', preco: 2487 },
-]
-
-const FALLBACK_MODULES = [
-  { codigo: 'MOD-EDI', descricao: 'EDI', preco: 250 },
-  { codigo: 'MOD-CTRL-VIAGEM', descricao: 'Controle de Viagem', preco: 199 },
-  { codigo: 'MOD-FROTA-10', descricao: 'Frota (até 10 placas)', preco: 250 },
-  { codigo: 'MOD-MEDICAO', descricao: 'Medição', preco: 350 },
-  { codigo: 'MOD-FRACIONADO', descricao: 'Fracionado', preco: 350 },
-  { codigo: 'MOD-TCI-TCE', descricao: 'Bloco TCI e TCE (Transportes)', preco: 350 },
-  { codigo: 'MOD-FUNDO-PROT', descricao: 'Fundo de proteção', preco: 1201 },
-  { codigo: 'MOD-CALENDARIO', descricao: 'Calendário', preco: 165 },
-  { codigo: 'MOD-PAINEL', descricao: 'Painel de Informações', preco: 165 },
-  { codigo: 'MOD-FISCAL', descricao: 'Fiscal', preco: 199 },
-  { codigo: 'MOD-DFE', descricao: 'DF-e', preco: 165 },
-  { codigo: 'MOD-POWER-BI', descricao: 'Power BI', preco: 199 },
-  { codigo: 'MOD-SL-TRIP', descricao: 'SL-Trip', preco: 299 },
-  { codigo: 'MOD-SL-TRACK', descricao: 'SL-Track', preco: 299 },
-  { codigo: 'MOD-HOMOL-BANC', descricao: 'Homologação Bancaria', preco: 200 },
-  { codigo: 'MOD-CIOT', descricao: 'CIOT', preco: 250 },
-  { codigo: 'MOD-TORRE-CTRL', descricao: 'Torre de Controle Logística', preco: 299 },
-]
-
-export interface CrmDiagnosticoFormProps {
-  prospect: any
-  onSuccess?: () => void
-  onCancel?: () => void
+interface PlanItem {
+  id: string
+  codigo: string
+  descricao: string
+  preco: number
 }
 
-export function CrmDiagnosticoForm({ prospect, onSuccess, onCancel }: CrmDiagnosticoFormProps) {
+const FALLBACK_PLANS: PlanItem[] = [
+  { id: 'none', codigo: 'ERP-NONE', descricao: 'Nenhum (Somente Módulos / Upsell)', preco: 0 },
+  { id: 'erp-50', codigo: 'ERP-TMS-50', descricao: 'TMS-50', preco: 399 },
+  { id: 'erp-100', codigo: 'ERP-TMS-100', descricao: 'TMS-100', preco: 657 },
+  { id: 'erp-200', codigo: 'ERP-TMS-200', descricao: 'TMS-200', preco: 585 },
+  { id: 'erp-300', codigo: 'ERP-TMS-300', descricao: 'TMS-300', preco: 877 },
+  { id: 'erp-500', codigo: 'ERP-TMS-500', descricao: 'TMS-500', preco: 1097 },
+  { id: 'erp-1000', codigo: 'ERP-MTS-1000', descricao: 'MTS-1000', preco: 1427 },
+  { id: 'erp-3000', codigo: 'ERP-TMS-3000', descricao: 'TMS-3000', preco: 1757 },
+  { id: 'erp-5000', codigo: 'ERP-TMS-5000', descricao: 'TMS-5000', preco: 2087 },
+  { id: 'erp-5000p', codigo: 'ERP-TMS-5000-PLUS', descricao: 'TMS-5000+', preco: 2487 },
+]
+
+const FALLBACK_MODULES: PlanItem[] = [
+  { id: 'mod-edi', codigo: 'MOD-EDI', descricao: 'EDI', preco: 250 },
+  { id: 'mod-ctrl-viagem', codigo: 'MOD-CTRL-VIAGEM', descricao: 'Controle de Viagem', preco: 199 },
+  { id: 'mod-frota', codigo: 'MOD-FROTA-10', descricao: 'Frota (até 10 placas)', preco: 250 },
+  { id: 'mod-medicao', codigo: 'MOD-MEDICAO', descricao: 'Medição', preco: 350 },
+  { id: 'mod-fracionado', codigo: 'MOD-FRACIONADO', descricao: 'Fracionado', preco: 350 },
+  {
+    id: 'mod-tci-tce',
+    codigo: 'MOD-TCI-TCE',
+    descricao: 'Bloco TCI e TCE (Transportes)',
+    preco: 350,
+  },
+  { id: 'mod-fundo-prot', codigo: 'MOD-FUNDO-PROT', descricao: 'Fundo de proteção', preco: 1201 },
+  { id: 'mod-calendario', codigo: 'MOD-CALENDARIO', descricao: 'Calendário', preco: 165 },
+  { id: 'mod-painel', codigo: 'MOD-PAINEL', descricao: 'Painel de Informações', preco: 165 },
+  { id: 'mod-fiscal', codigo: 'MOD-FISCAL', descricao: 'Fiscal', preco: 199 },
+  { id: 'mod-dfe', codigo: 'MOD-DFE', descricao: 'DF-e', preco: 165 },
+  { id: 'mod-power-bi', codigo: 'MOD-POWER-BI', descricao: 'Power BI', preco: 199 },
+  { id: 'mod-sl-trip', codigo: 'MOD-SL-TRIP', descricao: 'SL-Trip', preco: 299 },
+  { id: 'mod-sl-track', codigo: 'MOD-SL-TRACK', descricao: 'SL-Track', preco: 299 },
+  { id: 'mod-homol-banc', codigo: 'MOD-HOMOL-BANC', descricao: 'Homologação Bancaria', preco: 200 },
+  { id: 'mod-ciot', codigo: 'MOD-CIOT', descricao: 'CIOT', preco: 250 },
+  {
+    id: 'mod-torre-ctrl',
+    codigo: 'MOD-TORRE-CTRL',
+    descricao: 'Torre de Controle Logística',
+    preco: 299,
+  },
+]
+
+interface PlanoSelecionado {
+  id: string
+  nome: string
+  valor_original: number
+  valor_negociado: number
+}
+
+interface ModuloAdicional {
+  id: string
+  nome: string
+  valor_original: number
+  valor_negociado: number
+  selecionado: boolean
+}
+
+export interface CrmDiagnosticoFormProps {
+  prospectId: string
+  initialPlanoId?: string | null
+  initialPropostaUrl?: string | null
+  initialContratoUrl?: string | null
+  onSave?: () => void
+}
+
+export function CrmDiagnosticoForm({
+  prospectId,
+  initialPlanoId,
+  onSave,
+}: CrmDiagnosticoFormProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
 
-  const [plans, setPlans] = useState(FALLBACK_PLANS)
-  const [modules, setModules] = useState(FALLBACK_MODULES)
-
-  const form = useForm({
-    defaultValues: {
-      planoSelecionado: prospect?.diagnostico?.planoSelecionado || null,
-      modulosSelecionados: prospect?.diagnostico?.modulosSelecionados || {},
-      observacoes: prospect?.diagnostico?.observacoes || '',
-    },
-  })
+  const [plans, setPlans] = useState<PlanItem[]>(FALLBACK_PLANS)
+  const [modules, setModules] = useState<PlanItem[]>(FALLBACK_MODULES)
+  const [planoSelecionado, setPlanoSelecionado] = useState<PlanoSelecionado | null>(null)
+  const [modulosSelecionados, setModulosSelecionados] = useState<Record<string, ModuloAdicional>>(
+    {},
+  )
+  const [observacoes, setObservacoes] = useState('')
 
   useEffect(() => {
-    const loadConfig = async () => {
+    const loadData = async () => {
       try {
-        const { data, error } = await supabase
+        const { data: planData } = await supabase
           .from('planos_saude')
-          .select('codigo, descricao, valor_titular')
-          .or(`codigo.like.ERP-%,codigo.like.MOD-%`)
+          .select('id, codigo, descricao, valor_titular')
+          .or('codigo.like.ERP-%,codigo.like.MOD-%')
 
-        if (data && data.length > 0) {
-          const fetchedPlans = data
+        let activePlans = FALLBACK_PLANS
+        let activeModules = FALLBACK_MODULES
+
+        if (planData && planData.length > 0) {
+          const fetchedPlans = planData
             .filter((d) => d.codigo.startsWith('ERP-'))
-            .map((d) => ({ codigo: d.codigo, descricao: d.descricao, preco: d.valor_titular }))
-          const fetchedMods = data
+            .map((d) => ({
+              id: d.id,
+              codigo: d.codigo,
+              descricao: d.descricao,
+              preco: d.valor_titular || 0,
+            }))
+          const fetchedMods = planData
             .filter((d) => d.codigo.startsWith('MOD-'))
-            .map((d) => ({ codigo: d.codigo, descricao: d.descricao, preco: d.valor_titular }))
+            .map((d) => ({
+              id: d.id,
+              codigo: d.codigo,
+              descricao: d.descricao,
+              preco: d.valor_titular || 0,
+            }))
 
           if (fetchedPlans.length > 0) {
             const none = fetchedPlans.find((p) => p.codigo === 'ERP-NONE')
             const rest = fetchedPlans
               .filter((p) => p.codigo !== 'ERP-NONE')
               .sort((a, b) => a.preco - b.preco)
-            setPlans(none ? [none, ...rest] : rest)
+            activePlans = none ? [none, ...rest] : rest
+            setPlans(activePlans)
           }
           if (fetchedMods.length > 0) {
-            setModules(fetchedMods)
+            activeModules = fetchedMods
+            setModules(activeModules)
+          }
+        }
+
+        const { data: prospect } = await supabase
+          .from('crm_prospects')
+          .select('diagnostico, plano_id')
+          .eq('id', prospectId)
+          .single()
+
+        if (prospect?.diagnostico) {
+          const diag = prospect.diagnostico as any
+          if (diag.plano_selecionado) {
+            setPlanoSelecionado(diag.plano_selecionado)
+          } else if (prospect.plano_id || initialPlanoId) {
+            const pid = prospect.plano_id || initialPlanoId
+            const plan = activePlans.find((p) => p.id === pid)
+            if (plan) {
+              setPlanoSelecionado({
+                id: plan.id,
+                nome: plan.descricao,
+                valor_original: plan.preco,
+                valor_negociado: plan.preco,
+              })
+            }
+          }
+          if (Array.isArray(diag.modulos_adicionais)) {
+            const modMap: Record<string, ModuloAdicional> = {}
+            diag.modulos_adicionais.forEach((m: ModuloAdicional) => {
+              if (m.selecionado) modMap[m.id] = m
+            })
+            setModulosSelecionados(modMap)
+          }
+          if (diag.observacoes) setObservacoes(diag.observacoes)
+        } else if (initialPlanoId) {
+          const plan = activePlans.find((p) => p.id === initialPlanoId)
+          if (plan) {
+            setPlanoSelecionado({
+              id: plan.id,
+              nome: plan.descricao,
+              valor_original: plan.preco,
+              valor_negociado: plan.preco,
+            })
           }
         }
       } catch (err) {
-        console.error('Error loading plans:', err)
+        console.error('Error loading data:', err)
       } finally {
         setIsLoading(false)
       }
     }
-    loadConfig()
-  }, [])
+    loadData()
+  }, [prospectId, initialPlanoId])
 
-  const onSubmit = async (values: any) => {
+  const totalValue =
+    (planoSelecionado?.valor_negociado || 0) +
+    Object.values(modulosSelecionados).reduce((acc, m) => acc + (m.valor_negociado || 0), 0)
+
+  const handlePlanChange = (planId: string) => {
+    const plan = plans.find((p) => p.id === planId)
+    if (!plan) return
+    setPlanoSelecionado({
+      id: plan.id,
+      nome: plan.descricao,
+      valor_original: plan.preco,
+      valor_negociado: plan.preco,
+    })
+  }
+
+  const handleModuleToggle = (mod: PlanItem, checked: boolean) => {
+    if (checked) {
+      setModulosSelecionados((prev) => ({
+        ...prev,
+        [mod.id]: {
+          id: mod.id,
+          nome: mod.descricao,
+          valor_original: mod.preco,
+          valor_negociado: mod.preco,
+          selecionado: true,
+        },
+      }))
+    } else {
+      setModulosSelecionados((prev) => {
+        const updated = { ...prev }
+        delete updated[mod.id]
+        return updated
+      })
+    }
+  }
+
+  const handlePlanoNegociadoChange = (value: number) => {
+    setPlanoSelecionado((prev) => (prev ? { ...prev, valor_negociado: value } : null))
+  }
+
+  const handleModuloNegociadoChange = (modId: string, value: number) => {
+    setModulosSelecionados((prev) => ({
+      ...prev,
+      [modId]: { ...prev[modId], valor_negociado: value },
+    }))
+  }
+
+  const onSubmit = async () => {
     setIsSaving(true)
     try {
-      const currentDiagnostico = prospect.diagnostico || {}
-      const updatedDiagnostico = {
-        ...currentDiagnostico,
-        ...values,
+      const diagnostico = {
+        plano_selecionado: planoSelecionado,
+        modulos_adicionais: Object.values(modulosSelecionados),
+        valor_total_mensal: totalValue,
+        observacoes,
       }
+
+      const planoId =
+        planoSelecionado && planoSelecionado.id !== 'none' ? planoSelecionado.id : null
 
       const { error } = await supabase
         .from('crm_prospects')
-        .update({ diagnostico: updatedDiagnostico })
-        .eq('id', prospect.id)
+        .update({ diagnostico, plano_id: planoId })
+        .eq('id', prospectId)
 
       if (error) throw error
 
-      toast({ title: 'Condições comerciais salvas com sucesso!' })
-      onSuccess?.()
+      toast({ title: 'Diagnóstico salvo com sucesso!' })
+      onSave?.()
     } catch (error: any) {
-      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' })
+      toast({ title: 'Erro ao salvar diagnóstico. Tente novamente.', variant: 'destructive' })
     } finally {
       setIsSaving(false)
-    }
-  }
-
-  const selectedPlan = form.watch('planoSelecionado')
-  const selectedModules = form.watch('modulosSelecionados') || {}
-
-  const totalValue =
-    (selectedPlan?.precoNegociado || 0) +
-    Object.values(selectedModules).reduce(
-      (acc: number, mod: any) => acc + (mod?.precoNegociado || 0),
-      0,
-    )
-
-  const handlePlanChange = (val: string) => {
-    if (val === 'ERP-NONE') {
-      form.setValue('planoSelecionado', {
-        codigo: 'ERP-NONE',
-        descricao: 'Nenhum (Somente Módulos / Upsell)',
-        precoPadrao: 0,
-        precoNegociado: 0,
-      })
-      return
-    }
-    const plan = plans.find((p) => p.codigo === val)
-    if (plan) {
-      form.setValue('planoSelecionado', {
-        codigo: plan.codigo,
-        descricao: plan.descricao,
-        precoPadrao: plan.preco,
-        precoNegociado: plan.preco,
-      })
-    }
-  }
-
-  const handleModuleToggle = (mod: any, checked: boolean) => {
-    const current = form.getValues('modulosSelecionados') || {}
-    if (checked) {
-      form.setValue('modulosSelecionados', {
-        ...current,
-        [mod.codigo]: {
-          codigo: mod.codigo,
-          descricao: mod.descricao,
-          precoPadrao: mod.preco,
-          precoNegociado: mod.preco,
-        },
-      })
-    } else {
-      const updated = { ...current }
-      delete updated[mod.codigo]
-      form.setValue('modulosSelecionados', updated)
     }
   }
 
@@ -194,7 +286,13 @@ export function CrmDiagnosticoForm({ prospect, onSuccess, onCancel }: CrmDiagnos
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        onSubmit()
+      }}
+      className="space-y-6"
+    >
       <Card>
         <CardHeader className="pb-4">
           <CardTitle>Configuração Comercial</CardTitle>
@@ -204,18 +302,17 @@ export function CrmDiagnosticoForm({ prospect, onSuccess, onCancel }: CrmDiagnos
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* PLANO */}
           <div className="space-y-4">
             <div className="flex flex-col gap-4 md:flex-row md:items-start">
               <div className="flex-1 space-y-2">
                 <Label>Plano de Franquia</Label>
-                <Select value={selectedPlan?.codigo || ''} onValueChange={handlePlanChange}>
+                <Select value={planoSelecionado?.id || ''} onValueChange={handlePlanChange}>
                   <SelectTrigger className="bg-background">
                     <SelectValue placeholder="Selecione um plano" />
                   </SelectTrigger>
                   <SelectContent>
                     {plans.map((p) => (
-                      <SelectItem key={p.codigo} value={p.codigo}>
+                      <SelectItem key={p.id} value={p.id}>
                         {p.descricao} {p.preco > 0 ? `- ${formatCurrency(p.preco)}` : ''}
                       </SelectItem>
                     ))}
@@ -223,17 +320,15 @@ export function CrmDiagnosticoForm({ prospect, onSuccess, onCancel }: CrmDiagnos
                 </Select>
               </div>
 
-              {selectedPlan && selectedPlan.codigo !== 'ERP-NONE' && (
+              {planoSelecionado && planoSelecionado.id !== 'none' && (
                 <div className="w-full md:w-48 space-y-2 animate-in fade-in zoom-in duration-300">
                   <Label className="text-primary font-medium">Valor do Plano (Negociado)</Label>
                   <Input
                     type="number"
                     min="0"
                     step="0.01"
-                    value={selectedPlan.precoNegociado}
-                    onChange={(e) =>
-                      form.setValue('planoSelecionado.precoNegociado', Number(e.target.value))
-                    }
+                    value={planoSelecionado.valor_negociado}
+                    onChange={(e) => handlePlanoNegociadoChange(Number(e.target.value))}
                     className="border-primary/50 focus-visible:ring-primary"
                   />
                 </div>
@@ -241,15 +336,14 @@ export function CrmDiagnosticoForm({ prospect, onSuccess, onCancel }: CrmDiagnos
             </div>
           </div>
 
-          {/* MODULES */}
           <div className="space-y-3 pt-4 border-t">
             <Label className="text-base">Módulos Adicionais</Label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {modules.map((mod) => {
-                const isChecked = !!selectedModules[mod.codigo]
+                const isChecked = !!modulosSelecionados[mod.id]
                 return (
                   <div
-                    key={mod.codigo}
+                    key={mod.id}
                     className={cn(
                       'border rounded-lg p-3 transition-colors duration-200',
                       isChecked ? 'bg-primary/5 border-primary/30' : 'bg-card hover:bg-accent/50',
@@ -257,14 +351,14 @@ export function CrmDiagnosticoForm({ prospect, onSuccess, onCancel }: CrmDiagnos
                   >
                     <div className="flex items-start space-x-3">
                       <Checkbox
-                        id={`mod-${mod.codigo}`}
+                        id={`mod-${mod.id}`}
                         checked={isChecked}
                         onCheckedChange={(c) => handleModuleToggle(mod, c as boolean)}
                         className="mt-1"
                       />
                       <div className="flex-1 space-y-1">
                         <Label
-                          htmlFor={`mod-${mod.codigo}`}
+                          htmlFor={`mod-${mod.id}`}
                           className="font-medium cursor-pointer leading-snug block"
                         >
                           {mod.descricao} -{' '}
@@ -282,12 +376,9 @@ export function CrmDiagnosticoForm({ prospect, onSuccess, onCancel }: CrmDiagnos
                               type="number"
                               min="0"
                               step="0.01"
-                              value={selectedModules[mod.codigo]?.precoNegociado ?? mod.preco}
+                              value={modulosSelecionados[mod.id]?.valor_negociado ?? mod.preco}
                               onChange={(e) =>
-                                form.setValue(
-                                  `modulosSelecionados.${mod.codigo}.precoNegociado`,
-                                  Number(e.target.value),
-                                )
+                                handleModuloNegociadoChange(mod.id, Number(e.target.value))
                               }
                               className="h-8 w-32 text-sm"
                             />
@@ -312,7 +403,8 @@ export function CrmDiagnosticoForm({ prospect, onSuccess, onCancel }: CrmDiagnos
             <Textarea
               placeholder="Adicione informações adicionais sobre as necessidades operacionais e comerciais do cliente..."
               className="min-h-[120px]"
-              {...form.register('observacoes')}
+              value={observacoes}
+              onChange={(e) => setObservacoes(e.target.value)}
             />
           </CardContent>
         </Card>
@@ -325,24 +417,24 @@ export function CrmDiagnosticoForm({ prospect, onSuccess, onCancel }: CrmDiagnos
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Plano</span>
               <span className="font-medium">
-                {formatCurrency(selectedPlan?.precoNegociado || 0)}
+                {formatCurrency(planoSelecionado?.valor_negociado || 0)}
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">
-                Módulos ({Object.keys(selectedModules).length})
+                Módulos ({Object.keys(modulosSelecionados).length})
               </span>
               <span className="font-medium">
                 {formatCurrency(
-                  Object.values(selectedModules).reduce(
-                    (acc: number, m: any) => acc + (m?.precoNegociado || 0),
+                  Object.values(modulosSelecionados).reduce(
+                    (acc, m) => acc + (m.valor_negociado || 0),
                     0,
                   ),
                 )}
               </span>
             </div>
             <div className="pt-4 border-t border-primary/10 flex justify-between items-center">
-              <span className="font-semibold text-primary">Total Mensal</span>
+              <span className="font-semibold text-primary">Valor Total</span>
               <span className="text-xl font-bold text-primary">{formatCurrency(totalValue)}</span>
             </div>
           </CardContent>
@@ -350,18 +442,13 @@ export function CrmDiagnosticoForm({ prospect, onSuccess, onCancel }: CrmDiagnos
       </div>
 
       <div className="flex justify-end gap-3">
-        {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancelar
-          </Button>
-        )}
         <Button type="submit" disabled={isSaving}>
           {isSaving ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : (
             <Save className="w-4 h-4 mr-2" />
           )}
-          Salvar Condições
+          Salvar
         </Button>
       </div>
     </form>
