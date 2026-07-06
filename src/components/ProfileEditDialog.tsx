@@ -71,14 +71,13 @@ export function ProfileEditDialog({
     setIsDeleting(false)
   }
 
-  const avatarUrl = profile?.avatar_url
+  const avatarUrl = profile?.avatar_url ?? null
   const fallback = profile?.nome
     ? profile.nome
         .split(' ')
         .slice(0, 2)
-        .map((n) => n[0])
+        .map((n) => (n[0] || '').toUpperCase())
         .join('')
-        .toUpperCase()
     : '?'
   const avatarGender = profile?.image_gender === 'female' ? 'female' : 'male'
   const avatarSeed = profile?.id ? profile.id.slice(0, 8) : 'default'

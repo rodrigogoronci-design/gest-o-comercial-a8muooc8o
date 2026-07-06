@@ -18,7 +18,7 @@ import { useNavigate } from 'react-router-dom'
 
 export function AppHeader() {
   const { signOut } = useAuth()
-  const { profile, updateProfile, uploadAvatar, deleteAvatar } = useColaboradorProfile()
+  const { profile, loading, updateProfile, uploadAvatar, deleteAvatar } = useColaboradorProfile()
   const navigate = useNavigate()
 
   const displayName = profile?.nome || 'Carregando...'
@@ -71,14 +71,20 @@ export function AppHeader() {
                 <span className="text-xs text-muted-foreground">{displayCargo}</span>
               </div>
               <Avatar className="h-9 w-9 border shadow-sm">
-                <AvatarImage
-                  src={
-                    avatarUrl ||
-                    `https://img.usecurling.com/ppl/thumbnail?gender=${avatarGender}&seed=${avatarSeed}`
-                  }
-                  alt="Avatar"
-                />
-                <AvatarFallback>{fallback}</AvatarFallback>
+                {loading ? (
+                  <AvatarFallback className="text-xs text-muted-foreground">···</AvatarFallback>
+                ) : (
+                  <>
+                    <AvatarImage
+                      src={
+                        avatarUrl ||
+                        `https://img.usecurling.com/ppl/thumbnail?gender=${avatarGender}&seed=${avatarSeed}`
+                      }
+                      alt="Avatar"
+                    />
+                    <AvatarFallback>{fallback}</AvatarFallback>
+                  </>
+                )}
               </Avatar>
             </button>
           </DropdownMenuTrigger>
