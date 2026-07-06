@@ -1,411 +1,369 @@
-import { useState, useEffect, useCallback } from 'react'
-import { FileText, UploadCloud, Eye, Trash2, Loader2, FileCheck2, ShieldCheck } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { supabase } from '@/lib/supabase/client'
 import { formatCurrency } from '@/lib/formatters'
+import { Loader2, Save } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
-type PlanoSaude = {
-  id: string
-  descricao: string
-  codigo: string
-  valor_titular: number | null
-  com_coparticipacao: boolean | null
-  padrao: boolean | null
-}
-
-type PlanGroupConfig = {
-  label: string
-  filter: (p: PlanoSaude) => boolean
-}
-
-const PLAN_GROUPS: PlanGroupConfig[] = [
-  { label: 'Planos Padrão', filter: (p) => !!p.padrao },
-  { label: 'Sem Coparticipação', filter: (p) => !p.padrao && !p.com_coparticipacao },
-  { label: 'Com Coparticipação', filter: (p) => !p.padrao && !!p.com_coparticipacao },
+const FALLBACK_PLANS = [
+  { codigo: 'ERP-NONE', descricao: 'Nenhum (Somente Módulos / Upsell)', preco: 0 },
+  { codigo: 'ERP-TMS-50', descricao: 'TMS-50', preco: 399 },
+  { codigo: 'ERP-TMS-100', descricao: 'TMS-100', preco: 657 },
+  { codigo: 'ERP-TMS-200', descricao: 'TMS-200', preco: 585 },
+  { codigo: 'ERP-TMS-300', descricao: 'TMS-300', preco: 877 },
+  { codigo: 'ERP-TMS-500', descricao: 'TMS-500', preco: 1097 },
+  { codigo: 'ERP-MTS-1000', descricao: 'MTS-1000', preco: 1427 },
+  { codigo: 'ERP-TMS-3000', descricao: 'TMS-3000', preco: 1757 },
+  { codigo: 'ERP-TMS-5000', descricao: 'TMS-5000', preco: 2087 },
+  { codigo: 'ERP-TMS-5000-PLUS', descricao: 'TMS-5000+', preco: 2487 },
 ]
 
-export function CrmDiagnosticoForm({
-  prospectId,
-  initialPlanoId,
-  initialPropostaUrl,
-  initialContratoUrl,
-  onSave,
-}: {
-  prospectId: string
-  initialPlanoId?: string | null
-  initialPropostaUrl?: string | null
-  initialContratoUrl?: string | null
-  onSave: () => void
-}) {
-  const [planos, setPlanos] = useState<PlanoSaude[]>([])
-  const [selectedPlanoId, setSelectedPlanoId] = useState<string>(initialPlanoId || '')
-  const [propostaUrl, setPropostaUrl] = useState<string | null>(initialPropostaUrl || null)
-  const [contratoUrl, setContratoUrl] = useState<string | null>(initialContratoUrl || null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isLoadingPlanos, setIsLoadingPlanos] = useState(true)
-  const [uploadingField, setUploadingField] = useState<string | null>(null)
+const FALLBACK_MODULES = [
+  { codigo: 'MOD-EDI', descricao: 'EDI', preco: 250 },
+  { codigo: 'MOD-CTRL-VIAGEM', descricao: 'Controle de Viagem', preco: 199 },
+  { codigo: 'MOD-FROTA-10', descricao: 'Frota (até 10 placas)', preco: 250 },
+  { codigo: 'MOD-MEDICAO', descricao: 'Medição', preco: 350 },
+  { codigo: 'MOD-FRACIONADO', descricao: 'Fracionado', preco: 350 },
+  { codigo: 'MOD-TCI-TCE', descricao: 'Bloco TCI e TCE (Transportes)', preco: 350 },
+  { codigo: 'MOD-FUNDO-PROT', descricao: 'Fundo de proteção', preco: 1201 },
+  { codigo: 'MOD-CALENDARIO', descricao: 'Calendário', preco: 165 },
+  { codigo: 'MOD-PAINEL', descricao: 'Painel de Informações', preco: 165 },
+  { codigo: 'MOD-FISCAL', descricao: 'Fiscal', preco: 199 },
+  { codigo: 'MOD-DFE', descricao: 'DF-e', preco: 165 },
+  { codigo: 'MOD-POWER-BI', descricao: 'Power BI', preco: 199 },
+  { codigo: 'MOD-SL-TRIP', descricao: 'SL-Trip', preco: 299 },
+  { codigo: 'MOD-SL-TRACK', descricao: 'SL-Track', preco: 299 },
+  { codigo: 'MOD-HOMOL-BANC', descricao: 'Homologação Bancaria', preco: 200 },
+  { codigo: 'MOD-CIOT', descricao: 'CIOT', preco: 250 },
+  { codigo: 'MOD-TORRE-CTRL', descricao: 'Torre de Controle Logística', preco: 299 },
+]
+
+export interface CrmDiagnosticoFormProps {
+  prospect: any
+  onSuccess?: () => void
+  onCancel?: () => void
+}
+
+export function CrmDiagnosticoForm({ prospect, onSuccess, onCancel }: CrmDiagnosticoFormProps) {
+  const [isSaving, setIsSaving] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
 
-  useEffect(() => {
-    setSelectedPlanoId(initialPlanoId || '')
-    setPropostaUrl(initialPropostaUrl || null)
-    setContratoUrl(initialContratoUrl || null)
-  }, [initialPlanoId, initialPropostaUrl, initialContratoUrl])
+  const [plans, setPlans] = useState(FALLBACK_PLANS)
+  const [modules, setModules] = useState(FALLBACK_MODULES)
+
+  const form = useForm({
+    defaultValues: {
+      planoSelecionado: prospect?.diagnostico?.planoSelecionado || null,
+      modulosSelecionados: prospect?.diagnostico?.modulosSelecionados || {},
+      observacoes: prospect?.diagnostico?.observacoes || '',
+    },
+  })
 
   useEffect(() => {
-    const fetchPlanos = async () => {
-      const { data, error } = await supabase
-        .from('planos_saude')
-        .select('id, descricao, codigo, valor_titular, com_coparticipacao, padrao')
-        .order('descricao', { ascending: true })
-      if (!error && data) {
-        setPlanos(data as PlanoSaude[])
+    const loadConfig = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('planos_saude')
+          .select('codigo, descricao, valor_titular')
+          .or(`codigo.like.ERP-%,codigo.like.MOD-%`)
+
+        if (data && data.length > 0) {
+          const fetchedPlans = data
+            .filter((d) => d.codigo.startsWith('ERP-'))
+            .map((d) => ({ codigo: d.codigo, descricao: d.descricao, preco: d.valor_titular }))
+          const fetchedMods = data
+            .filter((d) => d.codigo.startsWith('MOD-'))
+            .map((d) => ({ codigo: d.codigo, descricao: d.descricao, preco: d.valor_titular }))
+
+          if (fetchedPlans.length > 0) {
+            const none = fetchedPlans.find((p) => p.codigo === 'ERP-NONE')
+            const rest = fetchedPlans
+              .filter((p) => p.codigo !== 'ERP-NONE')
+              .sort((a, b) => a.preco - b.preco)
+            setPlans(none ? [none, ...rest] : rest)
+          }
+          if (fetchedMods.length > 0) {
+            setModules(fetchedMods)
+          }
+        }
+      } catch (err) {
+        console.error('Error loading plans:', err)
+      } finally {
+        setIsLoading(false)
       }
-      setIsLoadingPlanos(false)
     }
-    fetchPlanos()
+    loadConfig()
   }, [])
 
-  const uploadFile = async (file: File, folder: string): Promise<string | null> => {
-    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const fileName = `${prospectId}/${folder}-${Date.now()}-${safeName}`
-    const { error } = await supabase.storage.from('prospect-documents').upload(fileName, file)
-    if (error) {
-      toast({ title: 'Erro no upload', description: error.message, variant: 'destructive' })
-      return null
+  const onSubmit = async (values: any) => {
+    setIsSaving(true)
+    try {
+      const currentDiagnostico = prospect.diagnostico || {}
+      const updatedDiagnostico = {
+        ...currentDiagnostico,
+        ...values,
+      }
+
+      const { error } = await supabase
+        .from('crm_prospects')
+        .update({ diagnostico: updatedDiagnostico })
+        .eq('id', prospect.id)
+
+      if (error) throw error
+
+      toast({ title: 'Condições comerciais salvas com sucesso!' })
+      onSuccess?.()
+    } catch (error: any) {
+      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' })
+    } finally {
+      setIsSaving(false)
     }
-    return fileName
   }
 
-  const removeFile = async (path: string) => {
-    const { error } = await supabase.storage.from('prospect-documents').remove([path])
-    if (error) {
-      toast({
-        title: 'Erro ao remover arquivo',
-        description: error.message,
-        variant: 'destructive',
+  const selectedPlan = form.watch('planoSelecionado')
+  const selectedModules = form.watch('modulosSelecionados') || {}
+
+  const totalValue =
+    (selectedPlan?.precoNegociado || 0) +
+    Object.values(selectedModules).reduce(
+      (acc: number, mod: any) => acc + (mod?.precoNegociado || 0),
+      0,
+    )
+
+  const handlePlanChange = (val: string) => {
+    if (val === 'ERP-NONE') {
+      form.setValue('planoSelecionado', {
+        codigo: 'ERP-NONE',
+        descricao: 'Nenhum (Somente Módulos / Upsell)',
+        precoPadrao: 0,
+        precoNegociado: 0,
+      })
+      return
+    }
+    const plan = plans.find((p) => p.codigo === val)
+    if (plan) {
+      form.setValue('planoSelecionado', {
+        codigo: plan.codigo,
+        descricao: plan.descricao,
+        precoPadrao: plan.preco,
+        precoNegociado: plan.preco,
       })
     }
   }
 
-  const handleFileUpload = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>, field: 'proposta' | 'contrato') => {
-      const file = e.target.files?.[0]
-      if (!file) return
-      setUploadingField(field)
-
-      try {
-        if (field === 'proposta' && propostaUrl) {
-          await removeFile(propostaUrl)
-        }
-        if (field === 'contrato' && contratoUrl) {
-          await removeFile(contratoUrl)
-        }
-
-        const uploadedPath = await uploadFile(file, field)
-        if (!uploadedPath) return
-
-        const dbField = field === 'proposta' ? 'proposta_url' : 'contrato_assinado_url'
-        const { error: dbError } = await supabase
-          .from('crm_prospects')
-          .update({ [dbField]: uploadedPath })
-          .eq('id', prospectId)
-
-        if (dbError) throw dbError
-
-        if (field === 'proposta') {
-          setPropostaUrl(uploadedPath)
-        } else {
-          setContratoUrl(uploadedPath)
-        }
-
-        toast({ title: 'Sucesso', description: 'Arquivo anexado com sucesso!' })
-      } catch (err: any) {
-        toast({ title: 'Erro', description: err.message, variant: 'destructive' })
-      } finally {
-        setUploadingField(null)
-        e.target.value = ''
-      }
-    },
-    [propostaUrl, contratoUrl, prospectId, toast],
-  )
-
-  const handleRemoveFile = async (field: 'proposta' | 'contrato') => {
-    const currentPath = field === 'proposta' ? propostaUrl : contratoUrl
-    if (!currentPath) return
-    setUploadingField(field)
-
-    try {
-      await removeFile(currentPath)
-      const dbField = field === 'proposta' ? 'proposta_url' : 'contrato_assinado_url'
-      const { error } = await supabase
-        .from('crm_prospects')
-        .update({ [dbField]: null })
-        .eq('id', prospectId)
-      if (error) throw error
-
-      if (field === 'proposta') {
-        setPropostaUrl(null)
-      } else {
-        setContratoUrl(null)
-      }
-      toast({ title: 'Sucesso', description: 'Arquivo removido.' })
-    } catch (err: any) {
-      toast({ title: 'Erro', description: err.message, variant: 'destructive' })
-    } finally {
-      setUploadingField(null)
+  const handleModuleToggle = (mod: any, checked: boolean) => {
+    const current = form.getValues('modulosSelecionados') || {}
+    if (checked) {
+      form.setValue('modulosSelecionados', {
+        ...current,
+        [mod.codigo]: {
+          codigo: mod.codigo,
+          descricao: mod.descricao,
+          precoPadrao: mod.preco,
+          precoNegociado: mod.preco,
+        },
+      })
+    } else {
+      const updated = { ...current }
+      delete updated[mod.codigo]
+      form.setValue('modulosSelecionados', updated)
     }
   }
 
-  const handleViewFile = (path: string) => {
-    const { data } = supabase.storage.from('prospect-documents').getPublicUrl(path)
-    window.open(data.publicUrl, '_blank')
-  }
-
-  const handleSavePlano = async () => {
-    setIsSubmitting(true)
-    const { error } = await supabase
-      .from('crm_prospects')
-      .update({ plano_id: selectedPlanoId || null })
-      .eq('id', prospectId)
-    setIsSubmitting(false)
-    if (error) {
-      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' })
-      return
-    }
-    toast({ title: 'Sucesso', description: 'Plano contratado salvo com sucesso!' })
-    onSave()
-  }
-
-  const getFileName = (path: string) => {
-    const parts = path.split('/')
-    return parts[parts.length - 1] || path
-  }
-
-  const FileUploadCard = ({
-    field,
-    label,
-    description,
-    fileUrl,
-  }: {
-    field: 'proposta' | 'contrato'
-    label: string
-    description: string
-    fileUrl: string | null
-  }) => {
-    const isUploading = uploadingField === field
+  if (isLoading) {
     return (
-      <Card className="border-slate-200/60 shadow-sm">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold text-slate-800">{label}</CardTitle>
-            {fileUrl && (
-              <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border border-emerald-200">
-                <FileCheck2 className="h-3 w-3 mr-1" /> Anexado
-              </Badge>
-            )}
-          </div>
-          <CardDescription className="text-xs">{description}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {fileUrl ? (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-emerald-50 border border-emerald-100 p-3 rounded-lg gap-3">
-              <div className="flex items-center gap-2 text-emerald-700 overflow-hidden min-w-0">
-                <FileText className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm font-medium truncate" title={getFileName(fileUrl)}>
-                  {getFileName(fileUrl)}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 bg-white border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
-                  onClick={() => handleViewFile(fileUrl)}
-                  disabled={isUploading}
-                >
-                  <Eye className="w-4 h-4 mr-1.5" /> Visualizar
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={() => handleRemoveFile(field)}
-                  disabled={isUploading}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                className="hidden"
-                id={`upload-${field}`}
-                disabled={isUploading}
-                onChange={(e) => handleFileUpload(e, field)}
-              />
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={isUploading}
-                onClick={() => document.getElementById(`upload-${field}`)?.click()}
-                className="gap-2"
-              >
-                {isUploading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <UploadCloud className="w-4 h-4" />
-                )}
-                {isUploading ? 'Enviando...' : 'Fazer Upload'}
-              </Button>
-              <span className="text-sm text-slate-500">
-                Formatos aceitos: PDF, DOC, DOCX, JPG, PNG
-              </span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="flex justify-center p-8">
+        <Loader2 className="animate-spin h-8 w-8 text-primary" />
+      </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="border-slate-200/60 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold text-slate-800">Plano Contratado</CardTitle>
-          <CardDescription className="text-xs">
-            Selecione o plano de saúde contratado pelo cliente antes do envio para implantação.
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle>Configuração Comercial</CardTitle>
+          <CardDescription>
+            Defina o plano e módulos de interesse para gerar propostas personalizadas para este
+            lead.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="space-y-2">
-              <Label htmlFor="plano-select" className="text-sm font-medium text-slate-700">
-                Plano Contratado
-              </Label>
-              {isLoadingPlanos ? (
-                <div className="flex items-center gap-2 text-sm text-slate-500">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Carregando planos...
-                </div>
-              ) : (
-                <Select value={selectedPlanoId} onValueChange={setSelectedPlanoId}>
-                  <SelectTrigger id="plano-select" className="bg-white">
-                    <SelectValue placeholder="Selecione um plano..." />
+        <CardContent className="space-y-6">
+          {/* PLANO */}
+          <div className="space-y-4">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start">
+              <div className="flex-1 space-y-2">
+                <Label>Plano de Franquia</Label>
+                <Select value={selectedPlan?.codigo || ''} onValueChange={handlePlanChange}>
+                  <SelectTrigger className="bg-background">
+                    <SelectValue placeholder="Selecione um plano" />
                   </SelectTrigger>
                   <SelectContent>
-                    {planos.length === 0 ? (
-                      <SelectItem value="_empty" disabled>
-                        Nenhum plano cadastrado
+                    {plans.map((p) => (
+                      <SelectItem key={p.codigo} value={p.codigo}>
+                        {p.descricao} {p.preco > 0 ? `- ${formatCurrency(p.preco)}` : ''}
                       </SelectItem>
-                    ) : (
-                      <>
-                        {PLAN_GROUPS.map((group) => {
-                          const items = planos.filter(group.filter)
-                          if (items.length === 0) return null
-                          return (
-                            <SelectGroup key={group.label}>
-                              <SelectLabel className="text-xs font-semibold text-slate-500">
-                                {group.label}
-                              </SelectLabel>
-                              {items.map((p) => (
-                                <SelectItem key={p.id} value={p.id}>
-                                  {p.descricao}
-                                  {p.codigo ? ` (${p.codigo})` : ''}
-                                  {p.valor_titular != null && p.valor_titular > 0
-                                    ? ` — ${formatCurrency(p.valor_titular)}/mês`
-                                    : ''}
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          )
-                        })}
-                      </>
-                    )}
+                    ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {selectedPlan && selectedPlan.codigo !== 'ERP-NONE' && (
+                <div className="w-full md:w-48 space-y-2 animate-in fade-in zoom-in duration-300">
+                  <Label className="text-primary font-medium">Valor do Plano (Negociado)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={selectedPlan.precoNegociado}
+                    onChange={(e) =>
+                      form.setValue('planoSelecionado.precoNegociado', Number(e.target.value))
+                    }
+                    className="border-primary/50 focus-visible:ring-primary"
+                  />
+                </div>
               )}
             </div>
-            <div className="flex justify-end pt-1">
-              <Button
-                type="button"
-                onClick={handleSavePlano}
-                disabled={isSubmitting || isLoadingPlanos}
-                size="sm"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  'Salvar Plano'
-                )}
-              </Button>
+          </div>
+
+          {/* MODULES */}
+          <div className="space-y-3 pt-4 border-t">
+            <Label className="text-base">Módulos Adicionais</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {modules.map((mod) => {
+                const isChecked = !!selectedModules[mod.codigo]
+                return (
+                  <div
+                    key={mod.codigo}
+                    className={cn(
+                      'border rounded-lg p-3 transition-colors duration-200',
+                      isChecked ? 'bg-primary/5 border-primary/30' : 'bg-card hover:bg-accent/50',
+                    )}
+                  >
+                    <div className="flex items-start space-x-3">
+                      <Checkbox
+                        id={`mod-${mod.codigo}`}
+                        checked={isChecked}
+                        onCheckedChange={(c) => handleModuleToggle(mod, c as boolean)}
+                        className="mt-1"
+                      />
+                      <div className="flex-1 space-y-1">
+                        <Label
+                          htmlFor={`mod-${mod.codigo}`}
+                          className="font-medium cursor-pointer leading-snug block"
+                        >
+                          {mod.descricao} -{' '}
+                          <span className="text-muted-foreground font-normal">
+                            {formatCurrency(mod.preco)}
+                          </span>
+                        </Label>
+
+                        {isChecked && (
+                          <div className="mt-3 flex items-center gap-2 animate-in slide-in-from-top-1">
+                            <Label className="text-xs text-muted-foreground whitespace-nowrap">
+                              Valor Negociado:
+                            </Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={selectedModules[mod.codigo]?.precoNegociado ?? mod.preco}
+                              onChange={(e) =>
+                                form.setValue(
+                                  `modulosSelecionados.${mod.codigo}.precoNegociado`,
+                                  Number(e.target.value),
+                                )
+                              }
+                              className="h-8 w-32 text-sm"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <FileUploadCard
-        field="proposta"
-        label="Anexar Proposta"
-        description="Documento da proposta comercial enviada ao cliente."
-        fileUrl={propostaUrl}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-lg">Observações do Diagnóstico</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              placeholder="Adicione informações adicionais sobre as necessidades operacionais e comerciais do cliente..."
+              className="min-h-[120px]"
+              {...form.register('observacoes')}
+            />
+          </CardContent>
+        </Card>
 
-      <FileUploadCard
-        field="contrato"
-        label="Anexar Contrato Assinado"
-        description="Contrato assinado pelo cliente, necessário antes da ativação."
-        fileUrl={contratoUrl}
-      />
-
-      <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-lg p-4">
-        <ShieldCheck className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-blue-800">
-          <p className="font-semibold mb-1">Checklist de Implantação</p>
-          <p className="text-blue-700">
-            Certifique-se de que o plano contratado e os documentos (proposta e contrato assinado)
-            estejam anexados antes de mover o lead para "Enviado para Implantação".
-          </p>
-          <div className="flex flex-wrap gap-3 mt-2">
-            <span
-              className={`text-xs font-medium ${selectedPlanoId ? 'text-emerald-700' : 'text-slate-500'}`}
-            >
-              {selectedPlanoId ? '✓' : '○'} Plano selecionado
-            </span>
-            <span
-              className={`text-xs font-medium ${propostaUrl ? 'text-emerald-700' : 'text-slate-500'}`}
-            >
-              {propostaUrl ? '✓' : '○'} Proposta anexada
-            </span>
-            <span
-              className={`text-xs font-medium ${contratoUrl ? 'text-emerald-700' : 'text-slate-500'}`}
-            >
-              {contratoUrl ? '✓' : '○'} Contrato assinado
-            </span>
-          </div>
-        </div>
+        <Card className="bg-primary/5 border-primary/20">
+          <CardHeader>
+            <CardTitle className="text-lg text-primary">Resumo da Proposta</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Plano</span>
+              <span className="font-medium">
+                {formatCurrency(selectedPlan?.precoNegociado || 0)}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                Módulos ({Object.keys(selectedModules).length})
+              </span>
+              <span className="font-medium">
+                {formatCurrency(
+                  Object.values(selectedModules).reduce(
+                    (acc: number, m: any) => acc + (m?.precoNegociado || 0),
+                    0,
+                  ),
+                )}
+              </span>
+            </div>
+            <div className="pt-4 border-t border-primary/10 flex justify-between items-center">
+              <span className="font-semibold text-primary">Total Mensal</span>
+              <span className="text-xl font-bold text-primary">{formatCurrency(totalValue)}</span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+
+      <div className="flex justify-end gap-3">
+        {onCancel && (
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancelar
+          </Button>
+        )}
+        <Button type="submit" disabled={isSaving}>
+          {isSaving ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4 mr-2" />
+          )}
+          Salvar Condições
+        </Button>
+      </div>
+    </form>
   )
 }
