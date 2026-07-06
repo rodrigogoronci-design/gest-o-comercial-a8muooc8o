@@ -74,6 +74,8 @@ export type CrmProspect = {
   proposta_url?: string | null
   data_assinatura?: string | null
   cliente_id?: string | null
+  plano_id?: string | null
+  contrato_assinado_url?: string | null
 }
 
 export default function CRMPage() {
@@ -1031,9 +1033,10 @@ export default function CRMPage() {
                 {editingProspect && (
                   <CrmDiagnosticoForm
                     prospectId={editingProspect.id}
-                    initialData={editingProspect.diagnostico}
+                    initialPlanoId={editingProspect.plano_id}
+                    initialPropostaUrl={editingProspect.proposta_url}
+                    initialContratoUrl={editingProspect.contrato_assinado_url}
                     onSave={() => {
-                      setEditingProspect(null)
                       fetchProspects()
                     }}
                   />
