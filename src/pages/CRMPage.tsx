@@ -198,9 +198,35 @@ export default function CRMPage() {
 
     if (p.cliente_id) {
       setIsSubmitting(true)
+      const diagExisting = (p.diagnostico as any) || {}
+      const modulosExisting = Array.isArray(diagExisting.modulos_adicionais)
+        ? diagExisting.modulos_adicionais
+            .filter((m: any) => m.selecionado)
+            .map((m: any) => ({ id: m.id, nome: m.nome, valor: m.valor_negociado }))
+        : []
+      await supabase
+        .from('clientes')
+        .update({
+          nome: p.empresa,
+          email: p.email,
+          telefone: p.telefone,
+          endereco: p.endereco,
+          diagnostico: p.diagnostico,
+          tags: p.tags,
+          contrato_url: p.contrato_assinado_url,
+          valor_implantacao: diagExisting.valor_implantacao || 0,
+          valor_total: diagExisting.valor_total_mensal || 0,
+          modulos: modulosExisting,
+          plano_id: p.plano_id || null,
+        })
+        .eq('id', p.cliente_id)
       await supabase
         .from('crm_prospects')
-        .update({ status: 'Cliente Efetivado', ultima_interacao: new Date().toISOString() })
+        .update({
+          status: 'Cliente Efetivado',
+          ultima_interacao: new Date().toISOString(),
+          data_assinatura: new Date().toISOString().split('T')[0],
+        })
         .eq('id', p.id)
       await supabase
         .from('crm_propostas')
@@ -272,6 +298,7 @@ export default function CRMPage() {
           valor_implantacao: diag.valor_implantacao || 0,
           valor_total: diag.valor_total_mensal || 0,
           modulos: modulosFromDiag,
+          plano_id: p.plano_id || null,
         },
       ])
       .select()
@@ -288,7 +315,11 @@ export default function CRMPage() {
 
     await supabase
       .from('crm_prospects')
-      .update({ status: 'Cliente Efetivado', ultima_interacao: new Date().toISOString() })
+      .update({
+        status: 'Cliente Efetivado',
+        ultima_interacao: new Date().toISOString(),
+        data_assinatura: new Date().toISOString().split('T')[0],
+      })
       .eq('id', p.id)
 
     await supabase
@@ -1058,6 +1089,19 @@ export default function CRMPage() {
                     initialPlanoId={editingProspect.plano_id}
                     initialPropostaUrl={editingProspect.proposta_url}
                     initialContratoUrl={editingProspect.contrato_assinado_url}
+                    isEfetivado={editingProspect.status === 'Cliente Efetivado'}
+                    onEfetivar={async () => {
+                      if (!editingProspect) return
+                      const { data: latest } = await supabase
+                        .from('crm_prospects')
+                        .select('*')
+                        .eq('id', editingProspect.id)
+                        .single()
+                      if (latest) {
+                        await handleEfetivarCliente(latest as CrmProspect)
+                        setEditingProspect(null)
+                      }
+                    }}
                     onSave={() => {
                       fetchProspects()
                     }}

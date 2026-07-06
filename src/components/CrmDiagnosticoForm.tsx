@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { formatCurrency } from '@/lib/formatters'
-import { Loader2, Save } from 'lucide-react'
+import { Loader2, Save, UserCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CrmDocumentUpload } from '@/components/CrmDocumentUpload'
 
@@ -90,6 +90,8 @@ export interface CrmDiagnosticoFormProps {
   initialPropostaUrl?: string | null
   initialContratoUrl?: string | null
   onSave?: () => void
+  onEfetivar?: () => void | Promise<void>
+  isEfetivado?: boolean
 }
 
 export function CrmDiagnosticoForm({
@@ -98,7 +100,10 @@ export function CrmDiagnosticoForm({
   initialPropostaUrl,
   initialContratoUrl,
   onSave,
+  onEfetivar,
+  isEfetivado,
 }: CrmDiagnosticoFormProps) {
+  const [isEfetivating, setIsEfetivating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
@@ -273,7 +278,7 @@ export function CrmDiagnosticoForm({
     onSave?.()
   }
 
-  const onSubmit = async () => {
+  const onSubmit = async (): Promise<boolean> => {
     setIsSaving(true)
     try {
       const diagnostico = {
@@ -301,11 +306,23 @@ export function CrmDiagnosticoForm({
 
       toast({ title: 'Diagnóstico salvo com sucesso!' })
       onSave?.()
+      return true
     } catch (error: any) {
       toast({ title: 'Erro ao salvar diagnóstico. Tente novamente.', variant: 'destructive' })
+      return false
     } finally {
       setIsSaving(false)
     }
+  }
+
+  const handleEfetivarClick = async () => {
+    if (!onEfetivar) return
+    setIsEfetivating(true)
+    const saved = await onSubmit()
+    if (saved) {
+      await onEfetivar()
+    }
+    setIsEfetivating(false)
   }
 
   if (isLoading) {
@@ -508,6 +525,64 @@ export function CrmDiagnosticoForm({
           </div>
         </CardContent>
       </Card>
+
+      {onEfetivar && (
+        <Card
+          className={cn(
+            'border-2',
+            isEfetivado
+              ? 'border-emerald-300 bg-emerald-50/50'
+              : contratoUrl
+                ? 'border-emerald-200 bg-emerald-50/30'
+                : 'border-amber-200 bg-amber-50/30',
+          )}
+        >
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div
+                  className={cn(
+                    'rounded-full p-2 shrink-0',
+                    isEfetivado ? 'bg-emerald-100' : 'bg-amber-100',
+                  )}
+                >
+                  <UserCheck
+                    className={cn('h-5 w-5', isEfetivado ? 'text-emerald-600' : 'text-amber-600')}
+                  />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">
+                    {isEfetivado ? 'Cliente Efetivado' : 'Efetivar Cliente'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {isEfetivado
+                      ? 'Este prospect já foi convertido em cliente ativo.'
+                      : contratoUrl
+                        ? 'O contrato assinado foi enviado. Clique para converter este prospect em cliente ativo.'
+                        : 'Faça o upload do contrato assinado acima antes de efetivar o cliente.'}
+                  </p>
+                </div>
+              </div>
+              {!isEfetivado && (
+                <Button
+                  type="button"
+                  variant={contratoUrl ? 'default' : 'secondary'}
+                  disabled={!contratoUrl || isSaving || isEfetivating}
+                  onClick={handleEfetivarClick}
+                  className="gap-2 shrink-0"
+                >
+                  {isEfetivating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <UserCheck className="h-4 w-4" />
+                  )}
+                  Efetivar Cliente
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex justify-end gap-3">
         <Button type="submit" disabled={isSaving}>
