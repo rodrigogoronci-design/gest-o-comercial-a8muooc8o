@@ -187,6 +187,15 @@ export default function CRMPage() {
   }
 
   const handleEfetivarCliente = async (p: CrmProspect) => {
+    if (!p.contrato_assinado_url) {
+      return toast({
+        title: 'Contrato assinado obrigatório',
+        description:
+          'Faça o upload do contrato assinado na aba Diagnóstico antes de efetivar o cliente.',
+        variant: 'destructive',
+      })
+    }
+
     if (p.cliente_id) {
       setIsSubmitting(true)
       await supabase
@@ -239,6 +248,13 @@ export default function CRMPage() {
       })
     }
 
+    const diag = (p.diagnostico as any) || {}
+    const modulosFromDiag = Array.isArray(diag.modulos_adicionais)
+      ? diag.modulos_adicionais
+          .filter((m: any) => m.selecionado)
+          .map((m: any) => ({ id: m.id, nome: m.nome, valor: m.valor_negociado }))
+      : []
+
     const { data: newClient, error: clientError } = await supabase
       .from('clientes')
       .insert([
@@ -251,6 +267,11 @@ export default function CRMPage() {
           diagnostico: p.diagnostico,
           tags: p.tags,
           status: 'Ativo',
+          contrato_url: p.contrato_assinado_url,
+          documentos_urls: p.proposta_url ? [p.proposta_url] : [],
+          valor_implantacao: diag.valor_implantacao || 0,
+          valor_total: diag.valor_total_mensal || 0,
+          modulos: modulosFromDiag,
         },
       ])
       .select()

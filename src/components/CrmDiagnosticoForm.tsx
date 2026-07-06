@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast'
 import { formatCurrency } from '@/lib/formatters'
 import { Loader2, Save } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { CrmDocumentUpload } from '@/components/CrmDocumentUpload'
 
 interface PlanItem {
   id: string
@@ -94,6 +95,8 @@ export interface CrmDiagnosticoFormProps {
 export function CrmDiagnosticoForm({
   prospectId,
   initialPlanoId,
+  initialPropostaUrl,
+  initialContratoUrl,
   onSave,
 }: CrmDiagnosticoFormProps) {
   const [isSaving, setIsSaving] = useState(false)
@@ -107,6 +110,9 @@ export function CrmDiagnosticoForm({
     {},
   )
   const [observacoes, setObservacoes] = useState('')
+  const [valorImplantacao, setValorImplantacao] = useState(0)
+  const [propostaUrl, setPropostaUrl] = useState<string | null>(null)
+  const [contratoUrl, setContratoUrl] = useState<string | null>(null)
 
   useEffect(() => {
     const loadData = async () => {
@@ -153,7 +159,7 @@ export function CrmDiagnosticoForm({
 
         const { data: prospect } = await supabase
           .from('crm_prospects')
-          .select('diagnostico, plano_id')
+          .select('diagnostico, plano_id, proposta_url, contrato_assinado_url')
           .eq('id', prospectId)
           .single()
 
@@ -181,6 +187,7 @@ export function CrmDiagnosticoForm({
             setModulosSelecionados(modMap)
           }
           if (diag.observacoes) setObservacoes(diag.observacoes)
+          if (diag.valor_implantacao !== undefined) setValorImplantacao(diag.valor_implantacao)
         } else if (initialPlanoId) {
           const plan = activePlans.find((p) => p.id === initialPlanoId)
           if (plan) {
@@ -192,6 +199,12 @@ export function CrmDiagnosticoForm({
             })
           }
         }
+
+        if (prospect?.proposta_url) setPropostaUrl(prospect.proposta_url)
+        else if (initialPropostaUrl) setPropostaUrl(initialPropostaUrl)
+
+        if (prospect?.contrato_assinado_url) setContratoUrl(prospect.contrato_assinado_url)
+        else if (initialContratoUrl) setContratoUrl(initialContratoUrl)
       } catch (err) {
         console.error('Error loading data:', err)
       } finally {
@@ -248,6 +261,18 @@ export function CrmDiagnosticoForm({
     }))
   }
 
+  const handlePropostaUrlChange = async (url: string | null) => {
+    setPropostaUrl(url)
+    await supabase.from('crm_prospects').update({ proposta_url: url }).eq('id', prospectId)
+    onSave?.()
+  }
+
+  const handleContratoUrlChange = async (url: string | null) => {
+    setContratoUrl(url)
+    await supabase.from('crm_prospects').update({ contrato_assinado_url: url }).eq('id', prospectId)
+    onSave?.()
+  }
+
   const onSubmit = async () => {
     setIsSaving(true)
     try {
@@ -255,6 +280,7 @@ export function CrmDiagnosticoForm({
         plano_selecionado: planoSelecionado,
         modulos_adicionais: Object.values(modulosSelecionados),
         valor_total_mensal: totalValue,
+        valor_implantacao: valorImplantacao,
         observacoes,
       }
 
@@ -263,7 +289,12 @@ export function CrmDiagnosticoForm({
 
       const { error } = await supabase
         .from('crm_prospects')
-        .update({ diagnostico, plano_id: planoId })
+        .update({
+          diagnostico,
+          plano_id: planoId,
+          proposta_url: propostaUrl,
+          contrato_assinado_url: contratoUrl,
+        })
         .eq('id', prospectId)
 
       if (error) throw error
@@ -433,13 +464,50 @@ export function CrmDiagnosticoForm({
                 )}
               </span>
             </div>
+            <div className="space-y-1">
+              <span className="text-sm text-muted-foreground">Valor Implantação (R$)</span>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={valorImplantacao}
+                onChange={(e) => setValorImplantacao(Number(e.target.value))}
+                className="h-8 text-sm"
+              />
+            </div>
             <div className="pt-4 border-t border-primary/10 flex justify-between items-center">
-              <span className="font-semibold text-primary">Valor Total</span>
+              <span className="font-semibold text-primary">Valor Total Mensal</span>
               <span className="text-xl font-bold text-primary">{formatCurrency(totalValue)}</span>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle>Documentos Finais</CardTitle>
+          <CardDescription>
+            Faça o upload da proposta aprovada e do contrato assinado para finalizar a negociação.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CrmDocumentUpload
+              prospectId={prospectId}
+              label="Proposta Aprovada"
+              currentUrl={propostaUrl}
+              onUrlChange={handlePropostaUrlChange}
+            />
+            <CrmDocumentUpload
+              prospectId={prospectId}
+              label="Contrato Assinado"
+              currentUrl={contratoUrl}
+              onUrlChange={handleContratoUrlChange}
+              required
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="flex justify-end gap-3">
         <Button type="submit" disabled={isSaving}>
