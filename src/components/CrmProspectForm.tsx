@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { cn } from '@/lib/utils'
 import { CrmProspectPropostasTab } from './CrmProspectPropostasTab'
+import { CrmDiagnosticoForm } from './CrmDiagnosticoForm'
+import { CrmHistorico } from './CrmHistorico'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, UploadCloud, FileText, Eye } from 'lucide-react'
@@ -50,14 +52,17 @@ export function CrmProspectForm({
 }: {
   onSubmit: (v: ProspectFormValues) => void
   isSubmitting?: boolean
-  initialData?: Partial<ProspectFormValues> & { id?: string }
+  initialData?: Partial<ProspectFormValues> & {
+    id?: string
+    plano_id?: string | null
+    proposta_url?: string | null
+    contrato_assinado_url?: string | null
+  }
 }) {
   const [isLoading, setIsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'dados' | 'propostas'>('dados')
-  const [propostaUrl, setPropostaUrl] = useState<string | null>(
-    (initialData as any)?.proposta_url || null,
+  const [activeTab, setActiveTab] = useState<'dados' | 'diagnostico' | 'historico' | 'propostas'>(
+    'dados',
   )
-  const [isUploadingProposta, setIsUploadingProposta] = useState(false)
   const { toast } = useToast()
   const form = useForm<ProspectFormValues>({
     resolver: zodResolver(prospectFormSchema),
@@ -236,24 +241,48 @@ export function CrmProspectForm({
   return (
     <div className="w-full">
       {initialData && initialData.id && (
-        <div className="flex space-x-1 p-1 bg-slate-100 rounded-lg mb-4">
+        <div className="flex space-x-1 p-1 bg-slate-100 rounded-lg mb-4 overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveTab('dados')}
             className={cn(
-              'flex-1 text-sm font-medium py-1.5 px-3 rounded-md transition-all',
+              'flex-1 text-sm font-medium py-1.5 px-3 rounded-md transition-all whitespace-nowrap',
               activeTab === 'dados'
                 ? 'bg-white shadow-sm text-slate-900'
                 : 'text-slate-600 hover:text-slate-900',
             )}
           >
-            Dados do Lead
+            Dados Básicos
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('diagnostico')}
+            className={cn(
+              'flex-1 text-sm font-medium py-1.5 px-3 rounded-md transition-all whitespace-nowrap',
+              activeTab === 'diagnostico'
+                ? 'bg-white shadow-sm text-slate-900'
+                : 'text-slate-600 hover:text-slate-900',
+            )}
+          >
+            Diagnóstico
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('historico')}
+            className={cn(
+              'flex-1 text-sm font-medium py-1.5 px-3 rounded-md transition-all whitespace-nowrap',
+              activeTab === 'historico'
+                ? 'bg-white shadow-sm text-slate-900'
+                : 'text-slate-600 hover:text-slate-900',
+            )}
+          >
+            Histórico
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('propostas')}
             className={cn(
-              'flex-1 text-sm font-medium py-1.5 px-3 rounded-md transition-all',
+              'flex-1 text-sm font-medium py-1.5 px-3 rounded-md transition-all whitespace-nowrap',
               activeTab === 'propostas'
                 ? 'bg-white shadow-sm text-slate-900'
                 : 'text-slate-600 hover:text-slate-900',
@@ -513,186 +542,23 @@ export function CrmProspectForm({
               </div>
             </form>
           </Form>
-
-          {initialData?.id && (
-            <div className="mt-6 border-t border-slate-200 pt-4">
-              <h4 className="text-sm font-semibold text-slate-800 mb-3">Anexar Proposta</h4>
-              {propostaUrl ? (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-emerald-50 border border-emerald-100 p-3 rounded-lg gap-3">
-                  <div className="flex items-center gap-2 text-emerald-700 overflow-hidden">
-                    <FileText className="w-5 h-5 flex-shrink-0" />
-                    <span className="text-sm font-medium truncate" title={propostaUrl}>
-                      {propostaUrl.replace(
-                        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}-\d+-/,
-                        '',
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 bg-white border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
-                      onClick={async () => {
-                        try {
-                          const { data: publicUrlData } = supabase.storage
-                            .from('proposals')
-                            .getPublicUrl(propostaUrl)
-                          window.open(publicUrlData.publicUrl, '_blank')
-                        } catch (e) {
-                          toast({ title: 'Erro ao abrir arquivo', variant: 'destructive' })
-                        }
-                      }}
-                    >
-                      <Eye className="w-4 h-4 mr-1.5" /> Visualizar Proposta
-                    </Button>
-                    <Input
-                      type="file"
-                      accept=".pdf"
-                      className="hidden"
-                      id="proposta-replace"
-                      disabled={isUploadingProposta}
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0]
-                        if (!file) return
-                        setIsUploadingProposta(true)
-                        try {
-                          await supabase.storage.from('proposals').remove([propostaUrl])
-
-                          const fileName = `${initialData.id}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-                          const { error: uploadError } = await supabase.storage
-                            .from('proposals')
-                            .upload(fileName, file)
-                          if (uploadError) throw uploadError
-
-                          const { error: dbError } = await supabase
-                            .from('crm_prospects')
-                            .update({ proposta_url: fileName })
-                            .eq('id', initialData.id)
-                          if (dbError) throw dbError
-
-                          setPropostaUrl(fileName)
-                          toast({ title: 'Proposta substituída com sucesso' })
-                        } catch (err: any) {
-                          toast({
-                            title: 'Erro ao substituir',
-                            description: err.message,
-                            variant: 'destructive',
-                          })
-                        } finally {
-                          setIsUploadingProposta(false)
-                          e.target.value = ''
-                        }
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 bg-white border-amber-200 text-amber-700 hover:bg-amber-100 hover:text-amber-800"
-                      onClick={() => document.getElementById('proposta-replace')?.click()}
-                      disabled={isUploadingProposta}
-                    >
-                      Substituir
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={async () => {
-                        setIsUploadingProposta(true)
-                        try {
-                          await supabase.storage.from('proposals').remove([propostaUrl])
-                          await supabase
-                            .from('crm_prospects')
-                            .update({ proposta_url: null })
-                            .eq('id', initialData.id)
-                          setPropostaUrl(null)
-                          toast({ title: 'Proposta removida com sucesso' })
-                        } catch (e: any) {
-                          toast({
-                            title: 'Erro ao remover',
-                            description: e.message,
-                            variant: 'destructive',
-                          })
-                        } finally {
-                          setIsUploadingProposta(false)
-                        }
-                      }}
-                      disabled={isUploadingProposta}
-                    >
-                      Remover
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                  <Input
-                    type="file"
-                    accept=".pdf"
-                    className="hidden"
-                    id="proposta-upload"
-                    disabled={isUploadingProposta}
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0]
-                      if (!file) return
-                      setIsUploadingProposta(true)
-                      try {
-                        const fileName = `${initialData.id}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-                        const { error: uploadError } = await supabase.storage
-                          .from('proposals')
-                          .upload(fileName, file)
-                        if (uploadError) throw uploadError
-
-                        const { error: dbError } = await supabase
-                          .from('crm_prospects')
-                          .update({ proposta_url: fileName })
-                          .eq('id', initialData.id)
-                        if (dbError) throw dbError
-
-                        setPropostaUrl(fileName)
-                        toast({ title: 'Proposta anexada com sucesso' })
-                      } catch (err: any) {
-                        toast({
-                          title: 'Erro ao anexar',
-                          description: err.message,
-                          variant: 'destructive',
-                        })
-                      } finally {
-                        setIsUploadingProposta(false)
-                        e.target.value = ''
-                      }
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={isUploadingProposta}
-                    onClick={() => document.getElementById('proposta-upload')?.click()}
-                  >
-                    {isUploadingProposta ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <UploadCloud className="w-4 h-4 mr-2" />
-                    )}
-                    Fazer Upload
-                  </Button>
-                  <span className="text-sm text-slate-500">
-                    Adicione o documento de proposta (formato .pdf)
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
         </>
-      ) : (
-        <CrmProspectPropostasTab
-          prospectId={initialData!.id!}
-          prospectName={initialData!.empresa || ''}
+      ) : activeTab === 'diagnostico' && initialData?.id ? (
+        <CrmDiagnosticoForm
+          prospectId={initialData.id}
+          initialPlanoId={initialData.plano_id}
+          initialPropostaUrl={initialData.proposta_url}
+          initialContratoUrl={initialData.contrato_assinado_url}
+          onSave={() => {}}
         />
-      )}
+      ) : activeTab === 'historico' && initialData?.id ? (
+        <CrmHistorico prospectId={initialData.id} />
+      ) : activeTab === 'propostas' && initialData?.id ? (
+        <CrmProspectPropostasTab
+          prospectId={initialData.id}
+          prospectName={initialData.empresa || ''}
+        />
+      ) : null}
     </div>
   )
 }
