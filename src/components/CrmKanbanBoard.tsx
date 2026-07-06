@@ -11,6 +11,7 @@ import {
   Trash2,
   MessageSquarePlus,
   Mail,
+  Building2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -177,6 +178,11 @@ export function CrmKanbanBoard({
                               <FileText className="w-3.5 h-3.5" />
                             </div>
                           )}
+                          {p.cliente_id && (
+                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100">
+                              Cliente
+                            </span>
+                          )}
                         </div>
                         {p.tags && p.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-0.5">
@@ -215,6 +221,17 @@ export function CrmKanbanBoard({
                               className="text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50"
                             >
                               <UserCheck className="mr-2 h-4 w-4" /> Efetivar Cliente
+                            </DropdownMenuItem>
+                          )}
+                          {p.cliente_id && (
+                            <DropdownMenuItem asChild>
+                              <Link
+                                to="/clientes"
+                                className="cursor-pointer w-full flex items-center"
+                              >
+                                <Building2 className="mr-2 h-4 w-4 text-emerald-600" />
+                                <span className="text-emerald-600">Ver Perfil do Cliente</span>
+                              </Link>
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuSeparator />

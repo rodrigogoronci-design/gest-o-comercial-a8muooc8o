@@ -73,6 +73,7 @@ export type CrmProspect = {
   tags: string[] | null
   proposta_url?: string | null
   data_assinatura?: string | null
+  cliente_id?: string | null
 }
 
 export default function CRMPage() {
@@ -184,6 +185,33 @@ export default function CRMPage() {
   }
 
   const handleEfetivarCliente = async (p: CrmProspect) => {
+    if (p.cliente_id) {
+      setIsSubmitting(true)
+      await supabase
+        .from('crm_prospects')
+        .update({ status: 'Cliente Efetivado', ultima_interacao: new Date().toISOString() })
+        .eq('id', p.id)
+      await supabase
+        .from('crm_propostas')
+        .update({ cliente_id: p.cliente_id })
+        .eq('prospect_id', p.id)
+      await supabase.from('crm_historico_interacoes').insert([
+        {
+          prospect_id: p.id,
+          tipo_contato: 'Sistema',
+          resumo: 'Conversão para Cliente',
+          detalhes: 'Prospecto convertido em cliente com sucesso.',
+        },
+      ])
+      setIsSubmitting(false)
+      toast({
+        title: 'Sucesso',
+        description: 'Prospecto marcado como cliente efetivado!',
+      })
+      fetchProspects()
+      return
+    }
+
     if (!p.cnpj) {
       return toast({
         title: 'CNPJ obrigatório',
@@ -398,10 +426,12 @@ export default function CRMPage() {
 
   const updateStatus = async (id: string, newStatus: string, oldStatus: string) => {
     if (newStatus === oldStatus) return
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('crm_prospects')
       .update({ status: newStatus, ultima_interacao: new Date().toISOString() })
       .eq('id', id)
+      .select()
+      .single()
     if (error) return toast({ title: 'Erro', description: error.message, variant: 'destructive' })
 
     await supabase.from('crm_historico_interacoes').insert([
@@ -412,6 +442,27 @@ export default function CRMPage() {
         detalhes: `Lead movido da fase "${oldStatus}" para "${newStatus}".`,
       },
     ])
+
+    if (newStatus === 'Enviado para Implantação') {
+      if (data?.cliente_id) {
+        toast({
+          title: 'Cliente ativado com sucesso!',
+          description: (
+            <div className="flex flex-col gap-1 mt-1">
+              <span>Prospect registrado como cliente no sistema.</span>
+              <Link to="/clientes" className="text-indigo-600 underline font-medium">
+                Ver Cliente
+              </Link>
+            </div>
+          ),
+        })
+      } else {
+        toast({
+          title: 'Status atualizado',
+          description: 'Cadastre o CNPJ do prospect para ativar o cliente automaticamente.',
+        })
+      }
+    }
 
     fetchProspects()
   }
@@ -931,6 +982,13 @@ export default function CRMPage() {
             <DialogDescription>
               Atualize informações, preencha o diagnóstico e acompanhe o histórico.
             </DialogDescription>
+            {editingProspect?.cliente_id && (
+              <Button variant="outline" size="sm" asChild className="mt-2 w-fit">
+                <Link to="/clientes">
+                  <UserCheck className="h-3.5 w-3.5 mr-1.5" /> Ver Perfil do Cliente
+                </Link>
+              </Button>
+            )}
           </DialogHeader>
           <div className="flex-1 overflow-hidden p-6 pt-4 bg-slate-50/30">
             <Tabs value={editingTab} onValueChange={setEditingTab} className="h-full flex flex-col">
