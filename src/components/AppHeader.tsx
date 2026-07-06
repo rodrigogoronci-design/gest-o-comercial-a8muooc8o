@@ -18,7 +18,7 @@ import { useNavigate } from 'react-router-dom'
 
 export function AppHeader() {
   const { signOut } = useAuth()
-  const { profile, updateProfile } = useColaboradorProfile()
+  const { profile, updateProfile, uploadAvatar, deleteAvatar } = useColaboradorProfile()
   const navigate = useNavigate()
 
   const displayName = profile?.nome || 'Carregando...'
@@ -93,6 +93,8 @@ export function AppHeader() {
             <ProfileEditDialog
               profile={profile}
               onUpdate={updateProfile}
+              onUploadAvatar={uploadAvatar}
+              onDeleteAvatar={deleteAvatar}
               trigger={
                 <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer">
                   <UserCog className="mr-2 h-4 w-4" />
