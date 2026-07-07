@@ -116,6 +116,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { DiagnosticoOperacional } from '@/components/DiagnosticoOperacional'
 import { useAuth } from '@/hooks/use-auth'
 import { CrmProspectPropostasTab } from '@/components/CrmProspectPropostasTab'
+import { ClientContractUpload } from '@/components/ClientContractUpload'
 
 export interface ClienteRecord {
   id: string
@@ -4335,7 +4336,27 @@ Obrigada.`)
                 className="mt-4 flex-1 bg-white border rounded-md shadow-sm"
               >
                 <ScrollArea className="h-[calc(100vh-14rem)]">
-                  <div className="min-w-[600px] bg-white">
+                  <div className="min-w-[600px] bg-white p-4">
+                    <ClientContractUpload
+                      clientId={viewingClient.id}
+                      clientName={viewingClient.name}
+                      currentUrl={viewingClient.contratoUrl || null}
+                      onUrlChange={(url) => {
+                        setViewingClient((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                contratoUrl: url,
+                                originalData: {
+                                  ...prev.originalData!,
+                                  contrato_url: url,
+                                },
+                              }
+                            : null,
+                        )
+                        loadClientes()
+                      }}
+                    />
                     <ContractDocument
                       name={viewingClient.name}
                       cnpj={viewingClient.cnpj}
