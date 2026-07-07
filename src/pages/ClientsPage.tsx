@@ -99,6 +99,7 @@ import { toast } from 'sonner'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { supabase } from '@/lib/supabase/client'
 import { calculateFinancialScore } from '@/lib/financial-score'
+import { fetchCnpjData } from '@/services/cnpj'
 import {
   PLANS,
   MODULES,
@@ -1009,21 +1010,26 @@ export default function ClientsPage() {
           return
         }
 
-        const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${clean}`)
-        if (res.ok) {
-          const d = await res.json()
-          if (d.razao_social && !form.getValues('nome')) form.setValue('nome', d.razao_social)
-          const addr = [d.logradouro, d.numero, d.bairro, d.municipio, d.uf]
-            .filter(Boolean)
-            .join(', ')
-          if (addr && !form.getValues('endereco')) form.setValue('endereco', addr)
-          if (d.ddd_telefone_1 && !form.getValues('telefone'))
-            form.setValue('telefone', d.ddd_telefone_1)
-          if (d.email && !form.getValues('email')) form.setValue('email', d.email)
+        const { data: cnpjData, error: cnpjError, notFound } = await fetchCnpjData(clean)
+        if (cnpjData) {
+          if (cnpjData.nome && !form.getValues('nome')) form.setValue('nome', cnpjData.nome)
+          if (cnpjData.endereco && !form.getValues('endereco'))
+            form.setValue('endereco', cnpjData.endereco)
+          if (cnpjData.telefone && !form.getValues('telefone'))
+            form.setValue('telefone', cnpjData.telefone)
+          if (cnpjData.email && !form.getValues('email')) form.setValue('email', cnpjData.email)
           toast.success('Dados preenchidos via Receita Federal.')
+        } else if (notFound) {
+          toast.warning(
+            'CNPJ não encontrado. Por favor, verifique os dados ou preencha manualmente.',
+          )
+        } else if (cnpjError) {
+          toast.warning(
+            'Serviço de consulta indisponível. Você pode preencher os dados manualmente.',
+          )
         }
       } catch {
-        toast.error('Erro ao consultar CNPJ na Receita Federal.')
+        toast.error('Erro ao consultar CNPJ. Preencha os dados manualmente.')
       } finally {
         setIsLoadingCnpj(false)
       }
@@ -2915,12 +2921,15 @@ Obrigada.`)
 
                   const clean = formatted.replace(/\D/g, '')
                   if (clean.length === 14 && !filialForm.nome) {
-                    fetch(`https://brasilapi.com.br/api/cnpj/v1/${clean}`)
-                      .then((res) => res.json())
-                      .then((data) => {
-                        if (data.razao_social) {
-                          setFilialForm((prev) => ({ ...prev, nome: data.razao_social }))
+                    fetchCnpjData(clean)
+                      .then(({ data: cnpjData, notFound }) => {
+                        if (cnpjData?.nome) {
+                          setFilialForm((prev) => ({ ...prev, nome: cnpjData.nome }))
                           toast.success('Razão Social preenchida via Receita Federal.')
+                        } else if (notFound) {
+                          toast.warning(
+                            'CNPJ não encontrado. Por favor, verifique os dados ou preencha manualmente.',
+                          )
                         }
                       })
                       .catch(() => {})
@@ -4014,16 +4023,15 @@ Obrigada.`)
                                         cnpjField.onChange(formatted)
 
                                         if (raw.length === 14) {
-                                          fetch(`https://brasilapi.com.br/api/cnpj/v1/${raw}`)
-                                            .then((res) => res.json())
-                                            .then((data) => {
+                                          fetchCnpjData(raw)
+                                            .then(({ data: cnpjData }) => {
                                               if (
-                                                data.razao_social &&
+                                                cnpjData?.nome &&
                                                 !form.getValues(`filiais_detalhes.${index}.nome`)
                                               ) {
                                                 form.setValue(
                                                   `filiais_detalhes.${index}.nome`,
-                                                  data.razao_social,
+                                                  cnpjData.nome,
                                                 )
                                               }
                                             })
