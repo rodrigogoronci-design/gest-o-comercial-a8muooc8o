@@ -112,6 +112,7 @@ import { AddendumDocument } from '@/components/AddendumDocument'
 import { TrainingProposalDocument } from '@/components/TrainingProposalDocument'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { DatePicker } from '@/components/ui/date-picker'
 import { DiagnosticoOperacional } from '@/components/DiagnosticoOperacional'
 import { useAuth } from '@/hooks/use-auth'
 import { CrmProspectPropostasTab } from '@/components/CrmProspectPropostasTab'
@@ -142,6 +143,7 @@ export interface ClienteRecord {
   filiais_detalhes?: any
   quantidade_filiais?: number | null
   cobrar_filiais?: boolean | null
+  data_assinatura?: string | null
 }
 
 type ModuleItem = { name: string; price: number }
@@ -254,6 +256,7 @@ type MergedClient = {
   tags?: string[]
   desconto_mensalidade?: number
   tipo_desconto?: 'valor' | 'percentual'
+  data_assinatura?: string | null
 }
 
 const clientSchema = z.object({
@@ -291,6 +294,7 @@ const clientSchema = z.object({
     )
     .optional()
     .default([]),
+  data_assinatura: z.string().optional().or(z.literal('')),
 })
 
 type ClientFormValues = z.infer<typeof clientSchema>
@@ -822,6 +826,7 @@ export default function ClientsPage() {
       tipo_desconto: 'valor',
       cobrar_filiais: false,
       quantidade_filiais: 0,
+      data_assinatura: '',
       filiais_detalhes: [],
     },
   })
@@ -1032,6 +1037,7 @@ export default function ClientsPage() {
       tipo_desconto: 'valor',
       cobrar_filiais: false,
       quantidade_filiais: 0,
+      data_assinatura: '',
       filiais_detalhes: [],
     })
     setIsSheetOpen(true)
@@ -1061,6 +1067,7 @@ export default function ClientsPage() {
         client.originalData?.quantidade_filiais ||
         client.originalData?.filiais_detalhes?.length ||
         0,
+      data_assinatura: client.data_assinatura || '',
       filiais_detalhes: client.originalData?.filiais_detalhes || [],
     })
     setIsSheetOpen(true)
@@ -1266,6 +1273,7 @@ Obrigada,`
       cobrar_filiais: data.cobrar_filiais,
       quantidade_filiais: data.quantidade_filiais,
       filiais_detalhes: data.filiais_detalhes,
+      data_assinatura: data.data_assinatura || null,
       modulos: {
         plano_base: data.plano_base,
         filiais: data.filiais,
@@ -2250,6 +2258,7 @@ Obrigada.`)
         tags: Array.isArray(c.tags) ? c.tags : [],
         desconto_mensalidade: c.desconto_mensalidade || 0,
         tipo_desconto: (c.tipo_desconto as 'valor' | 'percentual') || 'valor',
+        data_assinatura: c.data_assinatura,
       }
     }),
   ]
@@ -2303,6 +2312,15 @@ Obrigada.`)
                   {formatDate(client.createdAt)}
                 </span>
               </div>
+              {client.data_assinatura && (
+                <div>
+                  <span className="text-xs text-slate-500 block mb-1">Assinatura do Contrato</span>
+                  <span className="font-medium text-slate-900 flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                    {formatDate(client.data_assinatura)}
+                  </span>
+                </div>
+              )}
               <div className="text-right">
                 <span className="text-xs text-slate-500 block mb-1">Valor Total Mensal</span>
                 <span className="text-lg font-bold text-emerald-700">
@@ -3749,6 +3767,23 @@ Obrigada.`)
                           <FormLabel>RG do Rep.</FormLabel>
                           <FormControl>
                             <Input placeholder="00.000.000-0" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="data_assinatura"
+                      render={({ field }) => (
+                        <FormItem className="sm:col-span-2">
+                          <FormLabel>Data de Assinatura do Contrato</FormLabel>
+                          <FormControl>
+                            <DatePicker
+                              value={field.value || ''}
+                              onChange={field.onChange}
+                              placeholder="Selecione a data de assinatura"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
