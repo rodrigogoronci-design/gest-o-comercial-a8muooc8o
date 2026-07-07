@@ -117,6 +117,8 @@ import { DiagnosticoOperacional } from '@/components/DiagnosticoOperacional'
 import { useAuth } from '@/hooks/use-auth'
 import { CrmProspectPropostasTab } from '@/components/CrmProspectPropostasTab'
 import { ClientContractUpload } from '@/components/ClientContractUpload'
+import { getSignedContractUrl } from '@/lib/storage'
+import { getSignedContractUrl } from '@/lib/storage-utils'
 
 export interface ClienteRecord {
   id: string
@@ -367,6 +369,21 @@ export default function ClientsPage() {
 
   const [flagNotifyImplantacao, setFlagNotifyImplantacao] = useState(false)
   const [flagNotifyFinanceiro, setFlagNotifyFinanceiro] = useState(false)
+
+  const handleOpenContract = async (contratoUrl: string | null) => {
+    if (!contratoUrl) {
+      toast.error('Nenhum contrato anexado a este cliente.')
+      return
+    }
+    const toastId = toast.loading('Abrindo contrato...')
+    const url = await getSignedContractUrl(contratoUrl)
+    if (url) {
+      window.open(url, '_blank')
+      toast.success('Contrato aberto em nova aba.', { id: toastId })
+    } else {
+      toast.error('Documento não encontrado no armazenamento.', { id: toastId })
+    }
+  }
 
   // Upsell Modal
   const [isUpsellModalOpen, setIsUpsellModalOpen] = useState(false)
@@ -1150,6 +1167,23 @@ export default function ClientsPage() {
     } catch (err) {
       console.error(err)
       toast.error('Erro ao remover documento')
+    }
+  }
+
+  const handleOpenContractUrl = async (url: string | null) => {
+    if (!url) {
+      toast.error('Nenhum contrato anexado.')
+      return
+    }
+    try {
+      const { url: signedUrl, error } = await getSignedContractUrl(url)
+      if (error || !signedUrl) {
+        toast.error(error || 'Documento não encontrado')
+      } else {
+        window.open(signedUrl, '_blank')
+      }
+    } catch {
+      toast.error('Erro ao abrir contrato')
     }
   }
 
@@ -2666,10 +2700,10 @@ Obrigada.`)
                   variant="ghost"
                   size="sm"
                   className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 shrink-0"
-                  onClick={() => window.open(client.contratoUrl!, '_blank')}
+                  onClick={() => handleOpenContractUrl(client.contratoUrl)}
                 >
                   Abrir
-                </Button>
+                </Button>{' '}
               </div>
             )}
 
@@ -5001,7 +5035,7 @@ Obrigada.`)
                             size="icon"
                             className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
                             title="Ver Contrato Original"
-                            onClick={() => window.open(client.contratoUrl!, '_blank')}
+                            onClick={() => handleOpenContractUrl(client.contratoUrl)}
                           >
                             <FileText className="h-4 w-4" />
                           </Button>
