@@ -118,7 +118,6 @@ import { useAuth } from '@/hooks/use-auth'
 import { CrmProspectPropostasTab } from '@/components/CrmProspectPropostasTab'
 import { ClientContractUpload } from '@/components/ClientContractUpload'
 import { getSignedContractUrl } from '@/lib/storage'
-import { getSignedContractUrl } from '@/lib/storage-utils'
 
 export interface ClienteRecord {
   id: string
@@ -376,12 +375,12 @@ export default function ClientsPage() {
       return
     }
     const toastId = toast.loading('Abrindo contrato...')
-    const url = await getSignedContractUrl(contratoUrl)
+    const { url, error } = await getSignedContractUrl(contratoUrl)
     if (url) {
       window.open(url, '_blank')
       toast.success('Contrato aberto em nova aba.', { id: toastId })
     } else {
-      toast.error('Documento não encontrado no armazenamento.', { id: toastId })
+      toast.error(error || 'Documento não encontrado no armazenamento.', { id: toastId })
     }
   }
 
