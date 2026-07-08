@@ -970,7 +970,6 @@ export default function ClientsPage() {
 
   useEffect(() => {
     if (viewingClient && isViewSheetOpen) {
-      loadHistory(viewingClient.id)
       loadSolicitacoes(viewingClient.id)
     }
   }, [viewingClient, isViewSheetOpen])
@@ -2339,15 +2338,32 @@ Obrigada.`)
       <div className="mt-6 space-y-8">
         {/* Resumo Atual */}
         <div>
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
             <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-emerald-500" /> Pacote Contratado Vigente
             </h4>
-            {client.stats && client.stats.relevantTitulos > 0 && (
-              <Badge variant="outline" className={`${client.stats.color}`}>
-                {client.stats.classification} (Score: {client.stats.score})
-              </Badge>
-            )}
+            <div className="flex items-center gap-2">
+              {client.stats && client.stats.relevantTitulos > 0 && (
+                <Badge variant="outline" className={`${client.stats.color}`}>
+                  {client.stats.classification} (Score: {client.stats.score})
+                </Badge>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsAddFilialOpen(true)}
+                className="bg-white hover:bg-slate-50 shadow-sm"
+              >
+                <Building2 className="h-4 w-4 mr-1.5" /> Filial
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setIsAddModuleOpen(true)}
+                className="bg-indigo-600 hover:bg-indigo-700 shadow-sm"
+              >
+                <Plus className="h-4 w-4 mr-1.5" /> Módulo
+              </Button>
+            </div>
           </div>
 
           <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
@@ -2505,272 +2521,6 @@ Obrigada.`)
                 </div>
               )}
             </div>
-          </div>
-        </div>
-
-        {/* Histórico / Evolução */}
-        <div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
-            <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
-              Histórico & Aditivos
-            </h4>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setIsAddFilialOpen(true)}
-                className="bg-white hover:bg-slate-50 shadow-sm"
-              >
-                <Building2 className="h-4 w-4 mr-1.5" /> Adicionar Filial
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => setIsAddModuleOpen(true)}
-                className="bg-indigo-600 hover:bg-indigo-700 shadow-sm"
-              >
-                <Plus className="h-4 w-4 mr-1.5" /> Adicionar Módulo
-              </Button>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-            {isLoadingHistory ? (
-              <div className="flex items-center justify-center py-8 text-slate-500">
-                <Loader2 className="h-6 w-6 animate-spin mr-2" /> Carregando histórico...
-              </div>
-            ) : clientHistory.length === 0 ? (
-              <div className="text-sm text-slate-500 text-center py-6 border border-dashed rounded-md border-slate-200">
-                Nenhum histórico registrado para este cliente.
-              </div>
-            ) : (
-              <div className="space-y-6 border-l-2 border-slate-100 ml-3 pl-6 relative">
-                {clientHistory.map((h, i) => (
-                  <div key={h.id} className="relative group">
-                    <div
-                      className={cn(
-                        'absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 bg-white',
-                        h.tipo === 'Contrato Inicial' ? 'border-slate-300' : 'border-indigo-500',
-                      )}
-                    />
-
-                    <div className="bg-white border border-slate-100 rounded-md p-4 shadow-sm hover:border-indigo-100 transition-colors">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                'text-[10px] uppercase font-bold',
-                                h.tipo === 'Contrato Inicial'
-                                  ? 'text-slate-600 bg-slate-50 border-slate-200'
-                                  : h.tipo?.startsWith('Solicitação')
-                                    ? 'text-amber-700 bg-amber-50 border-amber-200'
-                                    : 'text-indigo-700 bg-indigo-50 border-indigo-200',
-                              )}
-                            >
-                              {h.tipo}
-                            </Badge>
-                            <span className="text-xs text-slate-400 font-medium">
-                              {formatDate(h.data_solicitacao)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-right flex flex-col items-end gap-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-400 block">Mensalidade (Ref.)</span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 text-slate-400 hover:text-red-600"
-                              onClick={() => handleDeleteHistory(h.id)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                          <span className="font-bold text-slate-700">
-                            {formatCurrency(h.valor_total)}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded border border-slate-100">
-                        {h.plano && (
-                          <div className="mb-1">
-                            <span className="font-medium text-slate-800">Plano Base:</span>{' '}
-                            {h.plano}
-                          </div>
-                        )}
-                        {Array.isArray(h.modulos) && h.modulos.length > 0 && (
-                          <div className="mt-2">
-                            <span className="font-medium text-slate-800 block mb-1">
-                              {h.tipo === 'Contrato Inicial'
-                                ? 'Módulos Inclusos:'
-                                : 'Módulos Adicionados:'}
-                            </span>
-                            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs">
-                              {h.modulos.map((m: any, idx: number) => (
-                                <li key={idx} className="flex items-center gap-1.5">
-                                  <div className="h-1 w-1 rounded-full bg-slate-400" />
-                                  <span className="truncate">{m.name || m}</span>
-                                  <span className="text-slate-400 ml-auto">
-                                    {m.price ? formatCurrency(m.price) : ''}
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {h.observacoes && h.tipo?.startsWith('Solicitação') && (
-                          <div className="mb-2 whitespace-pre-wrap">
-                            <span className="font-medium text-slate-800">Detalhes:</span>{' '}
-                            {h.observacoes}
-                          </div>
-                        )}
-                        {h.valor_adicional > 0 && !h.tipo?.startsWith('Solicitação') && (
-                          <div className="mt-3 pt-2 border-t border-slate-200 text-xs font-medium text-emerald-700">
-                            + {formatCurrency(h.valor_adicional)} adicionado ao contrato
-                          </div>
-                        )}
-                        {h.valor_adicional > 0 && h.tipo?.startsWith('Solicitação') && (
-                          <div className="mt-3 pt-2 border-t border-slate-200 text-xs font-medium text-amber-700">
-                            Valor cobrado: {formatCurrency(h.valor_adicional)} (Faturamento à parte)
-                          </div>
-                        )}
-                      </div>
-
-                      {h.tipo !== 'Contrato Inicial' && !h.tipo?.startsWith('Solicitação') && (
-                        <div className="mt-3 flex justify-end">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 text-xs"
-                            onClick={() =>
-                              setViewingAddendum({
-                                clientName: client.name,
-                                cnpj: client.cnpj,
-                                dataSolicitacao: h.data_solicitacao,
-                                modules: h.modulos,
-                                valorAdicional: h.valor_adicional,
-                                valorTotalAtual: h.valor_total,
-                              })
-                            }
-                          >
-                            <Printer className="h-3 w-3 mr-1.5" /> Ver Aditivo
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Documentos */}
-        <div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
-            <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
-              Repositório de Documentos
-            </h4>
-            <div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsDocUploadOpen(true)}
-                disabled={isUploadingDocs}
-              >
-                {isUploadingDocs ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Upload className="h-4 w-4 mr-2" />
-                )}
-                Anexar Documento
-              </Button>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {client.contratoUrl && (
-              <div className="flex items-center justify-between bg-white border border-slate-200 p-3 rounded-md shadow-sm hover:border-indigo-200 transition-colors">
-                <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="p-2 bg-indigo-50 rounded text-indigo-600 shrink-0">
-                    <FileText className="h-5 w-5" />
-                  </div>
-                  <div className="overflow-hidden">
-                    <span
-                      className="font-medium text-sm text-slate-800 block truncate"
-                      title="Contrato Inicial"
-                    >
-                      Contrato Inicial
-                    </span>
-                    <span className="text-xs text-slate-400">Documento Assinado</span>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 shrink-0"
-                  onClick={() => handleOpenContractUrl(client.contratoUrl)}
-                >
-                  Abrir
-                </Button>{' '}
-              </div>
-            )}
-
-            {client.originalData?.documentos_urls?.map((doc, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between bg-white border border-slate-200 p-3 rounded-md shadow-sm hover:border-slate-300 transition-colors"
-              >
-                <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="p-2 bg-slate-50 rounded text-slate-500 shrink-0">
-                    <FileText className="h-5 w-5" />
-                  </div>
-                  <div className="overflow-hidden">
-                    <span
-                      className="font-medium text-sm text-slate-800 block truncate"
-                      title={doc.name}
-                    >
-                      {doc.name}
-                    </span>
-                    <span className="text-xs text-slate-400">
-                      {doc.category || 'Anexo Cadastral'}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                    onClick={() => window.open(doc.url, '_blank')}
-                    title="Abrir Documento"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
-                    onClick={() => handleDeleteDoc(client.id, doc.url)}
-                    title="Remover Documento"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-
-            {!client.contratoUrl &&
-              (!client.originalData?.documentos_urls ||
-                client.originalData.documentos_urls.length === 0) && (
-                <div className="col-span-1 sm:col-span-2 flex items-center justify-center bg-slate-50 border border-dashed border-slate-200 p-6 rounded-md">
-                  <div className="flex flex-col items-center gap-2 text-slate-400">
-                    <FileText className="h-8 w-8" />
-                    <span className="text-sm">Nenhum documento anexado a este cliente</span>
-                  </div>
-                </div>
-              )}
           </div>
         </div>
       </div>
