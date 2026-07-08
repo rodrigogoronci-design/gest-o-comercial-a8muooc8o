@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Loader2, Plus, Calendar, MessageSquare, Trash2, FileText } from 'lucide-react'
+import { Loader2, Plus, Calendar, MessageSquare, Trash2, ChevronRight } from 'lucide-react'
 import { AtendimentoFormDialog } from '@/components/AtendimentoFormDialog'
+import { AtendimentoDetailDialog } from '@/components/AtendimentoDetailDialog'
 import {
   getAtendimentosByCliente,
   deleteAtendimento,
@@ -20,6 +20,8 @@ export function ClientAtendimentosTab({ clienteId, clientName }: ClientAtendimen
   const [atendimentos, setAtendimentos] = useState<Atendimento[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [selectedAtendimento, setSelectedAtendimento] = useState<Atendimento | null>(null)
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
 
   const loadAtendimentos = useCallback(async () => {
     setIsLoading(true)
@@ -48,6 +50,11 @@ export function ClientAtendimentosTab({ clienteId, clientName }: ClientAtendimen
     }
   }
 
+  const handleOpenDetail = (atendimento: Atendimento) => {
+    setSelectedAtendimento(atendimento)
+    setIsDetailOpen(true)
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -73,6 +80,12 @@ export function ClientAtendimentosTab({ clienteId, clientName }: ClientAtendimen
         onSaved={loadAtendimentos}
       />
 
+      <AtendimentoDetailDialog
+        open={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+        atendimento={selectedAtendimento}
+      />
+
       {isLoading ? (
         <div className="flex justify-center items-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
@@ -86,48 +99,36 @@ export function ClientAtendimentosTab({ clienteId, clientName }: ClientAtendimen
           </p>
         </div>
       ) : (
-        <ScrollArea className="h-[calc(100vh-16rem)] pr-4">
-          <div className="relative border-l-2 border-slate-100 ml-3 pl-6 space-y-6 pb-4 pt-2">
-            {atendimentos.map((atendimento) => (
-              <div key={atendimento.id} className="relative group">
-                <div className="absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-indigo-500 bg-white" />
-
-                <div className="bg-white border border-slate-100 rounded-md p-4 shadow-sm hover:border-indigo-100 transition-colors">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs text-slate-400 font-medium flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {formatDate(atendimento.data_atendimento)}
-                        </span>
-                      </div>
-                      <h4 className="font-semibold text-slate-800 text-sm">
-                        {atendimento.solicitacao}
-                      </h4>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-slate-400 hover:text-red-600 hover:bg-red-50"
-                      onClick={() => handleDelete(atendimento.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-
-                  <div className="bg-slate-50 p-3 rounded border border-slate-100">
-                    <div className="flex items-start gap-2">
-                      <FileText className="h-4 w-4 text-slate-400 shrink-0 mt-0.5" />
-                      <p className="text-sm text-slate-600 whitespace-pre-wrap">
-                        {atendimento.relatorio}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+        <div className="border border-slate-200 rounded-lg overflow-hidden">
+          {atendimentos.map((atendimento, index) => (
+            <div
+              key={atendimento.id}
+              className={`flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors group ${
+                index !== atendimentos.length - 1 ? 'border-b border-slate-100' : ''
+              }`}
+            >
+              <div className="flex items-center gap-2 text-xs text-slate-500 min-w-[130px] shrink-0">
+                <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                <span className="font-medium">{formatDate(atendimento.data_atendimento)}</span>
               </div>
-            ))}
-          </div>
-        </ScrollArea>
+              <button
+                onClick={() => handleOpenDetail(atendimento)}
+                className="flex-1 text-left text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer transition-colors truncate"
+              >
+                {atendimento.solicitacao}
+              </button>
+              <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-slate-400 shrink-0" />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-slate-400 hover:text-red-600 hover:bg-red-50 shrink-0"
+                onClick={() => handleDelete(atendimento.id)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )

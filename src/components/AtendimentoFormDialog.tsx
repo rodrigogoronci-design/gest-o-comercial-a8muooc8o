@@ -58,7 +58,7 @@ export function AtendimentoFormDialog({
     try {
       const payload: AtendimentoInput = {
         cliente_id: clienteId,
-        data_atendimento: new Date(dataAtendimento).toISOString(),
+        data_atendimento: new Date(dataAtendimento + 'T12:00:00').toISOString(),
         solicitacao: solicitacao.trim(),
         relatorio: relatorio.trim(),
       }
