@@ -13,9 +13,10 @@ import {
   LineChart,
 } from 'recharts'
 import { Button } from '@/components/ui/button'
-import { Download, BarChart3, FileSearch } from 'lucide-react'
+import { Download, BarChart3, FileSearch, FileSpreadsheet } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { AtendimentoReportTab } from '@/components/AtendimentoReportTab'
+import { GeneralAtendimentosReport } from '@/components/GeneralAtendimentosReport'
 
 export default function ReportsPage() {
   const [loading, setLoading] = useState(true)
@@ -74,7 +75,7 @@ export default function ReportsPage() {
       </div>
 
       <Tabs defaultValue="dashboards" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md print:hidden">
+        <TabsList className="grid w-full grid-cols-3 max-w-2xl print:hidden">
           <TabsTrigger value="dashboards" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Dashboards
@@ -82,6 +83,10 @@ export default function ReportsPage() {
           <TabsTrigger value="atendimento" className="flex items-center gap-2">
             <FileSearch className="h-4 w-4" />
             Relatório de Atendimento
+          </TabsTrigger>
+          <TabsTrigger value="relatorio-geral" className="flex items-center gap-2">
+            <FileSpreadsheet className="h-4 w-4" />
+            Relatório Geral
           </TabsTrigger>
         </TabsList>
 
@@ -211,6 +216,10 @@ export default function ReportsPage() {
 
         <TabsContent value="atendimento" className="mt-6">
           <AtendimentoReportTab />
+        </TabsContent>
+
+        <TabsContent value="relatorio-geral" className="mt-6">
+          <GeneralAtendimentosReport />
         </TabsContent>
       </Tabs>
     </div>

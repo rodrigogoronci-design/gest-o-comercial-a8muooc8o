@@ -43,6 +43,33 @@ export const deleteAtendimento = async (id: string): Promise<void> => {
   if (error) throw error
 }
 
+export interface AtendimentoWithCliente extends Atendimento {
+  clientes: { nome: string | null; cnpj: string | null } | null
+}
+
+export const getAtendimentosWithClientes = async (
+  startDate: string,
+  endDate: string,
+): Promise<AtendimentoWithCliente[]> => {
+  const endOfDay = `${endDate}T23:59:59.999Z`
+  const { data, error } = await supabase
+    .from('atendimentos_clientes')
+    .select(
+      `
+      *,
+      clientes (
+        nome,
+        cnpj
+      )
+    `,
+    )
+    .gte('data_atendimento', startDate)
+    .lte('data_atendimento', endOfDay)
+    .order('data_atendimento', { ascending: false })
+  if (error) throw error
+  return (data as AtendimentoWithCliente[]) || []
+}
+
 export async function uploadAtendimentoDocumento(clienteId: string, file: File): Promise<string> {
   const fileExt = file.name.split('.').pop()
   const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
