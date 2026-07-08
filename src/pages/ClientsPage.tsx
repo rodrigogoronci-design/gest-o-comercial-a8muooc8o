@@ -2336,6 +2336,49 @@ Obrigada.`)
 
     return (
       <div className="mt-6 space-y-8">
+        {/* CNPJs Vinculados */}
+        <div>
+          <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-indigo-500" /> CNPJs Vinculados
+          </h4>
+          <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+            <div className="p-3 bg-slate-50 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className="bg-indigo-50 text-indigo-700 border-indigo-100 text-[10px] uppercase"
+                >
+                  Matriz
+                </Badge>
+                <span className="font-mono text-sm font-medium text-slate-900">
+                  {formatCNPJ(client.cnpj)}
+                </span>
+              </div>
+            </div>
+            {client.filiais_detalhes && client.filiais_detalhes.length > 0 && (
+              <div className="p-3 space-y-2">
+                {client.filiais_detalhes.map((f, idx) => (
+                  <div key={idx} className="flex items-center gap-2 pl-4">
+                    <Badge
+                      variant="outline"
+                      className="bg-amber-50 text-amber-700 border-amber-100 text-[10px] uppercase"
+                    >
+                      Filial
+                    </Badge>
+                    <span className="font-mono text-xs text-slate-600">{formatCNPJ(f.cnpj)}</span>
+                    {f.nome && <span className="text-xs text-slate-400 truncate">— {f.nome}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+            {(!client.filiais_detalhes || client.filiais_detalhes.length === 0) && (
+              <div className="p-3 text-xs text-slate-400 italic">
+                Nenhuma filial vinculada a este cliente.
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Resumo Atual */}
         <div>
           <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
@@ -4409,6 +4452,15 @@ Obrigada.`)
                         <span className="text-xs text-slate-500 font-mono">
                           {formatCNPJ(client.cnpj)}
                         </span>
+                        {client.filiais_detalhes && client.filiais_detalhes.length > 0 && (
+                          <div className="flex flex-col gap-0.5 sm:ml-2 sm:pl-2 sm:border-l sm:border-slate-200">
+                            {client.filiais_detalhes.map((f, idx) => (
+                              <span key={idx} className="text-[10px] text-slate-400 font-mono">
+                                ↳ {formatCNPJ(f.cnpj)}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                         {client.originalData?.status === 'Em Implantação' && (
                           <Badge
                             variant="outline"
