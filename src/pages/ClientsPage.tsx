@@ -114,8 +114,8 @@ import { TrainingProposalDocument } from '@/components/TrainingProposalDocument'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { AdvancedDatePicker } from '@/components/ui/advanced-date-picker'
-import { DiagnosticoOperacional } from '@/components/DiagnosticoOperacional'
 import { useAuth } from '@/hooks/use-auth'
+import { ClientAtendimentosTab } from '@/components/ClientAtendimentosTab'
 import { CrmProspectPropostasTab } from '@/components/CrmProspectPropostasTab'
 import { ClientContractUpload } from '@/components/ClientContractUpload'
 import { getSignedContractUrl } from '@/lib/storage'
@@ -4332,7 +4332,7 @@ Obrigada.`)
             <Tabs defaultValue="resumo" className="mt-6 w-full h-full flex flex-col">
               <TabsList className="grid w-full max-w-3xl grid-cols-5 bg-white border border-slate-200">
                 <TabsTrigger value="resumo">Resumo & Gestão</TabsTrigger>
-                <TabsTrigger value="diagnostico">Diagnóstico</TabsTrigger>
+                <TabsTrigger value="atendimentos">Atendimentos</TabsTrigger>
                 <TabsTrigger value="contrato">Contrato Inicial</TabsTrigger>
                 <TabsTrigger value="solicitacoes">Solicitações</TabsTrigger>
                 <TabsTrigger value="propostas">Propostas</TabsTrigger>
@@ -4345,31 +4345,13 @@ Obrigada.`)
               </TabsContent>
 
               <TabsContent
-                value="diagnostico"
+                value="atendimentos"
                 className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4"
               >
-                <ScrollArea className="h-[calc(100vh-14rem)] pr-4">
-                  <DiagnosticoOperacional
-                    clientId={viewingClient.id}
-                    initialData={viewingClient.originalData?.diagnostico}
-                    onSaved={(tags) => {
-                      setViewingClient((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              tags,
-                              originalData: {
-                                ...prev.originalData!,
-                                diagnostico: prev.originalData?.diagnostico,
-                                tags,
-                              },
-                            }
-                          : null,
-                      )
-                      loadClientes()
-                    }}
-                  />
-                </ScrollArea>
+                <ClientAtendimentosTab
+                  clienteId={viewingClient.id}
+                  clientName={viewingClient.name}
+                />
               </TabsContent>
 
               <TabsContent
