@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { formatCNPJ } from '@/lib/formatters'
 import {
   TrendingUp,
   Users,
@@ -48,7 +49,9 @@ export default function Index() {
       try {
         const [{ data: clientes }, { data: leads }, { data: atividades }, { data: eventos }] =
           await Promise.all([
-            supabase.from('clientes').select('id, nome, valor_total, created_at, status'),
+            supabase
+              .from('clientes')
+              .select('id, nome, cnpj, filiais_detalhes, valor_total, created_at, status'),
             supabase
               .from('crm_prospects')
               .select('id, empresa, contato_nome, status, data_followup, ultima_interacao'),
@@ -404,7 +407,24 @@ export default function Index() {
                         <p className="text-sm font-medium leading-none text-slate-800">
                           {client.nome}
                         </p>
-                        <p className="text-xs text-slate-500 mt-1.5">
+                        {(client.cnpj ||
+                          (Array.isArray(client.filiais_detalhes) &&
+                            client.filiais_detalhes.length > 0)) && (
+                          <div className="mt-1 flex flex-col gap-0.5">
+                            {client.cnpj && (
+                              <p className="text-xs text-slate-500">{formatCNPJ(client.cnpj)}</p>
+                            )}
+                            {Array.isArray(client.filiais_detalhes) &&
+                              client.filiais_detalhes.map((filial: any, idx: number) =>
+                                filial.cnpj ? (
+                                  <p key={idx} className="text-xs text-slate-500">
+                                    {formatCNPJ(filial.cnpj)}
+                                  </p>
+                                ) : null,
+                              )}
+                          </div>
+                        )}
+                        <p className="text-[10px] text-slate-400 mt-1">
                           Desde {formatDt(client.created_at)}
                         </p>
                       </div>
