@@ -8,35 +8,42 @@ import { toast } from 'sonner'
 import { getAtendimentosWithClientes, type AtendimentoWithCliente } from '@/services/atendimentos'
 import { formatCurrency } from '@/lib/formatters'
 
-function escapeCSV(value: string): string {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`
-  }
-  return value
+function escapeCSVField(value: string | null | undefined): string {
+  const safeValue = value ?? ''
+  const escaped = safeValue.replace(/"/g, '""')
+  return `"${escaped}"`
 }
 
-function formatDateForCSV(dateString: string): string {
+function formatDateForCSV(dateString: string | null | undefined): string {
   if (!dateString) return ''
+  const datePart = dateString.includes('T') ? dateString.split('T')[0] : dateString
+  if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+    const [year, month, day] = datePart.split('-')
+    return `${day}/${month}/${year}`
+  }
   const date = new Date(dateString)
+  if (isNaN(date.getTime())) return ''
   return date.toLocaleDateString('pt-BR')
 }
 
 function downloadCSV(rows: AtendimentoWithCliente[]) {
-  const headers = ['Cliente', 'CNPJ', 'Data do Atendimento', 'Assunto/Solicitação', 'Detalhamento']
-  const csvLines = [headers.join(',')]
+  const headers = ['Nome do Cliente', 'CNPJ', 'Data do Atendimento', 'Assunto', 'Detalhamento']
+  const csvLines = [headers.map(escapeCSVField).join(';')]
 
   for (const row of rows) {
-    const clienteNome = row.clientes?.nome || ''
-    const clienteCnpj = row.clientes?.cnpj || ''
+    const clienteNome = row.clientes?.nome ?? ''
+    const clienteCnpj = row.clientes?.cnpj ?? ''
     const dataAtendimento = formatDateForCSV(row.data_atendimento)
-    const solicitacao = row.solicitacao || ''
-    const relatorio = row.relatorio || ''
+    const solicitacao = row.solicitacao ?? ''
+    const relatorio = row.relatorio ?? ''
     csvLines.push(
-      [clienteNome, clienteCnpj, dataAtendimento, solicitacao, relatorio].map(escapeCSV).join(','),
+      [clienteNome, clienteCnpj, dataAtendimento, solicitacao, relatorio]
+        .map(escapeCSVField)
+        .join(';'),
     )
   }
 
-  const csvContent = '\uFEFF' + csvLines.join('\n')
+  const csvContent = '\uFEFF' + csvLines.join('\r\n')
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -169,10 +176,10 @@ export function GeneralAtendimentosReport() {
           <div className="mt-2 border-t border-slate-100 pt-4">
             <h4 className="text-sm font-semibold text-slate-700 mb-2">Colunas da planilha:</h4>
             <ul className="text-xs text-slate-500 grid grid-cols-1 sm:grid-cols-2 gap-1">
-              <li>• Cliente (nome do cliente)</li>
+              <li>• Nome do Cliente</li>
               <li>• CNPJ</li>
               <li>• Data do Atendimento</li>
-              <li>• Assunto/Solicitação</li>
+              <li>• Assunto (solicitação)</li>
               <li>• Detalhamento (relatório)</li>
             </ul>
           </div>
