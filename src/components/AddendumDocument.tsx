@@ -6,6 +6,7 @@ export function AddendumDocument({
   cnpj,
   dataSolicitacao,
   modules,
+  currentPlanName,
   valorAdicional,
   valorAnualAdicional,
   valorTotalAtual,
@@ -23,7 +24,7 @@ export function AddendumDocument({
 
   if (Array.isArray(modules)) {
     formattedModules = modules.map((m: any) => {
-      if (typeof m === 'string') return { name: m, price: 0 }
+      if (typeof m === 'string') return { name: m, price: 0, billingCycle: 'mensal' }
       return {
         name: m.name || m.descricao || m.modulo || m.titulo || 'Item Adicional',
         price: Number(
@@ -141,6 +142,14 @@ export function AddendumDocument({
             <strong>CONTRATANTE:</strong> <strong>{clientName || '[NOME DO CLIENTE]'}</strong>,
             inscrita no CNPJ sob o nº <strong>{cnpj ? formatCNPJ(cnpj) : '[CNPJ]'}</strong>.
           </p>
+          {currentPlanName && (
+            <p className="mt-2">
+              <strong>Plano Atual:</strong>{' '}
+              <span className="font-semibold text-[#1b4382] print:text-black">
+                {currentPlanName}
+              </span>
+            </p>
+          )}
         </div>
 
         <div>
@@ -169,7 +178,9 @@ export function AddendumDocument({
                 <th className="border border-slate-300 p-2 text-left">
                   Descrição do Item / Serviço
                 </th>
-                <th className="border border-slate-300 p-2 text-center w-24">Ciclo</th>
+                <th className="border border-slate-300 p-2 text-center w-32">
+                  Ciclo de Faturamento
+                </th>
                 <th className="border border-slate-300 p-2 text-right w-40">Valor Adicional</th>
               </tr>
             </thead>
@@ -179,7 +190,11 @@ export function AddendumDocument({
                   <tr key={idx}>
                     <td className="border border-slate-300 p-2 whitespace-pre-line">{m.name}</td>
                     <td className="border border-slate-300 p-2 text-center">
-                      {m.isTaxaUnica ? 'Único' : m.billingCycle === 'anual' ? 'Anual' : 'Mensal'}
+                      {m.isTaxaUnica
+                        ? 'Único'
+                        : m.billingCycle === 'anual'
+                          ? 'Anual'
+                          : 'Cobrança Mensal'}
                     </td>
                     <td className="border border-slate-300 p-2 text-right">
                       {m.isTaxaUnica

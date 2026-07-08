@@ -124,6 +124,7 @@ export default function ContractGeneratorPage() {
     plano_base: '',
     adicionais: [],
   })
+  const [currentClientPlanName, setCurrentClientPlanName] = useState<string>('')
 
   const [selectedGenTargetType, setSelectedGenTargetType] = useState<'prospect' | 'cliente'>(
     'prospect',
@@ -192,7 +193,7 @@ export default function ContractGeneratorPage() {
       const { data } = await supabase
         .from('clientes')
         .select(
-          'id, nome, rep_nome, valor_total, modulos, cnpj, endereco, email, telefone, cobrar_filiais, quantidade_filiais, filiais_detalhes',
+          'id, nome, rep_nome, valor_total, modulos, cnpj, endereco, email, telefone, cobrar_filiais, quantidade_filiais, filiais_detalhes, plano_id',
         )
         .order('nome')
       if (data) setClientes(data)
@@ -227,7 +228,7 @@ export default function ContractGeneratorPage() {
           is_gratuito, quantidade_filiais, filiais_detalhes, aos_cuidados_de,
           cliente_id,
           crm_prospects ( id, empresa, contato_nome, cnpj, endereco ),
-          clientes ( id, nome, rep_nome, cnpj, endereco, modulos, valor_total )
+          clientes ( id, nome, rep_nome, cnpj, endereco, modulos, valor_total, plano_id )
         `)
         .order('data_proposta', { ascending: false })
       if (data) setAvailableProposals(data)
@@ -240,6 +241,7 @@ export default function ContractGeneratorPage() {
     if (id === 'none') {
       setIsAddendum(false)
       setSelectedGenTargetType('prospect')
+      setCurrentClientPlanName('')
       return
     }
     const prop = availableProposals.find((p) => p.id === id)
@@ -257,9 +259,24 @@ export default function ContractGeneratorPage() {
       setRepName(prop.aos_cuidados_de || prop.clientes.rep_nome || '')
       setCurrentContractValue(prop.clientes.valor_total || 0)
       setCurrentClientModules(prop.clientes.modulos || { plano_base: '', adicionais: [] })
+      if (prop.clientes.plano_id) {
+        supabase
+          .from('planos_saude')
+          .select('descricao')
+          .eq('id', prop.clientes.plano_id)
+          .single()
+          .then(({ data: planoData }) => {
+            setCurrentClientPlanName(
+              planoData?.descricao || prop.clientes.modulos?.plano_base || 'Não informado',
+            )
+          })
+      } else {
+        setCurrentClientPlanName(prop.clientes.modulos?.plano_base || 'Não informado')
+      }
     } else {
       setIsAddendum(false)
       setSelectedGenTargetType('prospect')
+      setCurrentClientPlanName('')
       const prospect = prop.crm_prospects || {}
       setName(prospect.empresa || '')
       if (prospect.cnpj) setCnpj(formatCNPJ(prospect.cnpj))
@@ -594,6 +611,66 @@ export default function ContractGeneratorPage() {
     selectedTrainings,
   ])
 
+  const autoItemDescription = useMemo(() => {
+    const parts: string[] = []
+    selectedModules.forEach((id) => {
+      const mod = MODULES.find((m) => m.id === id)
+      if (mod && !mod.isBasic) {
+        const price =
+          typeof customModulePrices[id] === 'number'
+            ? (customModulePrices[id] as number)
+            : mod.price
+        parts.push(`${mod.name} - ${formatCurrency(price)} (Cobrança Mensal)`)
+      }
+    })
+    if (selectedDfe !== 'dfe-none' && dfeData) {
+      parts.push(`${dfeData.name} - ${formatCurrency(dfePrice)} (Cobrança Mensal)`)
+    }
+    if (additionalPlates > 0) {
+      parts.push(
+        `Placas Adicionais (${additionalPlates}) - ${formatCurrency(additionalPlatesTotal)} (Cobrança Mensal)`,
+      )
+    }
+    if (additionalBranches > 0) {
+      parts.push(
+        `Filiais Adicionais (${additionalBranches}) - ${formatCurrency(additionalBranchesTotal)} (Cobrança Mensal)`,
+      )
+    }
+    selectedTrainings.forEach((id) => {
+      const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
+      if (t) {
+        const price =
+          typeof customTrainingPrices[id] === 'number'
+            ? (customTrainingPrices[id] as number)
+            : t.price
+        parts.push(
+          `Treinamento: ${t.name} - ${isTreinamentoGratuito ? 'Grátis' : formatCurrency(price)} (Cobrança Mensal)`,
+        )
+      }
+    })
+    if (includeDiagnosticVisit) {
+      diagnosticVisits.forEach((v) => {
+        parts.push(`Visita Presencial de Diagnóstico - ${formatCurrency(parseFloat(v.value) || 0)}`)
+      })
+    }
+    return parts.join('\n')
+  }, [
+    selectedModules,
+    customModulePrices,
+    selectedDfe,
+    dfeData,
+    dfePrice,
+    additionalPlates,
+    additionalPlatesTotal,
+    additionalBranches,
+    additionalBranchesTotal,
+    selectedTrainings,
+    customTrainingPrices,
+    isTreinamentoGratuito,
+    includeDiagnosticVisit,
+    diagnosticVisits,
+  ])
+
   const contractProps = {
     name,
     cnpj,
@@ -651,7 +728,11 @@ export default function ContractGeneratorPage() {
     dataSolicitacao: new Date().toISOString(),
     currentClientModules,
     newItems: newItemsToContract,
+    modules: newItemsToContract,
     valorAdicional: totalValue,
+    currentPlanName: currentClientPlanName,
+    autoItemDescription,
+    billingCycle: 'Cobrança Mensal',
   }
 
   const quoteProps = {
@@ -1457,7 +1538,9 @@ export default function ContractGeneratorPage() {
           cliente_id: existingClient.id,
           tipo: isAddendum ? 'Aditivo Contratual' : 'Renovação / Novo Contrato',
           data_solicitacao: new Date().toISOString().split('T')[0],
-          plano: planData?.name,
+          plano: isAddendum
+            ? currentClientPlanName || planData?.name || 'Não informado'
+            : planData?.name,
           modulos: adicionais,
           valor_adicional: totalValue,
           valor_total: (existingClient.valor_total || 0) + totalValue,
@@ -1531,7 +1614,9 @@ export default function ContractGeneratorPage() {
           cliente_id: newClient.id,
           tipo: isAddendum ? 'Aditivo Contratual' : 'Contrato Inicial',
           data_solicitacao: new Date().toISOString().split('T')[0],
-          plano: planData?.name,
+          plano: isAddendum
+            ? currentClientPlanName || planData?.name || 'Não informado'
+            : planData?.name,
           modulos: adicionais,
           valor_adicional: 0,
           valor_total: totalValue,
@@ -1739,6 +1824,7 @@ export default function ContractGeneratorPage() {
                           setSelectedGenClientId('novo')
                           setCurrentClientModules({ plano_base: '', adicionais: [] })
                           setCurrentContractValue(0)
+                          setCurrentClientPlanName('')
                         }
                       }}
                       className="flex gap-4"
@@ -1777,6 +1863,22 @@ export default function ContractGeneratorPage() {
                                 setCurrentClientModules(
                                   c.modulos || { plano_base: '', adicionais: [] },
                                 )
+                                if (c.plano_id) {
+                                  supabase
+                                    .from('planos_saude')
+                                    .select('descricao')
+                                    .eq('id', c.plano_id)
+                                    .single()
+                                    .then(({ data: planoData }) => {
+                                      setCurrentClientPlanName(
+                                        planoData?.descricao ||
+                                          c.modulos?.plano_base ||
+                                          'Não informado',
+                                      )
+                                    })
+                                } else {
+                                  setCurrentClientPlanName(c.modulos?.plano_base || 'Não informado')
+                                }
                                 if (c.cobrar_filiais) {
                                   setCobrarPorFilial(true)
                                   setQuantidadeFiliais(c.quantidade_filiais || 1)
@@ -1809,6 +1911,7 @@ export default function ContractGeneratorPage() {
                               setRepName('')
                               setCurrentContractValue(0)
                               setCurrentClientModules({ plano_base: '', adicionais: [] })
+                              setCurrentClientPlanName('')
                             }
                           }}
                         >
@@ -1840,6 +1943,22 @@ export default function ContractGeneratorPage() {
                       </div>
                     )}
                   </div>
+
+                  {isAddendum &&
+                    selectedGenTargetType === 'cliente' &&
+                    selectedGenClientId !== 'novo' && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
+                        <div>
+                          <div className="text-xs font-medium text-blue-700 uppercase tracking-wide mb-1">
+                            Plano Atual
+                          </div>
+                          <div className="text-sm font-bold text-blue-900">
+                            {currentClientPlanName || 'Não informado'}
+                          </div>
+                        </div>
+                        <FileText className="w-5 h-5 text-blue-400" />
+                      </div>
+                    )}
 
                   {isAddendum && cobrarPorFilial && filiaisVinculadas.length > 0 && (
                     <div className="bg-gradient-to-r from-slate-50 to-indigo-50 border border-indigo-200 rounded-lg p-4 space-y-3">
@@ -2277,6 +2396,22 @@ export default function ContractGeneratorPage() {
                       </div>
                     )}
 
+                  {autoItemDescription && (
+                    <div className="space-y-2 mt-4 bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-bold text-indigo-800">
+                          Descrição dos Itens (Gerada Automaticamente)
+                        </Label>
+                        <span className="text-xs font-semibold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded">
+                          Ciclo: Cobrança Mensal
+                        </span>
+                      </div>
+                      <div className="bg-white border border-indigo-200 rounded-md p-3 text-xs text-slate-700 whitespace-pre-line font-mono max-h-40 overflow-y-auto">
+                        {autoItemDescription}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-3 mt-4">
                     <Label className="text-sm font-bold">Franquia de Emissões (DF-e)</Label>
                     <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
@@ -2434,6 +2569,15 @@ export default function ContractGeneratorPage() {
                   </div>
 
                   <div className="space-y-3 mt-4 pt-4 border-t border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-sm font-bold">Ciclo de Faturamento</Label>
+                      <span className="text-xs font-semibold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded">
+                        Cobrança Mensal
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 mt-4">
                     <Label className="text-sm font-bold">Valor Total da Mensalidade (R$)</Label>
                     <div className="flex gap-3 items-center flex-wrap">
                       <Input
@@ -2926,6 +3070,22 @@ export default function ContractGeneratorPage() {
                             if (c) {
                               setQuoteEmpresa(c.nome)
                               setQuoteContato(c.rep_nome || '')
+                              if (c.plano_id) {
+                                supabase
+                                  .from('planos_saude')
+                                  .select('descricao')
+                                  .eq('id', c.plano_id)
+                                  .single()
+                                  .then(({ data: planoData }) => {
+                                    setCurrentClientPlanName(
+                                      planoData?.descricao ||
+                                        c.modulos?.plano_base ||
+                                        'Não informado',
+                                    )
+                                  })
+                              } else {
+                                setCurrentClientPlanName(c.modulos?.plano_base || 'Não informado')
+                              }
                               if (c.cobrar_filiais) {
                                 setCobrarPorFilial(true)
                                 setQuantidadeFiliais(c.quantidade_filiais || 1)
