@@ -4330,12 +4330,10 @@ Obrigada.`)
 
           {viewingClient && (
             <Tabs defaultValue="resumo" className="mt-6 w-full h-full flex flex-col">
-              <TabsList className="grid w-full max-w-3xl grid-cols-5 bg-white border border-slate-200">
+              <TabsList className="grid w-full max-w-3xl grid-cols-3 bg-white border border-slate-200">
                 <TabsTrigger value="resumo">Resumo & Gestão</TabsTrigger>
                 <TabsTrigger value="atendimentos">Atendimentos</TabsTrigger>
                 <TabsTrigger value="contrato">Contrato Inicial</TabsTrigger>
-                <TabsTrigger value="solicitacoes">Solicitações</TabsTrigger>
-                <TabsTrigger value="propostas">Propostas</TabsTrigger>
               </TabsList>
 
               <TabsContent value="resumo" className="mt-4 flex-1">
@@ -4436,317 +4434,323 @@ Obrigada.`)
                   </div>
                 </ScrollArea>
               </TabsContent>
-              <TabsContent
-                value="propostas"
-                className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4"
-              >
-                <ScrollArea className="h-[calc(100vh-14rem)] pr-4">
-                  <CrmProspectPropostasTab
-                    clienteId={viewingClient.id}
-                    prospectName={viewingClient.name}
-                  />
-                </ScrollArea>
-              </TabsContent>
+              {false && (
+                <TabsContent
+                  value="propostas"
+                  className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4"
+                >
+                  <ScrollArea className="h-[calc(100vh-14rem)] pr-4">
+                    <CrmProspectPropostasTab
+                      clienteId={viewingClient.id}
+                      prospectName={viewingClient.name}
+                    />
+                  </ScrollArea>
+                </TabsContent>
+              )}
 
-              <TabsContent
-                value="solicitacoes"
-                className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4"
-              >
-                <ScrollArea className="h-[calc(100vh-14rem)] pr-4">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-slate-800">
-                        Histórico de Solicitações
-                      </h3>
-                      <p className="text-sm text-slate-500">
-                        Histórico de interações, alterações cadastrais, treinamentos e mais para{' '}
-                        {viewingClient.name}
-                      </p>
-                    </div>
-                    <div className="flex flex-col gap-2 w-full sm:w-auto">
-                      <div className="flex gap-2 w-full sm:justify-end">
-                        <Button
-                          onClick={() => setIsUpsellModalOpen(true)}
-                          size="sm"
-                          variant="outline"
-                          className="bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 flex-1 sm:flex-none"
-                        >
-                          <Plus className="h-4 w-4 mr-2" /> Gerar Upsell
-                        </Button>
-                        <Button
-                          onClick={() => setIsSetupTrainingProposalOpen(true)}
-                          size="sm"
-                          variant="outline"
-                          className="bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 flex-1 sm:flex-none"
-                        >
-                          <FileText className="h-4 w-4 mr-2" /> Gerar Proposta
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            resetSolicitacaoForm()
-                            setIsAddSolicitacaoOpen(true)
-                          }}
-                          size="sm"
-                          className="bg-indigo-600 hover:bg-indigo-700 flex-1 sm:flex-none"
-                        >
-                          <Plus className="h-4 w-4 mr-2" /> Nova Solicitação
-                        </Button>
+              {false && (
+                <TabsContent
+                  value="solicitacoes"
+                  className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4"
+                >
+                  <ScrollArea className="h-[calc(100vh-14rem)] pr-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-800">
+                          Histórico de Solicitações
+                        </h3>
+                        <p className="text-sm text-slate-500">
+                          Histórico de interações, alterações cadastrais, treinamentos e mais para{' '}
+                          {viewingClient.name}
+                        </p>
                       </div>
-                      <div className="flex gap-2 w-full sm:justify-end">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 flex-1 sm:flex-none"
-                          onClick={() => {
-                            resetSolicitacaoForm()
-                            setSolicitacaoTipo('Treinamento')
-                            setSolicitacaoDescricao(
-                              'Solicitação de Agendamento/Implantação de Treinamento',
-                            )
-                            setIsAddSolicitacaoOpen(true)
-                          }}
-                        >
-                          <Mail className="h-3 w-3 mr-1.5" /> Solicitar Implantação
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 flex-1 sm:flex-none"
-                          onClick={() => {
-                            resetSolicitacaoForm()
-                            setSolicitacaoTipo('Outro')
-                            setSolicitacaoDescricao('Faturamento de Serviço / Treinamento')
-                            setIsAddSolicitacaoOpen(true)
-                          }}
-                        >
-                          <Mail className="h-3 w-3 mr-1.5" /> Solicitar Cobrança
-                        </Button>
+                      <div className="flex flex-col gap-2 w-full sm:w-auto">
+                        <div className="flex gap-2 w-full sm:justify-end">
+                          <Button
+                            onClick={() => setIsUpsellModalOpen(true)}
+                            size="sm"
+                            variant="outline"
+                            className="bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 flex-1 sm:flex-none"
+                          >
+                            <Plus className="h-4 w-4 mr-2" /> Gerar Upsell
+                          </Button>
+                          <Button
+                            onClick={() => setIsSetupTrainingProposalOpen(true)}
+                            size="sm"
+                            variant="outline"
+                            className="bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 flex-1 sm:flex-none"
+                          >
+                            <FileText className="h-4 w-4 mr-2" /> Gerar Proposta
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              resetSolicitacaoForm()
+                              setIsAddSolicitacaoOpen(true)
+                            }}
+                            size="sm"
+                            className="bg-indigo-600 hover:bg-indigo-700 flex-1 sm:flex-none"
+                          >
+                            <Plus className="h-4 w-4 mr-2" /> Nova Solicitação
+                          </Button>
+                        </div>
+                        <div className="flex gap-2 w-full sm:justify-end">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 flex-1 sm:flex-none"
+                            onClick={() => {
+                              resetSolicitacaoForm()
+                              setSolicitacaoTipo('Treinamento')
+                              setSolicitacaoDescricao(
+                                'Solicitação de Agendamento/Implantação de Treinamento',
+                              )
+                              setIsAddSolicitacaoOpen(true)
+                            }}
+                          >
+                            <Mail className="h-3 w-3 mr-1.5" /> Solicitar Implantação
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 flex-1 sm:flex-none"
+                            onClick={() => {
+                              resetSolicitacaoForm()
+                              setSolicitacaoTipo('Outro')
+                              setSolicitacaoDescricao('Faturamento de Serviço / Treinamento')
+                              setIsAddSolicitacaoOpen(true)
+                            }}
+                          >
+                            <Mail className="h-3 w-3 mr-1.5" /> Solicitar Cobrança
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {isLoadingSolicitacoes ? (
-                    <div className="flex justify-center items-center py-12 text-slate-500">
-                      <Loader2 className="h-6 w-6 animate-spin mr-2" /> Carregando...
-                    </div>
-                  ) : solicitacoes.length === 0 ? (
-                    <div className="text-center py-12 bg-slate-50 border border-dashed border-slate-200 rounded-lg">
-                      <p className="text-slate-500 text-sm">Nenhuma solicitação registrada.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {solicitacoes.map((sol) => (
-                        <div
-                          key={sol.id}
-                          className="border border-slate-200 rounded-lg overflow-hidden shadow-sm"
-                        >
-                          <div className="flex justify-between items-center bg-slate-50 p-3 border-b border-slate-200 flex-wrap gap-2">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Badge
-                                variant="outline"
-                                className={
-                                  sol.tipo === 'Treinamento'
-                                    ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                    : sol.tipo === 'Proposta de Treinamento'
-                                      ? 'bg-purple-50 text-purple-700 border-purple-200'
-                                      : sol.tipo === 'Upsell' || sol.tipo === 'Inclusão de Módulo'
-                                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                                        : sol.tipo === 'Alteração Cadastral'
-                                          ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                          : sol.tipo === 'Reclamação'
-                                            ? 'bg-red-50 text-red-700 border-red-200'
-                                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                }
-                              >
-                                {sol.tipo}
-                              </Badge>
-
-                              <Select
-                                value={sol.status || 'Pendente'}
-                                onValueChange={(val) => updateSolicitacaoStatus(sol, val)}
-                                disabled={sol.status === 'Efetivado'}
-                              >
-                                <SelectTrigger
-                                  className={`h-6 text-xs font-medium border-0 shadow-none focus:ring-0 w-[160px] ${
-                                    sol.status === 'Validada'
-                                      ? 'bg-blue-100 text-blue-800'
-                                      : sol.status === 'Enviado p/ Implantação'
-                                        ? 'bg-purple-100 text-purple-800'
-                                        : sol.status === 'Efetivado'
-                                          ? 'bg-emerald-100 text-emerald-800'
-                                          : sol.status === 'Em Análise'
-                                            ? 'bg-amber-100 text-amber-800'
-                                            : sol.status === 'Cancelado'
-                                              ? 'bg-red-100 text-red-800'
-                                              : 'bg-slate-200 text-slate-800'
-                                  }`}
+                    {isLoadingSolicitacoes ? (
+                      <div className="flex justify-center items-center py-12 text-slate-500">
+                        <Loader2 className="h-6 w-6 animate-spin mr-2" /> Carregando...
+                      </div>
+                    ) : solicitacoes.length === 0 ? (
+                      <div className="text-center py-12 bg-slate-50 border border-dashed border-slate-200 rounded-lg">
+                        <p className="text-slate-500 text-sm">Nenhuma solicitação registrada.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {solicitacoes.map((sol) => (
+                          <div
+                            key={sol.id}
+                            className="border border-slate-200 rounded-lg overflow-hidden shadow-sm"
+                          >
+                            <div className="flex justify-between items-center bg-slate-50 p-3 border-b border-slate-200 flex-wrap gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    sol.tipo === 'Treinamento'
+                                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                      : sol.tipo === 'Proposta de Treinamento'
+                                        ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                        : sol.tipo === 'Upsell' || sol.tipo === 'Inclusão de Módulo'
+                                          ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                                          : sol.tipo === 'Alteração Cadastral'
+                                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                            : sol.tipo === 'Reclamação'
+                                              ? 'bg-red-50 text-red-700 border-red-200'
+                                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  }
                                 >
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Pendente">Pendente</SelectItem>
-                                  <SelectItem value="Em Análise">Em Análise</SelectItem>
-                                  <SelectItem value="Validada">Validada</SelectItem>
-                                  <SelectItem value="Enviado p/ Implantação">
-                                    Enviado p/ Implantação
-                                  </SelectItem>
-                                  <SelectItem value="Efetivado" disabled>
-                                    Efetivado
-                                  </SelectItem>
-                                  <SelectItem value="Cancelado">Cancelado</SelectItem>
-                                </SelectContent>
-                              </Select>
+                                  {sol.tipo}
+                                </Badge>
 
-                              {sol.status === 'Validada' && (
+                                <Select
+                                  value={sol.status || 'Pendente'}
+                                  onValueChange={(val) => updateSolicitacaoStatus(sol, val)}
+                                  disabled={sol.status === 'Efetivado'}
+                                >
+                                  <SelectTrigger
+                                    className={`h-6 text-xs font-medium border-0 shadow-none focus:ring-0 w-[160px] ${
+                                      sol.status === 'Validada'
+                                        ? 'bg-blue-100 text-blue-800'
+                                        : sol.status === 'Enviado p/ Implantação'
+                                          ? 'bg-purple-100 text-purple-800'
+                                          : sol.status === 'Efetivado'
+                                            ? 'bg-emerald-100 text-emerald-800'
+                                            : sol.status === 'Em Análise'
+                                              ? 'bg-amber-100 text-amber-800'
+                                              : sol.status === 'Cancelado'
+                                                ? 'bg-red-100 text-red-800'
+                                                : 'bg-slate-200 text-slate-800'
+                                    }`}
+                                  >
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Pendente">Pendente</SelectItem>
+                                    <SelectItem value="Em Análise">Em Análise</SelectItem>
+                                    <SelectItem value="Validada">Validada</SelectItem>
+                                    <SelectItem value="Enviado p/ Implantação">
+                                      Enviado p/ Implantação
+                                    </SelectItem>
+                                    <SelectItem value="Efetivado" disabled>
+                                      Efetivado
+                                    </SelectItem>
+                                    <SelectItem value="Cancelado">Cancelado</SelectItem>
+                                  </SelectContent>
+                                </Select>
+
+                                {sol.status === 'Validada' && (
+                                  <Button
+                                    size="sm"
+                                    className="h-6 px-2 py-0 text-xs bg-emerald-600 hover:bg-emerald-700"
+                                    onClick={() => handleEfetivar(sol)}
+                                  >
+                                    <CheckCircle className="h-3 w-3 mr-1" /> Efetivar
+                                  </Button>
+                                )}
+
+                                <span className="text-xs text-slate-500 font-medium ml-2">
+                                  Solicitado:{' '}
+                                  {sol.data_solicitacao ? formatDate(sol.data_solicitacao) : 'N/I'}
+                                </span>
+                              </div>
+                              <div className="flex items-center">
                                 <Button
-                                  size="sm"
-                                  className="h-6 px-2 py-0 text-xs bg-emerald-600 hover:bg-emerald-700"
-                                  onClick={() => handleEfetivar(sol)}
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-slate-400 hover:text-blue-600"
+                                  onClick={() => handleOpenEditSolicitacao(sol)}
                                 >
-                                  <CheckCircle className="h-3 w-3 mr-1" /> Efetivar
+                                  <Edit className="h-4 w-4" />
                                 </Button>
-                              )}
-
-                              <span className="text-xs text-slate-500 font-medium ml-2">
-                                Solicitado:{' '}
-                                {sol.data_solicitacao ? formatDate(sol.data_solicitacao) : 'N/I'}
-                              </span>
-                            </div>
-                            <div className="flex items-center">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-slate-400 hover:text-blue-600"
-                                onClick={() => handleOpenEditSolicitacao(sol)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-slate-400 hover:text-red-600"
-                                onClick={() => handleDeleteSolicitacao(sol.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-
-                          <div className="p-4">
-                            <p className="text-sm text-slate-800 font-medium mb-1">Descrição</p>
-                            <p className="text-sm text-slate-600 mb-4 whitespace-pre-wrap">
-                              {sol.descricao}
-                            </p>
-
-                            {(sol.valor > 0 || sol.forma_pagamento || sol.data_vencimento) && (
-                              <div className="bg-slate-50 rounded p-3 mb-4 flex flex-wrap gap-4 border border-slate-100">
-                                {sol.valor > 0 && (
-                                  <div>
-                                    <span className="text-xs text-slate-500 block">
-                                      Valor Acordado
-                                    </span>
-                                    <span className="text-sm font-semibold text-slate-800">
-                                      {formatCurrency(sol.valor)}
-                                    </span>
-                                  </div>
-                                )}
-                                {sol.forma_pagamento && (
-                                  <div>
-                                    <span className="text-xs text-slate-500 block">
-                                      Forma de Pagamento
-                                    </span>
-                                    <span className="text-sm font-medium text-slate-700">
-                                      {sol.forma_pagamento}
-                                    </span>
-                                  </div>
-                                )}
-                                {sol.data_vencimento && (
-                                  <div>
-                                    <span className="text-xs text-slate-500 block">Vencimento</span>
-                                    <span className="text-sm font-medium text-slate-700">
-                                      {formatDate(sol.data_vencimento)}
-                                    </span>
-                                  </div>
-                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-slate-400 hover:text-red-600"
+                                  onClick={() => handleDeleteSolicitacao(sol.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
-                            )}
+                            </div>
 
-                            {sol.observacoes && (
-                              <div className="mb-4">
-                                <p className="text-xs text-slate-500 font-medium mb-1">
-                                  Observações
-                                </p>
-                                <p className="text-sm text-slate-600 italic">{sol.observacoes}</p>
-                              </div>
-                            )}
+                            <div className="p-4">
+                              <p className="text-sm text-slate-800 font-medium mb-1">Descrição</p>
+                              <p className="text-sm text-slate-600 mb-4 whitespace-pre-wrap">
+                                {sol.descricao}
+                              </p>
 
-                            {(sol.contato_nome || sol.contato_telefone) && (
-                              <div className="mb-4 bg-slate-50 p-3 rounded-md border border-slate-100">
-                                <p className="text-xs text-slate-500 font-medium mb-1">
-                                  Contato para o Serviço
-                                </p>
-                                <div className="flex gap-4">
-                                  {sol.contato_nome && (
-                                    <span className="text-sm text-slate-700">
-                                      <b>Nome:</b> {sol.contato_nome}
-                                    </span>
+                              {(sol.valor > 0 || sol.forma_pagamento || sol.data_vencimento) && (
+                                <div className="bg-slate-50 rounded p-3 mb-4 flex flex-wrap gap-4 border border-slate-100">
+                                  {sol.valor > 0 && (
+                                    <div>
+                                      <span className="text-xs text-slate-500 block">
+                                        Valor Acordado
+                                      </span>
+                                      <span className="text-sm font-semibold text-slate-800">
+                                        {formatCurrency(sol.valor)}
+                                      </span>
+                                    </div>
                                   )}
-                                  {sol.contato_telefone && (
-                                    <span className="text-sm text-slate-700">
-                                      <b>Telefone:</b> {sol.contato_telefone}
-                                    </span>
+                                  {sol.forma_pagamento && (
+                                    <div>
+                                      <span className="text-xs text-slate-500 block">
+                                        Forma de Pagamento
+                                      </span>
+                                      <span className="text-sm font-medium text-slate-700">
+                                        {sol.forma_pagamento}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {sol.data_vencimento && (
+                                    <div>
+                                      <span className="text-xs text-slate-500 block">
+                                        Vencimento
+                                      </span>
+                                      <span className="text-sm font-medium text-slate-700">
+                                        {formatDate(sol.data_vencimento)}
+                                      </span>
+                                    </div>
                                   )}
                                 </div>
-                              </div>
-                            )}
-
-                            {sol.documento_url && (
-                              <div className="mb-4">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  asChild
-                                  className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
-                                >
-                                  <a
-                                    href={sol.documento_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <FileText className="h-4 w-4 mr-2" /> Anexo
-                                  </a>
-                                </Button>
-                              </div>
-                            )}
-
-                            <div className="flex gap-2 pt-2 border-t border-slate-100">
-                              {(sol.tipo === 'Treinamento' || sol.tipo === 'Visita Técnica') && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="w-full text-xs"
-                                  onClick={() => handleEmailImplantacao(sol)}
-                                >
-                                  <Mail className="h-3.5 w-3.5 mr-1.5" /> Enviar e-mail para
-                                  implantação
-                                </Button>
                               )}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                                onClick={() => handleEmailFinanceiro(sol)}
-                              >
-                                <Mail className="h-3.5 w-3.5 mr-1.5" /> Enviar p/ Financeiro
-                              </Button>
+
+                              {sol.observacoes && (
+                                <div className="mb-4">
+                                  <p className="text-xs text-slate-500 font-medium mb-1">
+                                    Observações
+                                  </p>
+                                  <p className="text-sm text-slate-600 italic">{sol.observacoes}</p>
+                                </div>
+                              )}
+
+                              {(sol.contato_nome || sol.contato_telefone) && (
+                                <div className="mb-4 bg-slate-50 p-3 rounded-md border border-slate-100">
+                                  <p className="text-xs text-slate-500 font-medium mb-1">
+                                    Contato para o Serviço
+                                  </p>
+                                  <div className="flex gap-4">
+                                    {sol.contato_nome && (
+                                      <span className="text-sm text-slate-700">
+                                        <b>Nome:</b> {sol.contato_nome}
+                                      </span>
+                                    )}
+                                    {sol.contato_telefone && (
+                                      <span className="text-sm text-slate-700">
+                                        <b>Telefone:</b> {sol.contato_telefone}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {sol.documento_url && (
+                                <div className="mb-4">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    asChild
+                                    className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                                  >
+                                    <a
+                                      href={sol.documento_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      <FileText className="h-4 w-4 mr-2" /> Anexo
+                                    </a>
+                                  </Button>
+                                </div>
+                              )}
+
+                              <div className="flex gap-2 pt-2 border-t border-slate-100">
+                                {(sol.tipo === 'Treinamento' || sol.tipo === 'Visita Técnica') && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full text-xs"
+                                    onClick={() => handleEmailImplantacao(sol)}
+                                  >
+                                    <Mail className="h-3.5 w-3.5 mr-1.5" /> Enviar e-mail para
+                                    implantação
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                                  onClick={() => handleEmailFinanceiro(sol)}
+                                >
+                                  <Mail className="h-3.5 w-3.5 mr-1.5" /> Enviar p/ Financeiro
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </ScrollArea>
-              </TabsContent>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </TabsContent>
+              )}
             </Tabs>
           )}
         </SheetContent>
