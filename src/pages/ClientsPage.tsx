@@ -113,7 +113,7 @@ import { AddendumDocument } from '@/components/AddendumDocument'
 import { TrainingProposalDocument } from '@/components/TrainingProposalDocument'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-import { DatePicker } from '@/components/ui/date-picker'
+import { AdvancedDatePicker } from '@/components/ui/advanced-date-picker'
 import { DiagnosticoOperacional } from '@/components/DiagnosticoOperacional'
 import { useAuth } from '@/hooks/use-auth'
 import { CrmProspectPropostasTab } from '@/components/CrmProspectPropostasTab'
@@ -3822,7 +3822,7 @@ Obrigada.`)
                         <FormItem className="sm:col-span-2">
                           <FormLabel>Data de Assinatura do Contrato</FormLabel>
                           <FormControl>
-                            <DatePicker
+                            <AdvancedDatePicker
                               value={field.value || ''}
                               onChange={field.onChange}
                               placeholder="Selecione a data de assinatura"
