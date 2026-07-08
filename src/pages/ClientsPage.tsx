@@ -2345,21 +2345,12 @@ Obrigada.`)
           <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
             <div className="p-4 bg-slate-50 border-b border-slate-100 flex flex-wrap gap-4 justify-between items-center">
               <div>
-                <span className="text-xs text-slate-500 block mb-1">Cliente desde</span>
+                <span className="text-xs text-slate-500 block mb-1">Assinatura do Contrato</span>
                 <span className="font-medium text-slate-900 flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                  {formatDate(client.createdAt)}
+                  {client.data_assinatura ? formatDate(client.data_assinatura) : 'Não informada'}
                 </span>
               </div>
-              {client.data_assinatura && (
-                <div>
-                  <span className="text-xs text-slate-500 block mb-1">Assinatura do Contrato</span>
-                  <span className="font-medium text-slate-900 flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                    {formatDate(client.data_assinatura)}
-                  </span>
-                </div>
-              )}
               <div className="text-right">
                 <span className="text-xs text-slate-500 block mb-1">Valor Total Mensal</span>
                 <span className="text-lg font-bold text-emerald-700">
