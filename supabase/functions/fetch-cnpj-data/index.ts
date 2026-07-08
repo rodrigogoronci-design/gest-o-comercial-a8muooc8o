@@ -17,9 +17,7 @@ async function fetchFromBrasilAPI(cleanCnpj: string): Promise<CnpjData> {
     throw new Error(`BrasilAPI error: ${res.status}`)
   }
   const d = await res.json()
-  const addr = [d.logradouro, d.numero, d.bairro, d.municipio, d.uf]
-    .filter(Boolean)
-    .join(', ')
+  const addr = [d.logradouro, d.numero, d.bairro, d.municipio, d.uf].filter(Boolean).join(', ')
   return {
     nome: d.razao_social || '',
     email: d.email || '',
@@ -39,9 +37,7 @@ async function fetchFromReceitaWS(cleanCnpj: string): Promise<CnpjData> {
   }
   const d = await res.json()
   if (d.status === 'ERROR') throw new Error('CNPJ_NAO_ENCONTRADO')
-  const addr = [d.logradouro, d.numero, d.bairro, d.municipio, d.uf]
-    .filter(Boolean)
-    .join(', ')
+  const addr = [d.logradouro, d.numero, d.bairro, d.municipio, d.uf].filter(Boolean).join(', ')
   return {
     nome: d.nome || '',
     email: d.email || '',
@@ -60,10 +56,10 @@ Deno.serve(async (req: Request) => {
     const cleanCnpj = (cnpj || '').replace(/\D/g, '')
 
     if (cleanCnpj.length !== 14) {
-      return new Response(
-        JSON.stringify({ error: 'CNPJ inválido. Deve conter 14 dígitos.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      )
+      return new Response(JSON.stringify({ error: 'CNPJ inválido. Deve conter 14 dígitos.' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
     let data: CnpjData | null = null
@@ -75,7 +71,9 @@ Deno.serve(async (req: Request) => {
       errors.push(`BrasilAPI: ${(e as Error).message}`)
       if ((e as Error).message === 'CNPJ_NAO_ENCONTRADO') {
         return new Response(
-          JSON.stringify({ error: 'CNPJ não encontrado. Por favor, verifique os dados ou preencha manualmente.' }),
+          JSON.stringify({
+            error: 'CNPJ não encontrado. Por favor, verifique os dados ou preencha manualmente.',
+          }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         )
       }
@@ -88,7 +86,9 @@ Deno.serve(async (req: Request) => {
         errors.push(`ReceitaWS: ${(e as Error).message}`)
         if ((e as Error).message === 'CNPJ_NAO_ENCONTRADO') {
           return new Response(
-            JSON.stringify({ error: 'CNPJ não encontrado. Por favor, verifique os dados ou preencha manualmente.' }),
+            JSON.stringify({
+              error: 'CNPJ não encontrado. Por favor, verifique os dados ou preencha manualmente.',
+            }),
             { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
           )
         }
@@ -105,14 +105,13 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    return new Response(
-      JSON.stringify({ success: true, data }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    )
+    return new Response(JSON.stringify({ success: true, data }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   } catch (error: any) {
-    return new Response(
-      JSON.stringify({ error: 'Erro interno ao processar a solicitação.' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    )
+    return new Response(JSON.stringify({ error: 'Erro interno ao processar a solicitação.' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 })

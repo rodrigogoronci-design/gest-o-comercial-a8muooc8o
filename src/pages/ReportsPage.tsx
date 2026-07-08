@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Bar,
   BarChart,
@@ -12,8 +13,9 @@ import {
   LineChart,
 } from 'recharts'
 import { Button } from '@/components/ui/button'
-import { Download } from 'lucide-react'
+import { Download, BarChart3, FileSearch } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { AtendimentoReportTab } from '@/components/AtendimentoReportTab'
 
 export default function ReportsPage() {
   const [loading, setLoading] = useState(true)
@@ -29,7 +31,6 @@ export default function ReportsPage() {
     try {
       setLoading(true)
 
-      // MOCK DATA for Faturamento (Aggregation from backend would require complex queries or views)
       const mockFaturamento = [
         { name: 'Jan', fixo: 4000, aditivo: 2400 },
         { name: 'Fev', fixo: 3000, aditivo: 1398 },
@@ -47,7 +48,7 @@ export default function ReportsPage() {
         { tecnico: 'Ana Oliveira', tempoMedio: 2.0, visitas: 18 },
       ]
       setPerformanceData(mockPerformance)
-    } catch (error: any) {
+    } catch {
       toast({ title: 'Erro', description: 'Falha ao carregar relatórios', variant: 'destructive' })
     } finally {
       setLoading(false)
@@ -67,132 +68,151 @@ export default function ReportsPage() {
             Visualize o desempenho comercial e operacional.
           </p>
         </div>
-        <Button onClick={exportCSV} variant="outline">
+        <Button onClick={exportCSV} variant="outline" className="print:hidden">
           <Download className="mr-2 h-4 w-4" /> Exportar Dados
         </Button>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Faturamento Mensal</CardTitle>
-            <CardDescription>Receita de contratos fixos vs. aditivos</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                Carregando...
-              </div>
-            ) : (
-              <ChartContainer
-                config={{
-                  fixo: { label: 'Contratos Fixos', color: 'hsl(var(--primary))' },
-                  aditivo: { label: 'Aditivos', color: 'hsl(var(--chart-2))' },
-                }}
-                className="h-[300px] w-full"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={faturamentoData}
-                    margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      vertical={false}
-                      stroke="hsl(var(--border))"
-                    />
-                    <XAxis
-                      dataKey="name"
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(value) => `R$ ${value}`}
-                    />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar
-                      dataKey="fixo"
-                      fill="var(--color-fixo)"
-                      radius={[4, 4, 0, 0]}
-                      stackId="a"
-                    />
-                    <Bar
-                      dataKey="aditivo"
-                      fill="var(--color-aditivo)"
-                      radius={[4, 4, 0, 0]}
-                      stackId="a"
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            )}
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="dashboards" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md print:hidden">
+          <TabsTrigger value="dashboards" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Dashboards
+          </TabsTrigger>
+          <TabsTrigger value="atendimento" className="flex items-center gap-2">
+            <FileSearch className="h-4 w-4" />
+            Relatório de Atendimento
+          </TabsTrigger>
+        </TabsList>
 
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Performance de Execução</CardTitle>
-            <CardDescription>
-              Tempo médio (em dias) para execução de visitas técnicas
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                Carregando...
-              </div>
-            ) : (
-              <ChartContainer
-                config={{
-                  tempoMedio: { label: 'Tempo Médio (Dias)', color: 'hsl(var(--chart-3))' },
-                }}
-                className="h-[300px] w-full"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={performanceData}
-                    margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
+        <TabsContent value="dashboards" className="space-y-6 mt-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle>Faturamento Mensal</CardTitle>
+                <CardDescription>Receita de contratos fixos vs. aditivos</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                    Carregando...
+                  </div>
+                ) : (
+                  <ChartContainer
+                    config={{
+                      fixo: { label: 'Contratos Fixos', color: 'hsl(var(--primary))' },
+                      aditivo: { label: 'Aditivos', color: 'hsl(var(--chart-2))' },
+                    }}
+                    className="h-[300px] w-full"
                   >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      vertical={false}
-                      stroke="hsl(var(--border))"
-                    />
-                    <XAxis
-                      dataKey="tecnico"
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Line
-                      type="monotone"
-                      dataKey="tempoMedio"
-                      stroke="var(--color-tempoMedio)"
-                      strokeWidth={3}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={faturamentoData}
+                        margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                          stroke="hsl(var(--border))"
+                        />
+                        <XAxis
+                          dataKey="name"
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(value) => `R$ ${value}`}
+                        />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar
+                          dataKey="fixo"
+                          fill="var(--color-fixo)"
+                          radius={[4, 4, 0, 0]}
+                          stackId="a"
+                        />
+                        <Bar
+                          dataKey="aditivo"
+                          fill="var(--color-aditivo)"
+                          radius={[4, 4, 0, 0]}
+                          stackId="a"
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle>Performance de Execução</CardTitle>
+                <CardDescription>
+                  Tempo médio (em dias) para execução de visitas técnicas
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                    Carregando...
+                  </div>
+                ) : (
+                  <ChartContainer
+                    config={{
+                      tempoMedio: { label: 'Tempo Médio (Dias)', color: 'hsl(var(--chart-3))' },
+                    }}
+                    className="h-[300px] w-full"
+                  >
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={performanceData}
+                        margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                          stroke="hsl(var(--border))"
+                        />
+                        <XAxis
+                          dataKey="tecnico"
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Line
+                          type="monotone"
+                          dataKey="tempoMedio"
+                          stroke="var(--color-tempoMedio)"
+                          strokeWidth={3}
+                          dot={{ r: 4 }}
+                          activeDot={{ r: 6 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="atendimento" className="mt-6">
+          <AtendimentoReportTab />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
