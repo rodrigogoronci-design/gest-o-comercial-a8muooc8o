@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
-import { Loader2, Plus, Calendar, MessageSquare, Trash2, ChevronRight } from 'lucide-react'
+import {
+  Loader2,
+  Plus,
+  Calendar,
+  MessageSquare,
+  Trash2,
+  ChevronRight,
+  Paperclip,
+} from 'lucide-react'
 import { AtendimentoFormDialog } from '@/components/AtendimentoFormDialog'
 import { AtendimentoDetailDialog } from '@/components/AtendimentoDetailDialog'
 import {
@@ -117,6 +125,12 @@ export function ClientAtendimentosTab({ clienteId, clientName }: ClientAtendimen
               >
                 {atendimento.solicitacao}
               </button>
+              {atendimento.documento_url && (
+                <Paperclip
+                  className="h-4 w-4 text-indigo-500 shrink-0"
+                  aria-label="Possui documento anexo"
+                />
+              )}
               <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-slate-400 shrink-0" />
               <Button
                 variant="ghost"

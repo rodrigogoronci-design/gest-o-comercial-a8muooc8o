@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Calendar, FileText, MessageSquare } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Calendar, FileText, MessageSquare, Download, Loader2, ExternalLink } from 'lucide-react'
 import { formatDate } from '@/lib/formatters'
 import type { Atendimento } from '@/services/atendimentos'
 
@@ -14,6 +16,18 @@ export function AtendimentoDetailDialog({
   onOpenChange,
   atendimento,
 }: AtendimentoDetailDialogProps) {
+  const [loadingDoc, setLoadingDoc] = useState(false)
+
+  const handleViewDocument = async () => {
+    if (!atendimento?.documento_url) return
+    setLoadingDoc(true)
+    try {
+      window.open(atendimento.documento_url, '_blank')
+    } finally {
+      setLoadingDoc(false)
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
@@ -49,6 +63,44 @@ export function AtendimentoDetailDialog({
                   </p>
                 </div>
               </div>
+              {atendimento.documento_url && (
+                <div>
+                  <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
+                    Documento Anexo
+                  </h4>
+                  <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-100 rounded-md p-3">
+                    <FileText className="h-5 w-5 text-indigo-600 shrink-0" />
+                    <span className="text-sm text-slate-700 font-medium flex-1 truncate">
+                      Documento anexado
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                      disabled={loadingDoc}
+                      onClick={handleViewDocument}
+                    >
+                      {loadingDoc ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <ExternalLink className="h-4 w-4 mr-1.5" />
+                          Ver Documento Anexo
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-indigo-600 hover:bg-indigo-50"
+                      disabled={loadingDoc}
+                      onClick={handleViewDocument}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </>
         ) : null}
