@@ -146,6 +146,7 @@ export interface ClienteRecord {
   quantidade_filiais?: number | null
   cobrar_filiais?: boolean | null
   data_assinatura?: string | null
+  vencimento_mensal?: number | null
 }
 
 type ModuleItem = { name: string; price: number }
@@ -259,6 +260,7 @@ type MergedClient = {
   desconto_mensalidade?: number
   tipo_desconto?: 'valor' | 'percentual'
   data_assinatura?: string | null
+  vencimento_mensal?: number | null
 }
 
 const clientSchema = z.object({
@@ -297,6 +299,7 @@ const clientSchema = z.object({
     .optional()
     .default([]),
   data_assinatura: z.string().optional().or(z.literal('')),
+  vencimento_mensal: z.number().min(1, 'Dia inválido').max(31, 'Dia inválido').optional(),
 })
 
 type ClientFormValues = z.infer<typeof clientSchema>
@@ -844,6 +847,7 @@ export default function ClientsPage() {
       cobrar_filiais: false,
       quantidade_filiais: 0,
       data_assinatura: '',
+      vencimento_mensal: undefined,
       filiais_detalhes: [],
     },
   })
@@ -1060,6 +1064,7 @@ export default function ClientsPage() {
       cobrar_filiais: false,
       quantidade_filiais: 0,
       data_assinatura: '',
+      vencimento_mensal: undefined,
       filiais_detalhes: [],
     })
     setIsSheetOpen(true)
@@ -1090,6 +1095,7 @@ export default function ClientsPage() {
         client.originalData?.filiais_detalhes?.length ||
         0,
       data_assinatura: client.data_assinatura || '',
+      vencimento_mensal: client.vencimento_mensal ?? undefined,
       filiais_detalhes: client.originalData?.filiais_detalhes || [],
     })
     setIsSheetOpen(true)
@@ -1313,6 +1319,7 @@ Obrigada,`
       quantidade_filiais: data.quantidade_filiais,
       filiais_detalhes: data.filiais_detalhes,
       data_assinatura: data.data_assinatura || null,
+      vencimento_mensal: data.vencimento_mensal ?? null,
       modulos: {
         plano_base: data.plano_base,
         filiais: data.filiais,
@@ -2298,6 +2305,7 @@ Obrigada.`)
         desconto_mensalidade: c.desconto_mensalidade || 0,
         tipo_desconto: (c.tipo_desconto as 'valor' | 'percentual') || 'valor',
         data_assinatura: c.data_assinatura,
+        vencimento_mensal: c.vencimento_mensal,
       }
     }),
   ]
@@ -2349,6 +2357,13 @@ Obrigada.`)
                 <span className="font-medium text-slate-900 flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5 text-slate-400" />
                   {client.data_assinatura ? formatDate(client.data_assinatura) : 'Não informada'}
+                </span>
+              </div>
+              <div className="text-center">
+                <span className="text-xs text-slate-500 block mb-1">Vencimento Mensal</span>
+                <span className="font-medium text-slate-900 flex items-center gap-1.5 justify-center">
+                  <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                  {client.vencimento_mensal ? `Dia ${client.vencimento_mensal}` : '--'}
                 </span>
               </div>
               <div className="text-right">
@@ -3818,6 +3833,39 @@ Obrigada.`)
                               placeholder="Selecione a data de assinatura"
                             />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="vencimento_mensal"
+                      render={({ field }) => (
+                        <FormItem className="sm:col-span-2">
+                          <FormLabel>Dia de Vencimento (Mensal)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={31}
+                              placeholder="Ex: 10"
+                              value={field.value ?? ''}
+                              onChange={(e) => {
+                                const val = e.target.value
+                                if (val === '') {
+                                  field.onChange(undefined)
+                                } else {
+                                  const num = parseInt(val, 10)
+                                  if (!isNaN(num) && num >= 1 && num <= 31) {
+                                    field.onChange(num)
+                                  }
+                                }
+                              }}
+                            />
+                          </FormControl>
+                          <p className="text-xs text-slate-500">
+                            Dia do mês para o vencimento recorrente (1 a 31).
+                          </p>
                           <FormMessage />
                         </FormItem>
                       )}
