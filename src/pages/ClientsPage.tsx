@@ -17,6 +17,7 @@ import {
   CheckCircle,
   Printer,
   ChevronDown,
+  Ban,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -147,6 +148,8 @@ export interface ClienteRecord {
   cobrar_filiais?: boolean | null
   data_assinatura?: string | null
   vencimento_mensal?: number | null
+  data_cancelamento?: string | null
+  motivo_cancelamento?: string | null
 }
 
 type ModuleItem = { name: string; price: number }
@@ -261,6 +264,8 @@ type MergedClient = {
   tipo_desconto?: 'valor' | 'percentual'
   data_assinatura?: string | null
   vencimento_mensal?: number | null
+  data_cancelamento?: string | null
+  motivo_cancelamento?: string | null
 }
 
 const clientSchema = z.object({
@@ -556,6 +561,12 @@ export default function ClientsPage() {
     null,
   )
   const [emailBody, setEmailBody] = useState('')
+
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
+  const [cancelClient, setCancelClient] = useState<MergedClient | null>(null)
+  const [cancelDate, setCancelDate] = useState('')
+  const [cancelMotivo, setCancelMotivo] = useState('')
+  const [isSubmittingCancel, setIsSubmittingCancel] = useState(false)
 
   const handleRemoveModule = async (moduleToRemove: ModuleItem) => {
     if (!viewingClient) return
@@ -1356,6 +1367,44 @@ Obrigada,`
     } catch (error) {
       console.error(error)
       toast.error('Erro ao excluir cliente')
+    }
+  }
+
+  const handleConfirmCancel = async () => {
+    if (!cancelClient || !cancelDate || !cancelMotivo.trim()) return
+
+    setIsSubmittingCancel(true)
+    try {
+      await updateCliente(cancelClient.id, {
+        status: 'inativo',
+        data_cancelamento: cancelDate,
+        motivo_cancelamento: cancelMotivo.trim(),
+      })
+      toast.success('Cancelamento registrado com sucesso!')
+      setIsCancelModalOpen(false)
+      setCancelClient(null)
+      setCancelDate('')
+      setCancelMotivo('')
+      loadClientes()
+
+      if (viewingClient && viewingClient.id === cancelClient.id) {
+        setViewingClient({
+          ...viewingClient,
+          data_cancelamento: cancelDate,
+          motivo_cancelamento: cancelMotivo.trim(),
+          originalData: {
+            ...viewingClient.originalData!,
+            status: 'inativo',
+            data_cancelamento: cancelDate,
+            motivo_cancelamento: cancelMotivo.trim(),
+          },
+        })
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error('Erro ao registrar cancelamento')
+    } finally {
+      setIsSubmittingCancel(false)
     }
   }
 
@@ -2305,6 +2354,8 @@ Obrigada.`)
         tipo_desconto: (c.tipo_desconto as 'valor' | 'percentual') || 'valor',
         data_assinatura: c.data_assinatura,
         vencimento_mensal: c.vencimento_mensal,
+        data_cancelamento: c.data_cancelamento,
+        motivo_cancelamento: c.motivo_cancelamento,
       }
     }),
   ]
@@ -2378,6 +2429,33 @@ Obrigada.`)
             )}
           </div>
         </div>
+
+        {/* Cancelamento */}
+        {client.originalData?.status?.toLowerCase() === 'inativo' && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <h4 className="text-sm font-bold text-red-800 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <Ban className="h-4 w-4" /> Contrato Cancelado
+            </h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex gap-2">
+                <span className="text-red-600 font-medium min-w-[140px]">
+                  Data do Cancelamento:
+                </span>
+                <span className="text-slate-700">
+                  {client.data_cancelamento
+                    ? formatDate(client.data_cancelamento)
+                    : 'Não informada'}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-red-600 font-medium min-w-[140px]">Motivo:</span>
+                <span className="text-slate-700">
+                  {client.motivo_cancelamento || 'Não informado'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Resumo Atual */}
         <div>
@@ -4155,6 +4233,21 @@ Obrigada.`)
                     Gerar Upsell
                   </Link>
                 </Button>
+                {viewingClient?.originalData?.status?.toLowerCase() !== 'inativo' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setCancelClient(viewingClient)
+                      setCancelDate(new Date().toISOString().split('T')[0])
+                      setCancelMotivo('')
+                      setIsCancelModalOpen(true)
+                    }}
+                    className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                  >
+                    <Ban className="h-4 w-4 mr-2" /> Informar Cancelamento
+                  </Button>
+                )}
               </div>
             </div>
           </SheetHeader>
@@ -4332,6 +4425,50 @@ Obrigada.`)
         </DialogContent>
       </Dialog>
 
+      <Dialog open={isCancelModalOpen} onOpenChange={setIsCancelModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Informar Cancelamento de Contrato</DialogTitle>
+            <DialogDescription>
+              Registre os detalhes do cancelamento do contrato do cliente{' '}
+              <strong className="text-slate-900">{cancelClient?.name}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Data da Solicitação</Label>
+              <AdvancedDatePicker
+                value={cancelDate}
+                onChange={setCancelDate}
+                placeholder="Selecione a data do cancelamento"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Motivo do Cancelamento</Label>
+              <Textarea
+                placeholder="Descreva o motivo do cancelamento do contrato..."
+                value={cancelMotivo}
+                onChange={(e) => setCancelMotivo(e.target.value)}
+                className="min-h-[120px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCancelModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmCancel}
+              disabled={!cancelDate || !cancelMotivo.trim() || isSubmittingCancel}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isSubmittingCancel && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Confirmar Cancelamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog
         open={!!clientToDelete}
         onOpenChange={(open) => !open && setClientToDelete(null)}
@@ -4444,7 +4581,12 @@ Obrigada.`)
                 filteredClients.map((client) => (
                   <TableRow
                     key={client.id}
-                    className="group hover:bg-slate-50/80 transition-colors"
+                    className={cn(
+                      'group transition-colors',
+                      client.originalData?.status?.toLowerCase() === 'inativo'
+                        ? 'opacity-60 hover:opacity-80'
+                        : 'hover:bg-slate-50/80',
+                    )}
                   >
                     <TableCell>
                       <div className="font-medium text-slate-900">{client.name}</div>
@@ -4475,6 +4617,14 @@ Obrigada.`)
                             className="w-fit text-[10px] px-1.5 py-0 h-4 leading-none text-emerald-600 bg-emerald-50 border-emerald-200"
                           >
                             Faturamento
+                          </Badge>
+                        )}
+                        {client.originalData?.status?.toLowerCase() === 'inativo' && (
+                          <Badge
+                            variant="outline"
+                            className="w-fit text-[10px] px-1.5 py-0 h-4 leading-none text-red-600 bg-red-50 border-red-200"
+                          >
+                            Inativo
                           </Badge>
                         )}
                         {client.stats && client.stats.relevantTitulos > 0 && (
@@ -4545,6 +4695,22 @@ Obrigada.`)
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
+                        {client.originalData?.status?.toLowerCase() !== 'inativo' && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-slate-600 hover:text-red-600 hover:bg-red-50"
+                            title="Informar Cancelamento"
+                            onClick={() => {
+                              setCancelClient(client)
+                              setCancelDate(new Date().toISOString().split('T')[0])
+                              setCancelMotivo('')
+                              setIsCancelModalOpen(true)
+                            }}
+                          >
+                            <Ban className="h-4 w-4" />
+                          </Button>
+                        )}
                         {client.contratoUrl && (
                           <Button
                             variant="ghost"
