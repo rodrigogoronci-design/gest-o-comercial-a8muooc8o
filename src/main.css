@@ -90,21 +90,64 @@
 }
 
 @media print {
-  .no-print {
-    display: none !important;
+  @page {
+    size: A4;
+    margin: 12mm;
   }
 
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  html,
   body {
+    overflow: visible !important;
+    height: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
     background: white !important;
   }
 
+  body {
+    font-size: 11pt;
+    color: #1e293b !important;
+  }
+
+  .no-print,
+  header,
+  [data-sidebar],
+  [data-sidebar-container],
+  [data-sidebar-wrapper],
+  .sidebar-container {
+    display: none !important;
+  }
+
+  main {
+    overflow: visible !important;
+    height: auto !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
   .print-card {
+    overflow: visible !important;
     box-shadow: none !important;
     border: none !important;
   }
 
   .report-document {
+    overflow: visible !important;
     color: #1e293b !important;
+    font-size: 10pt;
+    line-height: 1.5;
+  }
+
+  .report-document * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .report-header h2 {
@@ -113,17 +156,24 @@
     print-color-adjust: exact;
   }
 
-  main {
-    padding: 0 !important;
-    max-width: 100% !important;
+  .report-header img {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
-  [data-sidebar] {
-    display: none !important;
+  .module-desc-item {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
-  .sidebar-container {
-    display: none !important;
+  .report-document > * {
+    break-inside: avoid;
+  }
+
+  .report-header {
+    break-after: avoid;
   }
 }
 

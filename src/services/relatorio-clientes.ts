@@ -29,8 +29,6 @@ export interface ClienteRelatorioDetalhado {
   plano_descricao: string | null
   plano_codigo: string | null
   com_coparticipacao: boolean | null
-  rep_nome: string | null
-  rep_cpf: string | null
   quantidade_filiais: number | null
   modo_implantacao: string | null
   filiais_detalhes: any[] | null
@@ -97,8 +95,6 @@ export const getClienteRelatorioDetalhado = async (
       status,
       modulos,
       plano_id,
-      rep_nome,
-      rep_cpf,
       quantidade_filiais,
       modo_implantacao,
       filiais_detalhes,
@@ -128,8 +124,6 @@ export const getClienteRelatorioDetalhado = async (
     plano_descricao: (data.planos_saude as any)?.descricao ?? null,
     plano_codigo: (data.planos_saude as any)?.codigo ?? null,
     com_coparticipacao: (data.planos_saude as any)?.com_coparticipacao ?? null,
-    rep_nome: data.rep_nome,
-    rep_cpf: data.rep_cpf,
     quantidade_filiais: data.quantidade_filiais,
     modo_implantacao: data.modo_implantacao,
     filiais_detalhes: data.filiais_detalhes,

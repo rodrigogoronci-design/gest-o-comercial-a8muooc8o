@@ -18,12 +18,12 @@ import {
   Calendar,
   CreditCard,
   Package,
-  User,
   MapPin,
   Phone,
   Mail,
   DollarSign,
   UserRound,
+  CheckCircle2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -32,15 +32,55 @@ import {
   type ClienteRelatorioDetalhado,
 } from '@/services/relatorio-clientes'
 import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
+import logoUrl from '@/assets/logomarca-service-ea011.png'
 
-function formatCPF(cpf: string | null | undefined): string {
-  if (!cpf) return '—'
-  const cleaned = cpf.replace(/\D/g, '')
-  const match = cleaned.match(/^(\d{3})(\d{3})(\d{3})(\d{2})$/)
-  if (match) {
-    return `${match[1]}.${match[2]}.${match[3]}-${match[4]}`
+const MODULE_DESCRIPTIONS: Record<string, string> = {
+  administração:
+    'Centraliza todas as configurações do sistema, incluindo usuários, permissões de acesso, parâmetros dos módulos, e-mails automáticos e configurações gerais.',
+  básico:
+    'Responsável pelos cadastros principais da empresa, como matriz, filiais, clientes, fornecedores, motoristas, veículos e demais informações utilizadas pelos outros módulos.',
+  'básico (cadastros)':
+    'Responsável pelos cadastros principais da empresa, como matriz, filiais, clientes, fornecedores, motoristas, veículos e demais informações utilizadas pelos outros módulos.',
+  carga:
+    'Gerencia toda a operação de transporte, permitindo emissão de CT-e, MDF-e, NFS-e, CIOT, averbação de seguro, tabela de frete, importação de XML, controle de entregas e demais documentos fiscais do transporte.',
+  'carga (transporte)':
+    'Gerencia toda a operação de transporte, permitindo emissão de CT-e, MDF-e, NFS-e, CIOT, averbação de seguro, tabela de frete, importação de XML, controle de entregas e demais documentos fiscais do transporte.',
+  comercial:
+    'Controla o processo comercial desde a criação das propostas até sua aprovação, com envio automático em PDF para os clientes.',
+  faturamento:
+    'Automatiza o faturamento das viagens através dos CT-es e NFS-es emitidos, permitindo geração de faturas, boletos e aplicação de regras de cobrança.',
+  financeiro:
+    'Realiza a gestão financeira completa da transportadora, com contas a pagar e receber, fluxo de caixa, conciliação bancária, boletos, orçamento, DRE e relatórios financeiros.',
+  fiscal:
+    'Auxilia no cumprimento das obrigações fiscais através da geração de SPED, Sintegra, livros fiscais, emissão de NF-e, apuração de impostos e importação de notas fiscais.',
+  edi: 'Integra o TMS com embarcadores, bancos, seguradoras, sistemas contábeis, abastecimento e órgãos fiscais, automatizando a troca de informações e reduzindo retrabalho.',
+  'edi (integrações)':
+    'Integra o TMS com embarcadores, bancos, seguradoras, sistemas contábeis, abastecimento e órgãos fiscais, automatizando a troca de informações e reduzindo retrabalho.',
+  frota:
+    'Gerencia toda a frota da empresa, incluindo compras, estoque, abastecimento, manutenção, pneus e controle de vencimentos de documentos e licenças dos veículos.',
+  'controle de viagem':
+    'Faz o acompanhamento completo das viagens da frota própria, registrando despesas, adiantamentos, abastecimentos, prestação de contas, comprovantes de entrega e resultado financeiro da viagem.',
+  'container / bloco':
+    'Desenvolvido para operações portuárias e de importação/exportação, controlando coletas, entregas, programação de transporte e emissão dos documentos necessários.',
+  fracionado:
+    'Gerencia operações com cargas fracionadas, acompanhando toda a movimentação da mercadoria desde a coleta até a entrega ao destinatário.',
+  calendário:
+    'Permite configurar alertas automáticos para vencimentos e compromissos operacionais ou financeiros importantes.',
+  'painel de informações':
+    'Possibilita a criação de relatórios e planilhas personalizadas diretamente a partir dos dados armazenados no sistema.',
+  patrimônio:
+    'Controla os bens da empresa, registrando aquisições, movimentações, depreciação e gerando relatórios patrimoniais.',
+}
+
+function getModuleDescription(moduleName: string): string | null {
+  const normalized = moduleName.toLowerCase().trim()
+  if (MODULE_DESCRIPTIONS[normalized]) return MODULE_DESCRIPTIONS[normalized]
+  for (const key of Object.keys(MODULE_DESCRIPTIONS)) {
+    if (normalized.includes(key) || key.includes(normalized)) {
+      return MODULE_DESCRIPTIONS[key]
+    }
   }
-  return cpf
+  return null
 }
 
 function formatDateBR(dateString: string | null | undefined): string {
@@ -92,9 +132,19 @@ function parseModulosData(clienteData: ClienteRelatorioDetalhado | null): {
   if (Array.isArray(parsed)) {
     adicionais = parsed.map(extractName).filter((s): s is string => Boolean(s))
   } else if (typeof parsed === 'object' && parsed !== null) {
-    plano_base = parsed.plano_base || null
-    if (Array.isArray(parsed.adicionais)) {
-      adicionais = parsed.adicionais.map(extractName).filter((s): s is string => Boolean(s))
+    const objKeys = Object.keys(parsed)
+    const hasBooleanVals = objKeys.some((k) => typeof (parsed as any)[k] === 'boolean')
+
+    if (hasBooleanVals && !parsed.plano_base && !Array.isArray(parsed.adicionais)) {
+      adicionais = objKeys
+        .filter((k) => (parsed as any)[k] === true)
+        .map((k) => k.trim())
+        .filter(Boolean)
+    } else {
+      plano_base = parsed.plano_base || null
+      if (Array.isArray(parsed.adicionais)) {
+        adicionais = parsed.adicionais.map(extractName).filter((s): s is string => Boolean(s))
+      }
     }
 
     const filiaisDet = parsed.filiais_detalhes || clienteData.filiais_detalhes || []
@@ -245,16 +295,24 @@ export function ClientIndividualReport() {
             </div>
           ) : (
             <div className="report-document space-y-6">
-              <div className="report-header flex items-center justify-between border-b border-slate-200 pb-4">
-                <div>
-                  <h2 className="text-xl font-bold text-[#1b4382]">Relatório de Contrato</h2>
-                  <p className="text-sm text-slate-500 mt-1">
-                    Documento gerado em {formatDate(new Date().toISOString())}
-                  </p>
+              <div className="report-header flex items-center justify-between border-b-2 border-[#1b4382] pb-4">
+                <div className="flex items-center gap-4">
+                  <img
+                    src={logoUrl}
+                    alt="Service Logic"
+                    className="h-12 w-auto object-contain print:h-14"
+                  />
+                  <div className="border-l-2 border-[#f37021] pl-4">
+                    <h2 className="text-xl font-bold text-[#1b4382] print:text-black">
+                      Relatório de Contrato
+                    </h2>
+                    <p className="text-sm text-slate-500 mt-0.5">
+                      Documento gerado em {formatDate(new Date().toISOString())}
+                    </p>
+                  </div>
                 </div>
-                <Building2 className="h-10 w-10 text-[#1b4382]" />
+                <Building2 className="h-10 w-10 text-[#1b4382] no-print" />
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -354,18 +412,18 @@ export function ClientIndividualReport() {
 
               <Separator />
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
                   <Package className="h-3.5 w-3.5" />
                   Módulos Contratados
                 </p>
                 {modulosList.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 print:gap-1.5">
                     {modulosList.map((modulo, idx) => (
                       <Badge
                         key={idx}
                         variant="secondary"
-                        className="bg-slate-100 text-slate-700 border-slate-200 font-normal px-3 py-1"
+                        className="bg-slate-100 text-slate-700 border-slate-200 font-normal px-3 py-1 print:border-slate-300"
                       >
                         {modulo}
                       </Badge>
@@ -378,47 +436,51 @@ export function ClientIndividualReport() {
                 )}
               </div>
 
+              {modulosList.length > 0 && (
+                <>
+                  <Separator />
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Descrição dos Módulos
+                    </p>
+                    <div className="space-y-2.5">
+                      {modulosList.map((modulo, idx) => {
+                        const description = getModuleDescription(modulo)
+                        return (
+                          <div
+                            key={idx}
+                            className="module-desc-item rounded-lg border border-slate-200 bg-slate-50/50 p-3 print:border-slate-300 print:bg-transparent"
+                          >
+                            <p className="text-sm font-semibold text-[#1b4382] print:text-black">
+                              {modulo}
+                            </p>
+                            {description ? (
+                              <p className="text-xs text-slate-600 mt-1 leading-relaxed print:text-black">
+                                {description}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-slate-400 mt-1 italic">
+                                Módulo contratado sem descrição detalhada.
+                              </p>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+
               <Separator />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                    Representante Legal
-                  </p>
-                  <p className="text-sm font-medium text-slate-800">
-                    {clienteData.rep_nome ?? '—'}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                    CPF do Representante
-                  </p>
-                  <p className="text-sm font-medium text-slate-800">
-                    {formatCPF(clienteData.rep_cpf)}
-                  </p>
-                </div>
                 <div className="space-y-1">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 flex items-center gap-1">
                     <Mail className="h-3 w-3" /> E-mail
                   </p>
                   <p className="text-sm font-medium text-slate-800">{clienteData.email ?? '—'}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 flex items-center gap-1">
-                    <Phone className="h-3 w-3" /> Telefone
-                  </p>
-                  <p className="text-sm font-medium text-slate-800">
-                    {clienteData.telefone ?? '—'}
-                  </p>
-                </div>
-                <div className="space-y-1 md:col-span-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 flex items-center gap-1">
-                    <MapPin className="h-3 w-3" /> Endereço
-                  </p>
-                  <p className="text-sm font-medium text-slate-800">
-                    {clienteData.endereco ?? '—'}
-                  </p>
-                </div>
+                </div>{' '}
               </div>
 
               {clienteData.quantidade_filiais != null && clienteData.quantidade_filiais > 0 && (
