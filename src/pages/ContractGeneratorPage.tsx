@@ -559,10 +559,16 @@ export default function ContractGeneratorPage() {
       ...selectedModules
         .filter((id) => !MODULES.find((m) => m.id === id)?.isBasic)
         .map((id) => {
-          const mod = MODULES.find((m) => m.id === id)
+          const mod = MODULES.find((m) => m.id === id) as any
           return {
             name: mod?.name,
             price: typeof customModulePrices[id] === 'number' ? customModulePrices[id] : mod?.price,
+            ...(mod?.franquia_quantidade
+              ? {
+                  franquia_quantidade: mod.franquia_quantidade,
+                  valor_excedente: mod.valor_excedente,
+                }
+              : {}),
           }
         }),
       ...(selectedDfe !== 'dfe-none' ? [{ name: dfeData?.name, price: dfeData?.price }] : []),
@@ -749,11 +755,14 @@ export default function ContractGeneratorPage() {
         : planData?.name || 'Plano Personalizado',
     selectedModulesData: selectedModules
       .map((id) => {
-        const m = MODULES.find((m) => m.id === id)
+        const m = MODULES.find((m) => m.id === id) as any
         if (!m) return null
         return {
           ...m,
           price: typeof customModulePrices[id] === 'number' ? customModulePrices[id] : m.price,
+          ...(m.franquia_quantidade
+            ? { franquia_quantidade: m.franquia_quantidade, valor_excedente: m.valor_excedente }
+            : {}),
         }
       })
       .filter((m) => m && !m.isBasic),
@@ -1173,7 +1182,7 @@ export default function ContractGeneratorPage() {
       ...selectedModules
         .filter((id) => !MODULES.find((mod) => mod.id === id)?.isBasic)
         .map((id) => {
-          const m = MODULES.find((mod) => mod.id === id)
+          const m = MODULES.find((mod) => mod.id === id) as any
           return {
             id,
             name: m?.name,
@@ -1181,6 +1190,12 @@ export default function ContractGeneratorPage() {
             implHours: m?.implHours || 0,
             tem_gratuidade: !!moduleGracePeriods[id],
             periodo_gratuidade: moduleGracePeriods[id] || 0,
+            ...(m?.franquia_quantidade
+              ? {
+                  franquia_quantidade: m.franquia_quantidade,
+                  valor_excedente: m.valor_excedente,
+                }
+              : {}),
           }
         }),
       ...(selectedDfe !== 'dfe-none' && dfeData
@@ -1424,11 +1439,17 @@ export default function ContractGeneratorPage() {
       const adicionais = selectedModules
         .filter((id) => !MODULES.find((m) => m.id === id)?.isBasic)
         .map((id) => {
-          const mod = MODULES.find((m) => m.id === id)
+          const mod = MODULES.find((m) => m.id === id) as any
           return {
             name: mod?.name || id,
             price:
               typeof customModulePrices[id] === 'number' ? customModulePrices[id] : mod?.price || 0,
+            ...(mod?.franquia_quantidade
+              ? {
+                  franquia_quantidade: mod.franquia_quantidade,
+                  valor_excedente: mod.valor_excedente,
+                }
+              : {}),
           }
         })
 
@@ -3180,10 +3201,27 @@ export default function ContractGeneratorPage() {
                             {PLANS.map((p) => (
                               <SelectItem key={p.id} value={p.id}>
                                 {p.name} - {formatCurrency(p.price)}
+                                {p.franquia_quantidade
+                                  ? ` | Franquia: ${p.franquia_quantidade} placas`
+                                  : ''}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+                        {selectedPlan === 'frota-20' &&
+                          (() => {
+                            const frota = PLANS.find((p) => p.id === 'frota-20')
+                            if (!frota?.franquia_quantidade) return null
+                            return (
+                              <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+                                Franquia: <strong>{frota.franquia_quantidade} placas</strong>{' '}
+                                incluídas
+                                {' · '}Excedente:{' '}
+                                <strong>{formatCurrency(frota.valor_excedente || 0)}</strong>/placa
+                                extra
+                              </p>
+                            )
+                          })()}
                       </div>
                       {selectedPlan !== 'none' && (
                         <div className="w-32">

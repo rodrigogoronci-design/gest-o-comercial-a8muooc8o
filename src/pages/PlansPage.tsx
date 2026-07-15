@@ -11,9 +11,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/formatters'
 import { PLANS, MODULES, DFE_TIERS } from '@/constants/contracts'
-import { PlanosSaudeSection } from '@/components/PlanosSaudeSection'
 
 export default function PlansPage() {
+  const additionalModules = MODULES.filter((mod) => !mod.isBasic)
+
   return (
     <div className="space-y-8 animate-fade-in pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -98,7 +99,7 @@ export default function PlansPage() {
           <h2 className="text-2xl font-semibold tracking-tight">Módulos Adicionais</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {MODULES.map((mod) => (
+          {additionalModules.map((mod) => (
             <Card
               key={mod.id}
               className="relative overflow-hidden flex flex-col border-slate-200/60 shadow-sm hover:shadow-md transition-shadow group"
@@ -132,6 +133,18 @@ export default function PlansPage() {
                   </span>
                   <span className="text-sm text-slate-500 font-medium">/mês</span>
                 </div>
+                {mod.franquia_quantidade != null && mod.franquia_quantidade > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs font-medium text-slate-600">
+                      Franquia: {mod.franquia_quantidade} placas incluídas
+                    </p>
+                    {mod.valor_excedente != null && mod.valor_excedente > 0 && (
+                      <p className="text-xs text-slate-500">
+                        Excedente: {formatCurrency(mod.valor_excedente)}/placa extra
+                      </p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -163,7 +176,7 @@ export default function PlansPage() {
                   {dfe.name}
                 </CardTitle>
                 <CardDescription className="mt-2 text-xs">
-                  Franquia: {dfe.docs} Documentos
+                  Franquia: {dfe.maxDocs} Documentos
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-grow">
@@ -178,8 +191,6 @@ export default function PlansPage() {
           ))}
         </div>
       </div>
-
-      <PlanosSaudeSection />
     </div>
   )
 }

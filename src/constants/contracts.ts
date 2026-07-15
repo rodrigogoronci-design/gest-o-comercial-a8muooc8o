@@ -1,4 +1,14 @@
-export const PLANS = [
+export interface PlanItem {
+  id: string
+  name: string
+  limit: string
+  maxDocs: string
+  price: number
+  franquia_quantidade?: number
+  valor_excedente?: number
+}
+
+export const PLANS: PlanItem[] = [
   { id: 'tms-50', name: 'TMS-50', limit: 'Até 50', maxDocs: '50', price: 399.0 },
   { id: 'tms-100', name: 'TMS-100', limit: 'à 100', maxDocs: '100', price: 657.0 },
   { id: 'tms-200', name: 'TMS-200', limit: 'à 200', maxDocs: '200', price: 585.0 },
@@ -49,6 +59,14 @@ export const MODULES = [
   { id: 'mod-edi', name: 'EDI', price: 250.0, implHours: 2 },
   { id: 'mod-ctrl-viagem', name: 'Controle de Viagem', price: 199.0, implHours: 3 },
   { id: 'mod-frota', name: 'Frota (até 10 placas)', price: 250.0, implHours: 16 },
+  {
+    id: 'mod-frota-20',
+    name: 'Frota – Até 20 Placas',
+    price: 320.0,
+    implHours: 16,
+    franquia_quantidade: 20,
+    valor_excedente: 8.0,
+  },
   { id: 'mod-medicao', name: 'Medição', price: 350.0, implHours: 6 },
   { id: 'mod-fracionado', name: 'Fracionado', price: 350.0, implHours: 4 },
   { id: 'mod-transp', name: 'Bloco TCI e TCE (Transportes)', price: 350.0, implHours: 10 },

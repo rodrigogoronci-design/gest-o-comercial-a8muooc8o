@@ -2402,9 +2402,11 @@ export type Database = {
           com_coparticipacao: boolean | null
           created_at: string
           descricao: string
+          franquia_quantidade: number | null
           id: string
           padrao: boolean | null
           valor_dependente: number | null
+          valor_excedente: number | null
           valor_titular: number | null
         }
         Insert: {
@@ -2412,9 +2414,11 @@ export type Database = {
           com_coparticipacao?: boolean | null
           created_at?: string
           descricao: string
+          franquia_quantidade?: number | null
           id?: string
           padrao?: boolean | null
           valor_dependente?: number | null
+          valor_excedente?: number | null
           valor_titular?: number | null
         }
         Update: {
@@ -2422,9 +2426,11 @@ export type Database = {
           com_coparticipacao?: boolean | null
           created_at?: string
           descricao?: string
+          franquia_quantidade?: number | null
           id?: string
           padrao?: boolean | null
           valor_dependente?: number | null
+          valor_excedente?: number | null
           valor_titular?: number | null
         }
         Relationships: []

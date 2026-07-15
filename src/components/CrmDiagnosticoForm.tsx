@@ -28,6 +28,7 @@ interface PlanItem {
 
 const FALLBACK_PLANS: PlanItem[] = [
   { id: 'none', codigo: 'ERP-NONE', descricao: 'Nenhum (Somente Módulos / Upsell)', preco: 0 },
+  { id: 'frota-20', codigo: 'FROTA_20', descricao: 'Frota – Até 20 Placas', preco: 320 },
   { id: 'erp-50', codigo: 'ERP-TMS-50', descricao: 'TMS-50', preco: 399 },
   { id: 'erp-100', codigo: 'ERP-TMS-100', descricao: 'TMS-100', preco: 657 },
   { id: 'erp-200', codigo: 'ERP-TMS-200', descricao: 'TMS-200', preco: 585 },
@@ -126,8 +127,8 @@ export function CrmDiagnosticoForm({
       try {
         const { data: planData } = await supabase
           .from('planos_saude')
-          .select('id, codigo, descricao, valor_titular')
-          .or('codigo.like.ERP-%,codigo.like.MOD-%')
+          .select('id, codigo, descricao, valor_titular, franquia_quantidade, valor_excedente')
+          .or('codigo.like.ERP-%,codigo.like.MOD-%,codigo.like.FROTA_%')
 
         let activePlans = FALLBACK_PLANS
         let activeModules = FALLBACK_MODULES
