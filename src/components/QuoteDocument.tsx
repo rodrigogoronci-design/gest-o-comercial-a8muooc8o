@@ -3,6 +3,7 @@ import logoUrl from '@/assets/logomarca-service-ea011.png'
 
 interface QuoteDocumentProps {
   empresa: string
+  cnpj?: string
   aosCuidadosDe: string
   date: string
   planName: string
@@ -93,6 +94,7 @@ const FEATURE_CATEGORIES = [
 
 export function QuoteDocument({
   empresa,
+  cnpj,
   aosCuidadosDe,
   date,
   planName,
@@ -148,7 +150,7 @@ export function QuoteDocument({
       id="quote-proposal-print"
     >
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 mb-4">
+      <div className="flex items-center justify-between gap-4 mb-3">
         <div className="flex items-center gap-3">
           <img src={logoUrl} alt="Service Logic" className="h-10 object-contain shrink-0" />
           <div className="text-[9px] text-slate-500 leading-tight space-y-0.5 border-l border-slate-200 pl-3">
@@ -161,7 +163,7 @@ export function QuoteDocument({
       </div>
 
       {/* Title & Client Info */}
-      <div className="flex justify-between items-end border-b-2 border-orange-500 pb-1.5 mb-3">
+      <div className="flex justify-between items-end border-b-2 border-orange-500 pb-1.5 mb-2">
         <div>
           <h1 className="text-lg font-bold uppercase tracking-wider text-[#1e3a8a]">
             {isUpsell ? 'Proposta Comercial - Upsell' : 'Proposta Comercial'}
@@ -177,11 +179,17 @@ export function QuoteDocument({
         </div>
       </div>
 
-      <div className="flex gap-3 mb-4 bg-slate-50 p-2 rounded border border-slate-200 text-[10px]">
+      <div className="flex gap-3 mb-3 bg-slate-50 p-2 rounded border border-slate-200 text-[10px]">
         <div className="flex-1">
           <span className="block text-slate-500 mb-0.5">Empresa</span>
           <strong className="text-slate-900 text-xs">{empresa || 'Não informado'}</strong>
         </div>
+        {cnpj && (
+          <div className="flex-1">
+            <span className="block text-slate-500 mb-0.5">CNPJ</span>
+            <strong className="text-slate-900 text-xs">{cnpj}</strong>
+          </div>
+        )}
         <div className="flex-1">
           <span className="block text-slate-500 mb-0.5">Aos Cuidados de</span>
           <strong className="text-slate-900 text-xs">{aosCuidadosDe || 'Não informado'}</strong>
@@ -190,12 +198,12 @@ export function QuoteDocument({
 
       {/* Features */}
       {showBasePlan && !isUpsell && (
-        <div className="mb-4">
-          <h3 className="font-bold text-xs text-[#1e3a8a] mb-2 flex items-center gap-1.5">
+        <div className="mb-3">
+          <h3 className="font-bold text-xs text-[#1e3a8a] mb-1.5 flex items-center gap-1.5">
             <div className="w-1.5 h-3 bg-orange-500 rounded-full" />
             Funcionalidades Inclusas no Plano Base
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5">
             {FEATURE_CATEGORIES.map((cat, i) => (
               <div key={i} className="bg-white p-2 rounded border border-slate-200 shadow-sm">
                 <h4 className="font-bold text-slate-800 text-[10px] mb-1 pb-0.5 border-b border-slate-100">
@@ -219,8 +227,8 @@ export function QuoteDocument({
       )}
 
       {/* Investment Details */}
-      <div className="mb-4">
-        <h3 className="font-bold text-xs text-[#1e3a8a] mb-2 flex items-center gap-1.5">
+      <div className="mb-3">
+        <h3 className="font-bold text-xs text-[#1e3a8a] mb-1.5 flex items-center gap-1.5">
           <div className="w-1.5 h-3 bg-orange-500 rounded-full" />
           Investimento Detalhado
         </h3>
@@ -289,6 +297,15 @@ export function QuoteDocument({
                       {hasGrace && (
                         <span className="text-[9px] font-bold text-emerald-600 ml-2">
                           (Isento por {graceMonths} meses)
+                        </span>
+                      )}
+                      {m.franquia_quantidade && (
+                        <span className="text-[9px] block text-slate-500 mt-0.5">
+                          Franquia: {m.franquia_quantidade} placas incluídas · Excedente:{' '}
+                          {formatCurrency(m.valor_excedente || 0)}/placa
+                          {!!additionalPlates && additionalPlates > 0
+                            ? ` · ${additionalPlates} placas adicionais`
+                            : ''}
                         </span>
                       )}
                       {m.id === 'mod-edi' && (
@@ -493,8 +510,8 @@ export function QuoteDocument({
       </div>
 
       {prazosConcedidos && (
-        <div className="mb-4">
-          <h3 className="font-bold text-xs text-[#1e3a8a] mb-2 flex items-center gap-1.5">
+        <div className="mb-3">
+          <h3 className="font-bold text-xs text-[#1e3a8a] mb-1.5 flex items-center gap-1.5">
             <div className="w-1.5 h-3 bg-orange-500 rounded-full" />
             Condições Especiais / Prazos Concedidos
           </h3>
@@ -505,8 +522,8 @@ export function QuoteDocument({
       )}
 
       {cobrarDfePorFilial && filiaisDfe && filiaisDfe.length > 0 && (
-        <div className="mb-4">
-          <h3 className="font-bold text-xs text-[#1e3a8a] mb-2 flex items-center gap-1.5">
+        <div className="mb-3">
+          <h3 className="font-bold text-xs text-[#1e3a8a] mb-1.5 flex items-center gap-1.5">
             <div className="w-1.5 h-3 bg-orange-500 rounded-full" />
             Filiais Consideradas na Franquia DF-e
           </h3>
@@ -532,8 +549,8 @@ export function QuoteDocument({
       )}
 
       {/* Totals */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-slate-50 p-3 rounded border border-slate-200">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
           <h4 className="font-bold text-slate-500 text-[9px] uppercase tracking-wider mb-2">
             Total Recorrente
           </h4>
@@ -653,7 +670,7 @@ export function QuoteDocument({
           )}
         </div>
 
-        <div className="bg-slate-50 p-3 rounded border border-slate-200">
+        <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
           <h4 className="font-bold text-slate-500 text-[9px] uppercase tracking-wider mb-2">
             Total Parcela Única
           </h4>
@@ -718,7 +735,7 @@ export function QuoteDocument({
         </div>
       </div>
 
-      <div className="mt-6 pt-3 border-t border-slate-200 text-center text-[9px] text-slate-400">
+      <div className="mt-4 pt-2 border-t border-slate-200 text-center text-[9px] text-slate-400">
         <p>Validade desta proposta: 15 dias corridos.</p>
         <p>Para dúvidas ou esclarecimentos, entre em contato conosco.</p>
       </div>

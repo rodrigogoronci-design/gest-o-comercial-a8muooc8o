@@ -2405,6 +2405,7 @@ export type Database = {
           franquia_quantidade: number | null
           id: string
           padrao: boolean | null
+          tipo: string | null
           valor_dependente: number | null
           valor_excedente: number | null
           valor_titular: number | null
@@ -2417,6 +2418,7 @@ export type Database = {
           franquia_quantidade?: number | null
           id?: string
           padrao?: boolean | null
+          tipo?: string | null
           valor_dependente?: number | null
           valor_excedente?: number | null
           valor_titular?: number | null
@@ -2429,6 +2431,7 @@ export type Database = {
           franquia_quantidade?: number | null
           id?: string
           padrao?: boolean | null
+          tipo?: string | null
           valor_dependente?: number | null
           valor_excedente?: number | null
           valor_titular?: number | null

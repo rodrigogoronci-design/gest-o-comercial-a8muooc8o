@@ -176,7 +176,8 @@ export default function ContractGeneratorPage() {
         * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
         *::-webkit-scrollbar { display: none !important; }
         .overflow-auto, .overflow-x-auto, .overflow-y-auto, .overflow-hidden, .overflow-scroll { overflow: visible !important; }
-        header.sticky, aside, nav, [data-sidebar="sidebar"], .sidebar-container { display: none !important; }
+        header, aside, nav, [data-sidebar="sidebar"], [data-sidebar], .sidebar-container,
+        [data-sidebar-wrapper], [data-sidebar-container], [data-sidebar-inset] { display: none !important; }
         body, html { background-color: white !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
         main { margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; overflow: visible !important; }
       }
@@ -205,7 +206,7 @@ export default function ContractGeneratorPage() {
     const fetchProspects = async () => {
       const { data } = await supabase
         .from('crm_prospects')
-        .select('id, empresa, contato_nome')
+        .select('id, empresa, contato_nome, cnpj')
         .order('empresa')
       if (data) setProspects(data)
     }
@@ -743,6 +744,12 @@ export default function ContractGeneratorPage() {
 
   const quoteProps = {
     empresa: quoteEmpresa,
+    cnpj:
+      quoteTargetType === 'cliente' && selectedClientId !== 'novo'
+        ? formatCNPJ(clientes.find((c) => c.id === selectedClientId)?.cnpj || '')
+        : quoteTargetType === 'prospect' && selectedProspectId !== 'novo'
+          ? formatCNPJ(prospects.find((p) => p.id === selectedProspectId)?.cnpj || '')
+          : '',
     aosCuidadosDe: quoteContato,
     date: new Date().toLocaleDateString('pt-BR', {
       day: '2-digit',
