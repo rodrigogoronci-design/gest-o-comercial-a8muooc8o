@@ -211,9 +211,11 @@ export function ClientReportTab() {
                               : '—'}
                           </TableCell>
                           <TableCell className="text-slate-600 print:text-[8pt] print:py-1">
-                            {cliente.plano_descricao ?? (
+                            {cliente.plano_descricao ? (
+                              cliente.plano_descricao
+                            ) : (
                               <span className="text-xs text-slate-400 italic">
-                                Plano não informado
+                                Nenhum plano vinculado
                               </span>
                             )}
                           </TableCell>
@@ -232,7 +234,7 @@ export function ClientReportTab() {
                               </div>
                             ) : (
                               <span className="text-xs text-slate-400 italic">
-                                Nenhum módulo contratado
+                                Nenhum módulo selecionado
                               </span>
                             )}
                           </TableCell>

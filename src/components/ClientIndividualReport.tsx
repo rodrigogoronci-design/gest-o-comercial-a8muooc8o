@@ -235,7 +235,8 @@ export function ClientIndividualReport() {
 
   const modulosData = useMemo(() => parseModulosData(clienteData), [clienteData])
   const modulosList = modulosData.adicionais
-  const planoFranquia = modulosData.plano_base || clienteData?.plano_descricao || 'Não contratado'
+  const planoFranquia =
+    modulosData.plano_base || clienteData?.plano_descricao || 'Nenhum plano vinculado'
   const valorMensalidade = clienteData?.valor_total ?? 0
 
   return (
@@ -417,9 +418,7 @@ export function ClientIndividualReport() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-500 italic">
-                    Nenhum módulo contratado registrado.
-                  </p>
+                  <p className="text-sm text-slate-500 italic">Nenhum módulo selecionado</p>
                 )}
               </div>
             </div>

@@ -4,6 +4,7 @@ export interface ClienteRelatorio {
   id: string
   nome: string
   cnpj: string
+  modulos: any[] | null
   valor_total: number | null
   vencimento_mensal: number | null
   endereco: string | null
@@ -41,10 +42,12 @@ export const getClientesRelatorio = async (): Promise<ClienteRelatorio[]> => {
       id,
       nome,
       cnpj,
+      modulos,
       valor_total,
       vencimento_mensal,
       endereco,
       status,
+      plano_id,
       planos_saude(descricao)
     `)
     .order('nome', { ascending: true })
@@ -55,6 +58,7 @@ export const getClientesRelatorio = async (): Promise<ClienteRelatorio[]> => {
     id: c.id,
     nome: c.nome,
     cnpj: c.cnpj,
+    modulos: c.modulos,
     valor_total: c.valor_total,
     vencimento_mensal: c.vencimento_mensal,
     endereco: c.endereco,
@@ -121,9 +125,9 @@ export const getClienteRelatorioDetalhado = async (
     status: data.status,
     modulos: data.modulos,
     plano_id: data.plano_id,
-    plano_descricao: (data.planos_saude as any)?.descricao ?? null,
-    plano_codigo: (data.planos_saude as any)?.codigo ?? null,
-    com_coparticipacao: (data.planos_saude as any)?.com_coparticipacao ?? null,
+    plano_descricao: data.planos_saude?.descricao ?? null,
+    plano_codigo: data.planos_saude?.codigo ?? null,
+    com_coparticipacao: data.planos_saude?.com_coparticipacao ?? null,
     quantidade_filiais: data.quantidade_filiais,
     modo_implantacao: data.modo_implantacao,
     filiais_detalhes: data.filiais_detalhes,
