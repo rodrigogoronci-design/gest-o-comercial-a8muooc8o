@@ -89,6 +89,44 @@
   }
 }
 
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  .print-card {
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .report-document {
+    color: #1e293b !important;
+  }
+
+  .report-header h2 {
+    color: #1b4382 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  main {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  [data-sidebar] {
+    display: none !important;
+  }
+
+  .sidebar-container {
+    display: none !important;
+  }
+}
+
 @layer utilities {
   @keyframes accordion-down {
     from {
