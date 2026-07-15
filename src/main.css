@@ -92,7 +92,7 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 15mm;
+    margin: 10mm;
   }
 
   * {
@@ -104,8 +104,8 @@
   body,
   #root,
   .flex-1 {
-    overflow: visible !important;
-    height: auto !important;
+    overflow: hidden !important;
+    height: 100% !important;
     width: 100% !important;
     max-width: none !important;
     margin: 0 !important;

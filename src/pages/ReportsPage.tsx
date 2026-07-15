@@ -70,7 +70,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6 max-w-[1400px] mx-auto animate-fade-in print:p-0 print:m-0 print:space-y-0 print:block">
+    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6 max-w-[1400px] mx-auto animate-fade-in print:p-0 print:m-0 print:space-y-0 print:flex print:flex-col print:h-[100vh] print:overflow-hidden print:bg-white">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Relatórios e Dashboards</h2>
@@ -83,7 +83,7 @@ export default function ReportsPage() {
         </Button>
       </div>
 
-      <Tabs defaultValue="dashboards" className="w-full">
+      <Tabs defaultValue="dashboards" className="w-full print:h-full print:flex print:flex-col">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 max-w-4xl print:hidden">
           <TabsTrigger value="dashboards" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
@@ -243,7 +243,10 @@ export default function ReportsPage() {
           <ClientReportTab />
         </TabsContent>
 
-        <TabsContent value="cliente-individual" className="mt-6 print:mt-0">
+        <TabsContent
+          value="cliente-individual"
+          className="mt-6 print:mt-0 print:h-full print:flex-1"
+        >
           <ClientIndividualReport />
         </TabsContent>
       </Tabs>

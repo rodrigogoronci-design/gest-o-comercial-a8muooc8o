@@ -65,7 +65,7 @@ const MODULE_INFO: Record<string, { desc: string; icon: any }> = {
     icon: Truck,
   },
   comercial: {
-    desc: 'Controla o processo comercial desde a criação das propostas até sua aprovação, com envio automático em PDF para os clientes.',
+    desc: 'Controla o processo comercial desde a criação das propostas até sua aprovação.',
     icon: ShieldCheck,
   },
   faturamento: {
@@ -89,6 +89,10 @@ const MODULE_INFO: Record<string, { desc: string; icon: any }> = {
     icon: Network,
   },
   frota: {
+    desc: 'Gerencia toda a frota da empresa, incluindo compras, estoque, abastecimento, manutenção, pneus e controle de vencimentos de documentos e licenças dos veículos.',
+    icon: Truck,
+  },
+  'frota (até 10 placas)': {
     desc: 'Gerencia toda a frota da empresa, incluindo compras, estoque, abastecimento, manutenção, pneus e controle de vencimentos de documentos e licenças dos veículos.',
     icon: Truck,
   },
@@ -235,7 +239,7 @@ export function ClientIndividualReport() {
   const valorMensalidade = clienteData?.valor_total ?? 0
 
   return (
-    <div className="space-y-4 print:space-y-0 print:m-0">
+    <div className="space-y-4 print:space-y-0 print:m-0 print:h-full print:flex print:flex-col">
       <div className="flex flex-col sm:flex-row gap-4 no-print bg-white p-4 rounded-lg border border-slate-200 shadow-sm mb-6">
         <div className="flex-1">
           <p className="text-sm font-semibold text-slate-700 mb-2">Selecione o Cliente</p>
@@ -274,202 +278,191 @@ export function ClientIndividualReport() {
           <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
         </div>
       ) : clienteData ? (
-        <div className="report-document max-w-5xl mx-auto bg-white p-8 rounded-lg shadow-sm border border-slate-200 print:shadow-none print:border-none print:p-0">
-          <div className="flex items-center gap-8 border-b-2 border-slate-100 pb-8 mb-8">
-            <img src={logoUrl} alt="Service Logic" className="h-16 object-contain" />
-            <div>
-              <h1 className="text-3xl font-bold text-[#1b4382]">Relatório de Contrato</h1>
-              <p className="flex items-center gap-2 text-sm text-slate-600 mt-2">
-                <Calendar className="h-4 w-4 text-slate-400" />
-                Documento gerado em {formatDate(new Date().toISOString())}
-              </p>
-            </div>
-          </div>
-
-          <div className="border border-slate-200 rounded-lg overflow-hidden mb-8 print:border-slate-300">
-            <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x border-b divide-slate-200 border-slate-200 bg-slate-50/60 print:border-slate-300 print:divide-slate-300">
-              <div className="p-4 flex gap-3">
-                <UserRound className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
-                    Razão Social
-                  </p>
-                  <p className="text-sm font-semibold text-slate-800 line-clamp-2 leading-tight">
-                    {clienteData.nome}
-                  </p>
-                </div>
-              </div>
-              <div className="p-4 flex gap-3">
-                <IdCard className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
-                    CNPJ
-                  </p>
-                  <p className="text-sm font-semibold text-slate-800">
-                    {clienteData.cnpj ? formatCNPJ(clienteData.cnpj) : '—'}
-                  </p>
-                </div>
-              </div>
-              <div className="p-4 flex gap-3">
-                <Calendar className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
-                    Data de Assinatura
-                  </p>
-                  <p className="text-sm font-semibold text-slate-800">
-                    {formatDateBR(clienteData.data_assinatura)}
-                  </p>
-                </div>
-              </div>
-              <div className="p-4 flex gap-3">
-                <CheckCircle2
-                  className={`h-5 w-5 shrink-0 mt-0.5 ${clienteData.status === 'Inativo' || clienteData.status === 'Cancelado' ? 'text-red-500' : 'text-green-500'}`}
-                />
-                <div>
-                  <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
-                    Status
-                  </p>
-                  <p
-                    className={`text-sm font-semibold ${clienteData.status === 'Inativo' || clienteData.status === 'Cancelado' ? 'text-red-700' : 'text-green-700'}`}
-                  >
-                    {clienteData.status ?? 'Ativo'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-slate-200 bg-white print:divide-slate-300">
-              <div className="p-4 flex gap-3">
-                <Layers className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
-                    Plano de Franquia
-                  </p>
-                  <p className="text-sm font-semibold text-slate-800">{planoFranquia}</p>
-                </div>
-              </div>
-              <div className="p-4 flex gap-3">
-                <CircleDollarSign className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
-                    Mensalidade
-                  </p>
-                  <p className="text-sm font-semibold text-slate-800">
-                    {valorMensalidade > 0 ? formatCurrency(valorMensalidade) : '—'}
-                  </p>
-                </div>
-              </div>
-              <div className="p-4 flex gap-3">
-                <CircleDollarSign className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
-                    Valor Anual
-                  </p>
-                  <p className="text-sm font-semibold text-slate-800">
-                    {clienteData.valor_anual != null && clienteData.valor_anual > 0
-                      ? formatCurrency(clienteData.valor_anual)
-                      : '—'}
-                  </p>
-                </div>
-              </div>
-              <div className="p-4 flex gap-3">
-                <Timer className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
-                    Implantação
-                  </p>
-                  <p className="text-sm font-semibold text-slate-800">
-                    {clienteData.valor_implantacao != null && clienteData.valor_implantacao > 0
-                      ? formatCurrency(clienteData.valor_implantacao)
-                      : '—'}
-                  </p>
-                </div>
-              </div>
-              <div className="p-4 flex gap-3">
-                <Calendar className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
-                    Vencimento
-                  </p>
-                  <p className="text-sm font-semibold text-slate-800">
-                    {clienteData.vencimento_mensal != null
-                      ? `Dia ${clienteData.vencimento_mensal}`
-                      : '—'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-8 break-inside-avoid">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-3 flex items-center gap-2">
-              <Package className="h-3.5 w-3.5" />
-              Módulos Contratados
-            </p>
-            <div className="border border-slate-200 rounded-lg p-5 bg-slate-50/60 print:border-slate-300">
-              {modulosList.length > 0 ? (
-                <div className="flex flex-wrap gap-2.5">
-                  {modulosList.map((modulo, idx) => (
-                    <Badge
-                      key={idx}
-                      variant="outline"
-                      className="bg-white border-slate-200 text-slate-700 py-1.5 px-3.5 font-medium flex items-center gap-2 shadow-sm rounded-full print:border-slate-300"
-                    >
-                      <CheckCircle2
-                        className="h-4 w-4 text-[#1b4382]"
-                        fill="#1b4382"
-                        stroke="white"
-                      />
-                      {modulo}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-slate-500 italic">
-                  Nenhum módulo contratado registrado.
+        <div className="report-document max-w-5xl mx-auto bg-white p-8 rounded-lg shadow-sm border border-slate-200 print:shadow-none print:border-none print:p-0 flex flex-col print:flex-1 print:h-full">
+          <div className="flex-1">
+            <div className="flex items-center gap-8 border-b-2 border-slate-100 pb-6 mb-4 print:mb-4 print:pb-4">
+              <img src={logoUrl} alt="Service Logic" className="h-16 object-contain" />
+              <div>
+                <h1 className="text-3xl font-bold text-[#1b4382]">Relatório de Contrato</h1>
+                <p className="flex items-center gap-2 text-sm text-slate-600 mt-2">
+                  <Calendar className="h-4 w-4 text-slate-400" />
+                  Documento gerado em {formatDate(new Date().toISOString())}
                 </p>
-              )}
+              </div>
             </div>
+
+            <div className="border border-slate-200 rounded-lg overflow-hidden mb-6 print:border-slate-300">
+              <div className="grid grid-cols-2 md:grid-cols-4 print:grid-cols-4 divide-y md:divide-y-0 print:divide-y-0 md:divide-x print:divide-x border-b divide-slate-200 border-slate-200 bg-slate-50/60 print:border-slate-300 print:divide-slate-300">
+                <div className="p-4 flex gap-3">
+                  <UserRound className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
+                      Razão Social
+                    </p>
+                    <p className="text-xs font-semibold text-slate-800 line-clamp-2 leading-tight">
+                      {clienteData.nome}
+                    </p>
+                  </div>
+                </div>
+                <div className="p-4 flex gap-3">
+                  <IdCard className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
+                      CNPJ
+                    </p>
+                    <p className="text-xs font-semibold text-slate-800">
+                      {clienteData.cnpj ? formatCNPJ(clienteData.cnpj) : '—'}
+                    </p>
+                  </div>
+                </div>
+                <div className="p-4 flex gap-3">
+                  <Calendar className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
+                      Data de Assinatura
+                    </p>
+                    <p className="text-xs font-semibold text-slate-800">
+                      {formatDateBR(clienteData.data_assinatura)}
+                    </p>
+                  </div>
+                </div>
+                <div className="p-4 flex gap-3">
+                  <CheckCircle2
+                    className={`h-5 w-5 shrink-0 mt-0.5 ${clienteData.status === 'Inativo' || clienteData.status === 'Cancelado' ? 'text-red-500' : 'text-green-500'}`}
+                  />
+                  <div>
+                    <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
+                      Status
+                    </p>
+                    <p
+                      className={`text-xs font-semibold ${clienteData.status === 'Inativo' || clienteData.status === 'Cancelado' ? 'text-red-700' : 'text-green-700'}`}
+                    >
+                      {clienteData.status ?? 'Ativo'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 print:grid-cols-4 divide-y md:divide-y-0 print:divide-y-0 md:divide-x print:divide-x divide-slate-200 bg-white print:divide-slate-300">
+                <div className="p-4 flex gap-3">
+                  <Layers className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
+                      Plano Atual de Franquia
+                    </p>
+                    <p className="text-xs font-semibold text-slate-800">{planoFranquia}</p>
+                  </div>
+                </div>
+                <div className="p-4 flex gap-3">
+                  <CircleDollarSign className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
+                      Valor da Mensalidade
+                    </p>
+                    <p className="text-xs font-semibold text-slate-800">
+                      {valorMensalidade > 0 ? formatCurrency(valorMensalidade) : '—'}
+                    </p>
+                  </div>
+                </div>
+                <div className="p-4 flex gap-3">
+                  <Calendar className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
+                      Data de Vencimento
+                    </p>
+                    <p className="text-xs font-semibold text-slate-800">
+                      {clienteData.vencimento_mensal != null
+                        ? `${clienteData.vencimento_mensal}º dia do mês`
+                        : '—'}
+                    </p>
+                  </div>
+                </div>
+                <div className="p-4 flex gap-3">
+                  <Timer className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
+                      Valor de Implantação
+                    </p>
+                    <p className="text-xs font-semibold text-slate-800">
+                      {clienteData.valor_implantacao != null && clienteData.valor_implantacao > 0
+                        ? formatCurrency(clienteData.valor_implantacao)
+                        : 'Não informado'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-6 break-inside-avoid">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-2 flex items-center gap-2">
+                <Package className="h-3.5 w-3.5" />
+                Módulos Contratados
+              </p>
+              <div className="border border-slate-200 rounded-lg p-4 bg-slate-50/60 print:border-slate-300">
+                {modulosList.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {modulosList.map((modulo, idx) => (
+                      <Badge
+                        key={idx}
+                        variant="outline"
+                        className="bg-white border-slate-200 text-slate-700 py-1 px-3 text-xs font-medium flex items-center gap-1.5 shadow-sm rounded-full print:border-slate-300"
+                      >
+                        <CheckCircle2
+                          className="h-3.5 w-3.5 text-[#1b4382]"
+                          fill="#1b4382"
+                          stroke="white"
+                        />
+                        {modulo}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500 italic">
+                    Nenhum módulo contratado registrado.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {modulosList.length > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-2 border-b-2 border-slate-100 pb-2 print:border-slate-200">
+                  <FileText className="h-5 w-5 text-slate-500" />
+                  <h3 className="text-[11px] font-semibold uppercase tracking-widest text-slate-700">
+                    Descrição dos Módulos
+                  </h3>
+                </div>
+                <div className="space-y-0">
+                  {modulosList.map((modulo, idx) => {
+                    const info = getModuleInfo(modulo)
+                    const Icon = info?.icon || Settings
+                    return (
+                      <div
+                        key={idx}
+                        className="flex gap-4 py-2 border-b border-slate-100 last:border-0 break-inside-avoid print:border-slate-200"
+                      >
+                        <div className="mt-0.5">
+                          <Icon className="h-5 w-5 text-[#f37021]" strokeWidth={1.5} />
+                        </div>
+                        <div className="w-[30%] shrink-0">
+                          <p className="text-[12px] font-semibold text-[#f37021] uppercase tracking-wide">
+                            {modulo}
+                          </p>
+                        </div>
+                        <div className="w-[70%]">
+                          <p className="text-[11px] text-slate-600 leading-relaxed print:text-slate-800">
+                            {info?.desc || 'Módulo contratado sem descrição detalhada.'}
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
-          {modulosList.length > 0 && (
-            <div className="mb-8">
-              <div className="flex items-center gap-2 mb-4 border-b-2 border-slate-100 pb-3 print:border-slate-200">
-                <FileText className="h-5 w-5 text-slate-500" />
-                <h3 className="text-[11px] font-semibold uppercase tracking-widest text-slate-700">
-                  Descrição dos Módulos
-                </h3>
-              </div>
-              <div className="space-y-0">
-                {modulosList.map((modulo, idx) => {
-                  const info = getModuleInfo(modulo)
-                  const Icon = info?.icon || Settings
-                  return (
-                    <div
-                      key={idx}
-                      className="flex gap-4 py-4 border-b border-slate-100 last:border-0 break-inside-avoid print:border-slate-200"
-                    >
-                      <div className="mt-0.5">
-                        <Icon className="h-6 w-6 text-[#f37021]" strokeWidth={1.5} />
-                      </div>
-                      <div className="w-[30%] shrink-0">
-                        <p className="text-[13px] font-semibold text-[#1b4382] uppercase tracking-wide">
-                          {modulo}
-                        </p>
-                      </div>
-                      <div className="w-[70%]">
-                        <p className="text-[13px] text-slate-600 leading-relaxed print:text-black">
-                          {info?.desc || 'Módulo contratado sem descrição detalhada.'}
-                        </p>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          <div className="mt-8 pt-6 border-t border-slate-200 bg-slate-50/80 rounded-xl p-6 flex flex-wrap justify-between items-center break-inside-avoid gap-4 print:border-slate-300">
+          <div className="mt-auto pt-4 border-t border-slate-200 bg-slate-50/80 rounded-xl p-4 flex flex-wrap justify-between items-center break-inside-avoid gap-4 print:border-slate-300">
             <div className="flex items-center gap-3">
               <div className="bg-white p-2.5 rounded-full border border-slate-200 shadow-sm print:border-slate-300">
                 <Mail className="h-4 w-4 text-slate-600" />
