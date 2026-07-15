@@ -235,7 +235,7 @@ export function ClientIndividualReport() {
   const valorMensalidade = clienteData?.valor_total ?? 0
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 print:space-y-0 print:m-0">
       <div className="flex flex-col sm:flex-row gap-4 no-print bg-white p-4 rounded-lg border border-slate-200 shadow-sm mb-6">
         <div className="flex-1">
           <p className="text-sm font-semibold text-slate-700 mb-2">Selecione o Cliente</p>
@@ -338,12 +338,12 @@ export function ClientIndividualReport() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-slate-200 bg-white print:divide-slate-300">
+            <div className="grid grid-cols-2 md:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-slate-200 bg-white print:divide-slate-300">
               <div className="p-4 flex gap-3">
                 <Layers className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
-                    Plano Atual de Franquia
+                    Plano de Franquia
                   </p>
                   <p className="text-sm font-semibold text-slate-800">{planoFranquia}</p>
                 </div>
@@ -352,7 +352,7 @@ export function ClientIndividualReport() {
                 <CircleDollarSign className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
-                    Valor da Mensalidade
+                    Mensalidade
                   </p>
                   <p className="text-sm font-semibold text-slate-800">
                     {valorMensalidade > 0 ? formatCurrency(valorMensalidade) : '—'}
@@ -360,15 +360,15 @@ export function ClientIndividualReport() {
                 </div>
               </div>
               <div className="p-4 flex gap-3">
-                <Calendar className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
+                <CircleDollarSign className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
-                    Data de Vencimento
+                    Valor Anual
                   </p>
                   <p className="text-sm font-semibold text-slate-800">
-                    {clienteData.vencimento_mensal != null
-                      ? `${clienteData.vencimento_mensal}º dia do mês`
-                      : 'Não definido'}
+                    {clienteData.valor_anual != null && clienteData.valor_anual > 0
+                      ? formatCurrency(clienteData.valor_anual)
+                      : '—'}
                   </p>
                 </div>
               </div>
@@ -376,12 +376,25 @@ export function ClientIndividualReport() {
                 <Timer className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
-                    Valor de Implantação
+                    Implantação
                   </p>
                   <p className="text-sm font-semibold text-slate-800">
                     {clienteData.valor_implantacao != null && clienteData.valor_implantacao > 0
                       ? formatCurrency(clienteData.valor_implantacao)
-                      : 'Não informado'}
+                      : '—'}
+                  </p>
+                </div>
+              </div>
+              <div className="p-4 flex gap-3">
+                <Calendar className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[10px] uppercase text-slate-500 mb-0.5 tracking-wider font-medium">
+                    Vencimento
+                  </p>
+                  <p className="text-sm font-semibold text-slate-800">
+                    {clienteData.vencimento_mensal != null
+                      ? `Dia ${clienteData.vencimento_mensal}`
+                      : '—'}
                   </p>
                 </div>
               </div>

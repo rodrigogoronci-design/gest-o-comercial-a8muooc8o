@@ -70,8 +70,8 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6 max-w-[1400px] mx-auto animate-fade-in">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6 max-w-[1400px] mx-auto animate-fade-in print:p-0 print:m-0 print:space-y-0 print:block">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Relatórios e Dashboards</h2>
           <p className="text-muted-foreground mt-1">
@@ -243,7 +243,7 @@ export default function ReportsPage() {
           <ClientReportTab />
         </TabsContent>
 
-        <TabsContent value="cliente-individual" className="mt-6">
+        <TabsContent value="cliente-individual" className="mt-6 print:mt-0">
           <ClientIndividualReport />
         </TabsContent>
       </Tabs>
