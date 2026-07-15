@@ -13,10 +13,11 @@ import {
   LineChart,
 } from 'recharts'
 import { Button } from '@/components/ui/button'
-import { Download, BarChart3, FileSearch, FileSpreadsheet } from 'lucide-react'
+import { Download, BarChart3, FileSearch, FileSpreadsheet, Building2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { AtendimentoReportTab } from '@/components/AtendimentoReportTab'
 import { GeneralAtendimentosReport } from '@/components/GeneralAtendimentosReport'
+import { ClientReportTab } from '@/components/ClientReportTab'
 
 export default function ReportsPage() {
   const [loading, setLoading] = useState(true)
@@ -75,18 +76,22 @@ export default function ReportsPage() {
       </div>
 
       <Tabs defaultValue="dashboards" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-2xl print:hidden">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 max-w-3xl print:hidden">
           <TabsTrigger value="dashboards" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
-            Dashboards
+            <span className="hidden sm:inline">Dashboards</span>
           </TabsTrigger>
           <TabsTrigger value="atendimento" className="flex items-center gap-2">
             <FileSearch className="h-4 w-4" />
-            Relatório de Atendimento
+            <span className="hidden sm:inline">Atendimento</span>
           </TabsTrigger>
           <TabsTrigger value="relatorio-geral" className="flex items-center gap-2">
             <FileSpreadsheet className="h-4 w-4" />
-            Relatório Geral
+            <span className="hidden sm:inline">Relatório Geral</span>
+          </TabsTrigger>
+          <TabsTrigger value="clientes" className="flex items-center gap-2">
+            <Building2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Relatório de Clientes</span>
           </TabsTrigger>
         </TabsList>
 
@@ -220,6 +225,10 @@ export default function ReportsPage() {
 
         <TabsContent value="relatorio-geral" className="mt-6">
           <GeneralAtendimentosReport />
+        </TabsContent>
+
+        <TabsContent value="clientes" className="mt-6">
+          <ClientReportTab />
         </TabsContent>
       </Tabs>
     </div>

@@ -869,6 +869,7 @@ export type Database = {
           contrato_url: string | null
           created_at: string
           data_assinatura: string | null
+          data_cancelamento: string | null
           desconto_mensalidade: number | null
           diagnostico: Json | null
           documentos_urls: Json | null
@@ -878,6 +879,7 @@ export type Database = {
           id: string
           modo_implantacao: string | null
           modulos: Json | null
+          motivo_cancelamento: string | null
           nome: string
           plano_id: string | null
           quantidade_filiais: number | null
@@ -900,6 +902,7 @@ export type Database = {
           contrato_url?: string | null
           created_at?: string
           data_assinatura?: string | null
+          data_cancelamento?: string | null
           desconto_mensalidade?: number | null
           diagnostico?: Json | null
           documentos_urls?: Json | null
@@ -909,6 +912,7 @@ export type Database = {
           id?: string
           modo_implantacao?: string | null
           modulos?: Json | null
+          motivo_cancelamento?: string | null
           nome: string
           plano_id?: string | null
           quantidade_filiais?: number | null
@@ -931,6 +935,7 @@ export type Database = {
           contrato_url?: string | null
           created_at?: string
           data_assinatura?: string | null
+          data_cancelamento?: string | null
           desconto_mensalidade?: number | null
           diagnostico?: Json | null
           documentos_urls?: Json | null
@@ -940,6 +945,7 @@ export type Database = {
           id?: string
           modo_implantacao?: string | null
           modulos?: Json | null
+          motivo_cancelamento?: string | null
           nome?: string
           plano_id?: string | null
           quantidade_filiais?: number | null
