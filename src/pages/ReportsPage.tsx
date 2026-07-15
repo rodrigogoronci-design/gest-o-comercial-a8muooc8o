@@ -13,11 +13,19 @@ import {
   LineChart,
 } from 'recharts'
 import { Button } from '@/components/ui/button'
-import { Download, BarChart3, FileSearch, FileSpreadsheet, Building2 } from 'lucide-react'
+import {
+  Download,
+  BarChart3,
+  FileSearch,
+  FileSpreadsheet,
+  Building2,
+  UserRound,
+} from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { AtendimentoReportTab } from '@/components/AtendimentoReportTab'
 import { GeneralAtendimentosReport } from '@/components/GeneralAtendimentosReport'
 import { ClientReportTab } from '@/components/ClientReportTab'
+import { ClientIndividualReport } from '@/components/ClientIndividualReport'
 
 export default function ReportsPage() {
   const [loading, setLoading] = useState(true)
@@ -76,7 +84,7 @@ export default function ReportsPage() {
       </div>
 
       <Tabs defaultValue="dashboards" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 max-w-3xl print:hidden">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 max-w-4xl print:hidden">
           <TabsTrigger value="dashboards" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             <span className="hidden sm:inline">Dashboards</span>
@@ -92,6 +100,10 @@ export default function ReportsPage() {
           <TabsTrigger value="clientes" className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
             <span className="hidden sm:inline">Relatório de Clientes</span>
+          </TabsTrigger>
+          <TabsTrigger value="cliente-individual" className="flex items-center gap-2">
+            <UserRound className="h-4 w-4" />
+            <span className="hidden sm:inline">Relatório Individual</span>
           </TabsTrigger>
         </TabsList>
 
@@ -229,6 +241,10 @@ export default function ReportsPage() {
 
         <TabsContent value="clientes" className="mt-6">
           <ClientReportTab />
+        </TabsContent>
+
+        <TabsContent value="cliente-individual" className="mt-6">
+          <ClientIndividualReport />
         </TabsContent>
       </Tabs>
     </div>
