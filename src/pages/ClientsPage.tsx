@@ -18,6 +18,8 @@ import {
   Printer,
   ChevronDown,
   Ban,
+  Send,
+  PenLine,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -150,6 +152,7 @@ export interface ClienteRecord {
   vencimento_mensal?: number | null
   data_cancelamento?: string | null
   motivo_cancelamento?: string | null
+  link_assinatura?: string | null
 }
 
 type ModuleItem = { name: string; price: number }
@@ -266,6 +269,7 @@ type MergedClient = {
   vencimento_mensal?: number | null
   data_cancelamento?: string | null
   motivo_cancelamento?: string | null
+  link_assinatura?: string | null
 }
 
 const clientSchema = z.object({
@@ -564,6 +568,10 @@ export default function ClientsPage() {
 
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
   const [cancelClient, setCancelClient] = useState<MergedClient | null>(null)
+  const [isSendingContract, setIsSendingContract] = useState(false)
+  const [isSignatureLinkOpen, setIsSignatureLinkOpen] = useState(false)
+  const [signatureLinkValue, setSignatureLinkValue] = useState('')
+  const [signatureLinkClient, setSignatureLinkClient] = useState<MergedClient | null>(null)
   const [cancelDate, setCancelDate] = useState('')
   const [cancelMotivo, setCancelMotivo] = useState('')
   const [isSubmittingCancel, setIsSubmittingCancel] = useState(false)
@@ -1405,6 +1413,85 @@ Obrigada,`
       toast.error('Erro ao registrar cancelamento')
     } finally {
       setIsSubmittingCancel(false)
+    }
+  }
+
+  const handleSaveSignatureLink = async () => {
+    if (!signatureLinkClient) return
+    try {
+      await updateCliente(signatureLinkClient.id, { link_assinatura: signatureLinkValue || null })
+      toast.success('Link de assinatura salvo com sucesso!')
+      setIsSignatureLinkOpen(false)
+      setSignatureLinkClient(null)
+      loadClientes()
+      if (viewingClient && viewingClient.id === signatureLinkClient.id) {
+        setViewingClient({
+          ...viewingClient,
+          link_assinatura: signatureLinkValue || null,
+          originalData: {
+            ...viewingClient.originalData!,
+            link_assinatura: signatureLinkValue || null,
+          },
+        })
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao salvar link de assinatura')
+    }
+  }
+
+  const handleSendContractEmail = async (client: MergedClient) => {
+    if (!client.originalData?.email) {
+      toast.error('Cliente não possui e-mail cadastrado.')
+      return
+    }
+    if (!client.link_assinatura) {
+      toast.error('É necessário definir o link de assinatura antes de enviar.')
+      setSignatureLinkClient(client)
+      setSignatureLinkValue('')
+      setIsSignatureLinkOpen(true)
+      return
+    }
+
+    setIsSendingContract(true)
+    const toastId = toast.loading('Enviando contrato para assinatura...')
+    try {
+      let contractUrl = client.contratoUrl || null
+      if (contractUrl) {
+        const { url } = await getSignedContractUrl(contractUrl)
+        if (url) contractUrl = url
+      }
+
+      const { error } = await supabase.functions.invoke('send-contract-email', {
+        body: {
+          to: client.originalData.email,
+          clientName: client.name,
+          repName: client.rep_nome || '',
+          signatureLink: client.link_assinatura,
+          contractUrl: contractUrl,
+        },
+      })
+
+      if (error) throw error
+
+      toast.success('E-mail enviado com sucesso para ' + client.originalData.email, { id: toastId })
+
+      await createHistorico({
+        cliente_id: client.id,
+        tipo: 'Contrato Enviado para Assinatura',
+        observacoes: `E-mail de boas-vindas com link de assinatura enviado para ${client.originalData.email}.`,
+        valor_total: client.totalValue,
+      })
+
+      if (viewingClient && viewingClient.id === client.id) {
+        loadHistory(client.id)
+      }
+    } catch (err: any) {
+      toast.error('Erro ao enviar e-mail: ' + (err.message || 'Falha desconhecida'), {
+        id: toastId,
+      })
+    } finally {
+      setIsSendingContract(false)
     }
   }
 
@@ -2356,6 +2443,7 @@ Obrigada.`)
         vencimento_mensal: c.vencimento_mensal,
         data_cancelamento: c.data_cancelamento,
         motivo_cancelamento: c.motivo_cancelamento,
+        link_assinatura: c.link_assinatura,
       }
     }),
   ]
@@ -2425,6 +2513,60 @@ Obrigada.`)
             {(!client.filiais_detalhes || client.filiais_detalhes.length === 0) && (
               <div className="p-3 text-xs text-slate-400 italic">
                 Nenhuma filial vinculada a este cliente.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Link de Assinatura */}
+        <div>
+          <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <PenLine className="h-4 w-4 text-violet-500" /> Assinatura Eletrônica
+          </h4>
+          <div className="bg-white rounded-lg border border-slate-200 p-3 shadow-sm">
+            {client.link_assinatura ? (
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
+                  <a
+                    href={client.link_assinatura}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-violet-600 hover:underline truncate"
+                  >
+                    {client.link_assinatura}
+                  </a>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-500 hover:text-violet-600 shrink-0 h-7"
+                  onClick={() => {
+                    setSignatureLinkClient(client)
+                    setSignatureLinkValue(client.link_assinatura || '')
+                    setIsSignatureLinkOpen(true)
+                  }}
+                >
+                  <Edit className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-400 italic">
+                  Nenhum link de assinatura definido.
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-violet-600 border-violet-200 hover:bg-violet-50 h-7"
+                  onClick={() => {
+                    setSignatureLinkClient(client)
+                    setSignatureLinkValue('')
+                    setIsSignatureLinkOpen(true)
+                  }}
+                >
+                  <PenLine className="h-3.5 w-3.5 mr-1.5" /> Definir Link
+                </Button>
               </div>
             )}
           </div>
@@ -4233,6 +4375,20 @@ Obrigada.`)
                     Gerar Upsell
                   </Link>
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isSendingContract}
+                  onClick={() => viewingClient && handleSendContractEmail(viewingClient)}
+                  className="bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100"
+                >
+                  {isSendingContract ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4 mr-2" />
+                  )}
+                  Enviar Contrato para Assinatura
+                </Button>
                 {viewingClient?.originalData?.status?.toLowerCase() !== 'inativo' && (
                   <Button
                     variant="outline"
@@ -4758,6 +4914,44 @@ Obrigada.`)
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={isSignatureLinkOpen} onOpenChange={setIsSignatureLinkOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Link de Assinatura Eletrônica</DialogTitle>
+            <DialogDescription>
+              Defina o link para assinatura eletrônica do contrato do cliente{' '}
+              <strong className="text-slate-900">{signatureLinkClient?.name}</strong>. Este link
+              será incluído no e-mail enviado ao cliente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>URL do Link de Assinatura</Label>
+              <Input
+                placeholder="https://exemplo.com/assinatura/..."
+                value={signatureLinkValue}
+                onChange={(e) => setSignatureLinkValue(e.target.value)}
+              />
+              <p className="text-xs text-slate-500">
+                Cole aqui o link gerado pela plataforma de assinatura eletrônica (ex: DocuSign,
+                Clicksign, etc).
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSignatureLinkOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveSignatureLink}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              Salvar Link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isDocUploadOpen} onOpenChange={setIsDocUploadOpen}>
         <DialogContent className="sm:max-w-md">
