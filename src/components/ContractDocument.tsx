@@ -186,7 +186,7 @@ export function ContractDocument({
                         ? planBilling === 'anual'
                           ? formatCurrency(planAnnualPrice)
                           : formatCurrency(planPrice)
-                        : formatCurrency(p.price)}
+                        : 'R$ xx,00'}
                     </td>
                     <td className="border border-slate-300 p-1.5 text-center">
                       {selectedPlan === p.id
@@ -782,20 +782,43 @@ export function ContractDocument({
         />
         <ClauseBlock title="CLÁUSULA DÉCIMA - DO FORO" texts={CONTRACT_TEXT.CLAUSULA_10} />
 
-        <div className="mt-16 text-center space-y-12">
-          <p>E por estarem justos e contratados, assinam eletronicamente.</p>
-          <div className="grid grid-cols-2 gap-8 mt-12">
-            <div className="border-t border-[#1b4382] pt-2 text-center print:border-black">
-              <p className="font-bold text-[#1b4382] print:text-black">
-                CONTACTO SOLUÇÕES EM TECNOLOGIA - LTDA
-              </p>
-              <p className="text-[11px] text-slate-500">CONTRATADA</p>
+        <div className="mt-16 print:mt-12">
+          <p className="text-center mb-10 print:mb-12">
+            E por estarem justos e contratados, assinam eletronicamente.
+          </p>
+          <div className="flex flex-col sm:flex-row sm:justify-between gap-10 sm:gap-16 print:flex-row print:gap-16 print:items-end">
+            <div className="flex-1 flex flex-col items-center text-center min-w-0">
+              <div className="h-12 sm:h-16 print:h-16 flex items-end" />
+              <div className="w-full border-t-2 border-[#1b4382] pt-3 print:border-black">
+                <p className="font-bold text-[#1b4382] print:text-black text-sm leading-snug break-words">
+                  CONTACTO SOLUÇÕES EM TECNOLOGIA - LTDA
+                </p>
+                <p className="text-[11px] text-slate-500 mt-1">CNPJ: 27.751.577/0001-91</p>
+                <p className="text-[11px] text-slate-600 font-medium mt-0.5">
+                  Rodrigo Goronci Sant'Ana
+                </p>
+                <p className="text-[10px] text-slate-400 uppercase tracking-wide mt-0.5">
+                  Contratada
+                </p>
+              </div>
             </div>
-            <div className="border-t border-[#1b4382] pt-2 text-center print:border-black">
-              <p className="font-bold uppercase text-[#1b4382] print:text-black">
-                <Highlight value={name} fallback="[NOME DA EMPRESA]" />
-              </p>
-              <p className="text-[11px] text-slate-500">CONTRATANTE</p>
+            <div className="hidden sm:block sm:w-8 print:block print:w-8" />
+            <div className="flex-1 flex flex-col items-center text-center min-w-0">
+              <div className="h-12 sm:h-16 print:h-16 flex items-end" />
+              <div className="w-full border-t-2 border-[#1b4382] pt-3 print:border-black">
+                <p className="font-bold uppercase text-[#1b4382] print:text-black text-sm leading-snug break-words">
+                  <Highlight value={name} fallback="[NOME DA EMPRESA]" />
+                </p>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  CNPJ: <Highlight value={cnpj} fallback="[CNPJ]" />
+                </p>
+                <p className="text-[11px] text-slate-600 font-medium mt-0.5">
+                  <Highlight value={repName} fallback="[NOME DO REPRESENTANTE]" />
+                </p>
+                <p className="text-[10px] text-slate-400 uppercase tracking-wide mt-0.5">
+                  Contratante
+                </p>
+              </div>
             </div>
           </div>
         </div>
