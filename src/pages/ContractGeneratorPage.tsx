@@ -2978,7 +2978,7 @@ export default function ContractGeneratorPage() {
                     <ContractDocument {...contractProps} />
                   )}
                 </div>
-                <div className="hidden print:block">
+                <div className="hidden print:block w-full overflow-hidden">
                   {isAddendum ? (
                     <AddendumDocument {...contractProps} />
                   ) : (
@@ -4151,7 +4151,7 @@ export default function ContractGeneratorPage() {
                 <div className="flex-1 overflow-y-auto print:hidden p-1 bg-slate-100/50">
                   <QuoteDocument {...quoteProps} />
                 </div>
-                <div className="hidden print:block">
+                <div className="hidden print:block w-full overflow-hidden">
                   <QuoteDocument {...quoteProps} />
                 </div>
                 <CardFooter className="bg-slate-50 border-t p-4 flex flex-col sm:flex-row gap-3 justify-end shrink-0 print:hidden">

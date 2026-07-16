@@ -146,7 +146,7 @@ export function QuoteDocument({
 
   return (
     <div
-      className="bg-white w-full max-w-[210mm] mx-auto p-4 md:p-6 print:m-0 print:p-4 text-slate-800 text-xs shadow-sm print:shadow-none font-sans"
+      className="bg-white w-full max-w-[210mm] mx-auto p-4 md:p-6 print:m-0 print:p-2 text-slate-800 text-xs shadow-sm print:shadow-none font-sans print:max-w-[186mm] print:w-[186mm] overflow-hidden print:overflow-visible"
       id="quote-proposal-print"
     >
       {/* Header */}
@@ -180,19 +180,23 @@ export function QuoteDocument({
       </div>
 
       <div className="flex gap-3 mb-3 bg-slate-50 p-2 rounded border border-slate-200 text-[10px]">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <span className="block text-slate-500 mb-0.5">Empresa</span>
-          <strong className="text-slate-900 text-xs">{empresa || 'Não informado'}</strong>
+          <strong className="text-slate-900 text-xs break-words">
+            {empresa || 'Não informado'}
+          </strong>
         </div>
         {cnpj && (
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <span className="block text-slate-500 mb-0.5">CNPJ</span>
-            <strong className="text-slate-900 text-xs">{cnpj}</strong>
+            <strong className="text-slate-900 text-xs break-words">{cnpj}</strong>
           </div>
         )}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <span className="block text-slate-500 mb-0.5">Aos Cuidados de</span>
-          <strong className="text-slate-900 text-xs">{aosCuidadosDe || 'Não informado'}</strong>
+          <strong className="text-slate-900 text-xs break-words">
+            {aosCuidadosDe || 'Não informado'}
+          </strong>
         </div>
       </div>
 
@@ -203,9 +207,12 @@ export function QuoteDocument({
             <div className="w-1.5 h-3 bg-orange-500 rounded-full" />
             Funcionalidades Inclusas no Plano Base
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 min-w-0">
             {FEATURE_CATEGORIES.map((cat, i) => (
-              <div key={i} className="bg-white p-2 rounded border border-slate-200 shadow-sm">
+              <div
+                key={i}
+                className="bg-white p-2 rounded border border-slate-200 shadow-sm min-w-0"
+              >
                 <h4 className="font-bold text-slate-800 text-[10px] mb-1 pb-0.5 border-b border-slate-100">
                   {cat.title}
                 </h4>
@@ -213,10 +220,10 @@ export function QuoteDocument({
                   {cat.items.map((item, j) => (
                     <li
                       key={j}
-                      className="flex items-start gap-1 text-[9px] text-slate-600 leading-tight"
+                      className="flex items-start gap-1 text-[9px] text-slate-600 leading-tight break-words"
                     >
                       <span className="text-emerald-500 font-bold shrink-0">✓</span>
-                      {item}
+                      <span className="break-words">{item}</span>
                     </li>
                   ))}
                 </ul>
@@ -233,14 +240,27 @@ export function QuoteDocument({
           Investimento Detalhado
         </h3>
         <div className="bg-white rounded overflow-hidden border border-slate-200 shadow-sm">
-          <table className="w-full text-left text-[10px]">
+          <table className="w-full text-left text-[10px]" style={{ tableLayout: 'auto' }}>
             <thead className="bg-slate-50 text-slate-700 font-bold">
               <tr>
-                <th className="p-1.5 border-b border-slate-200">Descrição</th>
-                <th className="p-1.5 border-b border-slate-200 text-center">Qtd</th>
-                <th className="p-1.5 border-b border-slate-200 text-right">V. Unitário</th>
-                <th className="p-1.5 border-b border-slate-200 text-right">V. Total</th>
-                <th className="p-1.5 border-b border-slate-200 text-center">Ciclo</th>
+                <th className="p-1.5 border-b border-slate-200" style={{ width: '40%' }}>
+                  Descrição
+                </th>
+                <th className="p-1.5 border-b border-slate-200 text-center" style={{ width: '8%' }}>
+                  Qtd
+                </th>
+                <th className="p-1.5 border-b border-slate-200 text-right" style={{ width: '17%' }}>
+                  V. Unitário
+                </th>
+                <th className="p-1.5 border-b border-slate-200 text-right" style={{ width: '17%' }}>
+                  V. Total
+                </th>
+                <th
+                  className="p-1.5 border-b border-slate-200 text-center"
+                  style={{ width: '18%' }}
+                >
+                  Ciclo
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -527,21 +547,21 @@ export function QuoteDocument({
             <div className="w-1.5 h-3 bg-orange-500 rounded-full" />
             Filiais Consideradas na Franquia DF-e
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 min-w-0">
             {filiaisDfe
               .filter((f) => f.cnpj)
               .map((f, i) => (
                 <div
                   key={i}
-                  className="bg-slate-50 p-2 rounded border border-slate-200 shadow-sm text-[10px]"
+                  className="bg-slate-50 p-2 rounded border border-slate-200 shadow-sm text-[10px] min-w-0"
                 >
                   <p
-                    className="font-bold text-slate-800 truncate"
+                    className="font-bold text-slate-800 break-words"
                     title={f.nome || 'Filial não identificada'}
                   >
                     {f.nome || 'Filial não identificada'}
                   </p>
-                  <p className="text-slate-600 mt-0.5">CNPJ: {f.cnpj}</p>
+                  <p className="text-slate-600 mt-0.5 break-words">CNPJ: {f.cnpj}</p>
                 </div>
               ))}
           </div>
@@ -549,7 +569,7 @@ export function QuoteDocument({
       )}
 
       {/* Totals */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2 min-w-0">
         <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
           <h4 className="font-bold text-slate-500 text-[9px] uppercase tracking-wider mb-2">
             Total Recorrente

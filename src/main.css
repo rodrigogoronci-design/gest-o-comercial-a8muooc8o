@@ -187,17 +187,20 @@
   }
 
   #quote-proposal-print {
-    max-width: 196mm !important;
-    width: 196mm !important;
-    padding: 2mm !important;
+    max-width: 186mm !important;
+    width: 186mm !important;
+    padding: 0 !important;
     margin: 0 auto !important;
     font-size: 7.5pt !important;
     line-height: 1.15 !important;
     box-shadow: none !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
   }
 
   #quote-proposal-print * {
     line-height: 1.15 !important;
+    box-sizing: border-box !important;
   }
 
   #quote-proposal-print h1 {
@@ -238,6 +241,10 @@
     padding: 0.15rem !important;
   }
 
+  #quote-proposal-print [class~='p-2.5'] {
+    padding: 0.2rem !important;
+  }
+
   #quote-proposal-print [class~='gap-3'] {
     gap: 0.2rem !important;
   }
@@ -246,13 +253,23 @@
     gap: 0.15rem !important;
   }
 
+  #quote-proposal-print [class~='gap-4'] {
+    gap: 0.2rem !important;
+  }
+
   #quote-proposal-print table {
     font-size: 7pt !important;
+    table-layout: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   #quote-proposal-print th,
   #quote-proposal-print td {
     padding: 1px 3px !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
   }
 
   #quote-proposal-print [class~='space-y-1.5'] > * + * {
@@ -265,6 +282,98 @@
 
   #quote-proposal-print [class~='space-y-0.5'] > * + * {
     margin-top: 0.05rem !important;
+  }
+
+  #quote-proposal-print [class~='overflow-hidden'] {
+    overflow: visible !important;
+  }
+
+  #quote-proposal-print [class~='truncate'] {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  #quote-proposal-print [class~='max-w-[210mm]'] {
+    max-width: 186mm !important;
+    width: 186mm !important;
+  }
+
+  #quote-proposal-print [class~='grid-cols-2'] {
+    grid-template-columns: 1fr 1fr !important;
+    min-width: 0 !important;
+  }
+
+  #quote-proposal-print [class~='grid-cols-3'] {
+    grid-template-columns: 1fr 1fr 1fr !important;
+    min-width: 0 !important;
+  }
+
+  #quote-proposal-print [class~='md\\:grid-cols-3'] {
+    grid-template-columns: 1fr 1fr 1fr !important;
+    min-width: 0 !important;
+  }
+
+  #quote-proposal-print [class~='flex-1'] {
+    min-width: 0 !important;
+  }
+
+  #quote-proposal-print [class~='flex-2'] {
+    min-width: 0 !important;
+  }
+
+  /* Contract document print fixes */
+  .print\:block table {
+    table-layout: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .print\:block th,
+  .print\:block td {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+  }
+
+  /* Ensure all print content stays within bounds */
+  [class*='print']:not([class*='hidden']) {
+    max-width: 186mm !important;
+    overflow: hidden !important;
+  }
+
+  /* Fix overflow on flex children in print */
+  main [class*='lg:col-span-7'] {
+    max-width: 100% !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  main [class*='lg:col-span-5'] {
+    display: none !important;
+  }
+
+  main .grid {
+    display: block !important;
+    width: 100% !important;
+    max-width: 186mm !important;
+    margin: 0 auto !important;
+  }
+
+  /* Fix card overflow in print */
+  main [class*='overflow-hidden'] {
+    overflow: visible !important;
+  }
+
+  /* Fix sticky positioning in print */
+  main [class*='sticky'] {
+    position: static !important;
+  }
+
+  /* Ensure the print container takes full width */
+  main [class*='h-[calc'] {
+    height: auto !important;
+    min-height: auto !important;
   }
 }
 
