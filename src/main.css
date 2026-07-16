@@ -104,8 +104,8 @@
   body,
   #root,
   .flex-1 {
-    overflow: hidden !important;
-    height: 100% !important;
+    overflow: visible !important;
+    height: auto !important;
     width: 100% !important;
     max-width: none !important;
     margin: 0 !important;
@@ -339,7 +339,7 @@
   /* Ensure all print content stays within bounds */
   [class*='print']:not([class*='hidden']) {
     max-width: 186mm !important;
-    overflow: hidden !important;
+    overflow: visible !important;
   }
 
   /* Fix overflow on flex children in print */
@@ -374,6 +374,70 @@
   main [class*='h-[calc'] {
     height: auto !important;
     min-height: auto !important;
+  }
+
+  /* Multi-page support: natural page breaks for contract & quote documents */
+  .print\:block,
+  .print\:block > * {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  /* Avoid breaking inside key structural elements */
+  .print\:block h1,
+  .print\:block h2,
+  .print\:block h3,
+  .print\:block h4,
+  .report-header,
+  .report-header * {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .print\:block table,
+  .report-document table,
+  #quote-proposal-print table {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  .print\:block thead,
+  .report-document thead,
+  #quote-proposal-print thead {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    break-after: avoid !important;
+  }
+
+  .print\:block tr,
+  .report-document tr,
+  #quote-proposal-print tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .print\:block tbody,
+  .report-document tbody,
+  #quote-proposal-print tbody {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  /* Allow natural page breaks between major sections */
+  .print\:block > div,
+  .report-document > * {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  /* Signature blocks should not be split across pages */
+  .print\:block .grid.grid-cols-2:last-child,
+  .report-document .mt-16 {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }
 
