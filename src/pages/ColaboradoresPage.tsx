@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
-import { UserPlus, Search, ShieldAlert, ShieldCheck, Pencil, Trash2 } from 'lucide-react'
+import { UserPlus, Search, ShieldAlert, ShieldCheck, Pencil, Trash2, UserCheck } from 'lucide-react'
 
 export default function ColaboradoresPage() {
   const [colaboradores, setColaboradores] = useState<any[]>([])
@@ -51,6 +51,14 @@ export default function ColaboradoresPage() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [search, setSearch] = useState('')
+  const [isActivateOpen, setIsActivateOpen] = useState(false)
+  const [activateData, setActivateData] = useState({
+    id: '',
+    name: '',
+    email: '',
+    password: 'Skip@Pass123',
+    role: 'Colaborador',
+  })
 
   const fetchColaboradores = async () => {
     setIsLoading(true)
@@ -149,6 +157,60 @@ export default function ColaboradoresPage() {
       systemAccess: !!colab.user_id,
     })
     setIsEditOpen(true)
+  }
+
+  const openActivateDialog = (colab: any) => {
+    setActivateData({
+      id: colab.id,
+      name: colab.nome,
+      email: colab.email || '',
+      password: 'Skip@Pass123',
+      role: colab.role || 'Colaborador',
+    })
+    setIsActivateOpen(true)
+  }
+
+  const handleActivateAccess = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!activateData.email.trim()) {
+      toast.error('E-mail é obrigatório para ativar o acesso')
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-user', {
+        body: {
+          action: 'update',
+          payload: {
+            id: activateData.id,
+            name: activateData.name,
+            email: activateData.email,
+            password: activateData.password,
+            role: activateData.role,
+            systemAccess: true,
+          },
+        },
+      })
+
+      if (error || data?.error) throw error || new Error(data?.error)
+
+      toast.success('Acesso ativado com sucesso!')
+      setIsActivateOpen(false)
+      fetchColaboradores()
+    } catch (error: any) {
+      let msg = error.message
+      if (msg?.includes('User already registered') || msg?.includes('already exists')) {
+        msg = 'Este e-mail já está sendo utilizado por outro acesso.'
+      } else if (msg?.includes('Password should be at least')) {
+        msg = 'A senha deve ter pelo menos 6 caracteres.'
+      }
+      toast.error('Erro ao ativar acesso', { description: msg })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const filteredColaboradores = colaboradores.filter(
@@ -321,6 +383,65 @@ export default function ColaboradoresPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={isActivateOpen} onOpenChange={setIsActivateOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Ativar Acesso ao Sistema</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleActivateAccess} className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="activate-name">Nome</Label>
+                <Input
+                  id="activate-name"
+                  value={activateData.name}
+                  onChange={(e) => setActivateData({ ...activateData, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="activate-email">E-mail</Label>
+                <Input
+                  id="activate-email"
+                  type="email"
+                  value={activateData.email}
+                  onChange={(e) => setActivateData({ ...activateData, email: e.target.value })}
+                  placeholder="exemplo@servicelogic.com.br"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="activate-password">Senha Provisória</Label>
+                <Input
+                  id="activate-password"
+                  type="text"
+                  value={activateData.password}
+                  onChange={(e) => setActivateData({ ...activateData, password: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="activate-role">Perfil de Acesso</Label>
+                <Select
+                  value={activateData.role}
+                  onValueChange={(v) => setActivateData({ ...activateData, role: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Admin">Administrador</SelectItem>
+                    <SelectItem value="Gerente">Gerente</SelectItem>
+                    <SelectItem value="Colaborador">Colaborador</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full mt-4" disabled={isSubmitting}>
+                {isSubmitting ? 'Ativando...' : 'Ativar Acesso'}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
@@ -378,6 +499,18 @@ export default function ColaboradoresPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
+                      {!colab.user_id && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700"
+                          onClick={() => openActivateDialog(colab)}
+                          title="Ativar acesso ao sistema"
+                        >
+                          <UserCheck className="h-4 w-4" />
+                          Ativar Acesso
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
