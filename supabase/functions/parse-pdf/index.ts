@@ -39,6 +39,19 @@ const MODULE_NAMES_MAP: Record<string, string> = {
 const ERROR_MSG =
   'Não foi possível identificar o padrão do contrato. Verifique o arquivo e tente novamente.'
 
+const PROVIDER_PATTERNS = [
+  'SERVICE LOGIC',
+  'SERVIÇO LOGIC',
+  'SERVIC LOGIC',
+  'SERVICE LOGIC TECNOLOGIA',
+  'SERVICE LOGIC TECNOLOGIA LTDA',
+]
+
+function isProviderName(name: string): boolean {
+  const upper = name.toUpperCase()
+  return PROVIDER_PATTERNS.some((p) => upper.includes(p.toUpperCase()))
+}
+
 function parseCurrency(val: string): number {
   return parseFloat(val.replace(/\./g, '').replace(',', '.')) || 0
 }
@@ -59,12 +72,33 @@ function extractData(text: string) {
   let repCpf: string | null = null
   let repRg: string | null = null
 
-  // 1. Extract Contratante details
-  const contratanteMatch = text.match(
-    /CONTRATANTE:?\s*([\s\S]*?)(?:CONTRATADA|As partes acima|DO OBJETO)/i,
-  )
-  if (contratanteMatch) {
-    const block = contratanteMatch[1].replace(/\n/g, ' ')
+  const clientKeywords = ['CONTRATANTE', 'CLIENTE', 'TOMADOR']
+
+  let contratanteBlock: string | null = null
+
+  for (const keyword of clientKeywords) {
+    if (contratanteBlock) break
+    const regex = new RegExp(
+      `${keyword}\\s*:?\\s*([\\s\\S]*?)(?=\\b(?:CONTRATADA|PRESTADORA|SERVICE\\s+LOGIC|SERVIÇO\\s+LOGIC|DO\\s+OBJETO|As\\s+partes\\s+acima|CLÁUSULA|CONSIDERANDO)\\b|$)`,
+      'i',
+    )
+    const match = text.match(regex)
+    if (match && match[1].trim().length > 10) {
+      contratanteBlock = match[1]
+    }
+  }
+
+  if (!contratanteBlock) {
+    const fallbackMatch = text.match(
+      /CONTRATANTE:?\s*([\s\S]*?)(?:CONTRATADA|As partes acima|DO OBJETO)/i,
+    )
+    if (fallbackMatch) {
+      contratanteBlock = fallbackMatch[1]
+    }
+  }
+
+  if (contratanteBlock) {
+    const block = contratanteBlock.replace(/\n/g, ' ')
 
     const nameMatch = block.match(/^\s*(.+?)(?:,|\binscrita?\b|\bCNPJ\b|\bcom sede\b)/i)
     if (nameMatch) {
@@ -72,13 +106,17 @@ function extractData(text: string) {
       rawName = rawName.replace(/^[^a-zA-ZÀ-ÿ0-9]+/, '')
       rawName = rawName.replace(/[^a-zA-ZÀ-ÿ0-9]+$/, '')
       rawName = rawName.replace(/^"(.+)"$/, '$1')
-      nome = rawName.trim()
+      if (!isProviderName(rawName)) {
+        nome = rawName.trim()
+      }
     }
 
-    // Fallback: try company name pattern (ends with LTDA, S.A., ME, etc.)
     if (!nome) {
       const altNameMatch = block.match(/([A-Z][A-ZÀ-ÿ0-9\s,.]+(?:LTDA|S\.?A\.?|ME|EPP|EIRELI))/i)
-      if (altNameMatch) nome = altNameMatch[1].trim()
+      if (altNameMatch) {
+        const altName = altNameMatch[1].trim()
+        if (!isProviderName(altName)) nome = altName
+      }
     }
 
     const cnpjMatch = block.match(/(?:\bCNPJ[^\d]*?|)(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2})/i)
@@ -86,7 +124,6 @@ function extractData(text: string) {
       cnpj = formatCnpjStrict(cnpjMatch[1])
     }
 
-    // Also try unformatted 14-digit CNPJ near keyword
     if (!cnpj) {
       const unformattedCnpjMatch = block.match(/CNPJ[:\s]*(\d{14})/i)
       if (unformattedCnpjMatch) {
@@ -107,23 +144,35 @@ function extractData(text: string) {
     if (repRgMatch) repRg = repRgMatch[1]
   }
 
-  // Fallback: search for CNPJ near CONTRATANTE text
   if (!cnpj) {
-    const contratanteCnpjMatch = text.match(
-      /CONTRATANTE[\s\S]{0,500}?(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2})/i,
-    )
-    if (contratanteCnpjMatch) {
-      cnpj = formatCnpjStrict(contratanteCnpjMatch[1])
+    for (const keyword of clientKeywords) {
+      if (cnpj) break
+      const regex = new RegExp(
+        `${keyword}[\\s\\S]{0,500}?(\\d{2}\\.?\\d{3}\\.?\\d{3}\\/?\\d{4}-?\\d{2})`,
+        'i',
+      )
+      const match = text.match(regex)
+      if (match) {
+        cnpj = formatCnpjStrict(match[1])
+      }
     }
   }
 
-  // Final fallback: any formatted CNPJ in the document
   if (!cnpj) {
-    const fallbackCnpjMatch = text.match(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/)
-    if (fallbackCnpjMatch) cnpj = fallbackCnpjMatch[0]
+    const allCnpjs = [...text.matchAll(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/g)]
+    for (const cnpjMatch of allCnpjs) {
+      const start = Math.max(0, (cnpjMatch.index || 0) - 200)
+      const context = text.substring(start, (cnpjMatch.index || 0) + cnpjMatch[0].length + 50)
+      if (!isProviderName(context)) {
+        cnpj = cnpjMatch[0]
+        break
+      }
+    }
+    if (!cnpj && allCnpjs.length > 0) {
+      cnpj = allCnpjs[0][0]
+    }
   }
 
-  // 2. Extract Plan
   let planoBase: string | null = null
   const planLines = text.match(/(?:TMS-\d+(?:\+)?|MTS-\d+).*?R\$\s*[\d.,]+.*?R\$\s*[\d.,]+.*?X/gi)
   if (planLines && planLines.length > 0) {
@@ -138,7 +187,6 @@ function extractData(text: string) {
     }
   }
 
-  // 3. Extract Financials
   let valorMensalidade = 0
   let valorImplantacao = 0
 
@@ -148,7 +196,6 @@ function extractData(text: string) {
   const implMatch = text.match(/Total Visitas \/ Implantação\s*R\$\s*([\d.,]+)/i)
   if (implMatch) valorImplantacao = parseCurrency(implMatch[1])
 
-  // Fallback for monthly value
   if (valorMensalidade === 0 && planoBase) {
     const summaryPlanMatch = text.match(
       new RegExp(`Plano \\(${planoBase.replace('+', '\\+')}\\)\\s*R\\$\\s*([\\d.,]+)`, 'i'),
@@ -158,7 +205,6 @@ function extractData(text: string) {
     }
   }
 
-  // 4. Extract Modules
   const modulos: string[] = []
   const lines = text.split('\n')
   for (const line of lines) {
@@ -170,7 +216,6 @@ function extractData(text: string) {
       }
     }
   }
-  // add basic modules if not present but plan exists
   if (planoBase) {
     ;[
       'mod-admin',
@@ -184,7 +229,6 @@ function extractData(text: string) {
     })
   }
 
-  // 5. Extract Signature Date
   let dataAssinatura: string | null = null
   const signatureMatches = [
     ...text.matchAll(/Assinado como contratante em (\d{2}\/\d{2}\/\d{4})/gi),
@@ -208,7 +252,7 @@ function extractData(text: string) {
     repName,
     repCpf,
     repRg,
-    valor_total: valorMensalidade, // the system historically stored total value
+    valor_total: valorMensalidade,
     valor_mensalidade: valorMensalidade,
     valor_implantacao: valorImplantacao,
     modulos,

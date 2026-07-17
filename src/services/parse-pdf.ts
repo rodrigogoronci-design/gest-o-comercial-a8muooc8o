@@ -4,6 +4,7 @@ export interface ExtractedContractData {
   nome: string
   cnpj: string
   nomeFromApi?: boolean
+  nomeNeedsVerification?: boolean
   endereco?: string | null
   repName?: string | null
   repCpf?: string | null

@@ -19,7 +19,7 @@ async function fetchFromBrasilAPI(cleanCnpj: string): Promise<CnpjData> {
   const d = await res.json()
   const addr = [d.logradouro, d.numero, d.bairro, d.municipio, d.uf].filter(Boolean).join(', ')
   return {
-    nome: d.razao_social || '',
+    nome: d.razao_social || d.nome_fantasia || '',
     email: d.email || '',
     telefone: d.ddd_telefone_1 || '',
     endereco: addr,
@@ -39,7 +39,7 @@ async function fetchFromReceitaWS(cleanCnpj: string): Promise<CnpjData> {
   if (d.status === 'ERROR') throw new Error('CNPJ_NAO_ENCONTRADO')
   const addr = [d.logradouro, d.numero, d.bairro, d.municipio, d.uf].filter(Boolean).join(', ')
   return {
-    nome: d.nome || '',
+    nome: d.nome || d.fantasia || '',
     email: d.email || '',
     telefone: d.telefone || '',
     endereco: addr,

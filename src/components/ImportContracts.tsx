@@ -463,7 +463,7 @@ export function ImportContracts() {
                             {enrichingIndex === index ? (
                               <span className="text-[10px] font-medium text-indigo-600 flex items-center gap-1">
                                 <Loader2 className="w-3 h-3 animate-spin" />
-                                Buscando dados na Receita Federal...
+                                Buscando dados oficiais da Receita...
                               </span>
                             ) : f.data.nomeFromApi ? (
                               <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
@@ -472,8 +472,8 @@ export function ImportContracts() {
                             ) : (
                               <div className="flex items-center gap-2">
                                 {f.data.nomeNeedsVerification && (
-                                  <span className="text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">
-                                    Verificar
+                                  <span className="text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 flex items-center gap-1">
+                                    <AlertCircle className="w-3 h-3" />A verificar
                                   </span>
                                 )}
                                 <button

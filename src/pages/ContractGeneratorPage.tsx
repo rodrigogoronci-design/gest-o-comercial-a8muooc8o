@@ -1024,16 +1024,14 @@ export default function ContractGeneratorPage() {
       if (extractedData.cnpj) {
         const rawCnpj = extractedData.cnpj.replace(/\D/g, '')
         if (rawCnpj.length === 14) {
+          setIsLoadingCnpj(true)
           try {
             const { data: cnpjResult } = await fetchCnpjFromService(rawCnpj)
             if (cnpjResult) {
-              if (
-                cnpjResult.nome &&
-                (!extractedData.nome || extractedData.nome === 'Empresa não identificada')
-              ) {
+              if (cnpjResult.nome) {
                 extractedData.nome = cnpjResult.nome
               }
-              if (cnpjResult.endereco && !extractedData.endereco) {
+              if (cnpjResult.endereco) {
                 extractedData.endereco = cnpjResult.endereco
               }
               if (cnpjResult.email) setEmail(cnpjResult.email)
@@ -1041,6 +1039,13 @@ export default function ContractGeneratorPage() {
             }
           } catch (e) {
             console.error('Failed to fetch CNPJ data', e)
+            toast({
+              title: 'Dados não verificados',
+              description:
+                'Não foi possível buscar dados oficiais da Receita. Verifique a Razão Social manualmente.',
+            })
+          } finally {
+            setIsLoadingCnpj(false)
           }
         }
       } else {
@@ -2016,7 +2021,7 @@ export default function ContractGeneratorPage() {
                       {isLoadingCnpj && (
                         <span className="text-xs text-indigo-600 flex items-center gap-1">
                           <Loader2 className="w-3 h-3 animate-spin" />
-                          Buscando dados na Receita Federal...
+                          Buscando dados oficiais da Receita...
                         </span>
                       )}
                     </div>
