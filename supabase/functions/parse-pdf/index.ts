@@ -69,18 +69,29 @@ function extractData(text: string) {
     const nameMatch = block.match(/^\s*(.+?)(?:,|\binscrita?\b|\bCNPJ\b|\bcom sede\b)/i)
     if (nameMatch) {
       let rawName = nameMatch[1].trim()
-      // Remove any leading non-alphanumeric (fixes issues like . "Treinamento")
       rawName = rawName.replace(/^[^a-zA-ZÀ-ÿ0-9]+/, '')
-      // Remove any trailing non-alphanumeric
       rawName = rawName.replace(/[^a-zA-ZÀ-ÿ0-9]+$/, '')
-      // Remove surrounding quotes if any
       rawName = rawName.replace(/^"(.+)"$/, '$1')
       nome = rawName.trim()
+    }
+
+    // Fallback: try company name pattern (ends with LTDA, S.A., ME, etc.)
+    if (!nome) {
+      const altNameMatch = block.match(/([A-Z][A-ZÀ-ÿ0-9\s,.]+(?:LTDA|S\.?A\.?|ME|EPP|EIRELI))/i)
+      if (altNameMatch) nome = altNameMatch[1].trim()
     }
 
     const cnpjMatch = block.match(/(?:\bCNPJ[^\d]*?|)(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2})/i)
     if (cnpjMatch) {
       cnpj = formatCnpjStrict(cnpjMatch[1])
+    }
+
+    // Also try unformatted 14-digit CNPJ near keyword
+    if (!cnpj) {
+      const unformattedCnpjMatch = block.match(/CNPJ[:\s]*(\d{14})/i)
+      if (unformattedCnpjMatch) {
+        cnpj = formatCnpjStrict(unformattedCnpjMatch[1])
+      }
     }
 
     const addrMatch = block.match(/sede na\s*(.+?)\s*,.*?neste ato/i)
@@ -96,7 +107,17 @@ function extractData(text: string) {
     if (repRgMatch) repRg = repRgMatch[1]
   }
 
-  // Fallback for older formats if contratanteMatch fails
+  // Fallback: search for CNPJ near CONTRATANTE text
+  if (!cnpj) {
+    const contratanteCnpjMatch = text.match(
+      /CONTRATANTE[\s\S]{0,500}?(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2})/i,
+    )
+    if (contratanteCnpjMatch) {
+      cnpj = formatCnpjStrict(contratanteCnpjMatch[1])
+    }
+  }
+
+  // Final fallback: any formatted CNPJ in the document
   if (!cnpj) {
     const fallbackCnpjMatch = text.match(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/)
     if (fallbackCnpjMatch) cnpj = fallbackCnpjMatch[0]

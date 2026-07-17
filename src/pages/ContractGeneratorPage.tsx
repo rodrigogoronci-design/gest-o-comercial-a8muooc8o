@@ -45,6 +45,7 @@ import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/hooks/use-toast'
 import { formatCurrency, formatCNPJ } from '@/lib/formatters'
 import { parsePdfContract } from '@/services/parse-pdf'
+import { fetchCnpjData as fetchCnpjFromService } from '@/services/cnpj'
 import {
   PLANS,
   MODULES as BASE_MODULES,
@@ -870,52 +871,28 @@ export default function ContractGeneratorPage() {
         return
       }
 
-      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjValue}`)
-      if (!res.ok) throw new Error('CNPJ não encontrado ou erro na consulta.')
-      const data = await res.json()
+      const { data: cnpjResult, error: cnpjError } = await fetchCnpjFromService(cnpjValue)
 
-      if (data.razao_social) setName(data.razao_social)
+      if (cnpjResult) {
+        if (cnpjResult.nome) setName(cnpjResult.nome)
+        if (cnpjResult.endereco) setAddress(cnpjResult.endereco)
+        if (cnpjResult.email) setEmail(cnpjResult.email)
+        if (cnpjResult.telefone) setTelefone(cnpjResult.telefone)
 
-      const addressParts = []
-      if (data.logradouro) addressParts.push(data.logradouro)
-      if (data.numero) addressParts.push(data.numero)
-      if (data.complemento) addressParts.push(data.complemento)
-      const firstPart = addressParts.join(', ')
+        setAutoFilled(true)
+        setTimeout(() => setAutoFilled(false), 3000)
 
-      const secondPart = []
-      if (data.bairro) secondPart.push(data.bairro)
-      if (data.municipio && data.uf) secondPart.push(`${data.municipio} - ${data.uf}`)
-      if (data.cep) {
-        const cepFormatted = data.cep.replace(/^(\d{5})(\d{3})$/, '$1-$2')
-        secondPart.push(cepFormatted)
+        toast({
+          title: 'CNPJ Encontrado!',
+          description: 'Dados oficiais obtidos via Receita Federal.',
+          className: 'bg-emerald-600 text-white border-none',
+        })
+      } else {
+        toast({
+          title: 'Aviso na busca de CNPJ',
+          description: cnpjError || 'Não foi possível obter dados oficiais. Preencha manualmente.',
+        })
       }
-
-      const fullAddress = [firstPart, secondPart.join(', ')].filter(Boolean).join(' - ')
-      if (fullAddress) setAddress(fullAddress)
-
-      if (data.email) setEmail(data.email)
-      if (data.ddd_telefone_1) setTelefone(data.ddd_telefone_1)
-
-      if (data.qsa && data.qsa.length > 0) {
-        const socioAdmin =
-          data.qsa.find(
-            (s: any) =>
-              s.qualificacao_socio?.toLowerCase().includes('administrador') ||
-              s.qualificacao_socio?.toLowerCase().includes('diretor'),
-          ) || data.qsa[0]
-        if (socioAdmin && socioAdmin.nome_socio) {
-          setRepName(socioAdmin.nome_socio)
-        }
-      }
-
-      setAutoFilled(true)
-      setTimeout(() => setAutoFilled(false), 3000)
-
-      toast({
-        title: 'CNPJ Encontrado!',
-        description: 'Dados da empresa preenchidos automaticamente.',
-        className: 'bg-emerald-600 text-white border-none',
-      })
     } catch (err: any) {
       toast({
         title: 'Aviso na busca de CNPJ',
@@ -961,11 +938,8 @@ export default function ContractGeneratorPage() {
 
   const fetchFilialCnpjData = async (cnpjValue: string) => {
     try {
-      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjValue}`)
-      if (res.ok) {
-        const data = await res.json()
-        if (data.razao_social) setNewFilialNome(data.razao_social)
-      }
+      const { data: cnpjResult } = await fetchCnpjFromService(cnpjValue)
+      if (cnpjResult?.nome) setNewFilialNome(cnpjResult.nome)
     } catch {
       /* intentionally ignored */
     }
@@ -1048,46 +1022,22 @@ export default function ContractGeneratorPage() {
       await new Promise((resolve) => setTimeout(resolve, 800))
 
       if (extractedData.cnpj) {
-        if (!extractedData.endereco) {
-          const rawCnpj = extractedData.cnpj.replace(/\D/g, '')
+        const rawCnpj = extractedData.cnpj.replace(/\D/g, '')
+        if (rawCnpj.length === 14) {
           try {
-            const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${rawCnpj}`)
-            if (res.ok) {
-              const data = await res.json()
-              if (data.razao_social && !extractedData.nome) extractedData.nome = data.razao_social
-
-              const addressParts = []
-              if (data.logradouro) addressParts.push(data.logradouro)
-              if (data.numero) addressParts.push(data.numero)
-              if (data.complemento) addressParts.push(data.complemento)
-              const firstPart = addressParts.join(', ')
-
-              const secondPart = []
-              if (data.bairro) secondPart.push(data.bairro)
-              if (data.municipio && data.uf) secondPart.push(`${data.municipio} - ${data.uf}`)
-              if (data.cep) {
-                const cepFormatted = data.cep.replace(/^(\d{5})(\d{3})$/, '$1-$2')
-                secondPart.push(cepFormatted)
+            const { data: cnpjResult } = await fetchCnpjFromService(rawCnpj)
+            if (cnpjResult) {
+              if (
+                cnpjResult.nome &&
+                (!extractedData.nome || extractedData.nome === 'Empresa não identificada')
+              ) {
+                extractedData.nome = cnpjResult.nome
               }
-
-              const fullAddress = [firstPart, secondPart.join(', ')].filter(Boolean).join(' - ')
-              if (fullAddress) extractedData.endereco = fullAddress
-
-              if (data.email) setEmail(data.email)
-              if (data.ddd_telefone_1) setTelefone(data.ddd_telefone_1)
-
-              if (data.qsa && data.qsa.length > 0 && !extractedData.repName) {
-                const socioAdmin =
-                  data.qsa.find(
-                    (s: any) =>
-                      s.qualificacao_socio?.toLowerCase().includes('administrador') ||
-                      s.qualificacao_socio?.toLowerCase().includes('diretor') ||
-                      s.qualificacao_socio?.toLowerCase().includes('socio'),
-                  ) || data.qsa[0]
-                if (socioAdmin && socioAdmin.nome_socio) {
-                  extractedData.repName = socioAdmin.nome_socio
-                }
+              if (cnpjResult.endereco && !extractedData.endereco) {
+                extractedData.endereco = cnpjResult.endereco
               }
+              if (cnpjResult.email) setEmail(cnpjResult.email)
+              if (cnpjResult.telefone) setTelefone(cnpjResult.telefone)
             }
           } catch (e) {
             console.error('Failed to fetch CNPJ data', e)
@@ -2061,7 +2011,15 @@ export default function ContractGeneratorPage() {
                   )}
 
                   <div className="space-y-2">
-                    <Label>Razão Social</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Razão Social</Label>
+                      {isLoadingCnpj && (
+                        <span className="text-xs text-indigo-600 flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Buscando dados na Receita Federal...
+                        </span>
+                      )}
+                    </div>
                     <Input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
@@ -2382,14 +2340,13 @@ export default function ContractGeneratorPage() {
                                       setFiliaisVinculadas(next)
 
                                       if (raw.length === 14) {
-                                        fetch(`https://brasilapi.com.br/api/cnpj/v1/${raw}`)
-                                          .then((res) => res.json())
-                                          .then((data) => {
-                                            if (data.razao_social) {
+                                        fetchCnpjFromService(raw)
+                                          .then(({ data: cnpjResult }) => {
+                                            if (cnpjResult?.nome) {
                                               setFiliaisVinculadas((prev) => {
                                                 const nextUpdate = [...prev]
                                                 if (!nextUpdate[index].nome) {
-                                                  nextUpdate[index].nome = data.razao_social
+                                                  nextUpdate[index].nome = cnpjResult.nome
                                                 }
                                                 return nextUpdate
                                               })
@@ -3470,14 +3427,13 @@ export default function ContractGeneratorPage() {
                                       setFiliaisVinculadas(next)
 
                                       if (raw.length === 14) {
-                                        fetch(`https://brasilapi.com.br/api/cnpj/v1/${raw}`)
-                                          .then((res) => res.json())
-                                          .then((data) => {
-                                            if (data.razao_social) {
+                                        fetchCnpjFromService(raw)
+                                          .then(({ data: cnpjResult }) => {
+                                            if (cnpjResult?.nome) {
                                               setFiliaisVinculadas((prev) => {
                                                 const nextUpdate = [...prev]
                                                 if (!nextUpdate[index].nome) {
-                                                  nextUpdate[index].nome = data.razao_social
+                                                  nextUpdate[index].nome = cnpjResult.nome
                                                 }
                                                 return nextUpdate
                                               })

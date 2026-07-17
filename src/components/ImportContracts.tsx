@@ -28,6 +28,7 @@ interface ExtractedData {
   nome: string
   cnpj: string
   nomeFromApi?: boolean
+  nomeNeedsVerification?: boolean
   endereco?: string | null
   repName?: string | null
   repCpf?: string | null
@@ -103,12 +104,14 @@ export function ImportContracts() {
       if (cnpjData?.nome) {
         handleUpdateData(index, 'nome', cnpjData.nome)
         handleUpdateData(index, 'nomeFromApi', true)
+        handleUpdateData(index, 'nomeNeedsVerification', false)
         if (cnpjData.endereco) handleUpdateData(index, 'endereco', cnpjData.endereco)
         toast({
           title: 'Razão Social atualizada',
           description: 'Dados oficiais obtidos via Receita Federal.',
         })
       } else if (cnpjError) {
+        handleUpdateData(index, 'nomeNeedsVerification', true)
         toast({
           title: 'Falha na consulta',
           description: cnpjError,
@@ -116,7 +119,7 @@ export function ImportContracts() {
         })
       }
     } catch {
-      // Keep existing data
+      handleUpdateData(index, 'nomeNeedsVerification', true)
     } finally {
       setEnrichingIndex(null)
     }
@@ -146,9 +149,11 @@ export function ImportContracts() {
               extractedData.nome = cnpjData.nome
               extractedData.nomeFromApi = true
               enrichedCount++
+            } else {
+              extractedData.nomeNeedsVerification = true
             }
           } catch {
-            // CNPJ lookup failed — keep extracted name, allow manual edit
+            extractedData.nomeNeedsVerification = true
           }
         }
 
@@ -458,21 +463,28 @@ export function ImportContracts() {
                             {enrichingIndex === index ? (
                               <span className="text-[10px] font-medium text-indigo-600 flex items-center gap-1">
                                 <Loader2 className="w-3 h-3 animate-spin" />
-                                Buscando dados oficiais...
+                                Buscando dados na Receita Federal...
                               </span>
                             ) : f.data.nomeFromApi ? (
                               <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
                                 Via Receita Federal
                               </span>
                             ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleRefetchCnpj(index)}
-                                className="text-[10px] font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
-                              >
-                                <RefreshCw className="w-3 h-3" />
-                                Buscar oficial
-                              </button>
+                              <div className="flex items-center gap-2">
+                                {f.data.nomeNeedsVerification && (
+                                  <span className="text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">
+                                    Verificar
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleRefetchCnpj(index)}
+                                  className="text-[10px] font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                                >
+                                  <RefreshCw className="w-3 h-3" />
+                                  Buscar oficial
+                                </button>
+                              </div>
                             )}
                           </div>
                           <Input
