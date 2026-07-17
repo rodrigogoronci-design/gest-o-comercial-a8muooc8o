@@ -1,6 +1,16 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Upload, CheckCircle, Clock, AlertCircle, FileText, Loader2 } from 'lucide-react'
+import {
+  ArrowLeft,
+  Upload,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  FileText,
+  Loader2,
+  Rocket,
+  User,
+} from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -8,6 +18,7 @@ import { Progress } from '@/components/ui/progress'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select,
   SelectContent,
@@ -42,15 +53,23 @@ const STATUS_CONFIG: Record<string, { color: string; icon: any }> = {
 
 const CATEGORIA_ORDER = [
   'Pré-Implantação',
+  'Implantação Inicial',
   'Ciclo de Treinamentos',
-  'Operação Assistida',
+  'Implantação Operacional',
   'Encerramento',
 ]
+
+const STATUS_OPTIONS = ['Não iniciada', 'Agendada', 'Em andamento', 'Concluída', 'Atrasada']
+
+function todayStr() {
+  return new Date().toISOString().split('T')[0]
+}
 
 export default function ImplementacaoDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [impl, setImpl] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [editingEtapa, setEditingEtapa] = useState<any>(null)
   const [colaboradores, setColaboradores] = useState<any[]>([])
   const [isSaving, setIsSaving] = useState(false)
@@ -66,11 +85,13 @@ export default function ImplementacaoDetailPage() {
 
   const loadImpl = async (implId: string) => {
     setIsLoading(true)
+    setLoadError(false)
     try {
       const data = await getImplementacao(implId)
       setImpl(data)
     } catch (error) {
       console.error(error)
+      setLoadError(true)
       toast.error('Erro ao carregar implementação')
     } finally {
       setIsLoading(false)
@@ -94,6 +115,14 @@ export default function ImplementacaoDetailPage() {
     return sorted.find((e: any) => e.status !== 'Concluída') || null
   }, [impl])
 
+  const colabMap = useMemo(() => {
+    const map: Record<string, string> = {}
+    colaboradores.forEach((c) => {
+      map[c.id] = c.nome
+    })
+    return map
+  }, [colaboradores])
+
   const handleOpenEdit = (etapa: any) => {
     setEditingEtapa(etapa)
     setFormData({
@@ -107,13 +136,34 @@ export default function ImplementacaoDetailPage() {
     setRatFile(null)
   }
 
+  const isTreinamentoEtapa = useMemo(() => {
+    return editingEtapa?.categoria === 'Ciclo de Treinamentos'
+  }, [editingEtapa])
+
+  const canConcluir = useMemo(() => {
+    if (!isTreinamentoEtapa) return true
+    return !!formData.documento_url || !!ratFile
+  }, [isTreinamentoEtapa, formData.documento_url, ratFile])
+
+  const handleStatusChange = (v: string) => {
+    const updates: any = { ...formData, status: v }
+    if (v === 'Concluída' && !updates.data_realizada) {
+      updates.data_realizada = todayStr()
+    }
+    setFormData(updates)
+  }
+
   const handleSaveEtapa = async () => {
     if (!editingEtapa || !impl) return
-    const isTreinamento = editingEtapa.titulo.toLowerCase().includes('treinamento')
 
-    if (isTreinamento && formData.status === 'Concluída' && !formData.documento_url && !ratFile) {
+    if (
+      isTreinamentoEtapa &&
+      formData.status === 'Concluída' &&
+      !formData.documento_url &&
+      !ratFile
+    ) {
       toast.error(
-        'É obrigatório anexar o RAT (Relatório de Atendimento Técnico) para concluir treinamentos.',
+        'A etapa somente poderá ser marcada como Concluída após existir um documento anexado.',
       )
       return
     }
@@ -145,12 +195,67 @@ export default function ImplementacaoDetailPage() {
   }
 
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-[400px]">Carregando...</div>
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10 rounded-lg" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-7 w-64" />
+            <Skeleton className="h-4 w-40" />
+          </div>
+          <Skeleton className="h-6 w-24" />
+        </div>
+        <Card>
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-8 w-12" />
+            </div>
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-4 w-72" />
+          </CardContent>
+        </Card>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="space-y-2">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </div>
+        ))}
+      </div>
+    )
   }
 
-  if (!impl) {
+  if (loadError || !impl) {
     return (
-      <div className="text-center py-12 text-muted-foreground">Implementação não encontrada.</div>
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <div className="flex items-center justify-center w-16 h-16 rounded-full bg-slate-100">
+          <AlertCircle className="h-8 w-8 text-slate-400" />
+        </div>
+        <div className="text-center">
+          <p className="text-lg font-medium text-slate-700">
+            {loadError ? 'Erro ao carregar implementação' : 'Implementação não encontrada'}
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {loadError
+              ? 'Ocorreu um erro ao carregar os dados. Tente novamente.'
+              : 'A implementação solicitada pode ter sido removida ou o ID é inválido.'}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          {loadError && id && (
+            <Button onClick={() => loadImpl(id)} className="bg-indigo-600 hover:bg-indigo-700">
+              Tentar Novamente
+            </Button>
+          )}
+          <Button asChild variant="outline">
+            <Link to="/implementacoes">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar para lista
+            </Link>
+          </Button>
+        </div>
+      </div>
     )
   }
 
@@ -178,33 +283,52 @@ export default function ImplementacaoDetailPage() {
             <span className="text-2xl font-bold text-indigo-600">{impl.progresso}%</span>
           </div>
           <Progress value={impl.progresso} className="h-3 mb-4" />
-          {proximaEtapa && (
-            <div className="flex items-center gap-2 text-sm">
-              <Clock className="h-4 w-4 text-slate-400" />
-              <span className="text-slate-500">Próxima atividade:</span>
-              <span className="font-medium text-slate-800">{proximaEtapa.titulo}</span>
-              {proximaEtapa.data_prevista && (
-                <span className="text-slate-400">
-                  — {new Date(proximaEtapa.data_prevista).toLocaleDateString('pt-BR')}
-                </span>
-              )}
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            {proximaEtapa && (
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-slate-400" />
+                <span className="text-slate-500">Próxima atividade:</span>
+                <span className="font-medium text-slate-800">{proximaEtapa.titulo}</span>
+                {proximaEtapa.data_prevista && (
+                  <span className="text-slate-400">
+                    — Previsto para{' '}
+                    {new Date(proximaEtapa.data_prevista).toLocaleDateString('pt-BR')}
+                  </span>
+                )}
+              </div>
+            )}
+            {impl.colaboradores?.nome && (
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-slate-400" />
+                <span className="text-slate-500">Analista:</span>
+                <span className="font-medium text-slate-800">{impl.colaboradores.nome}</span>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
       {CATEGORIA_ORDER.map((categoria) => {
         const etapas = etapasByCategoria[categoria]
         if (!etapas || etapas.length === 0) return null
+        const concludedCount = etapas.filter((e: any) => e.status === 'Concluída').length
         return (
           <div key={categoria}>
-            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">
-              {categoria}
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+                {categoria}
+              </h3>
+              <span className="text-xs text-slate-500">
+                {concludedCount}/{etapas.length} concluídas
+              </span>
+            </div>
             <div className="space-y-2">
               {etapas.map((etapa: any) => {
                 const config = STATUS_CONFIG[etapa.status] || STATUS_CONFIG['Não iniciada']
                 const Icon = config.icon
+                const responsavelNome = etapa.responsavel_id
+                  ? colabMap[etapa.responsavel_id] || null
+                  : null
                 return (
                   <Card
                     key={etapa.id}
@@ -227,7 +351,7 @@ export default function ImplementacaoDetailPage() {
                             </Badge>
                           )}
                         </div>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
+                        <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-slate-500">
                           {etapa.data_prevista && (
                             <span>
                               Prev: {new Date(etapa.data_prevista).toLocaleDateString('pt-BR')}
@@ -237,6 +361,12 @@ export default function ImplementacaoDetailPage() {
                             <span className="text-emerald-600">
                               Concluído:{' '}
                               {new Date(etapa.data_realizada).toLocaleDateString('pt-BR')}
+                            </span>
+                          )}
+                          {responsavelNome && (
+                            <span className="flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              {responsavelNome}
                             </span>
                           )}
                           {etapa.documento_url && (
@@ -273,21 +403,28 @@ export default function ImplementacaoDetailPage() {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(v) => setFormData({ ...formData, status: v })}
-              >
+              <Select value={formData.status} onValueChange={handleStatusChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Não iniciada">Não iniciada</SelectItem>
-                  <SelectItem value="Agendada">Agendada</SelectItem>
-                  <SelectItem value="Em andamento">Em andamento</SelectItem>
-                  <SelectItem value="Concluída">Concluída</SelectItem>
-                  <SelectItem value="Atrasada">Atrasada</SelectItem>
+                  {STATUS_OPTIONS.map((status) => {
+                    const isDisabled = status === 'Concluída' && !canConcluir
+                    return (
+                      <SelectItem key={status} value={status} disabled={isDisabled}>
+                        {status}
+                        {isDisabled && ' (requer RAT)'}
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
+              {isTreinamentoEtapa && !canConcluir && (
+                <p className="text-xs text-amber-600 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />A etapa somente poderá ser marcada como
+                  Concluída após existir um documento anexado.
+                </p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -333,7 +470,7 @@ export default function ImplementacaoDetailPage() {
                 placeholder="Notas sobre esta etapa..."
               />
             </div>
-            {editingEtapa?.titulo.toLowerCase().includes('treinamento') && (
+            {isTreinamentoEtapa && (
               <div className="space-y-2">
                 <Label className="flex items-center gap-1">
                   <FileText className="h-3 w-3" /> RAT - Relatório de Atendimento Técnico

@@ -1849,6 +1849,118 @@ export type Database = {
           },
         ]
       }
+      implementacao_etapas: {
+        Row: {
+          categoria: string
+          created_at: string
+          data_prevista: string | null
+          data_realizada: string | null
+          documento_url: string | null
+          id: string
+          implementacao_id: string
+          observacoes: string | null
+          ordem: number
+          responsavel_id: string | null
+          status: string
+          titulo: string
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          data_prevista?: string | null
+          data_realizada?: string | null
+          documento_url?: string | null
+          id?: string
+          implementacao_id: string
+          observacoes?: string | null
+          ordem?: number
+          responsavel_id?: string | null
+          status?: string
+          titulo: string
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          data_prevista?: string | null
+          data_realizada?: string | null
+          documento_url?: string | null
+          id?: string
+          implementacao_id?: string
+          observacoes?: string | null
+          ordem?: number
+          responsavel_id?: string | null
+          status?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'implementacao_etapas_implementacao_id_fkey'
+            columns: ['implementacao_id']
+            isOneToOne: false
+            referencedRelation: 'implementacoes'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'implementacao_etapas_responsavel_id_fkey'
+            columns: ['responsavel_id']
+            isOneToOne: false
+            referencedRelation: 'colaboradores'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      implementacoes: {
+        Row: {
+          cliente_id: string | null
+          contrato_id: string | null
+          created_at: string
+          id: string
+          progresso: number
+          responsavel_id: string | null
+          status: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          contrato_id?: string | null
+          created_at?: string
+          id?: string
+          progresso?: number
+          responsavel_id?: string | null
+          status?: string
+        }
+        Update: {
+          cliente_id?: string | null
+          contrato_id?: string | null
+          created_at?: string
+          id?: string
+          progresso?: number
+          responsavel_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'implementacoes_cliente_id_fkey'
+            columns: ['cliente_id']
+            isOneToOne: false
+            referencedRelation: 'clientes'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'implementacoes_contrato_id_fkey'
+            columns: ['contrato_id']
+            isOneToOne: false
+            referencedRelation: 'crm_propostas'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'implementacoes_responsavel_id_fkey'
+            columns: ['responsavel_id']
+            isOneToOne: false
+            referencedRelation: 'colaboradores'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       jira_issues: {
         Row: {
           assignee: string | null

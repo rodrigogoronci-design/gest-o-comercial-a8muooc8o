@@ -1547,44 +1547,53 @@ Obrigada,`
           ? client.modules.map((m) => `- ${m.name}`).join('\n')
           : 'Nenhum módulo adicional especificado'
 
-      const { error } = await supabase.functions.invoke('send-implementation-email', {
-        body: {
-          to: 'gesualdo@servicelogic.com.br',
-          clientName: client.name,
-          contactName: client.rep_nome || '',
-          contactPhone: client.originalData?.telefone || '',
-          modules: modulosList,
-          senderName,
-        },
-      })
-
-      if (error) throw error
-
-      await createHistorico({
-        cliente_id: client.id,
-        tipo: 'Notificação Enviada',
-        observacoes: 'E-mail para implantação enviado pelo painel do cliente.',
-        valor_total: client.totalValue,
-      })
-
-      toast.success('E-mail enviado!', { id: toastId })
-      loadHistory(client.id)
-
+      // First, check if it already exists or create it
+      let targetImplId: string | null = null
       const existing = await getImplementacaoByCliente(client.id)
       if (existing) {
-        toast.info('Redirecionando para projeto existente...')
-        navigate(`/implementacoes/${existing.id}`)
-        return
+        targetImplId = existing.id
+      } else {
+        const implData = await createImplementacao({
+          cliente_id: client.id,
+          responsavel_id: colabId,
+        })
+        targetImplId = implData.id
       }
 
-      const implData = await createImplementacao({
-        cliente_id: client.id,
-        responsavel_id: colabId,
-      })
-      toast.success('Projeto de implantação criado! Redirecionando...')
-      navigate(`/implementacoes/${implData.id}`)
+      // Try sending email
+      try {
+        const { error } = await supabase.functions.invoke('send-implementation-email', {
+          body: {
+            to: 'gesualdo@servicelogic.com.br',
+            clientName: client.name,
+            contactName: client.rep_nome || '',
+            contactPhone: client.originalData?.telefone || '',
+            modules: modulosList,
+            senderName,
+          },
+        })
+
+        if (!error) {
+          await createHistorico({
+            cliente_id: client.id,
+            tipo: 'Notificação Enviada',
+            observacoes: 'E-mail para implantação enviado pelo painel do cliente.',
+            valor_total: client.totalValue,
+          })
+          toast.success('Projeto criado e e-mail enviado!', { id: toastId })
+          loadHistory(client.id)
+        } else {
+          toast.warning('Projeto criado. Falha leve ao notificar via e-mail.', { id: toastId })
+        }
+      } catch (err) {
+        toast.warning('Projeto criado. Falha leve ao notificar via e-mail.', { id: toastId })
+      }
+
+      navigate(`/implementacoes/${targetImplId}`)
     } catch (e: any) {
-      toast.error('Erro: ' + (e.message || 'Falha desconhecida'), { id: toastId })
+      toast.error('Erro ao iniciar implantação: ' + (e.message || 'Falha desconhecida'), {
+        id: toastId,
+      })
     } finally {
       setIsSendingImplementation(false)
     }
@@ -2632,17 +2641,32 @@ Obrigada.`)
                 </span>
               </div>
               <Progress value={clientImplementacao.progresso || 0} className="h-2 mb-3" />
-              <div className="text-xs text-slate-500 mb-3">
-                {(() => {
-                  const etapas = (clientImplementacao.implementacao_etapas || []).sort(
-                    (a: any, b: any) => a.ordem - b.ordem,
-                  )
-                  const proxima = etapas.find((e: any) => e.status !== 'Concluída')
-                  return proxima ? `Próxima: ${proxima.titulo}` : 'Todas as etapas concluídas'
-                })()}
+
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-500">Responsável:</span>
+                  <span className="font-medium text-slate-800">
+                    {clientImplementacao.colaboradores?.nome || 'Não atribuído'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-500">Próxima etapa:</span>
+                  <span className="font-medium text-slate-800 text-right max-w-[180px] truncate">
+                    {(() => {
+                      const etapas = (clientImplementacao.implementacao_etapas || []).sort(
+                        (a: any, b: any) => a.ordem - b.ordem,
+                      )
+                      const proxima = etapas.find((e: any) => e.status !== 'Concluída')
+                      return proxima ? proxima.titulo : 'Todas concluídas'
+                    })()}
+                  </span>
+                </div>
               </div>
+
               <Button size="sm" className="w-full bg-indigo-600 hover:bg-indigo-700" asChild>
-                <Link to={`/implementacoes/${clientImplementacao.id}`}>Abrir Implantação</Link>
+                <Link to={`/implementacoes/${clientImplementacao.id}`}>
+                  <Rocket className="h-3.5 w-3.5 mr-1.5" /> Abrir Implantação
+                </Link>
               </Button>
             </div>
           ) : (
@@ -2652,6 +2676,7 @@ Obrigada.`)
                 size="sm"
                 variant="outline"
                 onClick={() => client && handleActionSendImplementation(client)}
+                className="hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200"
               >
                 <Rocket className="h-3.5 w-3.5 mr-1.5" /> Iniciar Implantação
               </Button>

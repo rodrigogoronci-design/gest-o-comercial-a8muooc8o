@@ -1,78 +1,86 @@
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import logoUrl from '@/assets/logomarca-service-ea011.png'
+import {
+  Rocket,
+  Home,
+  Users,
+  Briefcase,
+  Building2,
+  ListTodo,
+  CreditCard,
+  FileText,
+  Receipt,
+  BarChart3,
+  Calendar,
+} from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarHeader,
+  SidebarFooter,
 } from '@/components/ui/sidebar'
-import {
-  LayoutDashboard,
-  Users,
-  Briefcase,
-  Tags,
-  FileSignature,
-  ListTodo,
-  CircleDollarSign,
-  PieChart,
-  CalendarDays,
-  UserCog,
-  LogOut,
-  Rocket,
-} from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
+import { supabase } from '@/lib/supabase/client'
+import logo from '@/assets/logomarca-service-ea011.png'
 
-const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'CRM / Prospecção', href: '/crm', icon: Users },
-  { name: 'Base de Clientes', href: '/clientes', icon: Briefcase },
-  { name: 'Implantações', href: '/implementacoes', icon: Rocket },
-  { name: 'Agenda', href: '/agenda', icon: CalendarDays },
-  { name: 'Diário de Atividades', href: '/atividades', icon: ListTodo },
-  { name: 'Planos e Preços', href: '/planos', icon: Tags },
-  { name: 'Gerador de Contratos', href: '/contratos', icon: FileSignature },
-  { name: 'Acompanhamento de Recebimentos', href: '/recebimentos', icon: CircleDollarSign },
-  { name: 'Relatórios', href: '/relatorios', icon: PieChart },
-  { name: 'Colaboradores', href: '/colaboradores', icon: UserCog },
+const NAV_ITEMS = [
+  { title: 'Dashboard', href: '/', icon: Home },
+  { title: 'CRM', href: '/crm', icon: Briefcase },
+  { title: 'Clientes', href: '/clientes', icon: Building2 },
+  { title: 'Atividades', href: '/atividades', icon: ListTodo },
+  { title: '🚀 Implantações', href: '/implementacoes', icon: Rocket },
+  { title: 'Contratos', href: '/contratos', icon: FileText },
+  { title: 'Recebimentos', href: '/recebimentos', icon: Receipt },
+  { title: 'Planos', href: '/planos', icon: CreditCard },
+  { title: 'Agenda', href: '/agenda', icon: Calendar },
+  { title: 'Relatórios', href: '/relatorios', icon: BarChart3 },
+  { title: 'Colaboradores', href: '/colaboradores', icon: Users },
 ]
 
 export function AppSidebar() {
   const location = useLocation()
-  const { signOut } = useAuth()
+  const { user, signOut } = useAuth()
+  const [colabName, setColabName] = useState('')
+
+  useEffect(() => {
+    if (user?.id) {
+      supabase
+        .from('colaboradores')
+        .select('nome')
+        .eq('user_id', user.id)
+        .maybeSingle()
+        .then(({ data }) => setColabName(data?.nome || user.email || ''))
+    }
+  }, [user])
 
   return (
-    <Sidebar
-      variant="sidebar"
-      className="border-r border-sidebar-border bg-sidebar flex flex-col h-full"
-    >
-      <SidebarHeader className="p-4 border-b border-sidebar-border/50">
-        <div className="flex items-center justify-center px-2 py-2">
-          <img src={logoUrl} alt="Service Logic" className="h-10 object-contain" />
-        </div>
+    <Sidebar>
+      <SidebarHeader className="border-b px-4 py-3">
+        <Link to="/" className="flex items-center gap-2">
+          <img src={logo} alt="Service" className="h-8 w-auto" />
+        </Link>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/50 uppercase tracking-wider mb-2 mt-4">
-            Menu Principal
-          </SidebarGroupLabel>
+          <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigation.map((item) => {
-                const isActive = location.pathname === item.href
+              {NAV_ITEMS.map((item) => {
+                const isActive =
+                  location.pathname === item.href ||
+                  (item.href !== '/' && location.pathname.startsWith(item.href))
                 return (
-                  <SidebarMenuItem key={item.name}>
-                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
-                      <Link
-                        to={item.href}
-                        className="flex items-center gap-3 transition-all duration-200"
-                      >
-                        <item.icon className="size-4" />
-                        <span className="font-medium">{item.name}</span>
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton asChild isActive={isActive}>
+                      <Link to={item.href}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -81,22 +89,18 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        <SidebarGroup className="mt-auto border-t border-sidebar-border/50">
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => signOut()} tooltip="Sair do Sistema">
-                  <div className="flex items-center gap-3 transition-all duration-200 text-red-500 hover:text-red-600">
-                    <LogOut className="size-4" />
-                    <span className="font-medium">Sair do Sistema</span>
-                  </div>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="border-t p-3">
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium truncate max-w-[140px]">{colabName}</span>
+          <button
+            onClick={() => signOut()}
+            className="text-xs text-slate-500 hover:text-slate-900 transition-colors"
+          >
+            Sair
+          </button>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   )
 }

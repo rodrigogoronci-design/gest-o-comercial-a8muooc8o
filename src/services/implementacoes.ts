@@ -3,18 +3,38 @@ import { supabase } from '@/lib/supabase/client'
 const STANDARD_ETAPAS = [
   { titulo: 'Handover Comercial', categoria: 'Pré-Implantação', ordem: 1, semana: 0 },
   { titulo: 'Kick-off', categoria: 'Pré-Implantação', ordem: 2, semana: 0 },
-  { titulo: 'Parametrização', categoria: 'Pré-Implantação', ordem: 3, semana: 1 },
+  { titulo: 'Parametrização do Sistema', categoria: 'Implantação Inicial', ordem: 3, semana: 0 },
   { titulo: 'Treinamento: Administração', categoria: 'Ciclo de Treinamentos', ordem: 4, semana: 1 },
-  { titulo: 'Treinamento: Comercial', categoria: 'Ciclo de Treinamentos', ordem: 5, semana: 2 },
+  { titulo: 'Treinamento: Comercial', categoria: 'Ciclo de Treinamentos', ordem: 5, semana: 1 },
   { titulo: 'Treinamento: Faturamento', categoria: 'Ciclo de Treinamentos', ordem: 6, semana: 2 },
-  { titulo: 'Treinamento: Financeiro', categoria: 'Ciclo de Treinamentos', ordem: 7, semana: 3 },
-  { titulo: 'Treinamento: Carga', categoria: 'Ciclo de Treinamentos', ordem: 8, semana: 3 },
-  { titulo: 'Operação Assistida: Semana 1', categoria: 'Operação Assistida', ordem: 9, semana: 4 },
-  { titulo: 'Operação Assistida: Semana 2', categoria: 'Operação Assistida', ordem: 10, semana: 5 },
-  { titulo: 'Operação Assistida: Semana 3', categoria: 'Operação Assistida', ordem: 11, semana: 6 },
-  { titulo: 'Operação Assistida: Semana 4', categoria: 'Operação Assistida', ordem: 12, semana: 7 },
-  { titulo: 'Termo de Encerramento', categoria: 'Encerramento', ordem: 13, semana: 8 },
-  { titulo: 'Transição para Suporte', categoria: 'Encerramento', ordem: 14, semana: 8 },
+  { titulo: 'Treinamento: Financeiro', categoria: 'Ciclo de Treinamentos', ordem: 7, semana: 2 },
+  { titulo: 'Treinamento: Carga', categoria: 'Ciclo de Treinamentos', ordem: 8, semana: 2 },
+  {
+    titulo: 'Operação Assistida: Semana 1',
+    categoria: 'Implantação Operacional',
+    ordem: 9,
+    semana: 3,
+  },
+  {
+    titulo: 'Operação Assistida: Semana 2',
+    categoria: 'Implantação Operacional',
+    ordem: 10,
+    semana: 4,
+  },
+  {
+    titulo: 'Operação Assistida: Semana 3',
+    categoria: 'Implantação Operacional',
+    ordem: 11,
+    semana: 5,
+  },
+  {
+    titulo: 'Operação Assistida: Semana 4',
+    categoria: 'Implantação Operacional',
+    ordem: 12,
+    semana: 6,
+  },
+  { titulo: 'Termo de Encerramento', categoria: 'Encerramento', ordem: 13, semana: 7 },
+  { titulo: 'Transição para Suporte', categoria: 'Encerramento', ordem: 14, semana: 7 },
 ]
 
 function addWeeks(weeks: number): string {
@@ -26,7 +46,9 @@ function addWeeks(weeks: number): string {
 export const getImplementacoes = async () => {
   const { data, error } = await supabase
     .from('implementacoes' as any)
-    .select('*, clientes(nome), colaboradores(nome), implementacao_etapas(titulo, status, ordem)')
+    .select(
+      '*, clientes(nome), colaboradores(nome), implementacao_etapas(titulo, status, ordem, data_prevista)',
+    )
     .order('created_at', { ascending: false })
   if (error) throw error
   return data
@@ -38,14 +60,17 @@ export const getImplementacao = async (id: string) => {
     .select('*, clientes(nome, cnpj), colaboradores(nome), implementacao_etapas(*)')
     .eq('id', id)
     .single()
-  if (error) throw error
+  if (error) {
+    if (error.code === 'PGRST116') return null
+    throw error
+  }
   return data
 }
 
 export const getImplementacaoByCliente = async (clienteId: string) => {
   const { data, error } = await supabase
     .from('implementacoes' as any)
-    .select('*, implementacao_etapas(titulo, status, ordem)')
+    .select('*, colaboradores(nome), implementacao_etapas(titulo, status, ordem, data_prevista)')
     .eq('cliente_id', clienteId)
     .order('created_at', { ascending: false })
     .limit(1)

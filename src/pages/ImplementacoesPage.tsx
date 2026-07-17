@@ -26,6 +26,8 @@ export default function ImplementacoesPage() {
   const [filter, setFilter] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [currentColabId, setCurrentColabId] = useState<string | null>(null)
+  const [sortField, setSortField] = useState<'progresso' | 'data_prevista' | null>(null)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const { user } = useAuth()
 
   useEffect(() => {
@@ -62,6 +64,23 @@ export default function ImplementacoesPage() {
     return atual?.titulo || 'Concluída'
   }
 
+  const getPrevisaoConclusao = (impl: any) => {
+    const etapas = impl.implementacao_etapas || []
+    if (etapas.length === 0) return ''
+    return etapas.reduce((max: string, e: any) => {
+      return e.data_prevista && (!max || e.data_prevista > max) ? e.data_prevista : max
+    }, '')
+  }
+
+  const handleSort = (field: 'progresso' | 'data_prevista') => {
+    if (sortField === field) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDir('asc')
+    }
+  }
+
   const filtered = implementacoes
     .filter((impl) => {
       if (filter === 'mine') return impl.responsavel_id === currentColabId
@@ -71,6 +90,18 @@ export default function ImplementacoesPage() {
     .filter((impl) => {
       const nome = impl.clientes?.nome || ''
       return nome.toLowerCase().includes(searchTerm.toLowerCase())
+    })
+    .sort((a, b) => {
+      if (!sortField) return 0
+      let cmp = 0
+      if (sortField === 'progresso') {
+        cmp = (a.progresso || 0) - (b.progresso || 0)
+      } else {
+        const dateA = getPrevisaoConclusao(a)
+        const dateB = getPrevisaoConclusao(b)
+        cmp = dateA.localeCompare(dateB)
+      }
+      return sortDir === 'asc' ? cmp : -cmp
     })
 
   const statusColors: Record<string, string> = {
@@ -132,7 +163,28 @@ export default function ImplementacoesPage() {
                 <TableHead>Cliente</TableHead>
                 <TableHead>Analista</TableHead>
                 <TableHead>Etapa Atual</TableHead>
-                <TableHead>Progresso</TableHead>
+                <TableHead>
+                  <button
+                    className="flex items-center gap-1 hover:text-slate-900 transition-colors"
+                    onClick={() => handleSort('progresso')}
+                  >
+                    Progresso
+                    {sortField === 'progresso' && (
+                      <span className="text-xs">{sortDir === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    className="flex items-center gap-1 hover:text-slate-900 transition-colors"
+                    onClick={() => handleSort('data_prevista')}
+                  >
+                    Previsão
+                    {sortField === 'data_prevista' && (
+                      <span className="text-xs">{sortDir === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </button>
+                </TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -140,13 +192,13 @@ export default function ImplementacoesPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                     Carregando...
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                     Nenhuma implementação encontrada.
                   </TableCell>
                 </TableRow>
@@ -163,6 +215,11 @@ export default function ImplementacoesPage() {
                           {impl.progresso || 0}%
                         </span>
                       </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-slate-600">
+                      {getPrevisaoConclusao(impl)
+                        ? new Date(getPrevisaoConclusao(impl)).toLocaleDateString('pt-BR')
+                        : '—'}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={cn('text-xs', statusColors[impl.status])}>
