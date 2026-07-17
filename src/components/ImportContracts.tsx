@@ -3,12 +3,15 @@ import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Save } from 'luci
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { parsePdfContract } from '@/services/parse-pdf'
 import { createCliente, updateCliente } from '@/services/clientes'
 import { createHistorico } from '@/services/historico_contratos'
 import { supabase } from '@/lib/supabase/client'
 import { Link } from 'react-router-dom'
+import { formatCNPJ } from '@/lib/formatters'
 import {
   Dialog,
   DialogContent,
@@ -18,6 +21,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { cn } from '@/lib/utils'
 
 interface ExtractedData {
   nome: string
@@ -72,6 +76,16 @@ export function ImportContracts() {
         .map((f) => ({ file: f, status: 'pending' as const }))
       setFiles((prev) => [...prev, ...newFiles])
     }
+  }
+
+  const handleUpdateData = (index: number, field: keyof ExtractedData, value: any) => {
+    setFiles((prev) => {
+      const newFiles = [...prev]
+      if (newFiles[index].data) {
+        newFiles[index].data = { ...newFiles[index].data, [field]: value }
+      }
+      return newFiles
+    })
   }
 
   const extractData = async () => {
@@ -178,10 +192,11 @@ export function ImportContracts() {
           },
         }
 
+        const rawCnpj = data.cnpj.replace(/\D/g, '')
         const { data: existingClient } = await supabase
           .from('clientes')
           .select('id')
-          .eq('cnpj', data.cnpj)
+          .eq('cnpj', rawCnpj)
           .maybeSingle()
 
         let clientId: string
@@ -228,7 +243,7 @@ export function ImportContracts() {
     }
   }
 
-  const formatCurrency = (val: number) =>
+  const formatCurrencyLocal = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
 
   const pendingCount = files.filter((f) => f.status === 'pending' || f.status === 'error').length
@@ -345,109 +360,150 @@ export function ImportContracts() {
       </CardContent>
 
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col p-0">
-          <DialogHeader className="px-6 py-4 border-b">
-            <DialogTitle>Resumo da Extração de Contratos</DialogTitle>
-            <DialogDescription>
-              Valide as informações extraídas dos PDFs. O sistema identificou o plano base, filiais
-              adicionais e os módulos contratados.
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0 bg-slate-50">
+          <DialogHeader className="px-6 py-4 border-b bg-white">
+            <DialogTitle className="text-xl flex items-center gap-2 text-slate-800">
+              <FileText className="w-5 h-5 text-indigo-600" />
+              Revisão dos Dados Extraídos
+            </DialogTitle>
+            <DialogDescription className="text-sm text-slate-500 mt-1">
+              Valide as informações extraídas do PDF antes de confirmar.
             </DialogDescription>
           </DialogHeader>
 
           <ScrollArea className="flex-1 p-6">
-            <div className="space-y-6 pb-4">
+            <div className="space-y-8 pb-4">
               {extractedFiles.length === 0 ? (
                 <p className="text-center text-slate-500 py-8">
                   Nenhum dado extraído com sucesso ainda.
                 </p>
               ) : (
-                extractedFiles.map((f, i) => (
-                  <Card key={i} className="border-blue-100 bg-slate-50/50 shadow-none">
-                    <CardHeader className="py-3 px-4 bg-white border-b border-blue-50">
-                      <div className="flex justify-between items-center">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-blue-600" />
-                          {f.data?.nome}{' '}
-                          <span className="text-sm font-normal text-slate-500">
-                            ({f.data?.cnpj})
-                          </span>
-                        </CardTitle>
-                        <div className="text-lg font-bold text-indigo-700">
-                          {formatCurrency(f.data?.valor_total || 0)}
+                files.map((f, index) => {
+                  if (f.status !== 'extracted' || !f.data) return null
+
+                  // Format the date to input type date
+                  let dateValue = ''
+                  if (f.data.data_assinatura) {
+                    const parts = f.data.data_assinatura.split('-')
+                    if (parts.length === 3) dateValue = f.data.data_assinatura
+                  }
+
+                  return (
+                    <div
+                      key={index}
+                      className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6"
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                            Razão Social
+                          </Label>
+                          <Input
+                            value={f.data.nome}
+                            onChange={(e) => handleUpdateData(index, 'nome', e.target.value)}
+                            className="font-medium h-12 bg-slate-50/50"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                            CNPJ
+                          </Label>
+                          <Input
+                            value={f.data.cnpj}
+                            onChange={(e) => {
+                              const raw = e.target.value.replace(/\D/g, '')
+                              const formatted = raw.length <= 14 ? formatCNPJ(raw) : e.target.value
+                              handleUpdateData(index, 'cnpj', formatted)
+                            }}
+                            className="font-medium h-12 bg-slate-50/50"
+                            placeholder="00.000.000/0000-00"
+                          />
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-indigo-50/80 border border-indigo-100 rounded-lg p-4">
+                          <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-wide mb-1">
+                            Plano TMS
+                          </div>
+                          <div className="font-bold text-indigo-700 text-lg">
+                            {f.data.planoBase || 'Nenhum'}
+                          </div>
+                        </div>
+                        <div className="bg-emerald-50/80 border border-emerald-100 rounded-lg p-4">
+                          <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide mb-1">
+                            Mensalidade
+                          </div>
+                          <div className="font-bold text-emerald-700 text-lg">
+                            {formatCurrencyLocal(
+                              f.data.valor_mensalidade || f.data.valor_total || 0,
+                            )}
+                          </div>
+                        </div>
+                        <div className="bg-amber-50/80 border border-amber-100 rounded-lg p-4">
+                          <div className="text-[10px] font-bold text-amber-600 uppercase tracking-wide mb-1">
+                            Implantação
+                          </div>
+                          <div className="font-bold text-amber-700 text-lg">
+                            {formatCurrencyLocal(f.data.valor_implantacao || 0)}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                            Data de Assinatura
+                          </Label>
+                          <Input
+                            type="date"
+                            value={dateValue}
+                            onChange={(e) =>
+                              handleUpdateData(index, 'data_assinatura', e.target.value)
+                            }
+                            className="font-medium h-12 w-full md:w-auto bg-slate-50/50"
+                          />
+                        </div>
+                      </div>
+
                       <div className="space-y-3">
-                        <div>
-                          <p className="text-slate-500 mb-2 font-medium">Composição do Valor</p>
-                          <ul className="space-y-2">
-                            <li className="flex justify-between items-center bg-white p-2 rounded border border-slate-100">
-                              <span>
-                                Plano Base{' '}
-                                <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-1 rounded ml-1">
-                                  {f.data?.planoBase || 'Não identificado'}
-                                </span>
-                              </span>
-                              <span className="font-medium">
-                                {formatCurrency(f.data?.detalhes?.valorPlano || 0)}
-                              </span>
-                            </li>
-                            <li className="flex justify-between items-center bg-white p-2 rounded border border-slate-100">
-                              <span>
-                                Filiais Adicionais{' '}
-                                <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-1 rounded ml-1">
-                                  {f.data?.detalhes?.numFiliais || 0}
-                                </span>
-                              </span>
-                              <span className="font-medium">
-                                {formatCurrency(f.data?.detalhes?.valorFiliais || 0)}
-                              </span>
-                            </li>
-                            <li className="flex justify-between items-center bg-white p-2 rounded border border-slate-100">
-                              <span>Módulos Adicionais</span>
-                              <span className="font-medium">
-                                {formatCurrency(f.data?.detalhes?.valorModulos || 0)}
-                              </span>
-                            </li>
-                            <li className="flex justify-between items-center bg-white p-2 rounded border border-slate-100">
-                              <span>Valor de Implantação</span>
-                              <span className="font-medium">
-                                {formatCurrency(f.data?.valor_implantacao || 0)}
-                              </span>
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-slate-500 mb-2 font-medium">
-                          Módulos Identificados ({f.data?.modulos.length})
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {f.data?.modulos.map((mod, idx) => (
+                        <Label className="text-sm font-semibold text-slate-700">
+                          Módulos Inclusos ({f.data.modulos.length})
+                        </Label>
+                        <div className="flex flex-wrap gap-2">
+                          {f.data.modulos.map((mod, idx) => (
                             <span
                               key={idx}
-                              className="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded-md text-xs shadow-sm"
+                              className="bg-white border border-slate-200 text-slate-600 px-3 py-1 rounded-full text-xs font-medium shadow-sm"
                             >
                               {mod}
                             </span>
                           ))}
+                          {f.data.modulos.length === 0 && (
+                            <span className="text-sm text-slate-400 italic">
+                              Nenhum módulo adicional.
+                            </span>
+                          )}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))
+                    </div>
+                  )
+                })
               )}
             </div>
           </ScrollArea>
 
-          <DialogFooter className="p-4 border-t bg-slate-50/80">
-            <Button variant="outline" onClick={() => setShowPreview(false)}>
-              Revisar Depois
+          <DialogFooter className="p-4 border-t bg-white flex flex-row items-center justify-end gap-3">
+            <Button variant="outline" onClick={() => setShowPreview(false)} className="px-6">
+              Cancelar
             </Button>
-            <Button onClick={saveContracts} disabled={extractedFiles.length === 0}>
+            <Button
+              onClick={saveContracts}
+              disabled={extractedFiles.length === 0}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-6"
+            >
               <Save className="w-4 h-4 mr-2" />
-              Confirmar e Salvar {extractedFiles.length} clientes
+              Confirmar e Salvar
             </Button>
           </DialogFooter>
         </DialogContent>

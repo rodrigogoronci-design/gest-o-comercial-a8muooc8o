@@ -43,6 +43,14 @@ function parseCurrency(val: string): number {
   return parseFloat(val.replace(/\./g, '').replace(',', '.')) || 0
 }
 
+function formatCnpjStrict(raw: string): string {
+  const digits = raw.replace(/\D/g, '')
+  if (digits.length === 14) {
+    return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12, 14)}`
+  }
+  return raw
+}
+
 function extractData(text: string) {
   let nome: string | null = null
   let cnpj: string | null = null
@@ -52,15 +60,28 @@ function extractData(text: string) {
   let repRg: string | null = null
 
   // 1. Extract Contratante details
-  const contratanteMatch = text.match(/CONTRATANTE:?\s*([\s\S]*?)(?:CONTRATADA|As partes acima)/i)
+  const contratanteMatch = text.match(
+    /CONTRATANTE:?\s*([\s\S]*?)(?:CONTRATADA|As partes acima|DO OBJETO)/i,
+  )
   if (contratanteMatch) {
     const block = contratanteMatch[1].replace(/\n/g, ' ')
 
-    const nameMatch = block.match(/^\s*(.+?)\s*,/)
-    if (nameMatch) nome = nameMatch[1].trim()
+    const nameMatch = block.match(/^\s*(.+?)(?:,|\binscrita?\b|\bCNPJ\b|\bcom sede\b)/i)
+    if (nameMatch) {
+      let rawName = nameMatch[1].trim()
+      // Remove any leading non-alphanumeric (fixes issues like . "Treinamento")
+      rawName = rawName.replace(/^[^a-zA-ZÀ-ÿ0-9]+/, '')
+      // Remove any trailing non-alphanumeric
+      rawName = rawName.replace(/[^a-zA-ZÀ-ÿ0-9]+$/, '')
+      // Remove surrounding quotes if any
+      rawName = rawName.replace(/^"(.+)"$/, '$1')
+      nome = rawName.trim()
+    }
 
-    const cnpjMatch = block.match(/CNPJ.*?([\d.\-\/]{14,18})/)
-    if (cnpjMatch) cnpj = cnpjMatch[1]
+    const cnpjMatch = block.match(/(?:\bCNPJ[^\d]*?|)(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2})/i)
+    if (cnpjMatch) {
+      cnpj = formatCnpjStrict(cnpjMatch[1])
+    }
 
     const addrMatch = block.match(/sede na\s*(.+?)\s*,.*?neste ato/i)
     if (addrMatch) endereco = addrMatch[1].trim()
