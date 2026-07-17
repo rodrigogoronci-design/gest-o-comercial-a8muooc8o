@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase/client'
 export interface ExtractedContractData {
   nome: string
   cnpj: string
+  nomeFromApi?: boolean
   endereco?: string | null
   repName?: string | null
   repCpf?: string | null

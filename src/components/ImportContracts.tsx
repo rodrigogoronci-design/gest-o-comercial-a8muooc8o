@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { parsePdfContract } from '@/services/parse-pdf'
+import { fetchCnpjData } from '@/services/cnpj'
 import { createCliente, updateCliente } from '@/services/clientes'
 import { createHistorico } from '@/services/historico_contratos'
 import { supabase } from '@/lib/supabase/client'
@@ -26,6 +27,7 @@ import { cn } from '@/lib/utils'
 interface ExtractedData {
   nome: string
   cnpj: string
+  nomeFromApi?: boolean
   endereco?: string | null
   repName?: string | null
   repCpf?: string | null
@@ -93,6 +95,7 @@ export function ImportContracts() {
 
     let allExtracted = true
     const updatedFiles = [...files]
+    let enrichedCount = 0
 
     for (let i = 0; i < updatedFiles.length; i++) {
       if (updatedFiles[i].status !== 'pending' && updatedFiles[i].status !== 'error') continue
@@ -102,6 +105,21 @@ export function ImportContracts() {
 
       try {
         const extractedData = await parsePdfContract(updatedFiles[i].file)
+
+        const rawCnpj = extractedData.cnpj?.replace(/\D/g, '')
+        if (rawCnpj && rawCnpj.length === 14) {
+          try {
+            const { data: cnpjData } = await fetchCnpjData(rawCnpj)
+            if (cnpjData?.nome) {
+              extractedData.nome = cnpjData.nome
+              extractedData.nomeFromApi = true
+              enrichedCount++
+            }
+          } catch {
+            // CNPJ lookup failed — keep extracted name, allow manual edit
+          }
+        }
+
         updatedFiles[i] = { ...updatedFiles[i], status: 'extracted', data: extractedData }
       } catch (err: any) {
         updatedFiles[i] = { ...updatedFiles[i], status: 'error', error: err.message }
@@ -111,6 +129,12 @@ export function ImportContracts() {
     }
 
     setIsProcessing(false)
+    if (enrichedCount > 0) {
+      toast({
+        title: 'Razão Social enriquecida',
+        description: `${enrichedCount} empresa(s) tiveram o nome oficial obtido via Receita Federal.`,
+      })
+    }
     if (allExtracted && updatedFiles.some((f) => f.status === 'extracted')) {
       setShowPreview(true)
     } else if (updatedFiles.some((f) => f.status === 'extracted')) {
@@ -395,9 +419,16 @@ export function ImportContracts() {
                     >
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            Razão Social
-                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                              Razão Social
+                            </Label>
+                            {f.data.nomeFromApi && (
+                              <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+                                Via Receita Federal
+                              </span>
+                            )}
+                          </div>
                           <Input
                             value={f.data.nome}
                             onChange={(e) => handleUpdateData(index, 'nome', e.target.value)}
