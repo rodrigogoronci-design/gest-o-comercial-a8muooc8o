@@ -571,6 +571,8 @@ export default function ClientsPage() {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
   const [cancelClient, setCancelClient] = useState<MergedClient | null>(null)
   const [isSendingContract, setIsSendingContract] = useState(false)
+  const [isSendingImplementation, setIsSendingImplementation] = useState(false)
+  const [isSendingFinanceiro, setIsSendingFinanceiro] = useState(false)
   const [isSignatureLinkOpen, setIsSignatureLinkOpen] = useState(false)
   const [signatureLinkValue, setSignatureLinkValue] = useState('')
   const [signatureLinkClient, setSignatureLinkClient] = useState<MergedClient | null>(null)
@@ -1505,6 +1507,90 @@ Obrigada,`
       })
     } finally {
       setIsSendingContract(false)
+    }
+  }
+
+  const handleActionSendImplementation = async (client: MergedClient) => {
+    setIsSendingImplementation(true)
+    const toastId = toast.loading('Enviando e-mail para implantação...')
+    try {
+      let senderName = 'Equipe'
+      if (user?.id) {
+        const { data: colab } = await supabase
+          .from('colaboradores')
+          .select('nome')
+          .eq('user_id', user.id)
+          .maybeSingle()
+        if (colab) senderName = colab.nome
+      }
+
+      const modulosList =
+        client.modules && client.modules.length > 0
+          ? client.modules.map((m) => `- ${m.name}`).join('\n')
+          : 'Nenhum módulo adicional especificado'
+
+      const { error } = await supabase.functions.invoke('send-implementation-email', {
+        body: {
+          to: 'gesualdo@servicelogic.com.br',
+          clientName: client.name,
+          contactName: client.rep_nome || '',
+          contactPhone: client.originalData?.telefone || '',
+          modules: modulosList,
+          senderName,
+        },
+      })
+
+      if (error) throw error
+
+      await createHistorico({
+        cliente_id: client.id,
+        tipo: 'Notificação Enviada',
+        observacoes: 'E-mail para implantação enviado pelo painel do cliente.',
+        valor_total: client.totalValue,
+      })
+
+      toast.success('E-mail enviado para implantação com sucesso!', { id: toastId })
+      loadHistory(client.id)
+    } catch (e: any) {
+      toast.error('Erro ao enviar e-mail: ' + (e.message || 'Falha desconhecida'), { id: toastId })
+    } finally {
+      setIsSendingImplementation(false)
+    }
+  }
+
+  const handleActionSendFinanceiro = async (client: MergedClient) => {
+    setIsSendingFinanceiro(true)
+    const toastId = toast.loading('Enviando e-mail para financeiro...')
+    try {
+      const modulosList =
+        client.modules && client.modules.length > 0
+          ? client.modules.map((m) => m.name).join(', ')
+          : 'Nenhum módulo adicional'
+
+      const { error } = await supabase.functions.invoke('send-finance-email', {
+        body: {
+          to: 'financeiro@servicelogic.com.br',
+          clientName: client.name,
+          moduleName: modulosList,
+          type: 'novo_contrato',
+        },
+      })
+
+      if (error) throw error
+
+      await createHistorico({
+        cliente_id: client.id,
+        tipo: 'Notificação Enviada',
+        observacoes: 'E-mail para financeiro enviado pelo painel do cliente.',
+        valor_total: client.totalValue,
+      })
+
+      toast.success('E-mail enviado para financeiro com sucesso!', { id: toastId })
+      loadHistory(client.id)
+    } catch (e: any) {
+      toast.error('Erro ao enviar e-mail: ' + (e.message || 'Falha desconhecida'), { id: toastId })
+    } finally {
+      setIsSendingFinanceiro(false)
     }
   }
 
@@ -4338,7 +4424,7 @@ Obrigada.`)
       <Sheet open={isViewSheetOpen} onOpenChange={setIsViewSheetOpen}>
         <SheetContent className="sm:max-w-[700px] w-[95vw] flex flex-col bg-slate-50/50">
           <SheetHeader className="bg-white p-6 -mx-6 -mt-6 border-b border-slate-200 shadow-sm z-10 relative">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 pr-8">
+            <div className="flex flex-col gap-4 pr-8">
               <div>
                 <SheetTitle className="text-2xl text-slate-800">{viewingClient?.name}</SheetTitle>
                 <div className="flex items-center gap-3 mt-2 text-sm text-slate-500">
@@ -4352,59 +4438,76 @@ Obrigada.`)
                   )}
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2 shrink-0">
+              {/* Unified Action Bar */}
+              <div className="flex flex-wrap justify-center gap-3 pb-1 pt-1">
                 <Button
                   variant="outline"
-                  size="sm"
-                  onClick={() => viewingClient && handleOpenImplementationEmail(viewingClient)}
-                  className="bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100"
+                  disabled={isSendingImplementation}
+                  onClick={() => viewingClient && handleActionSendImplementation(viewingClient)}
+                  className="flex-1 min-w-[150px] max-w-[240px] h-10 bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100"
                 >
-                  <Mail className="h-4 w-4 mr-2" /> Enviar p/ Implantação
+                  {isSendingImplementation ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Rocket className="h-4 w-4 mr-2" />
+                  )}
+                  Enviar para Implantação
                 </Button>
                 <Button
                   variant="outline"
-                  size="sm"
-                  onClick={() => viewingClient && handleOpenFinanceiroEmail(viewingClient)}
-                  className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                  disabled={isSendingFinanceiro}
+                  onClick={() => viewingClient && handleActionSendFinanceiro(viewingClient)}
+                  className="flex-1 min-w-[150px] max-w-[240px] h-10 bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
                 >
-                  <Mail className="h-4 w-4 mr-2" /> Enviar p/ Financeiro
+                  {isSendingFinanceiro ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <DollarSign className="h-4 w-4 mr-2" />
+                  )}
+                  Enviar para Financeiro
                 </Button>
                 <Button
-                  variant="outline"
-                  size="sm"
                   disabled={isSendingContract}
                   onClick={() => viewingClient && handleSendContractEmail(viewingClient)}
-                  className="bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100"
+                  className="flex-1 min-w-[150px] max-w-[240px] h-10 bg-violet-600 text-white hover:bg-violet-700"
                 >
                   {isSendingContract ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
-                    <FileText className="h-4 w-4 mr-2" />
+                    <Send className="h-4 w-4 mr-2" />
                   )}
-                  Enviar Contrato
+                  Enviar para Cliente
                 </Button>
-                <Button variant="outline" size="sm" asChild className="bg-white">
+              </div>
+              {/* Secondary Actions */}
+              <div className="flex flex-wrap items-center gap-2 pb-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  asChild
+                  className="text-slate-600 hover:text-slate-800"
+                >
                   <Link
                     to={`/contratos?prospect=${encodeURIComponent(viewingClient?.name || '')}&cnpj=${viewingClient?.cnpj?.replace(/\D/g, '')}`}
                   >
-                    Gerar Novo Contrato
+                    <FileText className="h-3.5 w-3.5 mr-1.5" /> Novo Contrato
                   </Link>
                 </Button>
                 <Button
-                  variant="default"
+                  variant="ghost"
                   size="sm"
                   asChild
-                  className="bg-indigo-600 hover:bg-indigo-700"
+                  className="text-indigo-600 hover:text-indigo-800"
                 >
                   <Link
                     to={`/contratos?tab=cotacao&quoteTargetType=cliente&clientId=${viewingClient?.id}&prospect=${encodeURIComponent(viewingClient?.name || '')}&contato=${encodeURIComponent(viewingClient?.rep_nome || '')}`}
                   >
-                    Gerar Upsell
+                    <Plus className="h-3.5 w-3.5 mr-1.5" /> Gerar Upsell
                   </Link>
                 </Button>
                 {viewingClient?.originalData?.status?.toLowerCase() !== 'inativo' && (
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     onClick={() => {
                       setCancelClient(viewingClient)
@@ -4412,9 +4515,9 @@ Obrigada.`)
                       setCancelMotivo('')
                       setIsCancelModalOpen(true)
                     }}
-                    className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                    className="text-red-600 hover:text-red-800 hover:bg-red-50"
                   >
-                    <Ban className="h-4 w-4 mr-2" /> Cancelamento
+                    <Ban className="h-3.5 w-3.5 mr-1.5" /> Cancelamento
                   </Button>
                 )}
               </div>
