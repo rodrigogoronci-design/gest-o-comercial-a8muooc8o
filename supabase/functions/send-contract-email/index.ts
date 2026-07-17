@@ -25,34 +25,32 @@ Deno.serve(async (req: Request) => {
     const emailBody = `Boa tarde, ${clientName} conforme contrato
 
 Seja muito bem-vindos à Service Logic!
-
 Conforme alinhado, segue abaixo o link para assinatura eletrônica do contrato referente à contratação do sistema TMS Service Logic.
-
-O contrato deverá ser assinado pelo representante legal da empresa, ${repName || 'conforme contrato'}, e também em anexo.
+O contrato deverá ser assinado pela representante legal da empresa a ${repName || 'conforme contrato'} conforme contrato
 
 Link para assinatura:
 ${signatureLink}
 
 Após a assinatura do contrato, daremos início ao processo de implantação do sistema, que será conduzido nas seguintes etapas:
-
 1. Pré-Implantação (Handover Comercial)
+Alinhamento do escopo, validação das informações comerciais e preparação da documentação necessária para o início do projeto.
 2. Implantação Inicial (Reunião de Kick-off)
+Reunião de abertura para apresentação da equipe, alinhamento das atividades, parametrização inicial do sistema e liberação dos acessos.
 3. Ciclo de Treinamentos
+Capacitação dos usuários para utilização dos módulos contratados, garantindo o correto uso da plataforma.
 4. Operação Assistida
+Período em que a equipe já inicia a operação no sistema com acompanhamento do analista de implantação, assegurando uma transição segura e eficiente.
 5. Encerramento da Implantação
+Validação final do projeto, assinatura do Termo de Encerramento e transição oficial para a equipe de Suporte.
 
-O cronograma estimado é de aproximadamente 8 semanas, distribuídas da seguinte forma:
+Prazo médio de implantação
+O cronograma padrão é de aproximadamente 8 semanas, podendo variar conforme a complexidade da operação e o escopo contratado.
+Semana 1: Kick-off e parametrização;
+Semanas 2 e 3: Treinamentos;
+Semanas 4 a 7: Operação assistida;
+Semana 8: Encerramento da implantação.
 
-- Semana 1: Pré-Implantação — Alinhamento interno, handover comercial e parametrização inicial do sistema.
-- Semana 1 a 2: Implantação Inicial — Reunião de Kick-off com o cliente, apresentação da equipe e definição do cronograma detalhado.
-- Semana 2 a 4: Ciclo de Treinamentos — Treinamentos dos módulos contratados, com gravações disponibilizadas para consulta posterior da equipe.
-- Semana 4 a 6: Operação Assistida — Acompanhamento da operação real, suporte dedicado e ajustes finais de configuração.
-- Semana 6 a 8: Encerramento da Implantação — Revisão final, transição para o suporte oficial e encerramento formal do projeto.
-
-Estamos à disposição para quaisquer esclarecimentos.
-
-Atenciosamente,
-Equipe Comercial - Service Logic`
+Permanecemos à disposição para quaisquer esclarecimentos e esperamos iniciar essa parceria em breve.`
 
     const attachments: { filename: string; content: string }[] = []
 

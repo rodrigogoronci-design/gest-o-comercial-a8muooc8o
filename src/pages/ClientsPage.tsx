@@ -574,6 +574,7 @@ export default function ClientsPage() {
   const [isSignatureLinkOpen, setIsSignatureLinkOpen] = useState(false)
   const [signatureLinkValue, setSignatureLinkValue] = useState('')
   const [signatureLinkClient, setSignatureLinkClient] = useState<MergedClient | null>(null)
+  const [autoSendContractAfterLink, setAutoSendContractAfterLink] = useState(false)
   const [cancelDate, setCancelDate] = useState('')
   const [cancelMotivo, setCancelMotivo] = useState('')
   const [isSubmittingCancel, setIsSubmittingCancel] = useState(false)
@@ -1424,17 +1425,26 @@ Obrigada,`
       await updateCliente(signatureLinkClient.id, { link_assinatura: signatureLinkValue || null })
       toast.success('Link de assinatura salvo com sucesso!')
       setIsSignatureLinkOpen(false)
+
+      const updatedClient = {
+        ...signatureLinkClient,
+        link_assinatura: signatureLinkValue || null,
+        originalData: {
+          ...signatureLinkClient.originalData!,
+          link_assinatura: signatureLinkValue || null,
+        },
+      }
+
       setSignatureLinkClient(null)
       loadClientes()
-      if (viewingClient && viewingClient.id === signatureLinkClient.id) {
-        setViewingClient({
-          ...viewingClient,
-          link_assinatura: signatureLinkValue || null,
-          originalData: {
-            ...viewingClient.originalData!,
-            link_assinatura: signatureLinkValue || null,
-          },
-        })
+
+      if (viewingClient && viewingClient.id === updatedClient.id) {
+        setViewingClient(updatedClient)
+      }
+
+      if (autoSendContractAfterLink) {
+        setAutoSendContractAfterLink(false)
+        handleSendContractEmail(updatedClient)
       }
     } catch (err) {
       console.error(err)
@@ -1451,6 +1461,7 @@ Obrigada,`
       toast.error('É necessário definir o link de assinatura antes de enviar.')
       setSignatureLinkClient(client)
       setSignatureLinkValue('')
+      setAutoSendContractAfterLink(true)
       setIsSignatureLinkOpen(true)
       return
     }
@@ -4358,6 +4369,20 @@ Obrigada.`)
                 >
                   <Mail className="h-4 w-4 mr-2" /> Enviar p/ Financeiro
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isSendingContract}
+                  onClick={() => viewingClient && handleSendContractEmail(viewingClient)}
+                  className="bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100"
+                >
+                  {isSendingContract ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <FileText className="h-4 w-4 mr-2" />
+                  )}
+                  Enviar Contrato
+                </Button>
                 <Button variant="outline" size="sm" asChild className="bg-white">
                   <Link
                     to={`/contratos?prospect=${encodeURIComponent(viewingClient?.name || '')}&cnpj=${viewingClient?.cnpj?.replace(/\D/g, '')}`}
@@ -4377,20 +4402,6 @@ Obrigada.`)
                     Gerar Upsell
                   </Link>
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isSendingContract}
-                  onClick={() => viewingClient && handleSendContractEmail(viewingClient)}
-                  className="bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100"
-                >
-                  {isSendingContract ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4 mr-2" />
-                  )}
-                  Enviar Contrato para Assinatura
-                </Button>
                 {viewingClient?.originalData?.status?.toLowerCase() !== 'inativo' && (
                   <Button
                     variant="outline"
@@ -4403,7 +4414,7 @@ Obrigada.`)
                     }}
                     className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
                   >
-                    <Ban className="h-4 w-4 mr-2" /> Informar Cancelamento
+                    <Ban className="h-4 w-4 mr-2" /> Cancelamento
                   </Button>
                 )}
               </div>
@@ -4917,7 +4928,13 @@ Obrigada.`)
         </CardContent>
       </Card>
 
-      <Dialog open={isSignatureLinkOpen} onOpenChange={setIsSignatureLinkOpen}>
+      <Dialog
+        open={isSignatureLinkOpen}
+        onOpenChange={(open) => {
+          setIsSignatureLinkOpen(open)
+          if (!open) setAutoSendContractAfterLink(false)
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Link de Assinatura Eletrônica</DialogTitle>
@@ -4940,16 +4957,27 @@ Obrigada.`)
                 Clicksign, etc).
               </p>
             </div>
+            <div className="flex items-center gap-2 rounded-lg bg-violet-50 p-3 border border-violet-100">
+              <Checkbox
+                id="auto-send-contract"
+                checked={autoSendContractAfterLink}
+                onCheckedChange={(checked) => setAutoSendContractAfterLink(checked === true)}
+              />
+              <Label htmlFor="auto-send-contract" className="text-sm cursor-pointer flex-1">
+                Enviar contrato por e-mail após salvar o link
+              </Label>
+            </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setIsSignatureLinkOpen(false)}>
               Cancelar
             </Button>
             <Button
               onClick={handleSaveSignatureLink}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              className="bg-violet-600 hover:bg-violet-700 text-white"
             >
-              Salvar Link
+              <Send className="h-4 w-4 mr-2" />
+              Salvar e Enviar
             </Button>
           </DialogFooter>
         </DialogContent>
