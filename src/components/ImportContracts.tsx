@@ -5,7 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { useToast } from '@/hooks/use-toast'
 import { parsePdfContract } from '@/services/parse-pdf'
-import { createCliente } from '@/services/clientes'
+import { createCliente, updateCliente } from '@/services/clientes'
+import { createHistorico } from '@/services/historico_contratos'
+import { supabase } from '@/lib/supabase/client'
+import { Link } from 'react-router-dom'
 import {
   Dialog,
   DialogContent,
@@ -19,14 +22,16 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 interface ExtractedData {
   nome: string
   cnpj: string
-  endereco?: string
-  repName?: string
-  repCpf?: string
-  repRg?: string
-  contrato_url: string
+  endereco?: string | null
+  repName?: string | null
+  repCpf?: string | null
+  repRg?: string | null
   valor_total: number
+  valor_mensalidade?: number
+  valor_implantacao?: number
   modulos: string[]
-  planoBase?: string
+  planoBase?: string | null
+  data_assinatura?: string | null
   detalhes?: {
     valorPlano: number
     numFiliais: number
@@ -105,7 +110,8 @@ export function ImportContracts() {
     } else {
       toast({
         title: 'Erro na extração',
-        description: 'Não foi possível extrair dados dos PDFs.',
+        description:
+          'Não foi possível ler os dados do contrato. Por favor, verifique se o arquivo segue o modelo padrão.',
         variant: 'destructive',
       })
     }
@@ -124,18 +130,80 @@ export function ImportContracts() {
       setFiles([...updatedFiles])
 
       try {
-        await createCliente({
-          nome: updatedFiles[i].data!.nome,
-          cnpj: updatedFiles[i].data!.cnpj,
-          contrato_url: updatedFiles[i].data!.contrato_url,
-          valor_total: updatedFiles[i].data!.valor_total,
+        const data = updatedFiles[i].data!
+
+        const safeName = updatedFiles[i].file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+        const storagePath = `${Date.now()}-${safeName}`
+        let contratoUrl = ''
+
+        const { error: uploadError } = await supabase.storage
+          .from('contracts')
+          .upload(storagePath, updatedFiles[i].file, { upsert: true })
+
+        if (!uploadError) {
+          const { data: publicUrlData } = supabase.storage
+            .from('contracts')
+            .getPublicUrl(storagePath)
+          contratoUrl = publicUrlData.publicUrl
+        }
+
+        let planoId = null
+        if (data.planoBase) {
+          const { data: planoData } = await supabase
+            .from('planos_saude')
+            .select('id')
+            .eq('codigo', data.planoBase.toLowerCase())
+            .maybeSingle()
+          if (planoData) planoId = planoData.id
+        }
+
+        const clientPayload = {
+          nome: data.nome,
+          cnpj: data.cnpj,
+          contrato_url: contratoUrl || null,
+          valor_total: data.valor_total,
+          valor_mensalidade: data.valor_mensalidade || data.valor_total,
+          valor_implantacao: data.valor_implantacao || 0,
+          data_assinatura: data.data_assinatura || null,
+          plano_id: planoId,
+          rep_nome: data.repName || null,
+          rep_cpf: data.repCpf || null,
+          rep_rg: data.repRg || null,
+          endereco: data.endereco || null,
           status: 'Ativo',
           modulos: {
-            plano_base: updatedFiles[i].data!.planoBase,
-            filiais: updatedFiles[i].data!.detalhes?.numFiliais || 0,
-            adicionais: updatedFiles[i].data!.modulos || [],
+            plano_base: data.planoBase,
+            filiais: data.detalhes?.numFiliais || 0,
+            adicionais: data.modulos || [],
           },
+        }
+
+        const { data: existingClient } = await supabase
+          .from('clientes')
+          .select('id')
+          .eq('cnpj', data.cnpj)
+          .maybeSingle()
+
+        let clientId: string
+        if (existingClient) {
+          const updated = await updateCliente(existingClient.id, clientPayload)
+          clientId = updated.id
+        } else {
+          const created = await createCliente(clientPayload)
+          clientId = created.id
+        }
+
+        await createHistorico({
+          cliente_id: clientId,
+          tipo: 'Contrato Inicial',
+          data_solicitacao: data.data_assinatura || new Date().toISOString().split('T')[0],
+          plano: data.planoBase || '',
+          modulos: data.modulos || [],
+          valor_total: data.valor_total,
+          observacoes: 'Contrato importado via upload de PDF assinado.',
+          status: 'Assinado',
         })
+
         updatedFiles[i].status = 'success'
       } catch (err: any) {
         updatedFiles[i] = { ...updatedFiles[i], status: 'error', error: err.message }
@@ -144,10 +212,20 @@ export function ImportContracts() {
     }
 
     setIsProcessing(false)
-    toast({
-      title: 'Importação concluída',
-      description: 'Os contratos foram salvos na base de clientes.',
-    })
+
+    const successCount = updatedFiles.filter((f) => f.status === 'success').length
+    if (successCount > 0) {
+      toast({
+        title: 'Importação concluída',
+        description: `${successCount} contrato(s) salvo(s) com sucesso. PDFs armazenados e histórico criado.`,
+      })
+    } else {
+      toast({
+        title: 'Falha na importação',
+        description: 'Não foi possível salvar os contratos. Verifique os erros acima.',
+        variant: 'destructive',
+      })
+    }
   }
 
   const formatCurrency = (val: number) =>
@@ -165,9 +243,9 @@ export function ImportContracts() {
       <CardHeader>
         <CardTitle>Importar Contratos em Lote</CardTitle>
         <CardDescription>
-          Faça o upload de arquivos PDF. O sistema irá extrair automaticamente o Plano base, Filiais
-          adicionais, Módulos contratados e Valores. Você poderá validar os dados antes de inserir
-          na base de clientes.
+          Upload Contrato Assinado — Faça o upload de PDFs de contratos assinados. O sistema irá
+          extrair automaticamente o Plano base, Módulos contratados, Valores e Datas. Você poderá
+          validar os dados antes de inserir na base de clientes.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -179,7 +257,7 @@ export function ImportContracts() {
         >
           <Upload className="mx-auto h-10 w-10 text-slate-400 mb-4" />
           <p className="text-sm font-medium text-slate-700">
-            Clique para selecionar ou arraste os PDFs aqui
+            Upload Contrato Assinado — Clique ou arraste os PDFs aqui
           </p>
           <p className="text-xs text-slate-500 mt-1">Apenas arquivos .pdf</p>
           <input
@@ -255,6 +333,13 @@ export function ImportContracts() {
                 </div>
               ))}
             </div>
+            {files.some((f) => f.status === 'success') && !isProcessing && (
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" asChild>
+                  <Link to="/clientes">Ver Clientes & Iniciar Implantação</Link>
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
@@ -323,6 +408,12 @@ export function ImportContracts() {
                               <span>Módulos Adicionais</span>
                               <span className="font-medium">
                                 {formatCurrency(f.data?.detalhes?.valorModulos || 0)}
+                              </span>
+                            </li>
+                            <li className="flex justify-between items-center bg-white p-2 rounded border border-slate-100">
+                              <span>Valor de Implantação</span>
+                              <span className="font-medium">
+                                {formatCurrency(f.data?.valor_implantacao || 0)}
                               </span>
                             </li>
                           </ul>

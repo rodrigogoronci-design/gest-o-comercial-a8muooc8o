@@ -893,6 +893,7 @@ export type Database = {
           tipo_desconto: string
           valor_anual: number | null
           valor_implantacao: number | null
+          valor_mensalidade: number | null
           valor_total: number | null
           vencimento_mensal: number | null
         }
@@ -927,6 +928,7 @@ export type Database = {
           tipo_desconto?: string
           valor_anual?: number | null
           valor_implantacao?: number | null
+          valor_mensalidade?: number | null
           valor_total?: number | null
           vencimento_mensal?: number | null
         }
@@ -961,6 +963,7 @@ export type Database = {
           tipo_desconto?: string
           valor_anual?: number | null
           valor_implantacao?: number | null
+          valor_mensalidade?: number | null
           valor_total?: number | null
           vencimento_mensal?: number | null
         }

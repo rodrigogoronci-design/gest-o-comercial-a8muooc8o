@@ -54,6 +54,7 @@ import {
   PREDEFINED_TRAININGS,
 } from '@/constants/contracts'
 import { ContractDocument } from '@/components/ContractDocument'
+import { SignedContractUpload } from '@/components/SignedContractUpload'
 import { cn } from '@/lib/utils'
 
 const MODULES = [...BASE_MODULES]
@@ -1016,6 +1017,25 @@ export default function ContractGeneratorPage() {
             if (data.repName) extractedData.repName = data.repName
             if (data.repCpf) extractedData.repCpf = data.repCpf
             if (data.repRg) extractedData.repRg = data.repRg
+
+            if (data.valor_mensalidade) {
+              setManualMensalidadeValue(data.valor_mensalidade.toString())
+              setIsMensalidadeManual(true)
+            }
+            if (data.valor_implantacao) {
+              setManualImplValue(data.valor_implantacao.toString())
+            }
+            if (data.planoBase) {
+              const matchedPlan = PLANS.find(
+                (p) => p.id.toUpperCase() === data.planoBase?.toUpperCase(),
+              )
+              if (matchedPlan) {
+                setSelectedPlan(matchedPlan.id)
+              }
+            }
+            if (data.modulos && data.modulos.length > 0) {
+              setSelectedModules(data.modulos)
+            }
           } catch {
             /* intentionally ignored */
           }
@@ -1140,12 +1160,26 @@ export default function ContractGeneratorPage() {
     if (!file) return
     setIsExtractingProposal(true)
     try {
-      await parsePdfContract(file)
-      setSelectedPlan('tms-300')
-      setSelectedModules(['mod-edi', 'mod-frota', 'mod-calendario', 'mod-dfe'])
+      const data = await parsePdfContract(file)
+      if (data.planoBase) {
+        const matchedPlan = PLANS.find((p) => p.id.toUpperCase() === data.planoBase?.toUpperCase())
+        if (matchedPlan) {
+          setSelectedPlan(matchedPlan.id)
+        }
+      }
+      if (data.modulos && data.modulos.length > 0) {
+        setSelectedModules(data.modulos)
+      }
+      if (data.valor_mensalidade) {
+        setManualMensalidadeValue(data.valor_mensalidade.toString())
+        setIsMensalidadeManual(true)
+      }
+      if (data.valor_implantacao) {
+        setManualImplValue(data.valor_implantacao.toString())
+      }
       toast({
         title: 'Proposta importada!',
-        description: 'Plano e módulos preenchidos automaticamente.',
+        description: 'Plano, módulos e valores preenchidos automaticamente.',
       })
     } catch (err: any) {
       toast({ title: 'Erro na extração', description: err.message, variant: 'destructive' })
@@ -1763,6 +1797,8 @@ export default function ContractGeneratorPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              <SignedContractUpload />
 
               <Card className="border-indigo-100 shadow-sm bg-indigo-50/30">
                 <CardHeader className="pb-3">
