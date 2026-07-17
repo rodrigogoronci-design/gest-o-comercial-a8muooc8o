@@ -877,6 +877,7 @@ export type Database = {
           endereco: string | null
           filiais_detalhes: Json | null
           id: string
+          link_assinatura: string | null
           modo_implantacao: string | null
           modulos: Json | null
           motivo_cancelamento: string | null
@@ -910,6 +911,7 @@ export type Database = {
           endereco?: string | null
           filiais_detalhes?: Json | null
           id?: string
+          link_assinatura?: string | null
           modo_implantacao?: string | null
           modulos?: Json | null
           motivo_cancelamento?: string | null
@@ -943,6 +945,7 @@ export type Database = {
           endereco?: string | null
           filiais_detalhes?: Json | null
           id?: string
+          link_assinatura?: string | null
           modo_implantacao?: string | null
           modulos?: Json | null
           motivo_cancelamento?: string | null
