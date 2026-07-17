@@ -33,6 +33,8 @@ import ReceiptsPage from './pages/ReceiptsPage'
 import ReportsPage from './pages/ReportsPage'
 import AgendaPage from './pages/AgendaPage'
 import NotFound from './pages/NotFound'
+import ImplementacoesPage from './pages/ImplementacoesPage'
+import ImplementacaoDetailPage from './pages/ImplementacaoDetailPage'
 
 const App = () => (
   <AuthProvider>
@@ -60,6 +62,8 @@ const App = () => (
               <Route path="/recebimentos" element={<ReceiptsPage />} />
               <Route path="/relatorios" element={<ReportsPage />} />
               <Route path="/agenda" element={<AgendaPage />} />
+              <Route path="/implementacoes" element={<ImplementacoesPage />} />
+              <Route path="/implementacoes/:id" element={<ImplementacaoDetailPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

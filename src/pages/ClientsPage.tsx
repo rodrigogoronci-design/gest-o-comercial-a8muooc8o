@@ -116,7 +116,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { ContractDocument } from '@/components/ContractDocument'
 import { AddendumDocument } from '@/components/AddendumDocument'
 import { TrainingProposalDocument } from '@/components/TrainingProposalDocument'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { getImplementacaoByCliente, createImplementacao } from '@/services/implementacoes'
+import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
 import { AdvancedDatePicker } from '@/components/ui/advanced-date-picker'
 import { useAuth } from '@/hooks/use-auth'
@@ -382,6 +384,8 @@ export default function ClientsPage() {
 
   const [flagNotifyImplantacao, setFlagNotifyImplantacao] = useState(false)
   const [flagNotifyFinanceiro, setFlagNotifyFinanceiro] = useState(false)
+  const [clientImplementacao, setClientImplementacao] = useState<any>(null)
+  const navigate = useNavigate()
 
   const handleOpenContract = async (contratoUrl: string | null) => {
     if (!contratoUrl) {
@@ -998,6 +1002,16 @@ export default function ClientsPage() {
     }
   }, [viewingClient, isViewSheetOpen])
 
+  useEffect(() => {
+    if (viewingClient && isViewSheetOpen) {
+      getImplementacaoByCliente(viewingClient.id)
+        .then((data) => setClientImplementacao(data))
+        .catch(() => setClientImplementacao(null))
+    } else {
+      setClientImplementacao(null)
+    }
+  }, [viewingClient, isViewSheetOpen])
+
   const handleCnpjChange = async (val: string) => {
     const formatted = formatCNPJ(val)
     form.setValue('cnpj', formatted, { shouldValidate: true })
@@ -1515,13 +1529,17 @@ Obrigada,`
     const toastId = toast.loading('Enviando e-mail para implantação...')
     try {
       let senderName = 'Equipe'
+      let colabId: string | null = null
       if (user?.id) {
         const { data: colab } = await supabase
           .from('colaboradores')
-          .select('nome')
+          .select('id, nome')
           .eq('user_id', user.id)
           .maybeSingle()
-        if (colab) senderName = colab.nome
+        if (colab) {
+          senderName = colab.nome
+          colabId = colab.id
+        }
       }
 
       const modulosList =
@@ -1549,10 +1567,24 @@ Obrigada,`
         valor_total: client.totalValue,
       })
 
-      toast.success('E-mail enviado para implantação com sucesso!', { id: toastId })
+      toast.success('E-mail enviado!', { id: toastId })
       loadHistory(client.id)
+
+      const existing = await getImplementacaoByCliente(client.id)
+      if (existing) {
+        toast.info('Redirecionando para projeto existente...')
+        navigate(`/implementacoes/${existing.id}`)
+        return
+      }
+
+      const implData = await createImplementacao({
+        cliente_id: client.id,
+        responsavel_id: colabId,
+      })
+      toast.success('Projeto de implantação criado! Redirecionando...')
+      navigate(`/implementacoes/${implData.id}`)
     } catch (e: any) {
-      toast.error('Erro ao enviar e-mail: ' + (e.message || 'Falha desconhecida'), { id: toastId })
+      toast.error('Erro: ' + (e.message || 'Falha desconhecida'), { id: toastId })
     } finally {
       setIsSendingImplementation(false)
     }
@@ -2574,6 +2606,59 @@ Obrigada.`)
 
     return (
       <div className="mt-6 space-y-8">
+        {/* Implantação */}
+        <div>
+          <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <Rocket className="h-4 w-4 text-indigo-500" /> Implantação
+          </h4>
+          {clientImplementacao ? (
+            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'text-xs',
+                    clientImplementacao.status === 'Finalizada'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : clientImplementacao.status === 'Atrasada'
+                        ? 'bg-red-50 text-red-700 border-red-200'
+                        : 'bg-blue-50 text-blue-700 border-blue-200',
+                  )}
+                >
+                  {clientImplementacao.status}
+                </Badge>
+                <span className="text-sm font-bold text-indigo-600">
+                  {clientImplementacao.progresso}%
+                </span>
+              </div>
+              <Progress value={clientImplementacao.progresso || 0} className="h-2 mb-3" />
+              <div className="text-xs text-slate-500 mb-3">
+                {(() => {
+                  const etapas = (clientImplementacao.implementacao_etapas || []).sort(
+                    (a: any, b: any) => a.ordem - b.ordem,
+                  )
+                  const proxima = etapas.find((e: any) => e.status !== 'Concluída')
+                  return proxima ? `Próxima: ${proxima.titulo}` : 'Todas as etapas concluídas'
+                })()}
+              </div>
+              <Button size="sm" className="w-full bg-indigo-600 hover:bg-indigo-700" asChild>
+                <Link to={`/implementacoes/${clientImplementacao.id}`}>Abrir Implantação</Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="bg-slate-50 rounded-lg border border-dashed border-slate-300 p-4 text-center">
+              <p className="text-xs text-slate-400 mb-2">Nenhuma implantação iniciada.</p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => client && handleActionSendImplementation(client)}
+              >
+                <Rocket className="h-3.5 w-3.5 mr-1.5" /> Iniciar Implantação
+              </Button>
+            </div>
+          )}
+        </div>
+
         {/* CNPJs Vinculados */}
         <div>
           <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">

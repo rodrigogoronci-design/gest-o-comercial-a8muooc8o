@@ -23,6 +23,7 @@ import {
   CalendarDays,
   UserCog,
   LogOut,
+  Rocket,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 
@@ -30,6 +31,7 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'CRM / Prospecção', href: '/crm', icon: Users },
   { name: 'Base de Clientes', href: '/clientes', icon: Briefcase },
+  { name: 'Implantações', href: '/implementacoes', icon: Rocket },
   { name: 'Agenda', href: '/agenda', icon: CalendarDays },
   { name: 'Diário de Atividades', href: '/atividades', icon: ListTodo },
   { name: 'Planos e Preços', href: '/planos', icon: Tags },
