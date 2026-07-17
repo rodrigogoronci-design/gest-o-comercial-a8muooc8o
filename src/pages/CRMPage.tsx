@@ -76,6 +76,11 @@ export type CrmProspect = {
   cliente_id?: string | null
   plano_id?: string | null
   contrato_assinado_url?: string | null
+  tipo_pessoa?: string | null
+  cpf?: string | null
+  nome_mae?: string | null
+  nome_pai?: string | null
+  data_nascimento?: string | null
 }
 
 export default function CRMPage() {
@@ -387,6 +392,8 @@ export default function CRMPage() {
     const { error } = await supabase.from('crm_prospects').insert([
       {
         cnpj: values.cnpj || null,
+        cpf: values.cpf || null,
+        tipo_pessoa: values.tipo_pessoa || 'PJ',
         empresa: values.empresa,
         endereco: values.endereco || null,
         contato_nome: values.contato_nome,
@@ -397,6 +404,9 @@ export default function CRMPage() {
         data_followup: values.data_followup || null,
         observacoes: values.observacoes || null,
         data_assinatura: values.data_assinatura || null,
+        nome_mae: values.nome_mae || null,
+        nome_pai: values.nome_pai || null,
+        data_nascimento: values.data_nascimento || null,
       },
     ])
     setIsSubmitting(false)
@@ -420,6 +430,8 @@ export default function CRMPage() {
       .from('crm_prospects')
       .update({
         cnpj: values.cnpj || null,
+        cpf: values.cpf || null,
+        tipo_pessoa: values.tipo_pessoa || 'PJ',
         empresa: values.empresa,
         endereco: values.endereco || null,
         contato_nome: values.contato_nome,
@@ -430,6 +442,9 @@ export default function CRMPage() {
         data_followup: values.data_followup || null,
         observacoes: values.observacoes || null,
         data_assinatura: values.data_assinatura || null,
+        nome_mae: values.nome_mae || null,
+        nome_pai: values.nome_pai || null,
+        data_nascimento: values.data_nascimento || null,
         ultima_interacao:
           statusChanged || classifChanged
             ? new Date().toISOString()
@@ -1069,6 +1084,8 @@ export default function CRMPage() {
                     isSubmitting={isSubmitting}
                     initialData={{
                       cnpj: editingProspect.cnpj || '',
+                      cpf: editingProspect.cpf || '',
+                      tipo_pessoa: editingProspect.tipo_pessoa || 'PJ',
                       empresa: editingProspect.empresa,
                       endereco: editingProspect.endereco || '',
                       contato_nome: editingProspect.contato_nome,
@@ -1079,6 +1096,9 @@ export default function CRMPage() {
                       data_followup: editingProspect.data_followup || '',
                       observacoes: editingProspect.observacoes || '',
                       data_assinatura: editingProspect.data_assinatura || '',
+                      nome_mae: editingProspect.nome_mae || '',
+                      nome_pai: editingProspect.nome_pai || '',
+                      data_nascimento: editingProspect.data_nascimento || '',
                     }}
                   />
                 )}

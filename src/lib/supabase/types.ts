@@ -1353,20 +1353,26 @@ export type Database = {
           cnpj: string | null
           contato_nome: string
           contrato_assinado_url: string | null
+          cpf: string | null
           created_at: string | null
           data_assinatura: string | null
           data_followup: string | null
+          data_nascimento: string | null
           diagnostico: Json | null
           email: string | null
           empresa: string
           endereco: string | null
           id: string
+          nome_mae: string | null
+          nome_pai: string | null
           observacoes: string | null
           plano_id: string | null
           proposta_url: string | null
+          razao_social: string | null
           status: string
           tags: Json | null
           telefone: string | null
+          tipo_pessoa: string | null
           ultima_interacao: string | null
           user_id: string | null
         }
@@ -1376,20 +1382,26 @@ export type Database = {
           cnpj?: string | null
           contato_nome: string
           contrato_assinado_url?: string | null
+          cpf?: string | null
           created_at?: string | null
           data_assinatura?: string | null
           data_followup?: string | null
+          data_nascimento?: string | null
           diagnostico?: Json | null
           email?: string | null
           empresa: string
           endereco?: string | null
           id?: string
+          nome_mae?: string | null
+          nome_pai?: string | null
           observacoes?: string | null
           plano_id?: string | null
           proposta_url?: string | null
+          razao_social?: string | null
           status?: string
           tags?: Json | null
           telefone?: string | null
+          tipo_pessoa?: string | null
           ultima_interacao?: string | null
           user_id?: string | null
         }
@@ -1399,20 +1411,26 @@ export type Database = {
           cnpj?: string | null
           contato_nome?: string
           contrato_assinado_url?: string | null
+          cpf?: string | null
           created_at?: string | null
           data_assinatura?: string | null
           data_followup?: string | null
+          data_nascimento?: string | null
           diagnostico?: Json | null
           email?: string | null
           empresa?: string
           endereco?: string | null
           id?: string
+          nome_mae?: string | null
+          nome_pai?: string | null
           observacoes?: string | null
           plano_id?: string | null
           proposta_url?: string | null
+          razao_social?: string | null
           status?: string
           tags?: Json | null
           telefone?: string | null
+          tipo_pessoa?: string | null
           ultima_interacao?: string | null
           user_id?: string | null
         }
