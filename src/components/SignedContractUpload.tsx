@@ -1,7 +1,19 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Save, Rocket, X } from 'lucide-react'
+import {
+  Upload,
+  FileText,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Save,
+  Rocket,
+  X,
+  RefreshCw,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   Dialog,
@@ -19,6 +31,7 @@ import { createCliente, updateCliente } from '@/services/clientes'
 import { createHistorico } from '@/services/historico_contratos'
 import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { fetchCnpjData } from '@/services/cnpj'
 
 function formatCurrency(val: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
@@ -44,6 +57,7 @@ export function SignedContractUpload() {
   const [extractedData, setExtractedData] = useState<ExtractedContractData | null>(null)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [savedClientId, setSavedClientId] = useState<string | null>(null)
+  const [isEnriching, setIsEnriching] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleError = (message: string) => {
@@ -52,6 +66,40 @@ export function SignedContractUpload() {
       description: message,
       variant: 'destructive',
     })
+  }
+
+  const handleUpdateField = (field: keyof ExtractedContractData, value: any) => {
+    setExtractedData((prev) => (prev ? { ...prev, [field]: value } : prev))
+  }
+
+  const handleRefetchCnpj = async () => {
+    if (!extractedData?.cnpj) return
+    const rawCnpj = extractedData.cnpj.replace(/\D/g, '')
+    if (rawCnpj.length !== 14) return
+
+    setIsEnriching(true)
+    try {
+      const { data: cnpjData, error: cnpjError } = await fetchCnpjData(rawCnpj)
+      if (cnpjData?.nome) {
+        handleUpdateField('nome', cnpjData.nome)
+        handleUpdateField('nomeFromApi', true)
+        if (cnpjData.endereco) handleUpdateField('endereco', cnpjData.endereco)
+        toast({
+          title: 'Razão Social atualizada',
+          description: 'Dados oficiais obtidos via Receita Federal.',
+        })
+      } else if (cnpjError) {
+        toast({
+          title: 'Falha na consulta',
+          description: cnpjError,
+          variant: 'destructive',
+        })
+      }
+    } catch {
+      // Keep existing data
+    } finally {
+      setIsEnriching(false)
+    }
   }
 
   const processFile = async (file: File) => {
@@ -82,6 +130,28 @@ export function SignedContractUpload() {
 
       setExtractedData(data)
       setShowPreview(true)
+
+      const rawCnpj = (data.cnpj || '').replace(/\D/g, '')
+      if (rawCnpj.length === 14) {
+        setIsEnriching(true)
+        try {
+          const { data: cnpjData } = await fetchCnpjData(rawCnpj)
+          if (cnpjData?.nome) {
+            data.nome = cnpjData.nome
+            data.nomeFromApi = true
+            if (cnpjData.endereco) data.endereco = cnpjData.endereco
+            setExtractedData({ ...data })
+            toast({
+              title: 'Razão Social enriquecida',
+              description: 'Nome oficial obtido via Receita Federal.',
+            })
+          }
+        } catch {
+          // Keep extracted name as fallback
+        } finally {
+          setIsEnriching(false)
+        }
+      }
     } catch (err: any) {
       const msg =
         err.message?.includes('não foi possível') || err.message?.includes('modelo padrão')
@@ -305,10 +375,36 @@ export function SignedContractUpload() {
               <div className="space-y-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                    <p className="text-xs text-slate-500 font-medium uppercase mb-1">
-                      Razão Social
-                    </p>
-                    <p className="text-sm font-bold text-slate-800">{extractedData.nome}</p>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label className="text-xs text-slate-500 font-medium uppercase">
+                        Razão Social
+                      </Label>
+                      {isEnriching ? (
+                        <span className="text-[10px] font-medium text-indigo-600 flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Buscando dados oficiais...
+                        </span>
+                      ) : extractedData.nomeFromApi ? (
+                        <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+                          Via Receita Federal
+                        </span>
+                      ) : (
+                        <button
+                          onClick={handleRefetchCnpj}
+                          className="text-[10px] font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          Buscar oficial
+                        </button>
+                      )}
+                    </div>
+                    <Input
+                      value={extractedData.nome}
+                      onChange={(e) => handleUpdateField('nome', e.target.value)}
+                      disabled={isEnriching}
+                      placeholder={isEnriching ? 'Buscando dados oficiais...' : 'Razão Social'}
+                      className="text-sm font-bold text-slate-800 h-9 bg-white"
+                    />
                   </div>
                   <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
                     <p className="text-xs text-slate-500 font-medium uppercase mb-1">CNPJ</p>

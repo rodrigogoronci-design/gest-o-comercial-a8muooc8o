@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/form'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase/client'
+import { fetchCnpjData } from '@/services/cnpj'
 
 export const prospectFormSchema = z.object({
   cnpj: z.string().optional(),
@@ -156,25 +157,25 @@ export function CrmProspectForm({
           return
         }
 
-        const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${clean}`)
-        if (res.ok) {
-          const d = await res.json()
-          if (d.razao_social && !form.getValues('empresa')) form.setValue('empresa', d.razao_social)
-          const addr = [d.logradouro, d.numero, d.bairro, d.municipio, d.uf]
-            .filter(Boolean)
-            .join(', ')
-          if (addr && !form.getValues('endereco')) form.setValue('endereco', addr)
-          if (d.ddd_telefone_1 && !form.getValues('telefone'))
-            form.setValue('telefone', d.ddd_telefone_1)
-          if (d.email && !form.getValues('email')) form.setValue('email', d.email)
-
-          if (!form.getValues('contato_nome')) {
-            form.setValue('contato_nome', d.nome_fantasia || 'Responsável')
-          }
+        const { data: cnpjData, error: cnpjError } = await fetchCnpjData(clean)
+        if (cnpjData) {
+          if (cnpjData.nome && !form.getValues('empresa')) form.setValue('empresa', cnpjData.nome)
+          if (cnpjData.endereco && !form.getValues('endereco'))
+            form.setValue('endereco', cnpjData.endereco)
+          if (cnpjData.telefone && !form.getValues('telefone'))
+            form.setValue('telefone', cnpjData.telefone)
+          if (cnpjData.email && !form.getValues('email')) form.setValue('email', cnpjData.email)
+          if (!form.getValues('contato_nome')) form.setValue('contato_nome', 'Responsável')
 
           toast({
             title: 'Dados preenchidos',
-            description: 'CNPJ consultado com sucesso na base pública.',
+            description: 'Razão Social obtida via Receita Federal.',
+          })
+        } else if (cnpjError) {
+          toast({
+            title: 'Consulta CNPJ',
+            description: cnpjError,
+            variant: 'destructive',
           })
         }
       } catch {

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Save } from 'lucide-react'
+import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Save, RefreshCw } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -58,6 +58,7 @@ export function ImportContracts() {
   const [files, setFiles] = useState<FileStatus[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [enrichingIndex, setEnrichingIndex] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,6 +89,37 @@ export function ImportContracts() {
       }
       return newFiles
     })
+  }
+
+  const handleRefetchCnpj = async (index: number) => {
+    const file = files[index]
+    if (!file?.data?.cnpj) return
+    const rawCnpj = file.data.cnpj.replace(/\D/g, '')
+    if (rawCnpj.length !== 14) return
+
+    setEnrichingIndex(index)
+    try {
+      const { data: cnpjData, error: cnpjError } = await fetchCnpjData(rawCnpj)
+      if (cnpjData?.nome) {
+        handleUpdateData(index, 'nome', cnpjData.nome)
+        handleUpdateData(index, 'nomeFromApi', true)
+        if (cnpjData.endereco) handleUpdateData(index, 'endereco', cnpjData.endereco)
+        toast({
+          title: 'Razão Social atualizada',
+          description: 'Dados oficiais obtidos via Receita Federal.',
+        })
+      } else if (cnpjError) {
+        toast({
+          title: 'Falha na consulta',
+          description: cnpjError,
+          variant: 'destructive',
+        })
+      }
+    } catch {
+      // Keep existing data
+    } finally {
+      setEnrichingIndex(null)
+    }
   }
 
   const extractData = async () => {
@@ -423,15 +455,35 @@ export function ImportContracts() {
                             <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                               Razão Social
                             </Label>
-                            {f.data.nomeFromApi && (
+                            {enrichingIndex === index ? (
+                              <span className="text-[10px] font-medium text-indigo-600 flex items-center gap-1">
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                Buscando dados oficiais...
+                              </span>
+                            ) : f.data.nomeFromApi ? (
                               <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
                                 Via Receita Federal
                               </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleRefetchCnpj(index)}
+                                className="text-[10px] font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                              >
+                                <RefreshCw className="w-3 h-3" />
+                                Buscar oficial
+                              </button>
                             )}
                           </div>
                           <Input
                             value={f.data.nome}
                             onChange={(e) => handleUpdateData(index, 'nome', e.target.value)}
+                            disabled={enrichingIndex === index}
+                            placeholder={
+                              enrichingIndex === index
+                                ? 'Buscando dados oficiais...'
+                                : 'Razão Social'
+                            }
                             className="font-medium h-12 bg-slate-50/50"
                           />
                         </div>
