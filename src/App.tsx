@@ -35,6 +35,7 @@ import AgendaPage from './pages/AgendaPage'
 import NotFound from './pages/NotFound'
 import ImplementacoesPage from './pages/ImplementacoesPage'
 import ImplementacaoDetailPage from './pages/ImplementacaoDetailPage'
+import CaptacaoPage from './pages/CaptacaoPage'
 
 const App = () => (
   <AuthProvider>
@@ -64,6 +65,7 @@ const App = () => (
               <Route path="/agenda" element={<AgendaPage />} />
               <Route path="/implementacoes" element={<ImplementacoesPage />} />
               <Route path="/implementacoes/:id" element={<ImplementacaoDetailPage />} />
+              <Route path="/crm/captacao" element={<CaptacaoPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

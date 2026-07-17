@@ -12,6 +12,7 @@ import {
   Receipt,
   BarChart3,
   Calendar,
+  Target,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -32,6 +33,7 @@ import logo from '@/assets/logomarca-service-ea011.png'
 const NAV_ITEMS = [
   { title: 'Dashboard', href: '/', icon: Home },
   { title: 'CRM', href: '/crm', icon: Briefcase },
+  { title: 'Captação', href: '/crm/captacao', icon: Target },
   { title: 'Clientes', href: '/clientes', icon: Building2 },
   { title: 'Atividades', href: '/atividades', icon: ListTodo },
   { title: '🚀 Implantações', href: '/implementacoes', icon: Rocket },
