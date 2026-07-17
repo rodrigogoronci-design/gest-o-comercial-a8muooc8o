@@ -79,7 +79,7 @@ function extractData(text: string) {
   for (const keyword of clientKeywords) {
     if (contratanteBlock) break
     const regex = new RegExp(
-      `${keyword}\\s*:?\\s*([\\s\\S]*?)(?=\\b(?:CONTRATADA|PRESTADORA|SERVICE\\s+LOGIC|SERVIÇO\\s+LOGIC|DO\\s+OBJETO|As\\s+partes\\s+acima|CLÁUSULA|CONSIDERANDO)\\b|$)`,
+      `\\b${keyword}\\b\\s*:?\\s*([\\s\\S]*?)(?=\\b(?:CONTRATADA|PRESTADORA|SERVICE\\s+LOGIC|SERVIÇO\\s+LOGIC|DO\\s+OBJETO|As\\s+partes\\s+acima|CLÁUSULA|CONSIDERANDO)\\b|$)`,
       'i',
     )
     const match = text.match(regex)
@@ -90,7 +90,7 @@ function extractData(text: string) {
 
   if (!contratanteBlock) {
     const fallbackMatch = text.match(
-      /CONTRATANTE:?\s*([\s\S]*?)(?:CONTRATADA|As partes acima|DO OBJETO)/i,
+      /\bCONTRATANTE\b:?\s*([\s\S]*?)(?:CONTRATADA|As partes acima|DO OBJETO)/i,
     )
     if (fallbackMatch) {
       contratanteBlock = fallbackMatch[1]
@@ -100,7 +100,7 @@ function extractData(text: string) {
   if (contratanteBlock) {
     const block = contratanteBlock.replace(/\n/g, ' ')
 
-    const nameMatch = block.match(/^\s*(.+?)(?:,|\binscrita?\b|\bCNPJ\b|\bcom sede\b)/i)
+    const nameMatch = block.match(/^\s*(.+?)(?:,|\bpessoa\b|\binscrita?\b|\bCNPJ\b|\bcom sede\b)/i)
     if (nameMatch) {
       let rawName = nameMatch[1].trim()
       rawName = rawName.replace(/^[^a-zA-ZÀ-ÿ0-9]+/, '')
@@ -131,16 +131,18 @@ function extractData(text: string) {
       }
     }
 
-    const addrMatch = block.match(/sede na\s*(.+?)\s*,.*?neste ato/i)
+    const addrMatch = block.match(/sede (?:na|em)\s*(.+?)\s*(?:,.*?neste ato|\.\s*Neste ato)/i)
     if (addrMatch) endereco = addrMatch[1].trim()
 
-    const repNameMatch = block.match(/representantes? legais? Sr\.?\s*(.+?)\s*,/i)
+    const repNameMatch = block.match(
+      /representantes? legais?[,\s]*(?:Sra?\.?|Sr\(a\)\.?)?\s*(.+?)\s*,/i,
+    )
     if (repNameMatch) repName = repNameMatch[1].trim()
 
     const repCpfMatch = block.match(/CPF.*?([\d.\-]{11,14})/)
     if (repCpfMatch) repCpf = repCpfMatch[1]
 
-    const repRgMatch = block.match(/RG.*?([\d.\-A-Za-z]+)\s*\./)
+    const repRgMatch = block.match(/RG.*?([\d.\-A-Za-z]+)\s*(?:[.,]|$)/)
     if (repRgMatch) repRg = repRgMatch[1]
   }
 
@@ -246,7 +248,7 @@ function extractData(text: string) {
   }
 
   return {
-    nome: nome || 'Empresa não identificada',
+    nome: nome || '',
     cnpj: cnpj || '',
     endereco,
     repName,

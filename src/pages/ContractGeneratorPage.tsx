@@ -12,6 +12,7 @@ import {
   DollarSign,
   Gift,
   FileText,
+  CheckCircle2,
 } from 'lucide-react'
 import {
   Card,
@@ -137,6 +138,7 @@ export default function ContractGeneratorPage() {
   const [isDragging, setIsDragging] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [autoFilled, setAutoFilled] = useState(false)
+  const [extractedFromPdf, setExtractedFromPdf] = useState(false)
   const [isLoadingCnpj, setIsLoadingCnpj] = useState(false)
 
   // Cotação State
@@ -1048,28 +1050,18 @@ export default function ContractGeneratorPage() {
             setIsLoadingCnpj(false)
           }
         }
-      } else {
-        extractedData.cnpj = '12.345.678/0001-90'
       }
 
-      if (!extractedData.nome || extractedData.nome === 'Empresa Fictícia LTDA')
-        extractedData.nome = 'Tech Logistics Soluções LTDA'
-
-      if (!extractedData.endereco)
-        extractedData.endereco = 'Av. Paulista, 1000, Bela Vista, São Paulo - SP, 01310-100'
-      if (!extractedData.repName) extractedData.repName = 'João da Silva'
-      if (!extractedData.repCpf) extractedData.repCpf = '123.456.789-00'
-      if (!extractedData.repRg) extractedData.repRg = '12.345.678-9'
-
-      setName(extractedData.nome)
-      setCnpj(formatCNPJ(extractedData.cnpj))
-      setAddress(extractedData.endereco)
-      setRepName(extractedData.repName)
-      setRepCpf(extractedData.repCpf)
-      setRepRg(extractedData.repRg)
+      if (extractedData.nome) setName(extractedData.nome)
+      if (extractedData.cnpj) setCnpj(formatCNPJ(extractedData.cnpj))
+      if (extractedData.endereco) setAddress(extractedData.endereco)
+      if (extractedData.repName) setRepName(extractedData.repName)
+      if (extractedData.repCpf) setRepCpf(extractedData.repCpf)
+      if (extractedData.repRg) setRepRg(extractedData.repRg)
 
       setUploadProgress(100)
       setAutoFilled(true)
+      setExtractedFromPdf(true)
 
       setTimeout(() => {
         setAutoFilled(false)
@@ -1078,7 +1070,7 @@ export default function ContractGeneratorPage() {
 
       toast({
         title: 'Documentos processados!',
-        description: 'Os dados foram extraídos e preenchidos automaticamente.',
+        description: 'Os dados da Contratante foram extraídos e preenchidos.',
         className: 'bg-emerald-600 text-white border-none',
       })
     } catch (err: any) {
@@ -1694,8 +1686,8 @@ export default function ContractGeneratorPage() {
   }
 
   const inputHighlightClass = autoFilled
-    ? 'bg-yellow-50 border-yellow-300 transition-all duration-500'
-    : 'transition-all duration-500'
+    ? 'bg-emerald-50 border-emerald-300 transition-all duration-500 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
+    : 'bg-white transition-all duration-500'
 
   return (
     <div className="space-y-6 pb-12 print:pb-0 print:space-y-0">
@@ -1829,7 +1821,14 @@ export default function ContractGeneratorPage() {
 
               <Card>
                 <CardHeader className="pb-4">
-                  <CardTitle>1. Dados da Contratante</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>1. Dados da Contratante</CardTitle>
+                    {extractedFromPdf && (
+                      <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-md flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Extraído do PDF
+                      </span>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-4 mb-6 pb-4 border-b border-slate-100">
