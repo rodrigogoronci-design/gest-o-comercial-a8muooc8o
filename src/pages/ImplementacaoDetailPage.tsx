@@ -14,8 +14,10 @@ import {
   Package,
   GraduationCap,
   Calendar,
+  MessageSquare,
 } from 'lucide-react'
 import { useUserRole } from '@/hooks/use-user-role'
+import { useCoordinatorWhatsapp } from '@/hooks/use-coordinator-whatsapp'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -101,6 +103,7 @@ export default function ImplementacaoDetailPage() {
   const [ratFile, setRatFile] = useState<File | null>(null)
   const [formData, setFormData] = useState<any>({})
   const { isFinancialRestricted } = useUserRole()
+  const { phoneNumber: coordWhatsapp } = useCoordinatorWhatsapp()
 
   useEffect(() => {
     if (id) loadImpl(id)
@@ -239,6 +242,14 @@ export default function ImplementacaoDetailPage() {
     }
   }
 
+  const handleShareWhatsapp = () => {
+    const clienteNome = impl?.clientes?.nome || 'cliente'
+    const message = encodeURIComponent(
+      `Olá Gesualdo, gostaria de compartilhar os detalhes da implantação do cliente ${clienteNome}. Segue o link para acesso: ${window.location.href}`,
+    )
+    window.open(`https://wa.me/${coordWhatsapp}?text=${message}`, '_blank', 'noopener,noreferrer')
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -325,6 +336,16 @@ export default function ImplementacaoDetailPage() {
           <Badge variant="outline" className={cn('text-sm', STATUS_CONFIG[impl.status]?.color)}>
             {impl.status}
           </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleShareWhatsapp}
+            style={{ borderColor: '#25D366', color: '#25D366' }}
+            className="hover:bg-[#25D366] hover:text-white"
+          >
+            <MessageSquare className="h-4 w-4 sm:mr-1.5" />
+            <span className="hidden sm:inline">Enviar para WhatsApp</span>
+          </Button>
         </div>
       </div>
 
