@@ -296,6 +296,7 @@ export default function ColaboradoresPage() {
                         <SelectItem value="Admin">Administrador</SelectItem>
                         <SelectItem value="Gerente">Gerente</SelectItem>
                         <SelectItem value="Colaborador">Colaborador</SelectItem>
+                        <SelectItem value="Implantação">Implantação</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -371,6 +372,7 @@ export default function ColaboradoresPage() {
                         <SelectItem value="Admin">Administrador</SelectItem>
                         <SelectItem value="Gerente">Gerente</SelectItem>
                         <SelectItem value="Colaborador">Colaborador</SelectItem>
+                        <SelectItem value="Implantação">Implantação</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -433,6 +435,7 @@ export default function ColaboradoresPage() {
                     <SelectItem value="Admin">Administrador</SelectItem>
                     <SelectItem value="Gerente">Gerente</SelectItem>
                     <SelectItem value="Colaborador">Colaborador</SelectItem>
+                    <SelectItem value="Implantação">Implantação</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

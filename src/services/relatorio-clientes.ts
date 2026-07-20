@@ -10,6 +10,7 @@ export interface ClienteRelatorio {
   endereco: string | null
   status: string | null
   plano_descricao: string | null
+  plano_codigo: string | null
 }
 
 export interface ClienteRelatorioDetalhado {
@@ -48,7 +49,7 @@ export const getClientesRelatorio = async (): Promise<ClienteRelatorio[]> => {
       endereco,
       status,
       plano_id,
-      planos_saude(descricao)
+      planos_saude(descricao, codigo)
     `)
     .order('nome', { ascending: true })
 
@@ -64,6 +65,7 @@ export const getClientesRelatorio = async (): Promise<ClienteRelatorio[]> => {
     endereco: c.endereco,
     status: c.status,
     plano_descricao: c.planos_saude?.descricao ?? null,
+    plano_codigo: c.planos_saude?.codigo ?? null,
   }))
 }
 

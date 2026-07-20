@@ -28,6 +28,7 @@ function downloadCSV(rows: ClienteRelatorio[]) {
     'CNPJ',
     'Mensalidade',
     'Dia de Vencimento',
+    'Código do Plano',
     'Plano Contratado',
     'Módulos',
     'Endereço',
@@ -43,7 +44,8 @@ function downloadCSV(rows: ClienteRelatorio[]) {
         row.cnpj ? formatCNPJ(row.cnpj) : '',
         row.valor_total != null ? formatCurrency(row.valor_total) : '',
         row.vencimento_mensal != null ? String(row.vencimento_mensal) : '',
-        row.plano_descricao ?? '',
+        row.plano_codigo ?? '-',
+        row.plano_descricao ?? '-',
         modulos.join(', '),
         row.endereco ?? '',
         row.status ?? '',
@@ -170,6 +172,9 @@ export function ClientReportTab() {
                       <TableHead className="min-w-[100px] text-center font-semibold text-slate-700 print:text-[8pt] print:py-1">
                         Vencimento
                       </TableHead>
+                      <TableHead className="min-w-[100px] font-semibold text-slate-700 print:text-[8pt] print:py-1">
+                        Código
+                      </TableHead>
                       <TableHead className="min-w-[150px] font-semibold text-slate-700 print:text-[8pt] print:py-1">
                         Plano
                       </TableHead>
@@ -211,14 +216,36 @@ export function ClientReportTab() {
                               : '—'}
                           </TableCell>
                           <TableCell className="text-slate-600 print:text-[8pt] print:py-1">
-                            {cliente.plano_descricao ? (
-                              cliente.plano_descricao
+                            {cliente.plano_codigo ? (
+                              <Badge
+                                variant="outline"
+                                className="bg-blue-50 border-blue-200 text-blue-700 text-[10px] py-0 px-1.5 font-medium print:border-slate-300"
+                              >
+                                {cliente.plano_codigo}
+                              </Badge>
                             ) : (
-                              <span className="text-xs text-slate-400 italic">
-                                Nenhum plano vinculado
-                              </span>
+                              <span className="text-xs text-slate-400 italic">-</span>
                             )}
                           </TableCell>
+                          <TableCell className="text-slate-600 print:text-[8pt] print:py-1">
+                            {cliente.plano_descricao || cliente.plano_codigo ? (
+                              <div className="flex flex-col gap-0.5">
+                                {cliente.plano_descricao && (
+                                  <span className="font-medium">{cliente.plano_descricao}</span>
+                                )}
+                                {cliente.plano_codigo && (
+                                  <Badge
+                                    variant="outline"
+                                    className="w-fit bg-blue-50 border-blue-200 text-blue-700 text-[10px] py-0 px-1.5 font-medium"
+                                  >
+                                    {cliente.plano_codigo}
+                                  </Badge>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-400 italic">-</span>
+                            )}
+                          </TableCell>{' '}
                           <TableCell className="print:text-[8pt] print:py-1">
                             {modulos.length > 0 ? (
                               <div className="flex flex-wrap gap-1">

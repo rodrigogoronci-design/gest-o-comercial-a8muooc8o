@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase/client'
 export const getClientes = async () => {
   const { data, error } = await supabase
     .from('clientes')
-    .select('*')
+    .select('*, planos_saude(id, descricao, codigo)')
     .limit(10000)
     .order('created_at', { ascending: false })
   if (error) throw error

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Rocket, Eye } from 'lucide-react'
+import { Rocket, Eye, Pencil, Lock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   Table,
@@ -15,7 +15,9 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Input } from '@/components/ui/input'
 import { getImplementacoes } from '@/services/implementacoes'
+import { ImplementacaoEditSheet } from '@/components/ImplementacaoEditSheet'
 import { useAuth } from '@/hooks/use-auth'
+import { useUserRole } from '@/hooks/use-user-role'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -26,9 +28,12 @@ export default function ImplementacoesPage() {
   const [filter, setFilter] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [currentColabId, setCurrentColabId] = useState<string | null>(null)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
   const [sortField, setSortField] = useState<'progresso' | 'data_prevista' | null>(null)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const { user } = useAuth()
+  const { isFinancialRestricted } = useUserRole()
 
   useEffect(() => {
     if (user?.id) {
@@ -120,6 +125,14 @@ export default function ImplementacoesPage() {
         <p className="text-muted-foreground mt-1">
           Acompanhe o progresso dos projetos de implantação de novos clientes.
         </p>
+        {isFinancialRestricted && (
+          <div className="mt-3 flex items-center gap-2 py-2 px-3 rounded-lg bg-amber-50 border border-amber-200 max-w-fit">
+            <Lock className="h-4 w-4 text-amber-600 shrink-0" />
+            <span className="text-xs text-amber-700 font-medium">
+              Seu perfil de acesso restringe a visualização de dados financeiros.
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2 items-center">
@@ -227,11 +240,23 @@ export default function ImplementacoesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" asChild>
-                        <Link to={`/implementacoes/${impl.id}`}>
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setEditId(impl.id)
+                            setEditOpen(true)
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" asChild>
+                          <Link to={`/implementacoes/${impl.id}`}>
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -240,6 +265,13 @@ export default function ImplementacoesPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <ImplementacaoEditSheet
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        implementacaoId={editId}
+        onSaved={loadImplementacoes}
+      />
     </div>
   )
 }

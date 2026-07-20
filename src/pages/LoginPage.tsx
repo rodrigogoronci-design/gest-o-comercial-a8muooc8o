@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
+import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -36,7 +37,23 @@ export default function LoginPage() {
       })
     } else {
       toast.success('Login realizado com sucesso!')
-      navigate('/')
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser()
+      if (authUser) {
+        const { data: colab } = await supabase
+          .from('colaboradores')
+          .select('role')
+          .eq('user_id', authUser.id)
+          .maybeSingle()
+        if (colab?.role === 'Implantação') {
+          navigate('/implementacoes')
+        } else {
+          navigate('/')
+        }
+      } else {
+        navigate('/')
+      }
     }
     setIsLoading(false)
   }

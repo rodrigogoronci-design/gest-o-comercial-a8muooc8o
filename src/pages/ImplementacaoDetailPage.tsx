@@ -11,6 +11,7 @@ import {
   Rocket,
   User,
 } from 'lucide-react'
+import { useUserRole } from '@/hooks/use-user-role'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -42,6 +43,8 @@ import {
 } from '@/services/implementacoes'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { ContractedPlanDetails } from '@/components/ContractedPlanDetails'
+import { getContractedModules, isStageRelatedToModules } from '@/lib/scope-mapping'
 
 const STATUS_CONFIG: Record<string, { color: string; icon: any }> = {
   'Não iniciada': { color: 'bg-slate-100 text-slate-600 border-slate-200', icon: Clock },
@@ -75,6 +78,7 @@ export default function ImplementacaoDetailPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [ratFile, setRatFile] = useState<File | null>(null)
   const [formData, setFormData] = useState<any>({})
+  const { isFinancialRestricted } = useUserRole()
 
   useEffect(() => {
     if (id) loadImpl(id)
@@ -122,6 +126,11 @@ export default function ImplementacaoDetailPage() {
     })
     return map
   }, [colaboradores])
+
+  const contractedModules = useMemo(() => {
+    if (!impl) return []
+    return getContractedModules(impl.clientes, impl.crm_propostas)
+  }, [impl])
 
   const handleOpenEdit = (etapa: any) => {
     setEditingEtapa(etapa)
@@ -308,6 +317,13 @@ export default function ImplementacaoDetailPage() {
         </CardContent>
       </Card>
 
+      <ContractedPlanDetails
+        proposta={impl.crm_propostas}
+        cliente={impl.clientes}
+        etapas={impl.implementacao_etapas}
+        redactFinancial={isFinancialRestricted}
+      />
+
       {CATEGORIA_ORDER.map((categoria) => {
         const etapas = etapasByCategoria[categoria]
         if (!etapas || etapas.length === 0) return null
@@ -329,10 +345,14 @@ export default function ImplementacaoDetailPage() {
                 const responsavelNome = etapa.responsavel_id
                   ? colabMap[etapa.responsavel_id] || null
                   : null
+                const isScopeRelated = isStageRelatedToModules(etapa.titulo, contractedModules)
                 return (
                   <Card
                     key={etapa.id}
-                    className="hover:shadow-md transition-shadow cursor-pointer"
+                    className={cn(
+                      'hover:shadow-md transition-shadow cursor-pointer',
+                      isScopeRelated && 'border-l-4 border-l-indigo-400',
+                    )}
                     onClick={() => handleOpenEdit(etapa)}
                   >
                     <CardContent className="p-4 flex items-center gap-4">
@@ -348,6 +368,14 @@ export default function ImplementacaoDetailPage() {
                               className="text-[9px] bg-violet-50 text-violet-700"
                             >
                               RAT
+                            </Badge>
+                          )}
+                          {isScopeRelated && (
+                            <Badge
+                              variant="secondary"
+                              className="text-[9px] bg-indigo-50 text-indigo-700"
+                            >
+                              Escopo
                             </Badge>
                           )}
                         </div>

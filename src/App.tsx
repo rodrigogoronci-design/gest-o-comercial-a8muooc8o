@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '@/hooks/use-auth'
 import { Navigate } from 'react-router-dom'
 
 import Layout from './components/Layout'
+import { RoleGuard } from '@/components/RoleGuard'
 import LoginPage from './pages/LoginPage'
 import ColaboradoresPage from './pages/ColaboradoresPage'
 
@@ -49,7 +50,9 @@ const App = () => (
             <Route
               element={
                 <ProtectedRoute>
-                  <Layout />
+                  <RoleGuard>
+                    <Layout />
+                  </RoleGuard>
                 </ProtectedRoute>
               }
             >

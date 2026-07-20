@@ -3150,6 +3150,7 @@ export type Database = {
     }
     Functions: {
       get_current_colaborador_id: { Args: never; Returns: string }
+      get_current_user_role: { Args: never; Returns: string }
       global_search: {
         Args: { search_query: string }
         Returns: {

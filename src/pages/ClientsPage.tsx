@@ -130,6 +130,12 @@ export interface ClienteRecord {
   id: string
   nome: string
   cnpj: string
+  plano_id?: string | null
+  planos_saude?: {
+    id: string
+    descricao: string
+    codigo: string
+  } | null
   email?: string | null
   telefone?: string | null
   endereco?: string | null
@@ -274,6 +280,22 @@ type MergedClient = {
   data_cancelamento?: string | null
   motivo_cancelamento?: string | null
   link_assinatura?: string | null
+  plano_id?: string | null
+  plano_descricao?: string | null
+  plano_codigo?: string | null
+}
+
+const CODE_TO_PLAN_ID: Record<string, string> = {
+  FROTA_20: 'frota-20',
+  'ERP-TMS-50': 'tms-50',
+  'ERP-TMS-100': 'tms-100',
+  'ERP-TMS-200': 'tms-200',
+  'ERP-TMS-300': 'tms-300',
+  'ERP-TMS-500': 'tms-500',
+  'ERP-MTS-1000': 'mts-1000',
+  'ERP-TMS-3000': 'tms-3000',
+  'ERP-TMS-5000': 'tms-5000',
+  'ERP-TMS-5000-PLUS': 'tms-5000-plus',
 }
 
 const clientSchema = z.object({
@@ -323,6 +345,7 @@ export default function ClientsPage() {
   const [filterType, setFilterType] = useState<'all' | 'with_contract' | 'without_contract'>('all')
   const [clientes, setClientes] = useState<ClienteRecord[]>([])
   const [receipts, setReceipts] = useState<any[]>([])
+  const [dbPlanos, setDbPlanos] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
   const [isSheetOpen, setIsSheetOpen] = useState(false)
@@ -951,7 +974,7 @@ export default function ClientsPage() {
   const loadClientes = async () => {
     setIsLoading(true)
     try {
-      const [data, { data: receiptsData }] = await Promise.all([
+      const [data, { data: receiptsData }, { data: planosData }] = await Promise.all([
         fetchClientes(),
         supabase
           .from('recebimentos')
@@ -959,9 +982,11 @@ export default function ClientsPage() {
             'cliente_id, cnpj, status, dias_vencidos, data_pagamento, data_vencimento, razao_social, valor_titulo',
           )
           .limit(10000),
+        supabase.from('planos_saude').select('id, codigo'),
       ])
       setClientes(data)
       setReceipts(receiptsData || [])
+      setDbPlanos(planosData || [])
     } catch (error) {
       console.error(error)
       toast.error('Erro ao carregar clientes do banco')
@@ -1338,6 +1363,20 @@ Obrigada,`
   const onSubmit = async (data: ClientFormValues) => {
     const currentFiliaisDet = editingClient?.originalData?.modulos?.filiais_detalhes || []
 
+    let plano_id = null
+    if (data.plano_base) {
+      const planConfig = PLANS.find((p) => p.name === data.plano_base || p.id === data.plano_base)
+      if (planConfig) {
+        const dbCode = Object.keys(CODE_TO_PLAN_ID).find(
+          (k) => CODE_TO_PLAN_ID[k] === planConfig.id,
+        )
+        if (dbCode) {
+          const dbPlan = dbPlanos.find((p) => p.codigo === dbCode)
+          if (dbPlan) plano_id = dbPlan.id
+        }
+      }
+    }
+
     const payload = {
       nome: data.nome,
       cnpj: data.cnpj,
@@ -1357,6 +1396,7 @@ Obrigada,`
       filiais_detalhes: data.filiais_detalhes,
       data_assinatura: data.data_assinatura || null,
       vencimento_mensal: data.vencimento_mensal ?? null,
+      plano_id,
       modulos: {
         plano_base: data.plano_base,
         filiais: data.filiais,
@@ -2566,13 +2606,16 @@ Obrigada.`)
         valor_implantacao: c.valor_implantacao,
         modo_implantacao: c.modo_implantacao,
         modules: parsedModules,
-        plano_base,
+        plano_base: c.planos_saude?.descricao || plano_base,
         filiais,
         filiais_detalhes,
         totalValue: c.valor_total || 0,
         createdAt: c.created_at,
         isMock: false,
         originalData: c,
+        plano_id: c.plano_id,
+        plano_descricao: c.planos_saude?.descricao,
+        plano_codigo: c.planos_saude?.codigo,
         contratoUrl: c.contrato_url,
         stats,
         cobrancas: Array.isArray(c.cobrancas) ? c.cobrancas : [],
@@ -4941,6 +4984,7 @@ Obrigada.`)
             <TableHeader className="bg-slate-50/50">
               <TableRow>
                 <TableHead>Empresa / CNPJ</TableHead>
+                <TableHead>Plano</TableHead>
                 <TableHead>Módulos Contratados</TableHead>
                 <TableHead>Mensalidade</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -4949,13 +4993,13 @@ Obrigada.`)
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                     Carregando clientes...
                   </TableCell>
                 </TableRow>
               ) : filteredClients.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                     Nenhum cliente encontrado.
                   </TableCell>
                 </TableRow>
@@ -5038,30 +5082,39 @@ Obrigada.`)
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-col gap-1.5">
-                        {client.plano_base && (
+                      {client.plano_descricao || client.plano_base ? (
+                        <div className="flex flex-col gap-0.5">
                           <Badge
                             variant="outline"
                             className="w-fit bg-indigo-50 text-indigo-700 border-indigo-100 font-medium text-[10px] uppercase"
                           >
-                            {client.plano_base}
+                            {client.plano_descricao || client.plano_base}
                           </Badge>
-                        )}
-                        <div className="flex flex-wrap gap-1 max-w-[250px]">
-                          {client.modules.length > 0
-                            ? client.modules.map((mod) => (
-                                <Badge
-                                  key={mod.name}
-                                  variant="secondary"
-                                  className="bg-slate-100 text-slate-700 border-slate-200 font-normal text-xs"
-                                >
-                                  {mod.name}
-                                </Badge>
-                              ))
-                            : !client.plano_base && (
-                                <span className="text-xs text-slate-400 italic">Sem módulos</span>
-                              )}
+                          {client.plano_codigo && (
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {client.plano_codigo}
+                            </span>
+                          )}
                         </div>
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1 max-w-[250px]">
+                        {client.modules.length > 0 ? (
+                          client.modules.map((mod) => (
+                            <Badge
+                              key={mod.name}
+                              variant="secondary"
+                              className="bg-slate-100 text-slate-700 border-slate-200 font-normal text-xs"
+                            >
+                              {mod.name}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">Sem módulos</span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>

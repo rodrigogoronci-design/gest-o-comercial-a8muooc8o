@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/sidebar'
 import { useAuth } from '@/hooks/use-auth'
 import { supabase } from '@/lib/supabase/client'
+import { shouldShowNavItem } from '@/lib/roles'
 import logo from '@/assets/logomarca-service-ea011.png'
 
 const NAV_ITEMS = [
@@ -49,15 +50,19 @@ export function AppSidebar() {
   const location = useLocation()
   const { user, signOut } = useAuth()
   const [colabName, setColabName] = useState('')
+  const [colabRole, setColabRole] = useState<string | null>(null)
 
   useEffect(() => {
     if (user?.id) {
       supabase
         .from('colaboradores')
-        .select('nome')
+        .select('nome, role')
         .eq('user_id', user.id)
         .maybeSingle()
-        .then(({ data }) => setColabName(data?.nome || user.email || ''))
+        .then(({ data }) => {
+          setColabName(data?.nome || user.email || '')
+          setColabRole(data?.role || null)
+        })
     }
   }, [user])
 
@@ -73,7 +78,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {NAV_ITEMS.map((item) => {
+              {NAV_ITEMS.filter((item) => shouldShowNavItem(item.href, colabRole)).map((item) => {
                 const isActive =
                   location.pathname === item.href ||
                   (item.href !== '/' && location.pathname.startsWith(item.href))

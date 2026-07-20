@@ -9,6 +9,7 @@ export interface ColaboradorProfile {
   cargo: string | null
   avatar_url: string | null
   image_gender: string | null
+  role: string | null
 }
 
 export function useColaboradorProfile() {
@@ -25,7 +26,7 @@ export function useColaboradorProfile() {
     setLoading(true)
     const { data, error } = await supabase
       .from('colaboradores')
-      .select('id, nome, cargo, avatar_url, image_gender')
+      .select('id, nome, cargo, avatar_url, image_gender, role')
       .eq('user_id', user.id)
       .maybeSingle()
 
@@ -52,7 +53,7 @@ export function useColaboradorProfile() {
       .from('colaboradores')
       .update({ nome: nome.trim(), cargo: cargo.trim() })
       .eq('user_id', user.id)
-      .select('id, nome, cargo, avatar_url, image_gender')
+      .select('id, nome, cargo, avatar_url, image_gender, role')
       .single()
 
     if (error) {
@@ -104,7 +105,7 @@ export function useColaboradorProfile() {
       .from('colaboradores')
       .update({ avatar_url: avatarUrl })
       .eq('user_id', user.id)
-      .select('id, nome, cargo, avatar_url, image_gender')
+      .select('id, nome, cargo, avatar_url, image_gender, role')
       .single()
 
     if (updateError) {
@@ -136,7 +137,7 @@ export function useColaboradorProfile() {
       .from('colaboradores')
       .update({ avatar_url: null })
       .eq('user_id', user.id)
-      .select('id, nome, cargo, avatar_url, image_gender')
+      .select('id, nome, cargo, avatar_url, image_gender, role')
       .single()
 
     if (updateError) {

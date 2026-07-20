@@ -57,7 +57,9 @@ export const getImplementacoes = async () => {
 export const getImplementacao = async (id: string) => {
   const { data, error } = await supabase
     .from('implementacoes' as any)
-    .select('*, clientes(nome, cnpj), colaboradores(nome), implementacao_etapas(*)')
+    .select(
+      '*, clientes(nome, cnpj, modulos, modo_implantacao, filiais_detalhes, quantidade_filiais, cobrar_filiais, planos_saude(descricao, codigo)), colaboradores(nome), implementacao_etapas(*), crm_propostas(itens, quantidade_filiais, filiais_detalhes, cobrar_filiais)',
+    )
     .eq('id', id)
     .single()
   if (error) {
@@ -141,6 +143,45 @@ export const updateEtapa = async (id: string, etapa: any) => {
     await recalcProgress(data.implementacao_id)
   }
   return data
+}
+
+export const updateImplementacao = async (
+  id: string,
+  data: { status?: string; responsavel_id?: string | null },
+) => {
+  const { data: result, error } = await supabase
+    .from('implementacoes' as any)
+    .update(data)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return result
+}
+
+export const updateClienteModulos = async (clienteId: string, modulos: string[]) => {
+  const { data, error } = await supabase
+    .from('clientes')
+    .update({ modulos })
+    .eq('id', clienteId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export const batchUpdateEtapas = async (
+  updates: { id: string; data: any }[],
+  implementacaoId: string,
+) => {
+  for (const { id, data } of updates) {
+    const { error } = await supabase
+      .from('implementacao_etapas' as any)
+      .update(data)
+      .eq('id', id)
+    if (error) throw error
+  }
+  await recalcProgress(implementacaoId)
 }
 
 export const uploadRat = async (file: File, implementacaoId: string, etapaId: string) => {
