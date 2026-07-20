@@ -10,6 +10,10 @@ import {
   Loader2,
   Rocket,
   User,
+  RefreshCw,
+  Package,
+  GraduationCap,
+  Calendar,
 } from 'lucide-react'
 import { useUserRole } from '@/hooks/use-user-role'
 import { Card, CardContent } from '@/components/ui/card'
@@ -40,6 +44,7 @@ import {
   updateEtapa,
   uploadRat,
   getColaboradores,
+  syncModulosToCliente,
 } from '@/services/implementacoes'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -64,6 +69,30 @@ const CATEGORIA_ORDER = [
 
 const STATUS_OPTIONS = ['Não iniciada', 'Agendada', 'Em andamento', 'Concluída', 'Atrasada']
 
+const TIPO_CONFIG: Record<string, { label: string; color: string }> = {
+  novo_cliente: { label: 'Novo Cliente', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  inclusao_modulo: {
+    label: 'Inclusão de Módulo',
+    color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  },
+  treinamento: { label: 'Treinamento', color: 'bg-violet-50 text-violet-700 border-violet-200' },
+}
+
+const CATEGORIA_ORDER = [
+  'Pré-Implantação',
+  'Implantação Inicial',
+  'Análise',
+  'Configuração',
+  'Preparação',
+  'Agendamento',
+  'Ciclo de Treinamentos',
+  'Treinamento',
+  'Execução',
+  'Implantação Operacional',
+  'Validação',
+  'Encerramento',
+]
+
 function todayStr() {
   return new Date().toISOString().split('T')[0]
 }
@@ -76,6 +105,7 @@ export default function ImplementacaoDetailPage() {
   const [editingEtapa, setEditingEtapa] = useState<any>(null)
   const [colaboradores, setColaboradores] = useState<any[]>([])
   const [isSaving, setIsSaving] = useState(false)
+  const [syncingModulos, setSyncingModulos] = useState(false)
   const [ratFile, setRatFile] = useState<File | null>(null)
   const [formData, setFormData] = useState<any>({})
   const { isFinancialRestricted } = useUserRole()
@@ -203,6 +233,20 @@ export default function ImplementacaoDetailPage() {
     }
   }
 
+  const handleSyncModulos = async () => {
+    if (!impl) return
+    setSyncingModulos(true)
+    try {
+      const merged = await syncModulosToCliente(impl.id)
+      toast.success(`${merged.length} módulos sincronizados com o cliente!`)
+      loadImpl(impl.id)
+    } catch (error: any) {
+      toast.error('Erro ao sincronizar módulos: ' + (error.message || ''))
+    } finally {
+      setSyncingModulos(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -280,9 +324,16 @@ export default function ImplementacaoDetailPage() {
           <h1 className="text-2xl font-bold tracking-tight">{impl.clientes?.nome}</h1>
           <p className="text-sm text-muted-foreground">Projeto de Implantação</p>
         </div>
-        <Badge variant="outline" className={cn('text-sm', STATUS_CONFIG[impl.status]?.color)}>
-          {impl.status}
-        </Badge>
+        <div className="flex items-center gap-2">
+          {impl.tipo && impl.tipo !== 'novo_cliente' && (
+            <Badge variant="outline" className={cn('text-sm', TIPO_CONFIG[impl.tipo]?.color)}>
+              {TIPO_CONFIG[impl.tipo]?.label || impl.tipo}
+            </Badge>
+          )}
+          <Badge variant="outline" className={cn('text-sm', STATUS_CONFIG[impl.status]?.color)}>
+            {impl.status}
+          </Badge>
+        </div>
       </div>
 
       <Card>
@@ -316,6 +367,92 @@ export default function ImplementacaoDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {impl.tipo === 'inclusao_modulo' && (
+        <Card>
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                <Package className="h-4 w-4 text-emerald-600" />
+                Módulos em Inclusão
+              </h3>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleSyncModulos}
+                disabled={syncingModulos}
+                className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+              >
+                {syncingModulos ? (
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                )}
+                Sincronizar com Cliente
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(impl.modulos_novos || []).length === 0 ? (
+                <span className="text-sm text-muted-foreground">Nenhum módulo especificado.</span>
+              ) : (
+                (impl.modulos_novos as string[]).map((mod, i) => (
+                  <Badge key={i} variant="secondary" className="bg-emerald-50 text-emerald-700">
+                    {mod}
+                  </Badge>
+                ))
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              A sincronização adiciona estes módulos ao perfil do cliente. Use com cautela para
+              evitar substituições acidentais.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {impl.tipo === 'treinamento' && (
+        <Card>
+          <CardContent className="p-6 space-y-3">
+            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+              <GraduationCap className="h-4 w-4 text-violet-600" />
+              Detalhes do Treinamento
+            </h3>
+            {impl.treinamento_motivo && (
+              <div className="flex items-start gap-2">
+                <span className="text-sm text-muted-foreground min-w-[100px]">Motivo:</span>
+                <span className="text-sm font-medium">{impl.treinamento_motivo}</span>
+              </div>
+            )}
+            {impl.treinamento_topicos && (
+              <div className="flex items-start gap-2">
+                <span className="text-sm text-muted-foreground min-w-[100px]">Tópicos:</span>
+                <span className="text-sm font-medium">{impl.treinamento_topicos}</span>
+              </div>
+            )}
+            {impl.treinamento_data && (
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-slate-400" />
+                <span className="text-sm text-muted-foreground">Data agendada:</span>
+                <span className="text-sm font-medium">
+                  {new Date(impl.treinamento_data).toLocaleDateString('pt-BR')}
+                </span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {impl.solicitacao_id && (
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <FileText className="h-4 w-4 text-slate-400" />
+            <span className="text-sm text-muted-foreground">Solicitação de serviço vinculada:</span>
+            <span className="text-sm font-medium">
+              {impl.solicitacoes_servico?.descricao || impl.solicitacao_id}
+            </span>
+          </CardContent>
+        </Card>
+      )}
 
       <ContractedPlanDetails
         proposta={impl.crm_propostas}

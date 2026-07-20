@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Rocket, Eye, Pencil, Lock } from 'lucide-react'
+import { Rocket, Eye, Pencil, Lock, Plus, Package, GraduationCap } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   Table,
@@ -15,21 +15,31 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Input } from '@/components/ui/input'
 import { getImplementacoes } from '@/services/implementacoes'
+import { TIPO_CONFIG } from '@/lib/implantacao-config'
 import { ImplementacaoEditSheet } from '@/components/ImplementacaoEditSheet'
+import { ImplementacaoCreateDialog } from '@/components/ImplementacaoCreateDialog'
 import { useAuth } from '@/hooks/use-auth'
 import { useUserRole } from '@/hooks/use-user-role'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
+const TIPO_ICONS: Record<string, any> = {
+  novo_cliente: Rocket,
+  inclusao_modulo: Package,
+  treinamento: GraduationCap,
+}
+
 export default function ImplementacoesPage() {
   const [implementacoes, setImplementacoes] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filter, setFilter] = useState<string>('all')
+  const [tipoFilter, setTipoFilter] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [currentColabId, setCurrentColabId] = useState<string | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
   const [editOpen, setEditOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
   const [sortField, setSortField] = useState<'progresso' | 'data_prevista' | null>(null)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const { user } = useAuth()
@@ -93,6 +103,10 @@ export default function ImplementacoesPage() {
       return impl.status === filter
     })
     .filter((impl) => {
+      if (tipoFilter === 'all') return true
+      return (impl.tipo || 'novo_cliente') === tipoFilter
+    })
+    .filter((impl) => {
       const nome = impl.clientes?.nome || ''
       return nome.toLowerCase().includes(searchTerm.toLowerCase())
     })
@@ -117,22 +131,28 @@ export default function ImplementacoesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-          <Rocket className="h-8 w-8 text-indigo-600" />
-          Implantações
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Acompanhe o progresso dos projetos de implantação de novos clientes.
-        </p>
-        {isFinancialRestricted && (
-          <div className="mt-3 flex items-center gap-2 py-2 px-3 rounded-lg bg-amber-50 border border-amber-200 max-w-fit">
-            <Lock className="h-4 w-4 text-amber-600 shrink-0" />
-            <span className="text-xs text-amber-700 font-medium">
-              Seu perfil de acesso restringe a visualização de dados financeiros.
-            </span>
-          </div>
-        )}
+      <div className="flex items-start justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <Rocket className="h-8 w-8 text-indigo-600" />
+            Implantações
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Acompanhe o progresso dos projetos de implantação, inclusões de módulos e treinamentos.
+          </p>
+          {isFinancialRestricted && (
+            <div className="mt-3 flex items-center gap-2 py-2 px-3 rounded-lg bg-amber-50 border border-amber-200 max-w-fit">
+              <Lock className="h-4 w-4 text-amber-600 shrink-0" />
+              <span className="text-xs text-amber-700 font-medium">
+                Seu perfil de acesso restringe a visualização de dados financeiros.
+              </span>
+            </div>
+          )}
+        </div>
+        <Button onClick={() => setCreateOpen(true)} className="bg-indigo-600 hover:bg-indigo-700">
+          <Plus className="h-4 w-4 mr-2" />
+          Nova Implementação
+        </Button>
       </div>
 
       <div className="flex flex-wrap gap-2 items-center">
@@ -162,6 +182,37 @@ export default function ImplementacoesPage() {
             </Button>
           ))}
         </div>
+      </div>
+
+      <div className="flex gap-1 flex-wrap">
+        <span className="text-xs text-muted-foreground self-center mr-1">Tipo:</span>
+        {[
+          { key: 'all', label: 'Todos' },
+          { key: 'novo_cliente', label: 'Novo Cliente' },
+          { key: 'inclusao_modulo', label: 'Inclusão de Módulo' },
+          { key: 'treinamento', label: 'Treinamentos' },
+        ].map((f) => (
+          <Button
+            key={f.key}
+            variant={tipoFilter === f.key ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setTipoFilter(f.key)}
+            className={cn(
+              'text-xs h-7',
+              tipoFilter === f.key &&
+                f.key === 'novo_cliente' &&
+                'bg-blue-100 text-blue-700 hover:bg-blue-200',
+              tipoFilter === f.key &&
+                f.key === 'inclusao_modulo' &&
+                'bg-emerald-100 text-emerald-700 hover:bg-emerald-200',
+              tipoFilter === f.key &&
+                f.key === 'treinamento' &&
+                'bg-violet-100 text-violet-700 hover:bg-violet-200',
+            )}
+          >
+            {f.label}
+          </Button>
+        ))}
       </div>
 
       <Card>
@@ -216,50 +267,75 @@ export default function ImplementacoesPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((impl) => (
-                  <TableRow key={impl.id} className="hover:bg-slate-50/80">
-                    <TableCell className="font-medium">{impl.clientes?.nome || 'N/A'}</TableCell>
-                    <TableCell>{impl.colaboradores?.nome || 'Não atribuído'}</TableCell>
-                    <TableCell className="text-sm text-slate-600">{getEtapaAtual(impl)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 min-w-[120px]">
-                        <Progress value={impl.progresso || 0} className="h-2" />
-                        <span className="text-xs font-medium text-slate-600 w-8">
-                          {impl.progresso || 0}%
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-slate-600">
-                      {getPrevisaoConclusao(impl)
-                        ? new Date(getPrevisaoConclusao(impl)).toLocaleDateString('pt-BR')
-                        : '—'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={cn('text-xs', statusColors[impl.status])}>
-                        {impl.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setEditId(impl.id)
-                            setEditOpen(true)
-                          }}
+                filtered.map((impl) => {
+                  const tipoKey = impl.tipo || 'novo_cliente'
+                  const TipoIcon = TIPO_ICONS[tipoKey] || Rocket
+                  const tipoCfg = TIPO_CONFIG[tipoKey]
+                  return (
+                    <TableRow key={impl.id} className="hover:bg-slate-50/80">
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className={cn('p-1.5 rounded-full', tipoCfg?.color)}>
+                            <TipoIcon className="h-3 w-3" />
+                          </div>
+                          <div>
+                            <div className="font-medium">{impl.clientes?.nome || 'N/A'}</div>
+                            <Badge
+                              variant="outline"
+                              className={cn('text-[9px] mt-0.5', tipoCfg?.color)}
+                            >
+                              {tipoCfg?.label || 'Novo Cliente'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{impl.colaboradores?.nome || 'Não atribuído'}</TableCell>
+                      <TableCell className="text-sm text-slate-600">
+                        {getEtapaAtual(impl)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 min-w-[120px]">
+                          <Progress value={impl.progresso || 0} className="h-2" />
+                          <span className="text-xs font-medium text-slate-600 w-8">
+                            {impl.progresso || 0}%
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-slate-600">
+                        {getPrevisaoConclusao(impl)
+                          ? new Date(getPrevisaoConclusao(impl)).toLocaleDateString('pt-BR')
+                          : '—'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={cn('text-xs', statusColors[impl.status])}
                         >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" asChild>
-                          <Link to={`/implementacoes/${impl.id}`}>
-                            <Eye className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                          {impl.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setEditId(impl.id)
+                              setEditOpen(true)
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link to={`/implementacoes/${impl.id}`}>
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
               )}
             </TableBody>
           </Table>
@@ -271,6 +347,11 @@ export default function ImplementacoesPage() {
         onOpenChange={setEditOpen}
         implementacaoId={editId}
         onSaved={loadImplementacoes}
+      />
+      <ImplementacaoCreateDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={loadImplementacoes}
       />
     </div>
   )

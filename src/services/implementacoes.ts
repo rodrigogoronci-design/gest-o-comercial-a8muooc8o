@@ -1,47 +1,6 @@
 import { supabase } from '@/lib/supabase/client'
-
-const STANDARD_ETAPAS = [
-  { titulo: 'Handover Comercial', categoria: 'Pré-Implantação', ordem: 1, semana: 0 },
-  { titulo: 'Kick-off', categoria: 'Pré-Implantação', ordem: 2, semana: 0 },
-  { titulo: 'Parametrização do Sistema', categoria: 'Implantação Inicial', ordem: 3, semana: 0 },
-  { titulo: 'Treinamento: Administração', categoria: 'Ciclo de Treinamentos', ordem: 4, semana: 1 },
-  { titulo: 'Treinamento: Comercial', categoria: 'Ciclo de Treinamentos', ordem: 5, semana: 1 },
-  { titulo: 'Treinamento: Faturamento', categoria: 'Ciclo de Treinamentos', ordem: 6, semana: 2 },
-  { titulo: 'Treinamento: Financeiro', categoria: 'Ciclo de Treinamentos', ordem: 7, semana: 2 },
-  { titulo: 'Treinamento: Carga', categoria: 'Ciclo de Treinamentos', ordem: 8, semana: 2 },
-  {
-    titulo: 'Operação Assistida: Semana 1',
-    categoria: 'Implantação Operacional',
-    ordem: 9,
-    semana: 3,
-  },
-  {
-    titulo: 'Operação Assistida: Semana 2',
-    categoria: 'Implantação Operacional',
-    ordem: 10,
-    semana: 4,
-  },
-  {
-    titulo: 'Operação Assistida: Semana 3',
-    categoria: 'Implantação Operacional',
-    ordem: 11,
-    semana: 5,
-  },
-  {
-    titulo: 'Operação Assistida: Semana 4',
-    categoria: 'Implantação Operacional',
-    ordem: 12,
-    semana: 6,
-  },
-  { titulo: 'Termo de Encerramento', categoria: 'Encerramento', ordem: 13, semana: 7 },
-  { titulo: 'Transição para Suporte', categoria: 'Encerramento', ordem: 14, semana: 7 },
-]
-
-function addWeeks(weeks: number): string {
-  const d = new Date()
-  d.setDate(d.getDate() + weeks * 7)
-  return d.toISOString().split('T')[0]
-}
+import { getEtapasForTipo, addWeeks } from '@/lib/implantacao-config'
+import { parseModulosToList } from '@/lib/modules-parser'
 
 export const getImplementacoes = async () => {
   const { data, error } = await supabase
@@ -58,7 +17,7 @@ export const getImplementacao = async (id: string) => {
   const { data, error } = await supabase
     .from('implementacoes' as any)
     .select(
-      '*, clientes(nome, cnpj, modulos, modo_implantacao, filiais_detalhes, quantidade_filiais, cobrar_filiais, planos_saude(descricao, codigo)), colaboradores(nome), implementacao_etapas(*), crm_propostas(itens, quantidade_filiais, filiais_detalhes, cobrar_filiais)',
+      '*, clientes(nome, cnpj, modulos, modo_implantacao, filiais_detalhes, quantidade_filiais, cobrar_filiais, planos_saude(descricao, codigo)), colaboradores(nome), implementacao_etapas(*), crm_propostas(itens, quantidade_filiais, filiais_detalhes, cobrar_filiais), solicitacoes_servico(id, tipo, descricao, status)',
     )
     .eq('id', id)
     .single()
@@ -85,7 +44,14 @@ export const createImplementacao = async (params: {
   cliente_id: string
   contrato_id?: string | null
   responsavel_id?: string | null
+  tipo?: 'novo_cliente' | 'inclusao_modulo' | 'treinamento'
+  solicitacao_id?: string | null
+  modulos_novos?: string[]
+  treinamento_motivo?: string | null
+  treinamento_topicos?: string | null
+  treinamento_data?: string | null
 }) => {
+  const tipo = params.tipo || 'novo_cliente'
   const { data, error } = await supabase
     .from('implementacoes' as any)
     .insert({
@@ -94,12 +60,19 @@ export const createImplementacao = async (params: {
       responsavel_id: params.responsavel_id || null,
       status: 'Em andamento',
       progresso: 0,
+      tipo,
+      solicitacao_id: params.solicitacao_id || null,
+      modulos_novos: params.modulos_novos || [],
+      treinamento_motivo: params.treinamento_motivo || null,
+      treinamento_topicos: params.treinamento_topicos || null,
+      treinamento_data: params.treinamento_data || null,
     })
     .select()
     .single()
   if (error) throw error
 
-  const etapas = STANDARD_ETAPAS.map((e) => ({
+  const etapasTemplate = getEtapasForTipo(tipo)
+  const etapas = etapasTemplate.map((e) => ({
     implementacao_id: data.id,
     titulo: e.titulo,
     categoria: e.categoria,
@@ -139,9 +112,7 @@ export const updateEtapa = async (id: string, etapa: any) => {
     .select()
     .single()
   if (error) throw error
-  if (data?.implementacao_id) {
-    await recalcProgress(data.implementacao_id)
-  }
+  if (data?.implementacao_id) await recalcProgress(data.implementacao_id)
   return data
 }
 
@@ -168,6 +139,29 @@ export const updateClienteModulos = async (clienteId: string, modulos: string[])
     .single()
   if (error) throw error
   return data
+}
+
+export const syncModulosToCliente = async (implementacaoId: string) => {
+  const { data: impl, error: implError } = await supabase
+    .from('implementacoes' as any)
+    .select('modulos_novos, cliente_id')
+    .eq('id', implementacaoId)
+    .single()
+  if (implError) throw implError
+  if (!impl.cliente_id) throw new Error('Implementação sem cliente vinculado')
+
+  const { data: cliente, error: clienteError } = await supabase
+    .from('clientes')
+    .select('modulos')
+    .eq('id', impl.cliente_id)
+    .single()
+  if (clienteError) throw clienteError
+
+  const currentModulos = parseModulosToList(cliente.modulos)
+  const novosModulos = (impl.modulos_novos || []) as string[]
+  const merged = Array.from(new Set([...currentModulos, ...novosModulos]))
+  await updateClienteModulos(impl.cliente_id, merged)
+  return merged
 }
 
 export const batchUpdateEtapas = async (
@@ -201,6 +195,16 @@ export const getColaboradores = async () => {
     .select('id, nome')
     .eq('status', 'Ativo')
     .order('nome')
+  if (error) throw error
+  return data
+}
+
+export const getSolicitacoes = async () => {
+  const { data, error } = await supabase
+    .from('solicitacoes_servico' as any)
+    .select('id, tipo, descricao, status, data_solicitacao, clientes(nome)')
+    .order('created_at', { ascending: false })
+    .limit(50)
   if (error) throw error
   return data
 }

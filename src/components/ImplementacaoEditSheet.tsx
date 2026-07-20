@@ -135,6 +135,20 @@ export function ImplementacaoEditSheet({ open, onOpenChange, implementacaoId, on
               <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
                 Detalhes da Implementação
               </h3>
+              <div className="space-y-2">
+                <Label>Tipo de Implementação</Label>
+                <Input
+                  value={
+                    impl?.tipo === 'inclusao_modulo'
+                      ? 'Inclusão de Módulo'
+                      : impl?.tipo === 'treinamento'
+                        ? 'Treinamento'
+                        : 'Novo Cliente'
+                  }
+                  disabled
+                  className="bg-slate-50"
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Status</Label>
