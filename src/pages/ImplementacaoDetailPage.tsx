@@ -59,14 +59,6 @@ const STATUS_CONFIG: Record<string, { color: string; icon: any }> = {
   Atrasada: { color: 'bg-red-50 text-red-700 border-red-200', icon: AlertCircle },
 }
 
-const CATEGORIA_ORDER = [
-  'Pré-Implantação',
-  'Implantação Inicial',
-  'Ciclo de Treinamentos',
-  'Implantação Operacional',
-  'Encerramento',
-]
-
 const STATUS_OPTIONS = ['Não iniciada', 'Agendada', 'Em andamento', 'Concluída', 'Atrasada']
 
 const TIPO_CONFIG: Record<string, { label: string; color: string }> = {
