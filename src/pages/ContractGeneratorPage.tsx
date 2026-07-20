@@ -176,6 +176,7 @@ export default function ContractGeneratorPage() {
         display: none !important;
       }
       
+      @page { size: A4; margin: 10mm; }
       @media print {
         * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
         *::-webkit-scrollbar { display: none !important; }
@@ -184,6 +185,11 @@ export default function ContractGeneratorPage() {
         [data-sidebar-wrapper], [data-sidebar-container], [data-sidebar-inset] { display: none !important; }
         body, html { background-color: white !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
         main { margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; overflow: visible !important; }
+        #quote-proposal-print { box-shadow: none !important; max-width: 100% !important; width: 100% !important; padding: 0 !important; margin: 0 auto !important; }
+        #quote-proposal-print > div { page-break-inside: avoid; }
+        table { page-break-inside: auto; }
+        tr { page-break-inside: avoid; page-break-after: auto; }
+        thead { display: table-header-group; }
       }
     `
     document.head.appendChild(style)
@@ -820,6 +826,8 @@ export default function ContractGeneratorPage() {
     moduleGracePeriods,
     totalValueStandard,
     prazosConcedidos,
+    isGratuito: isTreinamentoGratuito,
+    tipoCobranca: 'mensal',
   }
 
   const fetchCnpjData = async (cnpjValue: string) => {

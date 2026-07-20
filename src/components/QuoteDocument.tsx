@@ -51,6 +51,8 @@ interface QuoteDocumentProps {
   branchesAnnualPrice?: number
   totalAnual?: number
   filiaisDfe?: { id?: string; cnpj?: string; nome?: string }[]
+  isGratuito?: boolean
+  tipoCobranca?: string
 }
 
 const FEATURE_CATEGORIES = [
@@ -140,13 +142,15 @@ export function QuoteDocument({
   branchesAnnualPrice = 0,
   totalAnual = 0,
   filiaisDfe = [],
+  isGratuito = false,
+  tipoCobranca = 'mensal',
 }: QuoteDocumentProps) {
   const showBasePlan =
     planName && planName !== 'Nenhum' && planName !== 'Nenhum (Somente Módulos / Upsell)'
 
   return (
     <div
-      className="bg-white w-full max-w-[210mm] mx-auto p-4 md:p-6 print:m-0 print:p-2 text-slate-800 text-xs shadow-sm print:shadow-none font-sans print:max-w-[186mm] print:w-[186mm] overflow-hidden print:overflow-visible"
+      className="bg-white w-full max-w-[210mm] mx-auto p-4 md:p-6 print:m-0 print:p-0 text-slate-800 text-xs shadow-sm print:shadow-none font-sans print:max-w-[190mm] print:w-[190mm] overflow-hidden print:overflow-visible"
       id="quote-proposal-print"
     >
       {/* Header */}
@@ -165,9 +169,16 @@ export function QuoteDocument({
       {/* Title & Client Info */}
       <div className="flex justify-between items-end border-b-2 border-orange-500 pb-1.5 mb-2">
         <div>
-          <h1 className="text-lg font-bold uppercase tracking-wider text-[#1e3a8a]">
-            {isUpsell ? 'Proposta Comercial - Upsell' : 'Proposta Comercial'}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-bold uppercase tracking-wider text-[#1e3a8a]">
+              {isUpsell ? 'Proposta Comercial - Upsell' : 'Proposta Comercial'}
+            </h1>
+            {isGratuito && (
+              <span className="text-[9px] font-bold uppercase bg-emerald-500 text-white px-2 py-0.5 rounded-full tracking-wide">
+                Gratuito
+              </span>
+            )}
+          </div>
           <p className="text-xs font-semibold text-slate-600 mt-0.5">
             {showBasePlan ? planName : 'Adição de Módulos e Serviços'}
           </p>
@@ -529,14 +540,33 @@ export function QuoteDocument({
         </div>
       </div>
 
-      {prazosConcedidos && (
-        <div className="mb-3">
+      {(prazosConcedidos || isencaoPeriodo > 0 || tipoCobranca || isGratuito) && (
+        <div className="mb-3 print:break-inside-avoid">
           <h3 className="font-bold text-xs text-[#1e3a8a] mb-1.5 flex items-center gap-1.5">
             <div className="w-1.5 h-3 bg-orange-500 rounded-full" />
-            Condições Especiais / Prazos Concedidos
+            Termos e Condições
           </h3>
-          <div className="bg-slate-50 p-2.5 rounded border border-slate-200 text-xs text-slate-700 text-justify">
-            {prazosConcedidos}
+          <div className="bg-slate-50 p-2.5 rounded border border-slate-200 text-xs text-slate-700 space-y-1.5">
+            {prazosConcedidos && (
+              <p className="text-justify">
+                <strong>Prazos Concedidos:</strong> {prazosConcedidos}
+              </p>
+            )}
+            {isencaoPeriodo > 0 && (
+              <p>
+                <strong>Período de Isenção:</strong> {isencaoPeriodo} mês(es) de isenção na
+                mensalidade.
+              </p>
+            )}
+            <p>
+              <strong>Ciclo de Cobrança:</strong> {tipoCobranca === 'anual' ? 'Anual' : 'Mensal'}
+            </p>
+            {isGratuito && (
+              <p className="text-emerald-600 font-semibold">
+                <strong>Observação:</strong> Esta proposta é gratuita, com 100% de desconto aplicado
+                sobre os valores recorrentes.
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -582,11 +612,27 @@ export function QuoteDocument({
               </div>
               <div className="flex justify-between items-center text-slate-600">
                 <span>Valor dos Adicionais (Upsell Mensal)</span>
-                <span className="font-medium">{formatCurrency(totalValue)}</span>
+                <span className="font-medium">
+                  {isGratuito ? (
+                    <span className="text-emerald-600 font-bold">Gratuito</span>
+                  ) : (
+                    formatCurrency(totalValue)
+                  )}
+                </span>
               </div>
+              {isGratuito && (
+                <div className="flex justify-between items-center text-emerald-600 font-bold bg-emerald-50 -mx-2.5 px-2.5 py-1 rounded">
+                  <span>Proposta Gratuita (100% Desconto)</span>
+                  <span>{formatCurrency(0)}</span>
+                </div>
+              )}
               <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
                 <span>Nova Mensalidade</span>
-                <span>{formatCurrency((currentClientValue || 0) + totalValue)}</span>
+                <span>
+                  {formatCurrency(
+                    isGratuito ? currentClientValue || 0 : (currentClientValue || 0) + totalValue,
+                  )}
+                </span>
               </div>
 
               {totalAnual! > 0 && (
@@ -669,9 +715,15 @@ export function QuoteDocument({
                   </span>
                 </div>
               )}
+              {isGratuito && (
+                <div className="flex justify-between items-center text-emerald-600 font-bold bg-emerald-50 -mx-2.5 px-2.5 py-1 rounded">
+                  <span>Proposta Gratuita (100% Desconto)</span>
+                  <span>{formatCurrency(0)}</span>
+                </div>
+              )}
               <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
                 <span>Total Mensal Final</span>
-                <span>{formatCurrency(totalValue)}</span>
+                <span>{formatCurrency(isGratuito ? 0 : totalValue)}</span>
               </div>
 
               {totalAnual! > 0 && (

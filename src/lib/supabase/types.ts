@@ -388,6 +388,7 @@ export type Database = {
           created_at: string
           data_atendimento: string
           documento_url: string | null
+          enviado_implantacao: boolean
           id: string
           relatorio: string
           solicitacao: string
@@ -397,6 +398,7 @@ export type Database = {
           created_at?: string
           data_atendimento: string
           documento_url?: string | null
+          enviado_implantacao?: boolean
           id?: string
           relatorio: string
           solicitacao: string
@@ -406,6 +408,7 @@ export type Database = {
           created_at?: string
           data_atendimento?: string
           documento_url?: string | null
+          enviado_implantacao?: boolean
           id?: string
           relatorio?: string
           solicitacao?: string
@@ -1932,6 +1935,7 @@ export type Database = {
       }
       implementacoes: {
         Row: {
+          atendimento_id: string | null
           cliente_id: string | null
           contrato_id: string | null
           created_at: string
@@ -1947,6 +1951,7 @@ export type Database = {
           treinamento_topicos: string | null
         }
         Insert: {
+          atendimento_id?: string | null
           cliente_id?: string | null
           contrato_id?: string | null
           created_at?: string
@@ -1962,6 +1967,7 @@ export type Database = {
           treinamento_topicos?: string | null
         }
         Update: {
+          atendimento_id?: string | null
           cliente_id?: string | null
           contrato_id?: string | null
           created_at?: string
@@ -1977,6 +1983,13 @@ export type Database = {
           treinamento_topicos?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: 'implementacoes_atendimento_id_fkey'
+            columns: ['atendimento_id']
+            isOneToOne: false
+            referencedRelation: 'atendimentos_clientes'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'implementacoes_cliente_id_fkey'
             columns: ['cliente_id']
