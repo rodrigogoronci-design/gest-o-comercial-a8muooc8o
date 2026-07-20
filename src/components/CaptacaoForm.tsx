@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/form'
 import { supabase } from '@/lib/supabase/client'
 import { fetchCnpjData } from '@/services/cnpj'
+import { fetchCpfData } from '@/services/cpf'
 import { formatCNPJ, formatCPF, isValidCNPJ, isValidCPF, composeEndereco } from '@/lib/cpf-utils'
 import { useToast } from '@/hooks/use-toast'
 
@@ -113,26 +114,86 @@ const defaultPF: CaptacaoFormValues = {
 export function CaptacaoForm({
   onSubmit,
   isSubmitting,
+  defaultTipoPessoa = 'PJ',
+  initialData,
 }: {
   onSubmit: (v: CaptacaoFormValues) => void
   isSubmitting?: boolean
+  defaultTipoPessoa?: 'PJ' | 'PF'
+  initialData?: Partial<CaptacaoFormValues>
 }) {
-  const [tipoPessoa, setTipoPessoa] = useState<'PJ' | 'PF'>('PJ')
+  const [tipoPessoa, setTipoPessoa] = useState<'PJ' | 'PF'>(
+    initialData?.tipo_pessoa || defaultTipoPessoa,
+  )
   const [isLoadingCnpj, setIsLoadingCnpj] = useState(false)
+  const [isLoadingCpf, setIsLoadingCpf] = useState(false)
+  const isFirstRender = useRef(true)
   const { toast } = useToast()
 
   const form = useForm<CaptacaoFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: defaultPJ,
+    defaultValues: initialData
+      ? ({ ...(initialData.tipo_pessoa === 'PJ' ? defaultPJ : defaultPF), ...initialData } as any)
+      : defaultTipoPessoa === 'PJ'
+        ? defaultPJ
+        : defaultPF,
   })
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      if (initialData) return
+    }
     if (tipoPessoa === 'PJ') {
       form.reset(defaultPJ)
     } else {
       form.reset(defaultPF)
     }
-  }, [tipoPessoa, form])
+  }, [tipoPessoa, form, initialData])
+
+  const handleCpfBlur = async (val: string) => {
+    const cleaned = val.replace(/\D/g, '')
+    if (cleaned.length !== 11) return
+    if (!isValidCPF(val)) {
+      toast({ title: 'CPF inválido', variant: 'destructive' })
+      return
+    }
+    setIsLoadingCpf(true)
+    try {
+      const { data: existing } = await supabase
+        .from('crm_prospects')
+        .select('id')
+        .eq('cpf', val)
+        .maybeSingle()
+      if (existing) {
+        toast({
+          title: 'CPF já cadastrado',
+          description: 'Já existe um prospect com este CPF.',
+          variant: 'destructive',
+        })
+        return
+      }
+
+      const { data: cpfData, error } = await fetchCpfData(cleaned)
+      if (cpfData) {
+        if (cpfData.nome) {
+          form.setValue('contato_nome', cpfData.nome)
+          form.setValue('empresa', cpfData.nome)
+        }
+        if (cpfData.nome_mae) form.setValue('nome_mae', cpfData.nome_mae)
+        if (cpfData.nome_pai) form.setValue('nome_pai', cpfData.nome_pai)
+        if (cpfData.data_nascimento) form.setValue('data_nascimento', cpfData.data_nascimento)
+        if (cpfData.endereco) form.setValue('logradouro', cpfData.endereco)
+        toast({ title: 'Dados preenchidos', description: 'Dados obtidos com sucesso.' })
+      } else if (error) {
+        toast({ title: 'Aviso', description: error })
+      }
+    } catch {
+      toast({ title: 'Erro na consulta CPF', variant: 'destructive' })
+    } finally {
+      setIsLoadingCpf(false)
+    }
+  }
 
   const handleCnpjBlur = async (val: string) => {
     const cleaned = val.replace(/\D/g, '')
@@ -320,12 +381,18 @@ export function CaptacaoForm({
                     <FormItem>
                       <FormLabel>CPF</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="000.000.000-00"
-                          maxLength={14}
-                          value={field.value || ''}
-                          onChange={(e) => field.onChange(formatCPF(e.target.value))}
-                        />
+                        <div className="relative">
+                          <Input
+                            placeholder="000.000.000-00"
+                            maxLength={14}
+                            value={field.value || ''}
+                            onChange={(e) => field.onChange(formatCPF(e.target.value))}
+                            onBlur={(e) => handleCpfBlur(e.target.value)}
+                          />
+                          {isLoadingCpf && (
+                            <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+                          )}
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

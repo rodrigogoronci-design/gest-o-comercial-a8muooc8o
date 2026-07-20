@@ -21,7 +21,8 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase/client'
-import { CrmProspectForm, ProspectFormValues } from '@/components/CrmProspectForm'
+import { CaptacaoForm, CaptacaoFormValues } from '@/components/CaptacaoForm'
+import { composeEndereco } from '@/lib/cpf-utils'
 import { cn } from '@/lib/utils'
 
 interface CaptacaoProspect {
@@ -64,24 +65,39 @@ export default function CaptacaoPage() {
     fetchProspects()
   }, [])
 
-  const onSubmit = async (values: ProspectFormValues) => {
+  const onSubmit = async (values: CaptacaoFormValues) => {
     setIsSubmitting(true)
+
+    const enderecoComposto =
+      values.tipo_pessoa === 'PF'
+        ? composeEndereco({
+            logradouro: values.logradouro,
+            numero: values.numero,
+            complemento: values.complemento,
+            bairro: values.bairro,
+            cidade: values.cidade,
+            estado: values.estado,
+            cep: values.cep,
+          })
+        : undefined
+
     const { error } = await supabase.from('crm_prospects').insert([
       {
-        tipo_pessoa: 'PF',
-        cpf: values.cpf || null,
+        tipo_pessoa: values.tipo_pessoa,
+        cpf: values.tipo_pessoa === 'PF' ? values.cpf || null : null,
+        cnpj: values.tipo_pessoa === 'PJ' ? values.cnpj || null : null,
+        razao_social: values.tipo_pessoa === 'PJ' ? values.razao_social || null : null,
         empresa: values.empresa,
-        endereco: values.endereco || null,
+        endereco: enderecoComposto || values.logradouro || null,
         contato_nome: values.contato_nome,
         telefone: values.telefone || null,
         email: values.email || null,
-        status: values.status,
+        status: 'Novo Lead',
         classificacao: values.classificacao || 'Frio',
-        data_followup: values.data_followup || null,
         observacoes: values.observacoes || null,
-        nome_mae: values.nome_mae || null,
-        nome_pai: values.nome_pai || null,
-        data_nascimento: values.data_nascimento || null,
+        nome_mae: values.tipo_pessoa === 'PF' ? values.nome_mae || null : null,
+        nome_pai: values.tipo_pessoa === 'PF' ? values.nome_pai || null : null,
+        data_nascimento: values.tipo_pessoa === 'PF' ? values.data_nascimento || null : null,
       },
     ])
     setIsSubmitting(false)
@@ -92,25 +108,40 @@ export default function CaptacaoPage() {
     fetchProspects()
   }
 
-  const onEditSubmit = async (values: ProspectFormValues) => {
+  const onEditSubmit = async (values: CaptacaoFormValues) => {
     if (!editingProspect) return
     setIsSubmitting(true)
+
+    const enderecoComposto =
+      values.tipo_pessoa === 'PF'
+        ? composeEndereco({
+            logradouro: values.logradouro,
+            numero: values.numero,
+            complemento: values.complemento,
+            bairro: values.bairro,
+            cidade: values.cidade,
+            estado: values.estado,
+            cep: values.cep,
+          })
+        : undefined
+
     const { error } = await supabase
       .from('crm_prospects')
       .update({
-        cpf: values.cpf || null,
+        tipo_pessoa: values.tipo_pessoa,
+        cpf: values.tipo_pessoa === 'PF' ? values.cpf || null : null,
+        cnpj: values.tipo_pessoa === 'PJ' ? values.cnpj || null : null,
+        razao_social: values.tipo_pessoa === 'PJ' ? values.razao_social || null : null,
         empresa: values.empresa,
-        endereco: values.endereco || null,
+        endereco: enderecoComposto || values.logradouro || editingProspect.endereco || null,
         contato_nome: values.contato_nome,
         telefone: values.telefone || null,
         email: values.email || null,
-        status: values.status,
         classificacao: values.classificacao || 'Frio',
-        data_followup: values.data_followup || null,
         observacoes: values.observacoes || null,
-        nome_mae: values.nome_mae || null,
-        nome_pai: values.nome_pai || null,
-        data_nascimento: values.data_nascimento || null,
+        nome_mae: values.tipo_pessoa === 'PF' ? values.nome_mae || null : null,
+        nome_pai: values.tipo_pessoa === 'PF' ? values.nome_pai || null : null,
+        data_nascimento: values.tipo_pessoa === 'PF' ? values.data_nascimento || null : null,
         ultima_interacao: new Date().toISOString(),
       })
       .eq('id', editingProspect.id)
@@ -169,11 +200,7 @@ export default function CaptacaoPage() {
               <DialogTitle>Novo Lead (Pessoa Física)</DialogTitle>
               <DialogDescription>Digite o CPF para preenchimento automático.</DialogDescription>
             </DialogHeader>
-            <CrmProspectForm
-              onSubmit={onSubmit}
-              isSubmitting={isSubmitting}
-              defaultTipoPessoa="PF"
-            />
+            <CaptacaoForm onSubmit={onSubmit} isSubmitting={isSubmitting} defaultTipoPessoa="PF" />
           </DialogContent>
         </Dialog>
       </div>
@@ -295,7 +322,7 @@ export default function CaptacaoPage() {
             <DialogDescription>Atualize as informações do lead.</DialogDescription>
           </DialogHeader>
           {editingProspect && (
-            <CrmProspectForm
+            <CaptacaoForm
               onSubmit={onEditSubmit}
               isSubmitting={isSubmitting}
               defaultTipoPessoa="PF"
@@ -303,12 +330,12 @@ export default function CaptacaoPage() {
                 tipo_pessoa: 'PF',
                 cpf: editingProspect.cpf || '',
                 empresa: editingProspect.empresa,
-                endereco: editingProspect.endereco || '',
+                logradouro: editingProspect.endereco || '',
                 contato_nome: editingProspect.contato_nome,
                 telefone: editingProspect.telefone || '',
                 email: editingProspect.email || '',
-                status: editingProspect.status,
                 classificacao: editingProspect.classificacao || 'Frio',
+                observacoes: editingProspect.observacoes || '',
                 nome_mae: editingProspect.nome_mae || '',
                 nome_pai: editingProspect.nome_pai || '',
                 data_nascimento: editingProspect.data_nascimento || '',
