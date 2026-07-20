@@ -1936,27 +1936,45 @@ export type Database = {
           contrato_id: string | null
           created_at: string
           id: string
+          modulos_novos: Json | null
           progresso: number
           responsavel_id: string | null
+          solicitacao_id: string | null
           status: string
+          tipo: string
+          treinamento_data: string | null
+          treinamento_motivo: string | null
+          treinamento_topicos: string | null
         }
         Insert: {
           cliente_id?: string | null
           contrato_id?: string | null
           created_at?: string
           id?: string
+          modulos_novos?: Json | null
           progresso?: number
           responsavel_id?: string | null
+          solicitacao_id?: string | null
           status?: string
+          tipo?: string
+          treinamento_data?: string | null
+          treinamento_motivo?: string | null
+          treinamento_topicos?: string | null
         }
         Update: {
           cliente_id?: string | null
           contrato_id?: string | null
           created_at?: string
           id?: string
+          modulos_novos?: Json | null
           progresso?: number
           responsavel_id?: string | null
+          solicitacao_id?: string | null
           status?: string
+          tipo?: string
+          treinamento_data?: string | null
+          treinamento_motivo?: string | null
+          treinamento_topicos?: string | null
         }
         Relationships: [
           {
@@ -1978,6 +1996,13 @@ export type Database = {
             columns: ['responsavel_id']
             isOneToOne: false
             referencedRelation: 'colaboradores'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'implementacoes_solicitacao_id_fkey'
+            columns: ['solicitacao_id']
+            isOneToOne: false
+            referencedRelation: 'solicitacoes_servico'
             referencedColumns: ['id']
           },
         ]

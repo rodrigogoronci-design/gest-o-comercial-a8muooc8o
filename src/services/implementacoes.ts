@@ -208,3 +208,54 @@ export const getSolicitacoes = async () => {
   if (error) throw error
   return data
 }
+
+export const createImplementacaoFromAtendimento = async (params: {
+  atendimento_id: string
+  cliente_id: string
+  tipo: 'novo_cliente' | 'inclusao_modulo' | 'treinamento'
+  responsavel_id?: string | null
+  modulos_novos?: string[]
+  treinamento_motivo?: string | null
+  treinamento_topicos?: string | null
+  treinamento_data?: string | null
+}) => {
+  const { data, error } = await supabase
+    .from('implementacoes' as any)
+    .insert({
+      atendimento_id: params.atendimento_id,
+      cliente_id: params.cliente_id,
+      responsavel_id: params.responsavel_id || null,
+      status: 'Em andamento',
+      progresso: 0,
+      tipo: params.tipo,
+      modulos_novos: params.modulos_novos || [],
+      treinamento_motivo: params.treinamento_motivo || null,
+      treinamento_topicos: params.treinamento_topicos || null,
+      treinamento_data: params.treinamento_data || null,
+    })
+    .select()
+    .single()
+  if (error) throw error
+
+  const etapasTemplate = getEtapasForTipo(params.tipo)
+  const etapas = etapasTemplate.map((e) => ({
+    implementacao_id: data.id,
+    titulo: e.titulo,
+    categoria: e.categoria,
+    ordem: e.ordem,
+    status: 'Não iniciada',
+    data_prevista: addWeeks(e.semana),
+    responsavel_id: params.responsavel_id || null,
+  }))
+
+  const { error: etapasError } = await supabase.from('implementacao_etapas' as any).insert(etapas)
+  if (etapasError) throw etapasError
+
+  const { error: updateError } = await supabase
+    .from('atendimentos_clientes')
+    .update({ enviado_implantacao: true })
+    .eq('id', params.atendimento_id)
+  if (updateError) throw updateError
+
+  return data
+}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   Loader2,
   Plus,
@@ -8,9 +9,12 @@ import {
   Trash2,
   ChevronRight,
   Paperclip,
+  Rocket,
+  CheckCircle2,
 } from 'lucide-react'
 import { AtendimentoFormDialog } from '@/components/AtendimentoFormDialog'
 import { AtendimentoDetailDialog } from '@/components/AtendimentoDetailDialog'
+import { EnviarImplantacaoFromAtendimentoDialog } from '@/components/EnviarImplantacaoFromAtendimentoDialog'
 import {
   getAtendimentosByCliente,
   deleteAtendimento,
@@ -30,6 +34,8 @@ export function ClientAtendimentosTab({ clienteId, clientName }: ClientAtendimen
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedAtendimento, setSelectedAtendimento] = useState<Atendimento | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
+  const [implantacaoAtendimento, setImplantacaoAtendimento] = useState<Atendimento | null>(null)
+  const [isImplantacaoOpen, setIsImplantacaoOpen] = useState(false)
 
   const loadAtendimentos = useCallback(async () => {
     setIsLoading(true)
@@ -63,6 +69,11 @@ export function ClientAtendimentosTab({ clienteId, clientName }: ClientAtendimen
     setIsDetailOpen(true)
   }
 
+  const handleOpenImplantacao = (atendimento: Atendimento) => {
+    setImplantacaoAtendimento(atendimento)
+    setIsImplantacaoOpen(true)
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -92,6 +103,14 @@ export function ClientAtendimentosTab({ clienteId, clientName }: ClientAtendimen
         open={isDetailOpen}
         onOpenChange={setIsDetailOpen}
         atendimento={selectedAtendimento}
+      />
+
+      <EnviarImplantacaoFromAtendimentoDialog
+        open={isImplantacaoOpen}
+        onOpenChange={setIsImplantacaoOpen}
+        atendimento={implantacaoAtendimento}
+        clienteId={clienteId}
+        onSent={loadAtendimentos}
       />
 
       {isLoading ? (
@@ -131,7 +150,27 @@ export function ClientAtendimentosTab({ clienteId, clientName }: ClientAtendimen
                   aria-label="Possui documento anexo"
                 />
               )}
+              {atendimento.enviado_implantacao && (
+                <Badge
+                  variant="secondary"
+                  className="bg-emerald-50 text-emerald-700 border-emerald-200 shrink-0"
+                >
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Enviado
+                </Badge>
+              )}
               <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-slate-400 shrink-0" />
+              {!atendimento.enviado_implantacao && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 shrink-0"
+                  onClick={() => handleOpenImplantacao(atendimento)}
+                >
+                  <Rocket className="h-3.5 w-3.5 mr-1" />
+                  Enviar para Implantação
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="icon"

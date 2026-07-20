@@ -8,6 +8,7 @@ export interface Atendimento {
   relatorio: string
   created_at: string
   documento_url: string | null
+  enviado_implantacao?: boolean
 }
 
 export interface AtendimentoInput {
