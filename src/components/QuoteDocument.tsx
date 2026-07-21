@@ -45,6 +45,8 @@ const SUB_FEATURES: Record<string, string[]> = {
   ],
 }
 
+const TMS30_ALLOWED_MODULE_IDS = ['mod-admin', 'mod-basico', 'mod-carga', 'mod-comercial']
+
 export function QuoteDocument(props: QuoteDocumentProps) {
   const {
     empresa = '',
@@ -58,6 +60,7 @@ export function QuoteDocument(props: QuoteDocumentProps) {
     showBasePlan = true,
     isUpsell = false,
     isGratuito = false,
+    currentClientValue = 0,
     items = [],
     discountValue = 0,
     discountType = 'valor',
@@ -75,10 +78,26 @@ export function QuoteDocument(props: QuoteDocumentProps) {
     items: SUB_FEATURES[name] || [],
   }))
 
-  const recurrentItems = items.filter(
-    (i) => i.id !== 'impl-details' && i.type !== 'training' && !i.isFree,
+  const safeItems = isTms30
+    ? items.filter((i) => {
+        if (
+          i.type === 'plan' ||
+          i.id === 'impl-details' ||
+          i.type === 'training' ||
+          i.type === 'one-time'
+        )
+          return true
+        if (i.id?.startsWith('mod-') && !TMS30_ALLOWED_MODULE_IDS.includes(i.id)) return false
+        return true
+      })
+    : items
+
+  const recurrentItems = safeItems.filter(
+    (i) => i.id !== 'impl-details' && i.type !== 'training' && i.type !== 'one-time' && !i.isFree,
   )
-  const oneTimeItems = items.filter((i) => i.id === 'impl-details' || i.type === 'training')
+  const oneTimeItems = safeItems.filter(
+    (i) => i.id === 'impl-details' || i.type === 'training' || i.type === 'one-time',
+  )
   const implItem = oneTimeItems.find((i) => i.id === 'impl-details')
   const implMode = implItem?.modo || 'Remoto'
 
@@ -86,12 +105,17 @@ export function QuoteDocument(props: QuoteDocumentProps) {
   const discountAmount =
     discountType === 'valor' ? discountValue : (totalRecorrenteBase * discountValue) / 100
   const totalRecorrenteFinal = Math.max(0, totalRecorrenteBase - discountAmount)
-
   const totalOneTime = oneTimeItems.reduce((acc, curr) => acc + (curr.price || 0), 0)
 
+  const isAnnual = planBilling === 'anual'
+  const cycleLabel = isAnnual ? 'Anual' : 'Mensal'
+  const effectivePlanPrice = isAnnual ? planAnnualPrice || 0 : planPrice
+
   return (
-    <div className="bg-white text-slate-900 p-8 max-w-4xl mx-auto text-sm print:p-0 print:m-0 print:max-w-none font-sans">
-      {/* Header */}
+    <div
+      id="quote-proposal-print"
+      className="bg-white text-slate-900 p-8 max-w-4xl mx-auto text-sm print:p-0 print:m-0 print:max-w-none font-sans"
+    >
       <div className="flex justify-between items-start mb-6">
         <div className="flex items-center gap-3">
           <img src={logoUrl} alt="Logo" className="h-12 w-auto object-contain" />
@@ -118,7 +142,7 @@ export function QuoteDocument(props: QuoteDocumentProps) {
         </h1>
         <div className="flex justify-between items-end">
           <p className="text-sm font-semibold text-slate-700">
-            {showBasePlan ? planName : 'Adição de Módulos e Serviços'}
+            {showBasePlan && !isUpsell ? planName : 'Adição de Módulos e Serviços'}
             {isGratuito && (
               <span className="ml-2 text-[9px] font-bold uppercase bg-emerald-500 text-white px-2 py-0.5 rounded-full tracking-wide">
                 Gratuito
@@ -131,7 +155,6 @@ export function QuoteDocument(props: QuoteDocumentProps) {
         </div>
       </div>
 
-      {/* Client Info */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="bg-white p-3 rounded border border-slate-200">
           <span className="block text-[10px] text-slate-500 mb-1">Empresa</span>
@@ -148,7 +171,6 @@ export function QuoteDocument(props: QuoteDocumentProps) {
         </div>
       </div>
 
-      {/* Funcionalidades */}
       {showBasePlan && !isUpsell && (
         <div className="mb-6">
           <h3 className="font-bold text-sm text-[#1e3a8a] mb-3 flex items-center gap-2">
@@ -178,7 +200,6 @@ export function QuoteDocument(props: QuoteDocumentProps) {
         </div>
       )}
 
-      {/* Investimento Detalhado */}
       <div className="mb-6">
         <h3 className="font-bold text-sm text-[#1e3a8a] mb-3 flex items-center gap-2">
           <div className="w-2 h-4 bg-orange-500 rounded-full" />
@@ -215,15 +236,11 @@ export function QuoteDocument(props: QuoteDocumentProps) {
                     </span>
                   </td>
                   <td className="p-2.5 text-center font-medium">1</td>
-                  <td className="p-2.5 text-right">
-                    {formatCurrency(planBilling === 'anual' ? planAnnualPrice || 0 : planPrice)}
-                  </td>
+                  <td className="p-2.5 text-right">{formatCurrency(effectivePlanPrice)}</td>
                   <td className="p-2.5 text-right font-bold">
-                    {formatCurrency(planBilling === 'anual' ? planAnnualPrice || 0 : planPrice)}
+                    {formatCurrency(effectivePlanPrice)}
                   </td>
-                  <td className="p-2.5 text-center text-slate-600">
-                    {planBilling === 'anual' ? 'Anual' : 'Mensal'}
-                  </td>
+                  <td className="p-2.5 text-center text-slate-600">{cycleLabel}</td>
                 </tr>
               )}
               {recurrentItems.map((item, idx) => {
@@ -238,9 +255,7 @@ export function QuoteDocument(props: QuoteDocumentProps) {
                       {formatCurrency(item.unitPrice || item.price)}
                     </td>
                     <td className="p-2.5 text-right font-bold">{formatCurrency(item.price)}</td>
-                    <td className="p-2.5 text-center text-slate-600">
-                      {planBilling === 'anual' ? 'Anual' : 'Mensal'}
-                    </td>
+                    <td className="p-2.5 text-center text-slate-600">{cycleLabel}</td>
                   </tr>
                 )
               })}
@@ -271,7 +286,6 @@ export function QuoteDocument(props: QuoteDocumentProps) {
         </div>
       </div>
 
-      {/* Termos e Condições */}
       <div className="mb-6">
         <h3 className="font-bold text-sm text-[#1e3a8a] mb-3 flex items-center gap-2">
           <div className="w-2 h-4 bg-orange-500 rounded-full" />
@@ -279,13 +293,11 @@ export function QuoteDocument(props: QuoteDocumentProps) {
         </h3>
         <div className="bg-slate-50 border border-slate-200 p-3 rounded-md">
           <span className="text-xs text-slate-700 font-semibold">
-            Ciclo de Cobrança:{' '}
-            <span className="font-normal">{planBilling === 'anual' ? 'Anual' : 'Mensal'}</span>
+            Ciclo de Cobrança: <span className="font-normal">{cycleLabel}</span>
           </span>
         </div>
       </div>
 
-      {/* Totals */}
       <div className="grid grid-cols-2 gap-4 mb-10">
         <div className="bg-slate-50 border border-slate-200 p-4 rounded-md flex flex-col justify-between">
           <div>
@@ -293,9 +305,7 @@ export function QuoteDocument(props: QuoteDocumentProps) {
               TOTAL RECORRENTE
             </h4>
             <div className="flex justify-between items-center mb-1 text-xs">
-              <span className="text-slate-600">
-                Subtotal ({planBilling === 'anual' ? 'Anual' : 'Mensal'})
-              </span>
+              <span className="text-slate-600">Subtotal ({cycleLabel})</span>
               <span className="font-semibold">{formatCurrency(totalRecorrenteBase)}</span>
             </div>
             {discountAmount > 0 && (
@@ -306,9 +316,7 @@ export function QuoteDocument(props: QuoteDocumentProps) {
             )}
           </div>
           <div className="flex justify-between items-center mt-4 pt-3 border-t border-slate-200">
-            <span className="font-bold text-[#1e3a8a]">
-              Total {planBilling === 'anual' ? 'Anual' : 'Mensal'} Final
-            </span>
+            <span className="font-bold text-[#1e3a8a]">Total {cycleLabel} Final</span>
             <span className="font-bold text-lg text-[#1e3a8a]">
               {formatCurrency(totalRecorrenteFinal)}
             </span>
@@ -332,7 +340,6 @@ export function QuoteDocument(props: QuoteDocumentProps) {
         </div>
       </div>
 
-      {/* Footer */}
       <div className="text-center text-[10px] text-slate-500 pt-6 border-t border-slate-200">
         <p className="mb-1">Validade desta proposta: 15 dias corridos.</p>
         <p>Para dúvidas ou esclarecimentos, entre em contato conosco.</p>

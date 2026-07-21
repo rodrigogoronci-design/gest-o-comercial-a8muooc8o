@@ -706,6 +706,10 @@ export default function ContractGeneratorPage() {
     selectedModules,
     planData,
     planPrice,
+    items: quoteItems,
+    discountValue: validDescontoMensalidade,
+    discountType: tipoDesconto,
+    planBilling: 'mensal',
     modulesPrice,
     selectedDfe,
     dfeData,
@@ -759,6 +763,84 @@ export default function ContractGeneratorPage() {
     autoItemDescription,
     billingCycle: 'Cobrança Mensal',
   }
+
+  const quoteItems = [
+    ...(selectedPlan !== 'none' && quoteTargetType !== 'cliente'
+      ? [{ id: selectedPlan, type: 'plan', name: planData?.name, price: planPrice }]
+      : []),
+    ...selectedModules
+      .filter((id) => !MODULES.find((mod) => mod.id === id)?.isBasic)
+      .map((id) => {
+        const m = MODULES.find((mod) => mod.id === id) as any
+        const price = typeof customModulePrices[id] === 'number' ? customModulePrices[id] : m?.price
+        return { id, name: m?.name, price, quantity: 1, unitPrice: price }
+      }),
+    ...(selectedDfe !== 'dfe-none' && dfeData
+      ? [
+          {
+            id: dfeData.id,
+            name: dfeData.name,
+            price: dfePrice,
+            quantity: 1,
+            unitPrice: dfeData.price,
+          },
+        ]
+      : []),
+    ...(additionalPlates > 0
+      ? [
+          {
+            id: 'placas-adicionais',
+            name: `Placa Adicional Frota (Qtd: ${additionalPlates})`,
+            price: additionalPlatesTotal,
+            quantity: additionalPlates,
+            unitPrice: additionalPlatesPrice,
+          },
+        ]
+      : []),
+    ...(additionalBranches > 0
+      ? [
+          {
+            id: 'filiais-adicionais',
+            name: `Filiais Adicionais (Qtd: ${additionalBranches})`,
+            price: additionalBranchesTotal,
+            quantity: additionalBranches,
+            unitPrice: additionalBranchesPrice,
+          },
+        ]
+      : []),
+    ...(includeDiagnosticVisit
+      ? diagnosticVisits.map((v) => ({
+          id: `diag-${v.id}`,
+          type: 'one-time' as const,
+          name: 'Visita Presencial de Diagnóstico',
+          price: parseFloat(v.value) || 0,
+          quantity: 1,
+          unitPrice: parseFloat(v.value) || 0,
+        }))
+      : []),
+    ...selectedTrainings.map((id) => {
+      const t = PREDEFINED_TRAININGS.find((pt) => pt.id === id)
+      const price =
+        typeof customTrainingPrices[id] === 'number' ? customTrainingPrices[id] : t?.price || 0
+      return {
+        id,
+        type: 'training' as const,
+        name: `Treinamento: ${t?.name}`,
+        price,
+        isFree: isTreinamentoGratuito,
+        quantity: 1,
+        unitPrice: price,
+      }
+    }),
+    {
+      id: 'impl-details',
+      name: 'Detalhes da Implantação',
+      price: implValue,
+      modo: implMode,
+      quantity: 1,
+      unitPrice: implValue,
+    },
+  ]
 
   const quoteProps = {
     empresa: quoteEmpresa,
