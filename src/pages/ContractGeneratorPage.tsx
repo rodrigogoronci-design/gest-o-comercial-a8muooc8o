@@ -950,6 +950,17 @@ export default function ContractGeneratorPage() {
     }
   }
 
+  const handlePlanSelect = (val: string) => {
+    setSelectedPlan(val)
+    setIsPlanPriceManual(false)
+    setManualPlanPrice('')
+    if (val === 'tms-30') {
+      setSelectedModules([])
+      setCustomModulePrices({})
+      setModuleGracePeriods({})
+    }
+  }
+
   const fetchFilialCnpjData = async (cnpjValue: string) => {
     try {
       const { data: cnpjResult } = await fetchCnpjFromService(cnpjValue)
@@ -2133,14 +2144,7 @@ export default function ContractGeneratorPage() {
                         <Label className="text-sm font-bold">Plano Base</Label>
                         <div className="flex gap-4 items-start">
                           <div className="flex-1">
-                            <Select
-                              value={selectedPlan}
-                              onValueChange={(val) => {
-                                setSelectedPlan(val)
-                                setIsPlanPriceManual(false)
-                                setManualPlanPrice('')
-                              }}
-                            >
+                            <Select value={selectedPlan} onValueChange={handlePlanSelect}>
                               <SelectTrigger>
                                 <SelectValue />
                               </SelectTrigger>
@@ -3227,14 +3231,7 @@ export default function ContractGeneratorPage() {
                     <Label className="text-sm font-bold">Plano Base</Label>
                     <div className="flex gap-4 items-start">
                       <div className="flex-1">
-                        <Select
-                          value={selectedPlan}
-                          onValueChange={(val) => {
-                            setSelectedPlan(val)
-                            setIsPlanPriceManual(false)
-                            setManualPlanPrice('')
-                          }}
-                        >
+                        <Select value={selectedPlan} onValueChange={handlePlanSelect}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
