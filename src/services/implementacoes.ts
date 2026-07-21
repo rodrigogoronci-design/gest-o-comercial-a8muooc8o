@@ -116,6 +116,20 @@ export const updateEtapa = async (id: string, etapa: any) => {
   return data
 }
 
+export const updateDadosParametrizacao = async (
+  implementacaoId: string,
+  dados: Record<string, any>,
+) => {
+  const { data, error } = await supabase
+    .from('implementacoes' as any)
+    .update({ dados_parametrizacao: dados })
+    .eq('id', implementacaoId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
 export const updateImplementacao = async (
   id: string,
   data: { status?: string; responsavel_id?: string | null },

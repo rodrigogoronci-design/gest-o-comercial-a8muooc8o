@@ -51,6 +51,7 @@ import {
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { ContractedPlanDetails } from '@/components/ContractedPlanDetails'
+import { ParametrizacaoSection } from '@/components/ParametrizacaoSection'
 import { getContractedModules, isStageRelatedToModules } from '@/lib/scope-mapping'
 
 const STATUS_CONFIG: Record<string, { color: string; icon: any }> = {
@@ -473,6 +474,13 @@ export default function ImplementacaoDetailPage() {
         etapas={impl.implementacao_etapas}
         redactFinancial={isFinancialRestricted}
       />
+
+      <div className="space-y-4">
+        <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+          Documentação e Parametrização
+        </h3>
+        <ParametrizacaoSection implementacaoId={impl.id} dados={impl.dados_parametrizacao} />
+      </div>
 
       {CATEGORIA_ORDER.map((categoria) => {
         const etapas = etapasByCategoria[categoria]
