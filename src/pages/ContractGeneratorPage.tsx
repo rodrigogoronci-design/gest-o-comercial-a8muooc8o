@@ -383,7 +383,11 @@ export default function ContractGeneratorPage() {
     setSelectedPlan(foundPlan)
     setIsPlanPriceManual(newPlanPriceManual)
     setManualPlanPrice(newPlanPrice)
-    setSelectedModules(newModules)
+    const finalModules =
+      foundPlan === 'tms-30'
+        ? newModules.filter((id: string) => getPlanDefaultModules('tms-30').includes(id))
+        : newModules
+    setSelectedModules(finalModules)
     setModuleGracePeriods(newGracePeriods)
     setCustomModulePrices(newCustomModulePrices)
     setSelectedDfe(newDfe)
@@ -935,6 +939,15 @@ export default function ContractGeneratorPage() {
   }
 
   const handleToggleModule = (id: string, checked: boolean) => {
+    if (selectedPlan === 'tms-30' && checked) {
+      toast({
+        title: 'Módulo não permitido',
+        description:
+          'O plano TMS 30 inclui apenas: Administração, Básico, Carga e Comercial. Não é possível adicionar módulos adicionais.',
+        variant: 'destructive',
+      })
+      return
+    }
     if (checked) {
       setSelectedModules((prev) => [...prev, id])
       const mod = MODULES.find((m) => m.id === id)
@@ -1205,13 +1218,14 @@ export default function ContractGeneratorPage() {
       )
       if (nonBasicSelected.length > 0) {
         setSelectedModules(tms30ModuleIds)
+        setCustomModulePrices({})
+        setModuleGracePeriods({})
         toast({
           title: 'Módulos ajustados',
           description:
             'O plano TMS 30 inclui apenas: Administração, Básico, Carga e Comercial. Módulos adicionais foram removidos.',
           className: 'bg-amber-500 text-white border-none',
         })
-        return
       }
     }
 
@@ -1475,13 +1489,14 @@ export default function ContractGeneratorPage() {
       )
       if (nonBasicSelected.length > 0) {
         setSelectedModules(tms30ModuleIds)
+        setCustomModulePrices({})
+        setModuleGracePeriods({})
         toast({
           title: 'Módulos ajustados',
           description:
             'O plano TMS 30 inclui apenas: Administração, Básico, Carga e Comercial. Módulos adicionais foram removidos.',
           className: 'bg-amber-500 text-white border-none',
         })
-        return
       }
     }
 
