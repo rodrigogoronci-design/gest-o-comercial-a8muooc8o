@@ -9,6 +9,7 @@ export interface PlanItem {
 }
 
 export const PLANS: PlanItem[] = [
+  { id: 'tms-30', name: 'TMS-30', limit: 'Até 30', maxDocs: '30', price: 250.0 },
   { id: 'tms-50', name: 'TMS-50', limit: 'Até 50', maxDocs: '50', price: 399.0 },
   { id: 'tms-100', name: 'TMS-100', limit: 'à 100', maxDocs: '100', price: 657.0 },
   { id: 'tms-200', name: 'TMS-200', limit: 'à 200', maxDocs: '200', price: 585.0 },
