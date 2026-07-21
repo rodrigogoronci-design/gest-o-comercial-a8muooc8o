@@ -919,6 +919,7 @@ export default function ContractGeneratorPage() {
     isGratuito: isTreinamentoGratuito,
     tipoCobranca: 'mensal',
     parcelasImplantacao,
+    items: quoteItems,
   }
 
   const fetchCnpjData = async (cnpjValue: string) => {
@@ -1322,6 +1323,7 @@ export default function ContractGeneratorPage() {
           const m = MODULES.find((mod) => mod.id === id) as any
           return {
             id,
+            type: 'module',
             name: m?.name,
             price: typeof customModulePrices[id] === 'number' ? customModulePrices[id] : m?.price,
             implHours: m?.implHours || 0,
@@ -1351,6 +1353,7 @@ export default function ContractGeneratorPage() {
           typeof customTrainingPrices[id] === 'number' ? customTrainingPrices[id] : t?.price || 0
         return {
           id,
+          type: 'training',
           name: `Treinamento: ${t?.name}`,
           price,
           isFree: isTreinamentoGratuito,

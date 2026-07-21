@@ -17,6 +17,8 @@ export interface QuoteDocumentProps {
   discountValue?: number
   discountType?: string
   logoUrl?: string
+  selectedModulesData?: any[]
+  trainings?: any[]
 }
 
 const SUB_FEATURES: Record<string, string[]> = {
@@ -65,6 +67,8 @@ export function QuoteDocument(props: QuoteDocumentProps) {
     discountValue = 0,
     discountType = 'valor',
     logoUrl = '/skip.png',
+    selectedModulesData = [],
+    trainings = [],
   } = props
 
   const isTms30 =
@@ -93,7 +97,12 @@ export function QuoteDocument(props: QuoteDocumentProps) {
     : items
 
   const recurrentItems = safeItems.filter(
-    (i) => i.id !== 'impl-details' && i.type !== 'training' && i.type !== 'one-time' && !i.isFree,
+    (i) =>
+      i.id !== 'impl-details' &&
+      i.type !== 'plan' &&
+      i.type !== 'training' &&
+      i.type !== 'one-time' &&
+      !i.isFree,
   )
   const oneTimeItems = safeItems.filter(
     (i) => i.id === 'impl-details' || i.type === 'training' || i.type === 'one-time',
@@ -105,7 +114,10 @@ export function QuoteDocument(props: QuoteDocumentProps) {
   const discountAmount =
     discountType === 'valor' ? discountValue : (totalRecorrenteBase * discountValue) / 100
   const totalRecorrenteFinal = Math.max(0, totalRecorrenteBase - discountAmount)
-  const totalOneTime = oneTimeItems.reduce((acc, curr) => acc + (curr.price || 0), 0)
+  const totalOneTime = oneTimeItems.reduce(
+    (acc, curr) => acc + (curr.isFree ? 0 : curr.price || 0),
+    0,
+  )
 
   const isAnnual = planBilling === 'anual'
   const cycleLabel = isAnnual ? 'Anual' : 'Mensal'
@@ -200,6 +212,54 @@ export function QuoteDocument(props: QuoteDocumentProps) {
         </div>
       )}
 
+      {selectedModulesData.length > 0 && !isUpsell && (
+        <div className="mb-4">
+          <h3 className="font-bold text-sm text-[#1e3a8a] mb-2 flex items-center gap-2">
+            <div className="w-2 h-4 bg-orange-500 rounded-full" />
+            Módulos Adicionais Contratados
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {selectedModulesData.map((mod, i) => (
+              <span
+                key={i}
+                className="text-[10px] bg-slate-100 text-slate-700 px-2 py-1 rounded border border-slate-200"
+              >
+                {mod.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {isUpsell && selectedModulesData.length > 0 && (
+        <div className="mb-4">
+          <h3 className="font-bold text-sm text-[#1e3a8a] mb-2 flex items-center gap-2">
+            <div className="w-2 h-4 bg-orange-500 rounded-full" />
+            Módulos e Serviços Incluídos
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {selectedModulesData.map((mod, i) => (
+              <span
+                key={`mod-${i}`}
+                className="text-[10px] bg-slate-100 text-slate-700 px-2 py-1 rounded border border-slate-200"
+              >
+                {mod.name}
+              </span>
+            ))}
+            {trainings
+              .filter((t: any) => !t.isFree)
+              .map((t: any, i: number) => (
+                <span
+                  key={`train-feat-${i}`}
+                  className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded border border-indigo-200"
+                >
+                  {t.name}
+                </span>
+              ))}
+          </div>
+        </div>
+      )}
+
       <div className="mb-6">
         <h3 className="font-bold text-sm text-[#1e3a8a] mb-3 flex items-center gap-2">
           <div className="w-2 h-4 bg-orange-500 rounded-full" />
@@ -272,12 +332,27 @@ export function QuoteDocument(props: QuoteDocumentProps) {
                         Taxa de setup inicial
                       </span>
                     )}
+                    {item.isFree && (
+                      <span className="text-[9px] font-bold uppercase bg-emerald-500 text-white px-1.5 py-0.5 rounded-full ml-1">
+                        Grátis
+                      </span>
+                    )}
                   </td>
                   <td className="p-2.5 text-center font-medium">{item.quantity || 1}</td>
                   <td className="p-2.5 text-right">
-                    {formatCurrency(item.unitPrice || item.price)}
+                    {item.isFree ? (
+                      <span className="text-emerald-600 font-semibold">Gratuito</span>
+                    ) : (
+                      formatCurrency(item.unitPrice || item.price)
+                    )}
                   </td>
-                  <td className="p-2.5 text-right font-bold">{formatCurrency(item.price)}</td>
+                  <td className="p-2.5 text-right font-bold">
+                    {item.isFree ? (
+                      <span className="text-emerald-600">Gratuito</span>
+                    ) : (
+                      formatCurrency(item.price)
+                    )}
+                  </td>
                   <td className="p-2.5 text-center text-slate-600">Parcela Única</td>
                 </tr>
               ))}
@@ -328,10 +403,22 @@ export function QuoteDocument(props: QuoteDocumentProps) {
             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
               TOTAL PARCELA ÚNICA
             </h4>
-            <div className="flex justify-between items-center mb-1 text-xs">
-              <span className="text-slate-600">Serviços de Implantação ({implMode})</span>
-              <span className="font-semibold">{formatCurrency(totalOneTime)}</span>
-            </div>
+            {oneTimeItems
+              .filter((i) => !i.isFree)
+              .map((item, idx) => (
+                <div key={`tot-${idx}`} className="flex justify-between items-center mb-1 text-xs">
+                  <span className="text-slate-600">
+                    {item.id === 'impl-details' ? `Implantação (${implMode})` : item.name}
+                  </span>
+                  <span className="font-semibold">{formatCurrency(item.price)}</span>
+                </div>
+              ))}
+            {oneTimeItems.some((i) => i.isFree) && (
+              <div className="flex justify-between items-center mb-1 text-xs text-emerald-600">
+                <span>Treinamentos Gratuitos</span>
+                <span className="font-semibold">Gratuito</span>
+              </div>
+            )}
           </div>
           <div className="flex justify-between items-center mt-4 pt-3 border-t border-slate-200">
             <span className="font-bold text-[#1e3a8a]">Total à Vista</span>
