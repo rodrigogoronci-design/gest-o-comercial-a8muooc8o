@@ -91,6 +91,19 @@ export const MODULES = [
   },
 ]
 
+export const PLAN_MODULE_MAP: Record<string, string[]> = {
+  'tms-30': ['mod-admin', 'mod-basico', 'mod-carga', 'mod-comercial'],
+}
+
+export const DEFAULT_BASIC_MODULE_IDS = [
+  'mod-admin',
+  'mod-basico',
+  'mod-carga',
+  'mod-comercial',
+  'mod-faturamento',
+  'mod-financeiro',
+]
+
 export const PREDEFINED_TRAININGS = [
   { id: 'train-admin-basico-comercial', name: 'Administrativo, Básico e Comercial', price: 200.0 },
   { id: 'train-carga', name: 'Carga', price: 200.0 },

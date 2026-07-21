@@ -5,6 +5,7 @@ import { PLANS, MODULES as BASE_MODULES, BASE_IMPLEMENTATION_HOURS } from '@/con
 const MODULES = [...BASE_MODULES]
 import { CONTRACT_TEXT } from '@/constants/contract-text'
 import logoUrl from '@/assets/logomarca-service-ea011.png'
+import { getPlanIncludedModuleNames, getPlanDefaultModules } from '@/lib/plan-modules'
 
 export const Highlight = ({ value, fallback }: { value: string; fallback: string }) => (
   <strong
@@ -234,8 +235,7 @@ export function ContractDocument({
               </tbody>
             </table>
             <p className="text-[10px] mt-1 text-slate-600">
-              (*) Módulos inclusos nos Planos: Administração, Básico, Carga, Comercial, Faturamento,
-              Financeiro. <br />
+              (*) Módulos inclusos nos Planos: {getPlanIncludedModuleNames(selectedPlan)}. <br />
               (**) Ct-e, MDF-e, NF-e, NFS-e e Documentos cancelados.
             </p>
             {selectedPlan !== 'none' && planData && (
@@ -364,7 +364,14 @@ export function ContractDocument({
               <tbody>
                 {selectedPlan !== 'none' && (
                   <tr>
-                    <td className="border border-slate-300 p-1.5">Básicos</td>
+                    <td className="border border-slate-300 p-1.5">
+                      Básicos
+                      {selectedPlan === 'tms-30' && (
+                        <span className="text-[9px] block text-slate-500">
+                          ({getPlanIncludedModuleNames(selectedPlan)})
+                        </span>
+                      )}
+                    </td>
                     <td className="border border-slate-300 p-1.5 text-center">
                       {BASE_IMPLEMENTATION_HOURS}
                     </td>
@@ -379,17 +386,7 @@ export function ContractDocument({
                   </tr>
                 )}
                 {MODULES.map((m) => {
-                  if (
-                    [
-                      'mod-admin',
-                      'mod-basico',
-                      'mod-carga',
-                      'mod-comercial',
-                      'mod-faturamento',
-                      'mod-financeiro',
-                    ].includes(m.id)
-                  )
-                    return null
+                  if (getPlanDefaultModules(selectedPlan).includes(m.id)) return null
 
                   const cicle = moduleBilling[m.id] || 'mensal'
                   const modPrice =
