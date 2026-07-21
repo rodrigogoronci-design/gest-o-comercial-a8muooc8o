@@ -1213,19 +1213,20 @@ export default function ContractGeneratorPage() {
 
     if (selectedPlan === 'tms-30') {
       const tms30ModuleIds = getPlanDefaultModules('tms-30')
-      const nonBasicSelected = selectedModules.filter(
-        (id) => !MODULES.find((m) => m.id === id)?.isBasic,
-      )
-      if (nonBasicSelected.length > 0) {
+      const hasDisallowedModules = selectedModules.some((id) => !tms30ModuleIds.includes(id))
+      const missingRequiredModules = tms30ModuleIds.some((id) => !selectedModules.includes(id))
+
+      if (hasDisallowedModules || missingRequiredModules) {
         setSelectedModules(tms30ModuleIds)
         setCustomModulePrices({})
         setModuleGracePeriods({})
         toast({
-          title: 'Módulos ajustados',
+          title: 'Módulos ajustados (TMS 30)',
           description:
-            'O plano TMS 30 inclui apenas: Administração, Básico, Carga e Comercial. Módulos adicionais foram removidos.',
+            'O plano TMS 30 inclui estritamente: Administração, Básico, Carga e Comercial. A seleção foi resetada para garantir a integridade do plano.',
           className: 'bg-amber-500 text-white border-none',
         })
+        return
       }
     }
 

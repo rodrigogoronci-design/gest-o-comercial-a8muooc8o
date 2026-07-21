@@ -1,240 +1,174 @@
 import { formatCurrency } from '@/lib/formatters'
-import logoUrl from '@/assets/logomarca-service-ea011.png'
 
-interface QuoteDocumentProps {
-  empresa: string
+export interface QuoteDocumentProps {
+  empresa?: string
   cnpj?: string
-  aosCuidadosDe: string
-  date: string
-  planName: string
-  selectedModulesData?: any[]
-  trainings?: any[]
-  planPrice: number
-  modulesPrice: number
-  selectedDfe?: string
-  dfeData?: any
-  dfePrice?: number
-  totalValue: number
-  implMode: string
-  implRate: number
-  totalImplHours: number
-  implValue: number
-  isUpsell?: boolean
-  includeFranchise?: boolean
-  includeDiagnosticVisit?: boolean
-  diagnosticVisitValue?: string
-  diagnosticVisits?: { id: string; date: string; value: string }[]
-  currentClientValue?: number
-  additionalPlates?: number
-  additionalPlatesPrice?: number
-  additionalPlatesTotal?: number
-  additionalBranches?: number
-  additionalBranchesPrice?: number
-  additionalBranchesTotal?: number
-  descontoMensalidade?: number
-  tipoDesconto?: 'valor' | 'percentual'
-  calculatedDiscount?: number
-  isencaoPeriodo?: number
-  moduleGracePeriods?: Record<string, number>
-  totalValueStandard?: number
-  prazosConcedidos?: string
-  cobrarDfePorFilial?: boolean
-  quantidadeFiliaisDfe?: number
-  baseDfePrice?: number
-  planBilling?: 'mensal' | 'anual'
+  aosCuidadosDe?: string
+  date?: string
+  planName?: string
+  planPrice?: number
   planAnnualPrice?: number
-  dfeBilling?: 'mensal' | 'anual'
-  dfeAnnualPrice?: number
-  platesBilling?: 'mensal' | 'anual'
-  platesAnnualPrice?: number
-  branchesBilling?: 'mensal' | 'anual'
-  branchesAnnualPrice?: number
-  totalAnual?: number
-  filiaisDfe?: { id?: string; cnpj?: string; nome?: string }[]
+  planBilling?: string
+  showBasePlan?: boolean
+  isUpsell?: boolean
   isGratuito?: boolean
-  tipoCobranca?: string
+  currentClientValue?: number
+  items?: any[]
+  discountValue?: number
+  discountType?: string
+  logoUrl?: string
 }
 
-const FEATURE_CATEGORIES = [
-  {
-    title: 'Administração',
-    items: ['Configurações do usuário', 'Configurações de acesso', 'Integração de E-mail'],
-  },
-  {
-    title: 'Básico',
-    items: ['Matriz e Filiais', 'Clientes', 'Fornecedores', 'Veículos', 'Motoristas'],
-  },
-  {
-    title: 'Carga',
-    items: [
-      'Emissão CT-e',
-      'Emissão MDF-e',
-      'Emissão NFS-e',
-      'Controle de Entrega',
-      'Programação de Carga',
-    ],
-  },
-  {
-    title: 'Comercial',
-    items: ['Gestão de CRM', 'Tabelas de Frete', 'Cotações', 'Propostas Comerciais'],
-  },
-  {
-    title: 'Faturamento',
-    items: ['Geração de Faturas', 'Envio em Lote', 'Gestão de Boletos', 'Arquivo Remessa/Retorno'],
-  },
-  {
-    title: 'Financeiro',
-    items: [
-      'Contas a Pagar/Receber',
-      'Conciliação bancária',
-      'Emissão boleto',
-      'Fluxo de caixa',
-      'DRE Gerencial',
-    ],
-  },
-]
+const SUB_FEATURES: Record<string, string[]> = {
+  Administração: ['Configurações do usuário', 'Configurações de acesso', 'Integração de E-mail'],
+  Básico: ['Matriz e Filiais', 'Clientes', 'Fornecedores', 'Veículos', 'Motoristas'],
+  Carga: [
+    'Emissão CT-e',
+    'Emissão MDF-e',
+    'Emissão NFS-e',
+    'Controle de Entrega',
+    'Programação de Carga',
+  ],
+  Comercial: ['Gestão de CRM', 'Tabelas de Frete', 'Cotações', 'Propostas Comerciais'],
+  Faturamento: [
+    'Geração de faturas',
+    'Envio em Lote',
+    'Gestão de Boletos',
+    'Arquivo Remessa/Retorno',
+  ],
+  Financeiro: [
+    'Contas a Pagar/Receber',
+    'Conciliação bancária',
+    'Emissão boleto',
+    'Fluxo de caixa',
+    'DRE Gerencial',
+  ],
+}
 
-export function QuoteDocument({
-  empresa,
-  cnpj,
-  aosCuidadosDe,
-  date,
-  planName,
-  selectedModulesData = [],
-  trainings = [],
-  planPrice,
-  modulesPrice,
-  dfeData,
-  dfePrice,
-  totalValue,
-  implMode,
-  totalImplHours,
-  implValue,
-  isUpsell,
-  includeFranchise,
-  includeDiagnosticVisit,
-  diagnosticVisitValue,
-  diagnosticVisits,
-  currentClientValue,
-  additionalPlates,
-  additionalPlatesPrice,
-  additionalPlatesTotal,
-  additionalBranches,
-  additionalBranchesPrice,
-  additionalBranchesTotal,
-  descontoMensalidade = 0,
-  tipoDesconto = 'valor',
-  calculatedDiscount = 0,
-  isencaoPeriodo = 0,
-  moduleGracePeriods = {},
-  totalValueStandard = 0,
-  prazosConcedidos,
-  cobrarDfePorFilial = false,
-  quantidadeFiliaisDfe = 1,
-  baseDfePrice = 0,
-  planBilling = 'mensal',
-  planAnnualPrice = 0,
-  dfeBilling = 'mensal',
-  dfeAnnualPrice = 0,
-  platesBilling = 'mensal',
-  platesAnnualPrice = 0,
-  branchesBilling = 'mensal',
-  branchesAnnualPrice = 0,
-  totalAnual = 0,
-  filiaisDfe = [],
-  isGratuito = false,
-  tipoCobranca = 'mensal',
-}: QuoteDocumentProps) {
-  const showBasePlan =
-    planName && planName !== 'Nenhum' && planName !== 'Nenhum (Somente Módulos / Upsell)'
+export function QuoteDocument(props: QuoteDocumentProps) {
+  const {
+    empresa = '',
+    cnpj = '',
+    aosCuidadosDe = '',
+    date = '',
+    planName = '',
+    planPrice = 0,
+    planAnnualPrice = 0,
+    planBilling = 'mensal',
+    showBasePlan = true,
+    isUpsell = false,
+    isGratuito = false,
+    items = [],
+    discountValue = 0,
+    discountType = 'valor',
+    logoUrl = '/skip.png',
+  } = props
+
+  const isTms30 =
+    planName?.toLowerCase().includes('tms-30') || planName?.toLowerCase().includes('tms 30')
+  const includedBaseModules = isTms30
+    ? ['Administração', 'Básico', 'Carga', 'Comercial']
+    : ['Administração', 'Básico', 'Carga', 'Comercial', 'Faturamento', 'Financeiro']
+
+  const categoriesToRender = includedBaseModules.map((name) => ({
+    title: name,
+    items: SUB_FEATURES[name] || [],
+  }))
+
+  const recurrentItems = items.filter(
+    (i) => i.id !== 'impl-details' && i.type !== 'training' && !i.isFree,
+  )
+  const oneTimeItems = items.filter((i) => i.id === 'impl-details' || i.type === 'training')
+  const implItem = oneTimeItems.find((i) => i.id === 'impl-details')
+  const implMode = implItem?.modo || 'Remoto'
+
+  const totalRecorrenteBase = recurrentItems.reduce((acc, curr) => acc + (curr.price || 0), 0)
+  const discountAmount =
+    discountType === 'valor' ? discountValue : (totalRecorrenteBase * discountValue) / 100
+  const totalRecorrenteFinal = Math.max(0, totalRecorrenteBase - discountAmount)
+
+  const totalOneTime = oneTimeItems.reduce((acc, curr) => acc + (curr.price || 0), 0)
 
   return (
-    <div
-      className="bg-white w-full max-w-[210mm] mx-auto p-4 md:p-6 print:m-0 print:p-0 text-slate-800 text-xs shadow-sm print:shadow-none font-sans print:max-w-[190mm] print:w-[190mm] overflow-hidden print:overflow-visible"
-      id="quote-proposal-print"
-    >
+    <div className="bg-white text-slate-900 p-8 max-w-4xl mx-auto text-sm print:p-0 print:m-0 print:max-w-none font-sans">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 mb-3">
+      <div className="flex justify-between items-start mb-6">
         <div className="flex items-center gap-3">
-          <img src={logoUrl} alt="Service Logic" className="h-10 object-contain shrink-0" />
-          <div className="text-[9px] text-slate-500 leading-tight space-y-0.5 border-l border-slate-200 pl-3">
-            <p className="font-semibold text-slate-700">SERVICE LOGIC SOLUÇÕES EM TECNOLOGIA</p>
-            <p>CNPJ: 10.929.600/0001-92</p>
-            <p>Avenida Central, 1439 CEP: 29165-130, Serra-ES</p>
-            <p>(27) 2141-0107 / comercial@servicelogic.com.br</p>
+          <img src={logoUrl} alt="Logo" className="h-12 w-auto object-contain" />
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold text-slate-700 leading-tight">
+              SERVICE LOGIC SOLUÇÕES EM TECNOLOGIA
+            </span>
+            <span className="text-[9px] text-slate-500 leading-tight">
+              CNPJ: 10.929.800/0001-92
+            </span>
+            <span className="text-[9px] text-slate-500 leading-tight">
+              Avenida Central, 1428 CEP: 29160-120, Serra-ES
+            </span>
+            <span className="text-[9px] text-slate-500 leading-tight">
+              (27) 2141-0107 / comercial@servicelogic.com.br
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Title & Client Info */}
-      <div className="flex justify-between items-end border-b-2 border-orange-500 pb-1.5 mb-2">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-bold uppercase tracking-wider text-[#1e3a8a]">
-              {isUpsell ? 'Proposta Comercial - Upsell' : 'Proposta Comercial'}
-            </h1>
+      <div className="flex flex-col mb-4 border-b-2 border-orange-500 pb-2">
+        <h1 className="text-2xl font-bold uppercase tracking-wider text-[#1e3a8a] mb-1">
+          {isUpsell ? 'PROPOSTA COMERCIAL - UPSELL' : 'PROPOSTA COMERCIAL'}
+        </h1>
+        <div className="flex justify-between items-end">
+          <p className="text-sm font-semibold text-slate-700">
+            {showBasePlan ? planName : 'Adição de Módulos e Serviços'}
             {isGratuito && (
-              <span className="text-[9px] font-bold uppercase bg-emerald-500 text-white px-2 py-0.5 rounded-full tracking-wide">
+              <span className="ml-2 text-[9px] font-bold uppercase bg-emerald-500 text-white px-2 py-0.5 rounded-full tracking-wide">
                 Gratuito
               </span>
             )}
-          </div>
-          <p className="text-xs font-semibold text-slate-600 mt-0.5">
-            {showBasePlan ? planName : 'Adição de Módulos e Serviços'}
           </p>
-        </div>
-        <div className="text-right text-[10px]">
-          <p>
-            <strong>Data:</strong> {date}
+          <p className="text-xs font-bold text-slate-700">
+            Data: <span className="font-normal">{date}</span>
           </p>
         </div>
       </div>
 
-      <div className="flex gap-3 mb-3 bg-slate-50 p-2 rounded border border-slate-200 text-[10px]">
-        <div className="flex-1 min-w-0">
-          <span className="block text-slate-500 mb-0.5">Empresa</span>
-          <strong className="text-slate-900 text-xs break-words">
+      {/* Client Info */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="bg-white p-3 rounded border border-slate-200">
+          <span className="block text-[10px] text-slate-500 mb-1">Empresa</span>
+          <strong className="text-slate-900 text-sm break-words block">
             {empresa || 'Não informado'}
           </strong>
+          {cnpj && <span className="text-[10px] text-slate-500 mt-1 block">CNPJ: {cnpj}</span>}
         </div>
-        {cnpj && (
-          <div className="flex-1 min-w-0">
-            <span className="block text-slate-500 mb-0.5">CNPJ</span>
-            <strong className="text-slate-900 text-xs break-words">{cnpj}</strong>
-          </div>
-        )}
-        <div className="flex-1 min-w-0">
-          <span className="block text-slate-500 mb-0.5">Aos Cuidados de</span>
-          <strong className="text-slate-900 text-xs break-words">
+        <div className="bg-white p-3 rounded border border-slate-200">
+          <span className="block text-[10px] text-slate-500 mb-1">Aos Cuidados de</span>
+          <strong className="text-slate-900 text-sm break-words block">
             {aosCuidadosDe || 'Não informado'}
           </strong>
         </div>
       </div>
 
-      {/* Features */}
+      {/* Funcionalidades */}
       {showBasePlan && !isUpsell && (
-        <div className="mb-3">
-          <h3 className="font-bold text-xs text-[#1e3a8a] mb-1.5 flex items-center gap-1.5">
-            <div className="w-1.5 h-3 bg-orange-500 rounded-full" />
+        <div className="mb-6">
+          <h3 className="font-bold text-sm text-[#1e3a8a] mb-3 flex items-center gap-2">
+            <div className="w-2 h-4 bg-orange-500 rounded-full" />
             Funcionalidades Inclusas no Plano Base
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 min-w-0">
-            {FEATURE_CATEGORIES.map((cat, i) => (
-              <div
-                key={i}
-                className="bg-white p-2 rounded border border-slate-200 shadow-sm min-w-0"
-              >
-                <h4 className="font-bold text-slate-800 text-[10px] mb-1 pb-0.5 border-b border-slate-100">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {categoriesToRender.map((cat, i) => (
+              <div key={i} className="bg-white p-3 rounded-md border border-slate-200 shadow-sm">
+                <h4 className="font-bold text-[#1e3a8a] text-xs mb-2 pb-1 border-b border-slate-100">
                   {cat.title}
                 </h4>
-                <ul className="space-y-0.5">
+                <ul className="space-y-1">
                   {cat.items.map((item, j) => (
                     <li
                       key={j}
-                      className="flex items-start gap-1 text-[9px] text-slate-600 leading-tight break-words"
+                      className="flex items-start gap-1.5 text-[10px] text-slate-600 leading-tight"
                     >
                       <span className="text-emerald-500 font-bold shrink-0">✓</span>
-                      <span className="break-words">{item}</span>
+                      <span>{item}</span>
                     </li>
                   ))}
                 </ul>
@@ -244,32 +178,29 @@ export function QuoteDocument({
         </div>
       )}
 
-      {/* Investment Details */}
-      <div className="mb-3">
-        <h3 className="font-bold text-xs text-[#1e3a8a] mb-1.5 flex items-center gap-1.5">
-          <div className="w-1.5 h-3 bg-orange-500 rounded-full" />
+      {/* Investimento Detalhado */}
+      <div className="mb-6">
+        <h3 className="font-bold text-sm text-[#1e3a8a] mb-3 flex items-center gap-2">
+          <div className="w-2 h-4 bg-orange-500 rounded-full" />
           Investimento Detalhado
         </h3>
-        <div className="bg-white rounded overflow-hidden border border-slate-200 shadow-sm">
-          <table className="w-full text-left text-[10px]" style={{ tableLayout: 'auto' }}>
-            <thead className="bg-slate-50 text-slate-700 font-bold">
+        <div className="bg-white rounded-md overflow-hidden border border-slate-200 shadow-sm">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
               <tr>
-                <th className="p-1.5 border-b border-slate-200" style={{ width: '40%' }}>
+                <th className="p-2.5" style={{ width: '40%' }}>
                   Descrição
                 </th>
-                <th className="p-1.5 border-b border-slate-200 text-center" style={{ width: '8%' }}>
+                <th className="p-2.5 text-center" style={{ width: '10%' }}>
                   Qtd
                 </th>
-                <th className="p-1.5 border-b border-slate-200 text-right" style={{ width: '17%' }}>
+                <th className="p-2.5 text-right" style={{ width: '16%' }}>
                   V. Unitário
                 </th>
-                <th className="p-1.5 border-b border-slate-200 text-right" style={{ width: '17%' }}>
+                <th className="p-2.5 text-right" style={{ width: '16%' }}>
                   V. Total
                 </th>
-                <th
-                  className="p-1.5 border-b border-slate-200 text-center"
-                  style={{ width: '18%' }}
-                >
+                <th className="p-2.5 text-center" style={{ width: '18%' }}>
                   Ciclo
                 </th>
               </tr>
@@ -277,262 +208,62 @@ export function QuoteDocument({
             <tbody className="divide-y divide-slate-100">
               {showBasePlan && !isUpsell && (
                 <tr>
-                  <td className="p-1.5">
-                    <span className="font-semibold text-slate-800">{planName}</span>
-                    <span className="text-[9px] block text-slate-500 mt-0.5">
-                      Administração, Básico, Carga, Comercial, Faturamento e Financeiro
+                  <td className="p-2.5">
+                    <span className="font-bold text-slate-800">{planName}</span>
+                    <span className="text-[10px] block text-slate-500 mt-1">
+                      {includedBaseModules.join(', ')}
                     </span>
                   </td>
-                  <td className="p-1.5 text-center font-medium">1</td>
-                  <td className="p-1.5 text-right">
-                    {planBilling === 'anual'
-                      ? formatCurrency(planAnnualPrice)
-                      : formatCurrency(planPrice)}
+                  <td className="p-2.5 text-center font-medium">1</td>
+                  <td className="p-2.5 text-right">
+                    {formatCurrency(planBilling === 'anual' ? planAnnualPrice || 0 : planPrice)}
                   </td>
-                  <td className="p-1.5 text-right font-medium">
-                    {planBilling === 'anual'
-                      ? formatCurrency(planAnnualPrice)
-                      : formatCurrency(planPrice)}
+                  <td className="p-2.5 text-right font-bold">
+                    {formatCurrency(planBilling === 'anual' ? planAnnualPrice || 0 : planPrice)}
                   </td>
-                  <td className="p-1.5 text-center text-slate-600">
+                  <td className="p-2.5 text-center text-slate-600">
                     {planBilling === 'anual' ? 'Anual' : 'Mensal'}
                   </td>
                 </tr>
               )}
-              {isUpsell && (currentClientValue || 0) > 0 && (
-                <tr className="bg-slate-50/50">
-                  <td className="p-1.5">
-                    <span className="font-semibold text-slate-800">Mensalidade Atual</span>
-                    <span className="text-[9px] block text-slate-500 mt-0.5">
-                      Valor pago atualmente pelo cliente
-                    </span>
-                  </td>
-                  <td className="p-1.5 text-center font-medium">1</td>
-                  <td className="p-1.5 text-right">{formatCurrency(currentClientValue || 0)}</td>
-                  <td className="p-1.5 text-right font-medium">
-                    {formatCurrency(currentClientValue || 0)}
-                  </td>
-                  <td className="p-1.5 text-center text-slate-600">Mensal</td>
-                </tr>
-              )}
-              {selectedModulesData.map((m, idx) => {
-                const hasGrace = moduleGracePeriods[m.id] > 0
-                const graceMonths = moduleGracePeriods[m.id]
-                const cicle = m.billingCycle || 'mensal'
-                const p = cicle === 'anual' ? m.annualPrice : m.price
-
+              {recurrentItems.map((item, idx) => {
+                if (item.id === planName || item.id === 'tms-30') return null
                 return (
-                  <tr key={`mod-${idx}`}>
-                    <td className="p-1.5">
-                      <span className="font-semibold text-slate-800">{m.name}</span>
-                      {hasGrace && (
-                        <span className="text-[9px] font-bold text-emerald-600 ml-2">
-                          (Isento por {graceMonths} meses)
-                        </span>
-                      )}
-                      {m.franquia_quantidade && (
-                        <span className="text-[9px] block text-slate-500 mt-0.5">
-                          Franquia: {m.franquia_quantidade} placas incluídas · Excedente:{' '}
-                          {formatCurrency(m.valor_excedente || 0)}/placa
-                          {!!additionalPlates && additionalPlates > 0
-                            ? ` · ${additionalPlates} placas adicionais`
-                            : ''}
-                        </span>
-                      )}
-                      {m.id === 'mod-edi' && (
-                        <span className="text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1">
-                          <strong>* EDI:</strong> Inclusão de Layout padrão Proceda para integração
-                          (arquivos NOTFIS para emissão de CT-e, envios de CONEMB, DOCCOB e OCOREN).
-                        </span>
-                      )}
-                      {m.description && !m.name?.toLowerCase().includes('torre de controle') && (
-                        <span className="text-[9px] block text-slate-500 mt-1.5 italic border-t border-slate-100 pt-1">
-                          {m.description}
-                        </span>
-                      )}
+                  <tr key={`rec-${idx}`}>
+                    <td className="p-2.5">
+                      <span className="font-semibold text-slate-800">{item.name}</span>
                     </td>
-                    <td className="p-1.5 text-center font-medium">1</td>
-                    <td className="p-1.5 text-right">{formatCurrency(p)}</td>
-                    <td className="p-1.5 text-right font-medium">
-                      {hasGrace ? (
-                        <span className="line-through text-slate-400 mr-1">
-                          {formatCurrency(p)}
-                        </span>
-                      ) : null}
-                      {hasGrace ? formatCurrency(0) : formatCurrency(p)}
+                    <td className="p-2.5 text-center font-medium">{item.quantity || 1}</td>
+                    <td className="p-2.5 text-right">
+                      {formatCurrency(item.unitPrice || item.price)}
                     </td>
-                    <td className="p-1.5 text-center text-slate-600">
-                      {hasGrace
-                        ? `Isento por ${graceMonths} meses`
-                        : cicle === 'anual'
-                          ? 'Anual'
-                          : 'Mensal'}
+                    <td className="p-2.5 text-right font-bold">{formatCurrency(item.price)}</td>
+                    <td className="p-2.5 text-center text-slate-600">
+                      {planBilling === 'anual' ? 'Anual' : 'Mensal'}
                     </td>
                   </tr>
                 )
               })}
-
-              {includeFranchise && dfeData && (
-                <tr>
-                  <td className="p-1.5">
+              {oneTimeItems.map((item, idx) => (
+                <tr key={`one-${idx}`}>
+                  <td className="p-2.5">
                     <span className="font-semibold text-slate-800">
-                      {dfeData.name || 'Franquia de Emissões (DF-e)'}
-                      {cobrarDfePorFilial ? ` (Por Filial: ${quantidadeFiliaisDfe}x)` : ''}
+                      {item.id === 'impl-details'
+                        ? `Serviços de Implantação / Configuração (${implMode})`
+                        : item.name}
                     </span>
-                    <span className="text-[9px] block text-slate-500 mt-0.5">
-                      Pacote de emissões eletrônicas
-                    </span>
-                  </td>
-                  <td className="p-1.5 text-center font-medium">
-                    {cobrarDfePorFilial ? quantidadeFiliaisDfe : 1}
-                  </td>
-                  <td className="p-1.5 text-right">
-                    {(dfeBilling === 'anual' ? dfeAnnualPrice : baseDfePrice) &&
-                    (dfeBilling === 'anual' ? dfeAnnualPrice : baseDfePrice)! > 0
-                      ? formatCurrency(dfeBilling === 'anual' ? dfeAnnualPrice! : baseDfePrice!)
-                      : 'Incluso'}
-                  </td>
-                  <td className="p-1.5 text-right font-medium">
-                    {(dfeBilling === 'anual' ? dfeAnnualPrice : dfePrice) &&
-                    (dfeBilling === 'anual' ? dfeAnnualPrice : dfePrice)! > 0
-                      ? formatCurrency(dfeBilling === 'anual' ? dfeAnnualPrice! : dfePrice!)
-                      : 'Incluso'}
-                  </td>
-                  <td className="p-1.5 text-center text-slate-600">
-                    {dfeBilling === 'anual' ? 'Anual' : 'Mensal'}
-                  </td>
-                </tr>
-              )}
-
-              {!!additionalPlates && additionalPlates > 0 && (
-                <tr>
-                  <td className="p-1.5">
-                    <span className="font-semibold text-slate-800">(*) Placa Adicional Frota</span>
-                    <span className="text-[9px] block text-slate-500 mt-0.5">
-                      Placas excedentes do módulo Frota
-                    </span>
-                  </td>
-                  <td className="p-1.5 text-center font-medium">{additionalPlates}</td>
-                  <td className="p-1.5 text-right">
-                    {platesBilling === 'anual' ? '-' : formatCurrency(additionalPlatesPrice || 0)}
-                  </td>
-                  <td className="p-1.5 text-right font-medium">
-                    {formatCurrency(
-                      platesBilling === 'anual' ? platesAnnualPrice : additionalPlatesTotal || 0,
+                    {item.id === 'impl-details' && (
+                      <span className="text-[10px] block text-slate-500 mt-1">
+                        Taxa de setup inicial
+                      </span>
                     )}
                   </td>
-                  <td className="p-1.5 text-center text-slate-600">
-                    {platesBilling === 'anual' ? 'Anual' : 'Mensal'}
+                  <td className="p-2.5 text-center font-medium">{item.quantity || 1}</td>
+                  <td className="p-2.5 text-right">
+                    {formatCurrency(item.unitPrice || item.price)}
                   </td>
-                </tr>
-              )}
-
-              {!!additionalBranches && additionalBranches > 0 && (
-                <tr>
-                  <td className="p-1.5">
-                    <span className="font-semibold text-slate-800">Filiais Adicionais</span>
-                    <span className="text-[9px] block text-slate-500 mt-0.5">
-                      CNPJs adicionais da mesma raiz
-                    </span>
-                  </td>
-                  <td className="p-1.5 text-center font-medium">{additionalBranches}</td>
-                  <td className="p-1.5 text-right">
-                    {branchesBilling === 'anual'
-                      ? '-'
-                      : formatCurrency(additionalBranchesPrice || 199)}
-                  </td>
-                  <td className="p-1.5 text-right font-medium">
-                    {formatCurrency(
-                      branchesBilling === 'anual'
-                        ? branchesAnnualPrice
-                        : additionalBranchesTotal || 0,
-                    )}
-                  </td>
-                  <td className="p-1.5 text-center text-slate-600">
-                    {branchesBilling === 'anual' ? 'Anual' : 'Mensal'}
-                  </td>
-                </tr>
-              )}
-
-              {implValue > 0 &&
-                implValue -
-                  trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) -
-                  (includeDiagnosticVisit && diagnosticVisits
-                    ? diagnosticVisits.reduce((acc, v) => acc + (Number(v.value) || 0), 0)
-                    : 0) >
-                  0 && (
-                  <tr>
-                    <td className="p-1.5">
-                      <span className="font-semibold text-slate-800">
-                        Serviços de Implantação / Configuração (
-                        {implMode === 'remoto' ? 'Remoto' : 'Presencial'})
-                      </span>
-                      <span className="text-[9px] block text-slate-500 mt-0.5">
-                        {totalImplHours > 0
-                          ? `Total estimado: ${totalImplHours} horas`
-                          : 'Taxa de setup inicial'}
-                      </span>
-                    </td>
-                    <td className="p-1.5 text-center font-medium">1</td>
-                    <td className="p-1.5 text-right">
-                      {formatCurrency(
-                        implValue -
-                          trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) -
-                          (includeDiagnosticVisit && diagnosticVisits
-                            ? diagnosticVisits.reduce((acc, v) => acc + (Number(v.value) || 0), 0)
-                            : 0),
-                      )}
-                    </td>
-                    <td className="p-1.5 text-right font-medium">
-                      {formatCurrency(
-                        implValue -
-                          trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) -
-                          (includeDiagnosticVisit && diagnosticVisits
-                            ? diagnosticVisits.reduce((acc, v) => acc + (Number(v.value) || 0), 0)
-                            : 0),
-                      )}
-                    </td>
-                    <td className="p-1.5 text-center text-slate-600">Parcela Única</td>
-                  </tr>
-                )}
-
-              {includeDiagnosticVisit &&
-                diagnosticVisits?.map((visit, index) => (
-                  <tr key={`diag-${index}`}>
-                    <td className="p-1.5">
-                      <span className="font-semibold text-slate-800">
-                        Visita Presencial de Diagnóstico
-                        {visit.date
-                          ? ` (Data: ${new Date(visit.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })})`
-                          : ''}
-                      </span>
-                    </td>
-                    <td className="p-1.5 text-center font-medium">1</td>
-                    <td className="p-1.5 text-right">{formatCurrency(Number(visit.value) || 0)}</td>
-                    <td className="p-1.5 text-right font-medium">
-                      {formatCurrency(Number(visit.value) || 0)}
-                    </td>
-                    <td className="p-1.5 text-center text-slate-600">Parcela Única</td>
-                  </tr>
-                ))}
-
-              {trainings.map((t, idx) => (
-                <tr key={`tr-${idx}`}>
-                  <td className="p-1.5">
-                    <span className="font-semibold text-slate-800">Treinamento: {t.name}</span>
-                  </td>
-                  <td className="p-1.5 text-center font-medium">1</td>
-                  <td className="p-1.5 text-right">
-                    {t.isFree ? 'Grátis' : formatCurrency(Number(t.price) || 0)}
-                  </td>
-                  <td className="p-1.5 text-right font-medium">
-                    {t.isFree ? (
-                      <span className="text-emerald-600">Cortesia</span>
-                    ) : (
-                      formatCurrency(Number(t.price) || 0)
-                    )}
-                  </td>
-                  <td className="p-1.5 text-center text-slate-600">Parcela Única</td>
+                  <td className="p-2.5 text-right font-bold">{formatCurrency(item.price)}</td>
+                  <td className="p-2.5 text-center text-slate-600">Parcela Única</td>
                 </tr>
               ))}
             </tbody>
@@ -540,275 +271,70 @@ export function QuoteDocument({
         </div>
       </div>
 
-      {(prazosConcedidos || isencaoPeriodo > 0 || tipoCobranca || isGratuito) && (
-        <div className="mb-3 print:break-inside-avoid">
-          <h3 className="font-bold text-xs text-[#1e3a8a] mb-1.5 flex items-center gap-1.5">
-            <div className="w-1.5 h-3 bg-orange-500 rounded-full" />
-            Termos e Condições
-          </h3>
-          <div className="bg-slate-50 p-2.5 rounded border border-slate-200 text-xs text-slate-700 space-y-1.5">
-            {prazosConcedidos && (
-              <p className="text-justify">
-                <strong>Prazos Concedidos:</strong> {prazosConcedidos}
-              </p>
-            )}
-            {isencaoPeriodo > 0 && (
-              <p>
-                <strong>Período de Isenção:</strong> {isencaoPeriodo} mês(es) de isenção na
-                mensalidade.
-              </p>
-            )}
-            <p>
-              <strong>Ciclo de Cobrança:</strong> {tipoCobranca === 'anual' ? 'Anual' : 'Mensal'}
-            </p>
-            {isGratuito && (
-              <p className="text-emerald-600 font-semibold">
-                <strong>Observação:</strong> Esta proposta é gratuita, com 100% de desconto aplicado
-                sobre os valores recorrentes.
-              </p>
-            )}
-          </div>
+      {/* Termos e Condições */}
+      <div className="mb-6">
+        <h3 className="font-bold text-sm text-[#1e3a8a] mb-3 flex items-center gap-2">
+          <div className="w-2 h-4 bg-orange-500 rounded-full" />
+          Termos e Condições
+        </h3>
+        <div className="bg-slate-50 border border-slate-200 p-3 rounded-md">
+          <span className="text-xs text-slate-700 font-semibold">
+            Ciclo de Cobrança:{' '}
+            <span className="font-normal">{planBilling === 'anual' ? 'Anual' : 'Mensal'}</span>
+          </span>
         </div>
-      )}
-
-      {cobrarDfePorFilial && filiaisDfe && filiaisDfe.length > 0 && (
-        <div className="mb-3">
-          <h3 className="font-bold text-xs text-[#1e3a8a] mb-1.5 flex items-center gap-1.5">
-            <div className="w-1.5 h-3 bg-orange-500 rounded-full" />
-            Filiais Consideradas na Franquia DF-e
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 min-w-0">
-            {filiaisDfe
-              .filter((f) => f.cnpj)
-              .map((f, i) => (
-                <div
-                  key={i}
-                  className="bg-slate-50 p-2 rounded border border-slate-200 shadow-sm text-[10px] min-w-0"
-                >
-                  <p
-                    className="font-bold text-slate-800 break-words"
-                    title={f.nome || 'Filial não identificada'}
-                  >
-                    {f.nome || 'Filial não identificada'}
-                  </p>
-                  <p className="text-slate-600 mt-0.5 break-words">CNPJ: {f.cnpj}</p>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* Totals */}
-      <div className="grid grid-cols-2 gap-2 min-w-0">
-        <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-          <h4 className="font-bold text-slate-500 text-[9px] uppercase tracking-wider mb-2">
-            Total Recorrente
-          </h4>
-          {isUpsell ? (
-            <div className="space-y-1.5 text-[10px]">
-              <div className="flex justify-between items-center text-slate-600">
-                <span>Mensalidade Atual</span>
-                <span className="font-medium">{formatCurrency(currentClientValue || 0)}</span>
-              </div>
-              <div className="flex justify-between items-center text-slate-600">
-                <span>Valor dos Adicionais (Upsell Mensal)</span>
-                <span className="font-medium">
-                  {isGratuito ? (
-                    <span className="text-emerald-600 font-bold">Gratuito</span>
-                  ) : (
-                    formatCurrency(totalValue)
-                  )}
-                </span>
-              </div>
-              {isGratuito && (
-                <div className="flex justify-between items-center text-emerald-600 font-bold bg-emerald-50 -mx-2.5 px-2.5 py-1 rounded">
-                  <span>Proposta Gratuita (100% Desconto)</span>
-                  <span>{formatCurrency(0)}</span>
-                </div>
-              )}
-              <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
-                <span>Nova Mensalidade</span>
-                <span>
-                  {formatCurrency(
-                    isGratuito ? currentClientValue || 0 : (currentClientValue || 0) + totalValue,
-                  )}
-                </span>
-              </div>
-
-              {totalAnual! > 0 && (
-                <>
-                  <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between items-center text-slate-600">
-                    <span>Valor dos Adicionais (Upsell Anual)</span>
-                    <span className="font-medium">{formatCurrency(totalAnual!)}</span>
-                  </div>
-                  <div className="flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
-                    <span>Novo Valor Anual (Adicionais)</span>
-                    <span>{formatCurrency(totalAnual!)}</span>
-                  </div>
-                </>
-              )}
+      <div className="grid grid-cols-2 gap-4 mb-10">
+        <div className="bg-slate-50 border border-slate-200 p-4 rounded-md flex flex-col justify-between">
+          <div>
+            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+              TOTAL RECORRENTE
+            </h4>
+            <div className="flex justify-between items-center mb-1 text-xs">
+              <span className="text-slate-600">
+                Subtotal ({planBilling === 'anual' ? 'Anual' : 'Mensal'})
+              </span>
+              <span className="font-semibold">{formatCurrency(totalRecorrenteBase)}</span>
             </div>
-          ) : (
-            <div className="space-y-1.5 text-[10px]">
-              {showBasePlan && planBilling === 'mensal' && (
-                <div className="flex justify-between items-center text-slate-600">
-                  <span>Plano Base (Mensal)</span>
-                  <span className="font-medium">{formatCurrency(planPrice)}</span>
-                </div>
-              )}
-              {selectedModulesData
-                .filter((m) => m.billingCycle !== 'anual')
-                .map((m, idx) => (
-                  <div
-                    key={`rec-mod-${idx}`}
-                    className="flex justify-between items-center text-slate-600"
-                  >
-                    <span>{m.name}</span>
-                    <span className="font-medium">{formatCurrency(m.price)}</span>
-                  </div>
-                ))}
-              {includeFranchise && dfeData && dfeBilling === 'mensal' && (
-                <div className="flex justify-between items-center text-slate-600">
-                  <span>
-                    {dfeData.name || 'Franquia DF-e'}
-                    {cobrarDfePorFilial ? ` (${quantidadeFiliaisDfe} filiais)` : ''}
-                  </span>
-                  <span className="font-medium">{formatCurrency(dfePrice || 0)}</span>
-                </div>
-              )}
-              {!!additionalPlates && additionalPlates > 0 && platesBilling === 'mensal' && (
-                <div className="flex justify-between items-center text-slate-600">
-                  <span>Placas Adicionais ({additionalPlates})</span>
-                  <span className="font-medium">{formatCurrency(additionalPlatesTotal || 0)}</span>
-                </div>
-              )}
-              {!!additionalBranches && additionalBranches > 0 && branchesBilling === 'mensal' && (
-                <div className="flex justify-between items-center text-slate-600">
-                  <span>Filiais Adicionais ({additionalBranches})</span>
-                  <span className="font-medium">
-                    {formatCurrency(additionalBranchesTotal || 0)}
-                  </span>
-                </div>
-              )}
-              {calculatedDiscount > 0 && (
-                <>
-                  <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center text-slate-600 font-medium">
-                    <span>Valor Calculado Mensal Padrão</span>
-                    <span>{formatCurrency(totalValueStandard || 0)}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-emerald-600 font-medium mt-1">
-                    <span>
-                      Desconto Aplicado{' '}
-                      {tipoDesconto === 'percentual' ? `(${descontoMensalidade}%)` : ''}
-                    </span>
-                    <span>- {formatCurrency(calculatedDiscount)}</span>
-                  </div>
-                </>
-              )}
-              {totalValue !== Math.max(0, (totalValueStandard || 0) - calculatedDiscount) && (
-                <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center text-orange-600 font-medium">
-                  <span>Ajuste Comercial Mensal</span>
-                  <span>
-                    {formatCurrency(
-                      totalValue - Math.max(0, (totalValueStandard || 0) - calculatedDiscount),
-                    )}
-                  </span>
-                </div>
-              )}
-              {isGratuito && (
-                <div className="flex justify-between items-center text-emerald-600 font-bold bg-emerald-50 -mx-2.5 px-2.5 py-1 rounded">
-                  <span>Proposta Gratuita (100% Desconto)</span>
-                  <span>{formatCurrency(0)}</span>
-                </div>
-              )}
-              <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
-                <span>Total Mensal Final</span>
-                <span>{formatCurrency(isGratuito ? 0 : totalValue)}</span>
+            {discountAmount > 0 && (
+              <div className="flex justify-between items-center mb-1 text-xs text-emerald-600">
+                <span>Desconto</span>
+                <span className="font-semibold">- {formatCurrency(discountAmount)}</span>
               </div>
-
-              {totalAnual! > 0 && (
-                <>
-                  <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between items-center text-slate-600">
-                    <span>Itens Anuais (Total)</span>
-                    <span className="font-medium">{formatCurrency(totalAnual!)}</span>
-                  </div>
-                  <div className="flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
-                    <span>Total Anual Final</span>
-                    <span>{formatCurrency(totalAnual!)}</span>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
+            )}
+          </div>
+          <div className="flex justify-between items-center mt-4 pt-3 border-t border-slate-200">
+            <span className="font-bold text-[#1e3a8a]">
+              Total {planBilling === 'anual' ? 'Anual' : 'Mensal'} Final
+            </span>
+            <span className="font-bold text-lg text-[#1e3a8a]">
+              {formatCurrency(totalRecorrenteFinal)}
+            </span>
+          </div>
         </div>
 
-        <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-          <h4 className="font-bold text-slate-500 text-[9px] uppercase tracking-wider mb-2">
-            Total Parcela Única
-          </h4>
-          <div className="space-y-1.5 text-[10px]">
-            {implValue > 0 &&
-              implValue -
-                trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) -
-                (includeDiagnosticVisit && diagnosticVisits
-                  ? diagnosticVisits.reduce((acc, v) => acc + (Number(v.value) || 0), 0)
-                  : 0) >
-                0 && (
-                <div className="flex justify-between items-center text-slate-600">
-                  <span>
-                    Serviços de Implantação ({implMode === 'remoto' ? 'Remoto' : 'Presencial'})
-                  </span>
-                  <span className="font-medium">
-                    {formatCurrency(
-                      implValue -
-                        trainings.reduce((acc, t) => acc + (Number(t.price) || 0), 0) -
-                        (includeDiagnosticVisit && diagnosticVisits
-                          ? diagnosticVisits.reduce((acc, v) => acc + (Number(v.value) || 0), 0)
-                          : 0),
-                    )}
-                  </span>
-                </div>
-              )}
-            {includeDiagnosticVisit &&
-              diagnosticVisits?.map((visit, index) => (
-                <div
-                  key={`diag-tot-${index}`}
-                  className="flex justify-between items-center text-slate-600"
-                >
-                  <span>
-                    Visita Presencial de Diagnóstico
-                    {visit.date
-                      ? ` (Data: ${new Date(visit.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })})`
-                      : ''}
-                  </span>
-                  <span className="font-medium">{formatCurrency(Number(visit.value) || 0)}</span>
-                </div>
-              ))}
-            {trainings.map((t, idx) => (
-              <div
-                key={`rec-tr-${idx}`}
-                className="flex justify-between items-center text-slate-600"
-              >
-                <span>Treinamento: {t.name}</span>
-                <span className="font-medium">
-                  {t.isFree ? (
-                    <span className="text-emerald-600">Grátis</span>
-                  ) : (
-                    formatCurrency(Number(t.price) || 0)
-                  )}
-                </span>
-              </div>
-            ))}
-            <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center font-bold text-[#1e3a8a] text-xs">
-              <span>Total à Vista</span>
-              <span>{formatCurrency(implValue)}</span>
+        <div className="bg-slate-50 border border-slate-200 p-4 rounded-md flex flex-col justify-between">
+          <div>
+            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+              TOTAL PARCELA ÚNICA
+            </h4>
+            <div className="flex justify-between items-center mb-1 text-xs">
+              <span className="text-slate-600">Serviços de Implantação ({implMode})</span>
+              <span className="font-semibold">{formatCurrency(totalOneTime)}</span>
             </div>
+          </div>
+          <div className="flex justify-between items-center mt-4 pt-3 border-t border-slate-200">
+            <span className="font-bold text-[#1e3a8a]">Total à Vista</span>
+            <span className="font-bold text-lg text-[#1e3a8a]">{formatCurrency(totalOneTime)}</span>
           </div>
         </div>
       </div>
 
-      <div className="mt-4 pt-2 border-t border-slate-200 text-center text-[9px] text-slate-400">
-        <p>Validade desta proposta: 15 dias corridos.</p>
+      {/* Footer */}
+      <div className="text-center text-[10px] text-slate-500 pt-6 border-t border-slate-200">
+        <p className="mb-1">Validade desta proposta: 15 dias corridos.</p>
         <p>Para dúvidas ou esclarecimentos, entre em contato conosco.</p>
       </div>
     </div>
