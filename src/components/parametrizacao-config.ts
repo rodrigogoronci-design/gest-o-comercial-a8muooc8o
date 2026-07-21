@@ -1,6 +1,6 @@
-import { Building2, FileCheck, Settings, Palette, User, Users } from 'lucide-react'
+import { Building2, FileCheck, Settings, User, Users } from 'lucide-react'
 
-export type FieldType = 'text' | 'password' | 'file' | 'radio' | 'toggle' | 'select'
+export type FieldType = 'text' | 'password' | 'radio' | 'toggle' | 'select'
 
 export interface FieldDef {
   key: string
@@ -20,19 +20,13 @@ export const SECTIONS: SectionDef[] = [
   {
     title: 'Empresa (Matriz)',
     icon: Building2,
-    fields: [
-      { key: 'matriz_cartao_cnpj_url', label: 'Cartão CNPJ', type: 'file' },
-      { key: 'matriz_contrato_social_url', label: 'Contrato Social', type: 'file' },
-      { key: 'matriz_regime_tributario', label: 'Regime Tributário', type: 'text' },
-    ],
+    fields: [{ key: 'matriz_regime_tributario', label: 'Regime Tributário', type: 'text' }],
   },
   {
     title: 'Filial',
     icon: Building2,
     toggleKey: 'filial_enabled',
     fields: [
-      { key: 'filial_cartao_cnpj_url', label: 'Cartão CNPJ', type: 'file' },
-      { key: 'filial_rntrc_url', label: 'RNTRC', type: 'file' },
       { key: 'filial_incidencia_tributaria', label: 'Incidência Tributária', type: 'text' },
       { key: 'filial_contador_nome', label: 'Nome do Contador', type: 'text' },
       { key: 'filial_contador_crc', label: 'CRC', type: 'text' },
@@ -50,7 +44,6 @@ export const SECTIONS: SectionDef[] = [
     title: 'Certificado Digital / SEFAZ',
     icon: FileCheck,
     fields: [
-      { key: 'certificado_arquivo_url', label: 'Certificado Digital', type: 'file' },
       { key: 'certificado_senha', label: 'Senha do Certificado', type: 'password' },
       {
         key: 'certificado_habilitada_sefaz',
@@ -71,16 +64,10 @@ export const SECTIONS: SectionDef[] = [
     ],
   },
   {
-    title: 'Identidade Visual',
-    icon: Palette,
-    fields: [{ key: 'identidade_logomarca_url', label: 'Logomarca da Empresa', type: 'file' }],
-  },
-  {
     title: 'Responsável Legal',
     icon: User,
     fields: [
       { key: 'responsavel_nome', label: 'Nome do Responsável Legal', type: 'text' },
-      { key: 'responsavel_cnh_url', label: 'Cópia da CNH', type: 'file' },
       { key: 'responsavel_telefone', label: 'Telefone para Contato', type: 'text' },
     ],
   },

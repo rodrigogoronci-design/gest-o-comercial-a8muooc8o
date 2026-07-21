@@ -13,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ParametrizacaoUpload } from '@/components/parametrizacao-upload'
 import { SECTIONS, type FieldDef } from '@/components/parametrizacao-config'
 import { updateDadosParametrizacao } from '@/services/implementacoes'
 import { toast } from 'sonner'
@@ -57,15 +56,6 @@ export function ParametrizacaoSection({
             type="password"
             value={val || ''}
             onChange={(e) => set(field.key, e.target.value)}
-          />
-        )
-      case 'file':
-        return (
-          <ParametrizacaoUpload
-            implementacaoId={implementacaoId}
-            label={field.label}
-            currentUrl={val || null}
-            onUrlChange={(url) => set(field.key, url)}
           />
         )
       case 'radio':
