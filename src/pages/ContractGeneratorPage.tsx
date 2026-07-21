@@ -237,7 +237,7 @@ export default function ContractGeneratorPage() {
           id, data_proposta, valor_mensalidade, valor_implantacao, itens,
           desconto_mensalidade, tipo_desconto, isencao_periodo, prazos_concedidos,
           is_gratuito, quantidade_filiais, filiais_detalhes, aos_cuidados_de,
-          cliente_id,
+          parcelas_implantacao, cliente_id,
           crm_prospects ( id, empresa, contato_nome, cnpj, endereco ),
           clientes ( id, nome, rep_nome, cnpj, endereco, modulos, valor_total, plano_id )
         `)
@@ -391,6 +391,7 @@ export default function ContractGeneratorPage() {
     setAdditionalPlates(newPlates)
     setImplMode(newImplMode)
     setManualImplValue(newImplValue.toString())
+    setParcelasImplantacao(prop.parcelas_implantacao || 1)
     if (prop.valor_mensalidade !== undefined && prop.valor_mensalidade !== null) {
       setIsMensalidadeManual(true)
       setManualMensalidadeValue(prop.valor_mensalidade.toString())
@@ -556,6 +557,7 @@ export default function ContractGeneratorPage() {
 
   const [manualImplValue, setManualImplValue] = useState<string>('')
   const implValue = manualImplValue !== '' ? parseFloat(manualImplValue) : calculatedImplValue
+  const [parcelasImplantacao, setParcelasImplantacao] = useState<number>(1)
 
   const currentClientValue = useMemo(() => {
     if (quoteTargetType === 'cliente' && selectedClientId !== 'novo') {
@@ -739,6 +741,7 @@ export default function ContractGeneratorPage() {
     currentContractValue,
     isTreinamentoGratuito,
     customModulePrices,
+    parcelasImplantacao,
     // Addendum specific props
     clientName: name,
     valorTotalAtual: currentContractValue,
@@ -828,6 +831,7 @@ export default function ContractGeneratorPage() {
     prazosConcedidos,
     isGratuito: isTreinamentoGratuito,
     tipoCobranca: 'mensal',
+    parcelasImplantacao,
   }
 
   const fetchCnpjData = async (cnpjValue: string) => {
@@ -1297,6 +1301,7 @@ export default function ContractGeneratorPage() {
             filiais_detalhes: finalFiliaisDetalhes,
             cobrar_filiais: cobrarPorFilial,
             prazos_concedidos: prazosConcedidos,
+            parcelas_implantacao: parcelasImplantacao,
           } as any)
           .select()
           .single()
@@ -1371,6 +1376,7 @@ export default function ContractGeneratorPage() {
             filiais_detalhes: finalFiliaisDetalhes,
             cobrar_filiais: cobrarPorFilial,
             prazos_concedidos: prazosConcedidos,
+            parcelas_implantacao: parcelasImplantacao,
           } as any)
           .select()
           .single()
@@ -1567,6 +1573,7 @@ export default function ContractGeneratorPage() {
           observacoes: `Contrato atualizado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}${validDescontoMensalidade > 0 ? ` | Desconto: ${tipoDesconto === 'percentual' ? `${validDescontoMensalidade}%` : `R$ ${validDescontoMensalidade}`} (${formatCurrency(calculatedDiscount)})${isencaoPeriodo > 0 ? ` Isenção: ${isencaoPeriodo} meses` : ''}` : ''}`,
           is_gratuito: isTreinamentoGratuito,
           prazos_concedidos: prazosConcedidos,
+          parcelas_implantacao: parcelasImplantacao,
         })
 
         try {
@@ -1643,6 +1650,7 @@ export default function ContractGeneratorPage() {
           observacoes: `Contrato gerado via Gerador de Contratos. Implantação: ${implMode} - R$ ${implValue}${validDescontoMensalidade > 0 ? ` | Desconto: ${tipoDesconto === 'percentual' ? `${validDescontoMensalidade}%` : `R$ ${validDescontoMensalidade}`} (${formatCurrency(calculatedDiscount)})${isencaoPeriodo > 0 ? ` Isenção: ${isencaoPeriodo} meses` : ''}` : ''}`,
           is_gratuito: isTreinamentoGratuito,
           prazos_concedidos: prazosConcedidos,
+          parcelas_implantacao: parcelasImplantacao,
         })
 
         if (sendToFinance) {
@@ -2700,6 +2708,26 @@ export default function ContractGeneratorPage() {
                         </span>
                       </div>
                     </div>
+                    <div className="mt-4 pt-2 border-t border-slate-100 space-y-2">
+                      <Label className="text-xs">Parcelas da Implantação</Label>
+                      <div className="flex gap-3 items-center">
+                        <Input
+                          type="number"
+                          min="1"
+                          step="1"
+                          placeholder="1"
+                          value={parcelasImplantacao || ''}
+                          onChange={(e) =>
+                            setParcelasImplantacao(Math.max(1, parseInt(e.target.value) || 1))
+                          }
+                          className="w-32 bg-white"
+                        />
+                        <span className="text-xs text-slate-500">
+                          Valor por parcela:{' '}
+                          {formatCurrency(implValue / (parcelasImplantacao || 1))}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
                   <Separator className="my-4" />
@@ -3699,6 +3727,26 @@ export default function ContractGeneratorPage() {
                         />
                         <span className="text-xs text-slate-500">
                           Calculado: {formatCurrency(calculatedImplValue)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-2 border-t border-slate-100 space-y-2">
+                      <Label className="text-xs">Parcelas da Implantação</Label>
+                      <div className="flex gap-3 items-center">
+                        <Input
+                          type="number"
+                          min="1"
+                          step="1"
+                          placeholder="1"
+                          value={parcelasImplantacao || ''}
+                          onChange={(e) =>
+                            setParcelasImplantacao(Math.max(1, parseInt(e.target.value) || 1))
+                          }
+                          className="w-32 bg-white"
+                        />
+                        <span className="text-xs text-slate-500">
+                          Valor por parcela:{' '}
+                          {formatCurrency(implValue / (parcelasImplantacao || 1))}
                         </span>
                       </div>
                     </div>

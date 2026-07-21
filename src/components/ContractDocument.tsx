@@ -86,6 +86,7 @@ export function ContractDocument({
   branchesAnnualPrice = 0,
   totalAnual = 0,
   totalAnualStandard = 0,
+  parcelasImplantacao = 1,
 }: any) {
   return (
     <div className="p-8 sm:p-12 text-[12px] text-slate-800 font-serif leading-relaxed space-y-5 print:p-0 print:text-black">
@@ -565,6 +566,13 @@ export function ContractDocument({
               correspondente à 50% do valor referente à última mensalidade pelo período em que o
               sistema ficar disponível para consulta.
             </p>
+            {parcelasImplantacao > 1 && (
+              <p>
+                5.21.1) O valor da implantação de {formatCurrency(implValue)} será pago em{' '}
+                {parcelasImplantacao} parcelas de {formatCurrency(implValue / parcelasImplantacao)},
+                mediante boleto bancário.
+              </p>
+            )}
             <p>5.22) Valor Resumo:</p>
           </div>
 
