@@ -55,6 +55,7 @@ import {
   DFE_TIERS,
   PREDEFINED_TRAININGS,
 } from '@/constants/contracts'
+import { getPlanDefaultModules } from '@/lib/plan-modules'
 import { ContractDocument } from '@/components/ContractDocument'
 import { SignedContractUpload } from '@/components/SignedContractUpload'
 import { cn } from '@/lib/utils'
@@ -955,9 +956,20 @@ export default function ContractGeneratorPage() {
     setIsPlanPriceManual(false)
     setManualPlanPrice('')
     if (val === 'tms-30') {
-      setSelectedModules([])
+      const tms30ModuleIds = getPlanDefaultModules('tms-30')
+      setSelectedModules(tms30ModuleIds)
       setCustomModulePrices({})
       setModuleGracePeriods({})
+      if (!isMensalidadeManual) {
+        setManualMensalidadeValue('250')
+      }
+    }
+  }
+
+  const enforceTms30ModuleConstraint = () => {
+    if (selectedPlan === 'tms-30') {
+      const tms30ModuleIds = getPlanDefaultModules('tms-30')
+      setSelectedModules(tms30ModuleIds)
     }
   }
 
@@ -1184,6 +1196,23 @@ export default function ContractGeneratorPage() {
         variant: 'destructive',
       })
       return
+    }
+
+    if (selectedPlan === 'tms-30') {
+      const tms30ModuleIds = getPlanDefaultModules('tms-30')
+      const nonBasicSelected = selectedModules.filter(
+        (id) => !MODULES.find((m) => m.id === id)?.isBasic,
+      )
+      if (nonBasicSelected.length > 0) {
+        setSelectedModules(tms30ModuleIds)
+        toast({
+          title: 'Módulos ajustados',
+          description:
+            'O plano TMS 30 inclui apenas: Administração, Básico, Carga e Comercial. Módulos adicionais foram removidos.',
+          className: 'bg-amber-500 text-white border-none',
+        })
+        return
+      }
     }
 
     const proposalItems = [
@@ -1437,6 +1466,23 @@ export default function ContractGeneratorPage() {
         variant: 'destructive',
       })
       return
+    }
+
+    if (selectedPlan === 'tms-30') {
+      const tms30ModuleIds = getPlanDefaultModules('tms-30')
+      const nonBasicSelected = selectedModules.filter(
+        (id) => !MODULES.find((m) => m.id === id)?.isBasic,
+      )
+      if (nonBasicSelected.length > 0) {
+        setSelectedModules(tms30ModuleIds)
+        toast({
+          title: 'Módulos ajustados',
+          description:
+            'O plano TMS 30 inclui apenas: Administração, Básico, Carga e Comercial. Módulos adicionais foram removidos.',
+          className: 'bg-amber-500 text-white border-none',
+        })
+        return
+      }
     }
 
     try {
