@@ -4,7 +4,8 @@ import { Buffer } from 'node:buffer'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
 }
 
 Deno.serve(async (req: Request) => {
@@ -14,18 +15,44 @@ Deno.serve(async (req: Request) => {
 
   try {
     const body = await req.json().catch(() => ({}))
-    const { to, clientName, repName, signatureLink, contractUrl } = body
+    const {
+      to,
+      clientName,
+      repName,
+      signatureLink,
+      contractUrl,
+      parcelasImplantacao,
+      implValue,
+      selectedModules,
+      planName,
+    } = body
 
     if (!to) throw new Error('E-mail do destinatário não informado.')
     if (!signatureLink) throw new Error('Link de assinatura não informado.')
 
     const subject = `Contrato Service Logic - ${clientName}`
 
+    const installmentText =
+      parcelasImplantacao && parcelasImplantacao > 1 && implValue
+        ? `O valor da implantação de R$ ${implValue.toFixed(2)} será pago em ${parcelasImplantacao} parcelas de R$ ${(implValue / parcelasImplantacao).toFixed(2)}.`
+        : 'O valor da implantação será pago à vista.'
+
+    const modulesText =
+      selectedModules && selectedModules.length > 0
+        ? `Módulos contratados: ${selectedModules.join(', ')}.`
+        : ''
+
+    const planText = planName ? `Plano contratado: ${planName}.` : ''
+
     const emailBody = `Boa tarde, ${clientName} conforme contrato
 
 Seja muito bem-vindos à Service Logic!
 Conforme alinhado, segue abaixo o link para assinatura eletrônica do contrato referente à contratação do sistema TMS Service Logic.
 O contrato deverá ser assinado pela representante legal da empresa a ${repName || 'conforme contrato'} conforme contrato
+
+${planText}
+${modulesText}
+${installmentText}
 
 Link para assinatura:
 ${signatureLink}
@@ -97,6 +124,9 @@ Permanecemos à disposição para quaisquer esclarecimentos e esperamos iniciar 
         subject,
         body: emailBody,
         attachmentsCount: attachments.length,
+        parcelasImplantacao,
+        selectedModules,
+        planName,
       })
     }
 

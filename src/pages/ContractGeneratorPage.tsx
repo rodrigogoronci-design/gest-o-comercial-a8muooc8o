@@ -1598,6 +1598,7 @@ export default function ContractGeneratorPage() {
               desconto_mensalidade: validDescontoMensalidade,
               tipo_desconto: tipoDesconto,
               isencao_periodo: isencaoPeriodo,
+              parcelas_implantacao: parcelasImplantacao,
             })
             .eq('id', loadedProposalId)
         }
@@ -1678,6 +1679,7 @@ export default function ContractGeneratorPage() {
               desconto_mensalidade: validDescontoMensalidade,
               tipo_desconto: tipoDesconto,
               isencao_periodo: isencaoPeriodo,
+              parcelas_implantacao: parcelasImplantacao,
             })
             .eq('id', loadedProposalId)
         }

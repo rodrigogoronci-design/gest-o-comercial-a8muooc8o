@@ -6,6 +6,10 @@ export interface SendContractEmailParams {
   repName?: string
   signatureLink: string
   contractUrl?: string
+  parcelasImplantacao?: number
+  implValue?: number
+  selectedModules?: string[]
+  planName?: string
 }
 
 export const sendContractEmail = async (params: SendContractEmailParams) => {

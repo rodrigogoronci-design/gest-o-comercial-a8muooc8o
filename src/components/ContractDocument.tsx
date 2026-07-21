@@ -135,6 +135,35 @@ export function ContractDocument({
           title="CLÁUSULA PRIMEIRA - DO OBJETO DO CONTRATO"
           texts={CONTRACT_TEXT.CLAUSULA_1}
         />
+        {selectedModules.filter((id: string) => !MODULES.find((m) => m.id === id)?.isBasic).length >
+          0 && (
+          <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg print:bg-transparent print:border-none print:p-0">
+            <h4 className="font-bold text-sm text-[#1b4382] mb-2 print:text-black">
+              Módulos Adicionais Contratados:
+            </h4>
+            <ul className="list-disc list-inside text-[11px] space-y-1">
+              {selectedModules
+                .filter((id: string) => !MODULES.find((m) => m.id === id)?.isBasic)
+                .map((id: string) => {
+                  const mod = MODULES.find((m) => m.id === id)
+                  const price =
+                    typeof customModulePrices[id] === 'number' ? customModulePrices[id] : mod?.price
+                  return (
+                    <li key={id}>
+                      <strong>{mod?.name}</strong>
+                      {mod?.franquia_quantidade
+                        ? ` (Franquia: ${mod.franquia_quantidade} placas)`
+                        : ''}{' '}
+                      — {mod?.price === 0 ? 'Incluso' : formatCurrency(price || 0)}
+                      {moduleGracePeriods[id] > 0
+                        ? ` (Isento por ${moduleGracePeriods[id]} meses)`
+                        : ''}
+                    </li>
+                  )
+                })}
+            </ul>
+          </div>
+        )}
         <ClauseBlock
           title="CLÁUSULA SEGUNDA - MELHORIAS, CUSTOMIZAÇÕES E SERVIÇOS NÃO CONTEMPLADOS NO CONTRATO."
           texts={CONTRACT_TEXT.CLAUSULA_2}
@@ -209,6 +238,12 @@ export function ContractDocument({
               Financeiro. <br />
               (**) Ct-e, MDF-e, NF-e, NFS-e e Documentos cancelados.
             </p>
+            {selectedPlan !== 'none' && planData && (
+              <p className="text-[10px] mt-1 font-medium text-[#1b4382] print:text-black">
+                Plano selecionado: <strong>{planData.name}</strong> — {planData.limit} documentos
+                eletrônicos por mês, no valor de {formatCurrency(planPrice)} mensais.
+              </p>
+            )}
           </div>
 
           <div className="space-y-3">
@@ -566,10 +601,15 @@ export function ContractDocument({
               correspondente à 50% do valor referente à última mensalidade pelo período em que o
               sistema ficar disponível para consulta.
             </p>
-            {parcelasImplantacao > 1 && (
+            {parcelasImplantacao > 1 ? (
               <p>
                 5.21.1) O valor da implantação de {formatCurrency(implValue)} será pago em{' '}
                 {parcelasImplantacao} parcelas de {formatCurrency(implValue / parcelasImplantacao)},
+                mediante boleto bancário.
+              </p>
+            ) : (
+              <p>
+                5.21.1) O valor da implantação de {formatCurrency(implValue)} será pago à vista,
                 mediante boleto bancário.
               </p>
             )}
@@ -592,7 +632,10 @@ export function ContractDocument({
                       <br />
                       Forma de pagamento: Boleto
                       <br />
-                      Implantação: À vista
+                      Implantação:{' '}
+                      {parcelasImplantacao > 1
+                        ? `${parcelasImplantacao}x de ${formatCurrency(implValue / parcelasImplantacao)}`
+                        : 'À vista'}
                     </td>
                   </tr>
                 )}
