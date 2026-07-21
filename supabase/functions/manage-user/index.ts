@@ -8,6 +8,75 @@ const corsHeaders = {
     'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
 }
 
+const EMAIL_IN_USE_ERROR = 'Este e-mail já está em uso por outro colaborador.'
+const ORPHAN_LINKED_SUCCESS = 'Usuário vinculado com sucesso a partir de conta existente.'
+
+function jsonResponse(body: any, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
+}
+
+function emailInUseResponse() {
+  return jsonResponse({ error: EMAIL_IN_USE_ERROR })
+}
+
+function isEmailConflict(err: any): boolean {
+  const msg = (err?.message || '').toLowerCase()
+  return msg.includes('already') || msg.includes('registered')
+}
+
+async function findOrphanedAuthUser(supabase: any, email: string): Promise<any | null> {
+  const { data: userList } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
+  if (!userList?.users) return null
+
+  const normalized = email.trim().toLowerCase()
+  const existing = userList.users.find((u: any) => u.email?.toLowerCase() === normalized)
+  if (!existing) return null
+
+  const { data: linked } = await supabase
+    .from('colaboradores')
+    .select('id')
+    .eq('user_id', existing.id)
+    .maybeSingle()
+
+  if (linked) return null
+  return existing
+}
+
+async function cleanupOrphanedAuthUser(supabase: any, email: string): Promise<boolean> {
+  const orphan = await findOrphanedAuthUser(supabase, email)
+  if (!orphan) return false
+  await supabase.auth.admin.deleteUser(orphan.id)
+  return true
+}
+
+async function createAuthUserSafely(
+  supabase: any,
+  email: string,
+  password: string | undefined,
+  name: string,
+): Promise<any | null> {
+  const userData = {
+    email,
+    password: password || 'Skip@Pass123!',
+    email_confirm: true,
+    user_metadata: { name, app_source: 'controle-de-beneficios' },
+  }
+
+  const { data, error } = await supabase.auth.admin.createUser(userData)
+  if (!error) return data.user
+  if (!isEmailConflict(error)) throw error
+
+  const cleaned = await cleanupOrphanedAuthUser(supabase, email)
+  if (!cleaned) return null
+
+  const { data: retryData, error: retryErr } = await supabase.auth.admin.createUser(userData)
+  if (retryErr) return null
+  return retryData.user
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -30,25 +99,46 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === 'create') {
-      let authUser
-      let colabId
+      let authUser: any = null
+      let colabId: string
+
+      if (payload.email) {
+        const { data: existingColab } = await supabase
+          .from('colaboradores')
+          .select('id')
+          .ilike('email', payload.email.trim().toLowerCase())
+          .maybeSingle()
+
+        if (existingColab) return emailInUseResponse()
+      }
 
       if (payload.systemAccess !== false && payload.email) {
         if (payload.sendInvite) {
           const { data, error } = await supabase.auth.admin.inviteUserByEmail(payload.email, {
             data: { name: payload.name, app_source: 'controle-de-beneficios' },
           })
-          if (error) throw error
-          authUser = data.user
+          if (error) {
+            if (isEmailConflict(error)) {
+              const orphan = await findOrphanedAuthUser(supabase, payload.email)
+              if (orphan) {
+                authUser = orphan
+              } else {
+                return emailInUseResponse()
+              }
+            } else {
+              throw error
+            }
+          } else {
+            authUser = data.user
+          }
         } else {
-          const { data, error } = await supabase.auth.admin.createUser({
-            email: payload.email,
-            password: payload.password || 'Skip@Pass123!',
-            email_confirm: true,
-            user_metadata: { name: payload.name, app_source: 'controle-de-beneficios' },
-          })
-          if (error) throw error
-          authUser = data.user
+          const orphan = await findOrphanedAuthUser(supabase, payload.email)
+          if (orphan) {
+            authUser = orphan
+          } else {
+            authUser = await createAuthUserSafely(supabase, payload.email, payload.password, payload.name)
+            if (!authUser) return emailInUseResponse()
+          }
         }
         if (!authUser) throw new Error('Falha ao criar usuário')
         colabId = authUser.id
@@ -65,10 +155,7 @@ Deno.serve(async (req: Request) => {
         app_source: 'controle-de-beneficios',
         departamento: payload.departamento || null,
         avatar_url: payload.avatar_url || null,
-        recebe_transporte:
-          payload.recebe_transporte === false || payload.recebe_transporte === 'false'
-            ? false
-            : true,
+        recebe_transporte: payload.recebe_transporte === false || payload.recebe_transporte === 'false' ? false : true,
         cpf: payload.cpf || null,
         rg: payload.rg || null,
         data_nascimento: payload.data_nascimento || null,
@@ -85,19 +172,18 @@ Deno.serve(async (req: Request) => {
       if (payload.tipo_chave_pix !== undefined) insertData.tipo_chave_pix = payload.tipo_chave_pix
 
       const { error: dbErr } = await supabase.from('colaboradores').insert(insertData)
-      if (dbErr) throw dbErr
+      if (dbErr) {
+        if (authUser) await supabase.auth.admin.deleteUser(authUser.id)
+        throw dbErr
+      }
 
-      return new Response(JSON.stringify({ success: true, id: colabId }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return jsonResponse({ success: true, id: colabId, linked: !!(payload.sendInvite || payload.systemAccess !== false) })
     }
 
     if (action === 'resend_invite') {
-      const { data, error } = await supabase.auth.admin.inviteUserByEmail(payload.email)
+      const { error } = await supabase.auth.admin.inviteUserByEmail(payload.email)
       if (error) throw error
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return jsonResponse({ success: true })
     }
 
     if (action === 'delete') {
@@ -118,9 +204,42 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return jsonResponse({ success: true })
+    }
+
+    if (action === 'check_conflict') {
+      const { email } = payload
+      if (!email) return jsonResponse({ conflict: false })
+
+      const normalized = email.trim().toLowerCase()
+
+      const { data: colabByEmail } = await supabase
+        .from('colaboradores')
+        .select('id, nome, email, user_id, status')
+        .ilike('email', normalized)
+        .maybeSingle()
+
+      if (colabByEmail) {
+        return jsonResponse({
+          conflict: true,
+          type: 'colaboradores',
+          record: colabByEmail,
+          message: `Este e-mail já está vinculado ao colaborador: ${colabByEmail.nome}.`,
+        })
+      }
+
+      const orphan = await findOrphanedAuthUser(supabase, email)
+      if (orphan) {
+        return jsonResponse({
+          conflict: true,
+          type: 'orphaned_auth',
+          record: { id: orphan.id, email: orphan.email },
+          message: 'Existe uma conta de autenticação órfã (sem vínculo a colaborador) com este e-mail. O sistema pode vinculá-la automaticamente ao criar o colaborador.',
+          canAutoResolve: true,
+        })
+      }
+
+      return jsonResponse({ conflict: false })
     }
 
     if (action === 'update') {
@@ -135,6 +254,17 @@ Deno.serve(async (req: Request) => {
       const authUserId = colab?.user_id
       const colabId = colab?.id || id
 
+      if (email) {
+        const { data: emailConflict } = await supabase
+          .from('colaboradores')
+          .select('id')
+          .ilike('email', email.trim().toLowerCase())
+          .neq('id', colabId)
+          .maybeSingle()
+
+        if (emailConflict) return emailInUseResponse()
+      }
+
       if (authUserId) {
         if (systemAccess === false) {
           await supabase.auth.admin.deleteUser(authUserId)
@@ -147,45 +277,36 @@ Deno.serve(async (req: Request) => {
           }
           if (password) updateData.password = password
 
-          const { error: authErr } = await supabase.auth.admin.updateUserById(
-            authUserId,
-            updateData,
-          )
+          const { error: authErr } = await supabase.auth.admin.updateUserById(authUserId, updateData)
           if (authErr) {
-            if (authErr.message.toLowerCase().includes('user not found')) {
-              if (email) {
-                const { data: newAuth, error: createErr } = await supabase.auth.admin.createUser({
-                  email,
-                  password: password || 'Skip@Pass123!',
-                  email_confirm: true,
-                  user_metadata: { name, app_source: 'controle-de-beneficios' },
-                })
-                if (!createErr) {
-                  await supabase
-                    .from('colaboradores')
-                    .update({ user_id: newAuth.user.id })
-                    .eq('id', colabId)
-                }
+            if (isEmailConflict(authErr)) {
+              const orphan = await findOrphanedAuthUser(supabase, email)
+              if (orphan) {
+                await supabase.from('colaboradores').update({ user_id: orphan.id }).eq('id', colabId)
+              } else {
+                return emailInUseResponse()
               }
+            } else if (authErr.message.toLowerCase().includes('user not found')) {
+              const newAuth = await createAuthUserSafely(supabase, email, password, name)
+              if (!newAuth) return emailInUseResponse()
+              await supabase.from('colaboradores').update({ user_id: newAuth.id }).eq('id', colabId)
             } else {
               throw authErr
             }
           }
         }
       } else if (systemAccess !== false && email) {
-        const { data: newAuth, error: createErr } = await supabase.auth.admin.createUser({
-          email,
-          password: password || 'Skip@Pass123!',
-          email_confirm: true,
-          user_metadata: { name, app_source: 'controle-de-beneficios' },
-        })
-        if (createErr) throw createErr
-
-        await supabase.from('colaboradores').update({ user_id: newAuth.user.id }).eq('id', colabId)
+        const orphan = await findOrphanedAuthUser(supabase, email)
+        if (orphan) {
+          await supabase.from('colaboradores').update({ user_id: orphan.id }).eq('id', colabId)
+        } else {
+          const newAuth = await createAuthUserSafely(supabase, email, password, name)
+          if (!newAuth) return emailInUseResponse()
+          await supabase.from('colaboradores').update({ user_id: newAuth.id }).eq('id', colabId)
+        }
       }
 
-      const receivesTransport =
-        recebe_transporte === false || recebe_transporte === 'false' ? false : true
+      const receivesTransport = recebe_transporte === false || recebe_transporte === 'false' ? false : true
 
       const updateDataDb: any = {
         nome: name,
@@ -195,48 +316,32 @@ Deno.serve(async (req: Request) => {
         app_source: 'controle-de-beneficios',
       }
       if (email !== undefined) updateDataDb.email = email || null
-
       if (payload.avatar_url !== undefined) updateDataDb.avatar_url = payload.avatar_url
       if (payload.cpf !== undefined) updateDataDb.cpf = payload.cpf
       if (payload.rg !== undefined) updateDataDb.rg = payload.rg
-      if (payload.data_nascimento !== undefined)
-        updateDataDb.data_nascimento = payload.data_nascimento
+      if (payload.data_nascimento !== undefined) updateDataDb.data_nascimento = payload.data_nascimento
       if (payload.endereco !== undefined) updateDataDb.endereco = payload.endereco
       if (payload.telefone !== undefined) updateDataDb.telefone = payload.telefone
       if (payload.cargo !== undefined) updateDataDb.cargo = payload.cargo
       if (payload.data_admissao !== undefined) updateDataDb.data_admissao = payload.data_admissao
-      if (payload.salario !== undefined)
-        updateDataDb.salario = payload.salario ? parseFloat(payload.salario) : null
+      if (payload.salario !== undefined) updateDataDb.salario = payload.salario ? parseFloat(payload.salario) : null
       if (payload.tipo_contrato !== undefined) updateDataDb.tipo_contrato = payload.tipo_contrato
-      if (payload.codigo_funcionario !== undefined)
-        updateDataDb.codigo_funcionario = payload.codigo_funcionario
+      if (payload.codigo_funcionario !== undefined) updateDataDb.codigo_funcionario = payload.codigo_funcionario
       if (payload.chave_pix !== undefined) updateDataDb.chave_pix = payload.chave_pix
       if (payload.tipo_chave_pix !== undefined) updateDataDb.tipo_chave_pix = payload.tipo_chave_pix
 
-      const { error: dbErr } = await supabase
-        .from('colaboradores')
-        .update(updateDataDb)
-        .eq('id', colabId)
-
+      const { error: dbErr } = await supabase.from('colaboradores').update(updateDataDb).eq('id', colabId)
       if (dbErr) throw dbErr
 
       if (!receivesTransport) {
         await supabase.from('beneficios_transporte').delete().eq('colaborador_id', colabId)
       }
 
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return jsonResponse({ success: true })
     }
 
-    return new Response(JSON.stringify({ error: 'Unknown action' }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return jsonResponse({ error: 'Unknown action' })
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return jsonResponse({ error: err.message })
   }
 })
