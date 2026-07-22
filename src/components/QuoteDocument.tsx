@@ -128,7 +128,7 @@ export function QuoteDocument(props: QuoteDocumentProps) {
   return (
     <div
       id="quote-proposal-print"
-      className="bg-white text-slate-900 p-8 max-w-4xl mx-auto text-sm print:p-0 print:m-0 print:max-w-none font-sans"
+      className="bg-white text-slate-900 p-8 max-w-4xl mx-auto text-sm print:p-0 print:max-w-none font-sans"
     >
       <div className="flex justify-between items-start mb-6">
         <div className="flex items-center gap-3">
@@ -375,7 +375,7 @@ export function QuoteDocument(props: QuoteDocumentProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-10">
+      <div className="grid grid-cols-2 gap-4 mb-10 break-inside-avoid">
         <div className="bg-slate-50 border border-slate-200 p-4 rounded-md flex flex-col justify-between">
           <div>
             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
@@ -429,7 +429,7 @@ export function QuoteDocument(props: QuoteDocumentProps) {
         </div>
       </div>
 
-      <div className="text-center text-[10px] text-slate-500 pt-6 border-t border-slate-200">
+      <div className="text-center text-[10px] text-slate-500 pt-6 border-t border-slate-200 break-inside-avoid">
         <p className="mb-1">Validade desta proposta: 15 dias corridos.</p>
         <p>Para dúvidas ou esclarecimentos, entre em contato conosco.</p>
       </div>

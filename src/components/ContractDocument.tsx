@@ -12,8 +12,8 @@ export const Highlight = ({ value, fallback }: { value: string; fallback: string
     className={cn(
       'mx-1 px-1 rounded transition-colors',
       value
-        ? 'bg-transparent font-bold text-[#1b4382] print:text-black'
-        : 'bg-[#f37021]/20 font-medium text-[#f37021] print:text-black print:bg-transparent',
+        ? 'bg-transparent font-bold text-[#1b4382]'
+        : 'bg-[#f37021]/20 font-medium text-[#f37021]',
     )}
   >
     {value || fallback}
@@ -22,7 +22,7 @@ export const Highlight = ({ value, fallback }: { value: string; fallback: string
 
 const ClauseBlock = ({ title, texts }: { title: string; texts: string[] }) => (
   <div className="mb-6">
-    <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+    <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3">
       {title}
     </h3>
     <div className="space-y-3">
@@ -90,11 +90,11 @@ export function ContractDocument({
   parcelasImplantacao = 1,
 }: any) {
   return (
-    <div className="p-8 sm:p-12 text-[12px] text-slate-800 font-serif leading-relaxed space-y-5 print:p-0 print:text-black">
-      <div className="flex flex-col items-center mb-8 border-b-2 border-[#f37021] print:border-black pb-6">
+    <div className="p-8 sm:p-12 text-[12px] text-slate-800 font-serif leading-relaxed space-y-5 print:p-0">
+      <div className="flex flex-col items-center mb-8 border-b-2 border-[#f37021] pb-6">
         <div className="flex w-full justify-between items-center mb-6">
           <img src={logoUrl} alt="Service Logic" className="h-16 object-contain" />
-          <h1 className="text-sm font-bold uppercase w-2/3 text-right leading-tight text-[#1b4382] print:text-black">
+          <h1 className="text-sm font-bold uppercase w-2/3 text-right leading-tight text-[#1b4382]">
             LICENÇA DE USO E SERVIÇOS DE IMPLANTAÇÃO, MANUTENÇÃO E SUPORTE DE SOFTWARE.
           </h1>
         </div>
@@ -102,14 +102,14 @@ export function ContractDocument({
 
       <div className="space-y-4 text-justify">
         <div>
-          <h3 className="font-bold uppercase mt-6 mb-2 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+          <h3 className="font-bold uppercase mt-6 mb-2 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3">
             DEFINIÇÕES:
           </h3>
           <p>{CONTRACT_TEXT.DEFINICOES}</p>
         </div>
 
         <div className="transition-colors duration-500 p-2 -mx-2 rounded-lg">
-          <h3 className="font-bold uppercase mt-4 mb-2 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+          <h3 className="font-bold uppercase mt-4 mb-2 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3">
             CONTRATANTE:
           </h3>
           <p>
@@ -124,7 +124,7 @@ export function ContractDocument({
         </div>
 
         <div>
-          <h3 className="font-bold uppercase mt-6 mb-2 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+          <h3 className="font-bold uppercase mt-6 mb-2 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3">
             CONTRATADA:
           </h3>
           <p>{CONTRACT_TEXT.CONTRATADA}</p>
@@ -138,8 +138,8 @@ export function ContractDocument({
         />
         {selectedModules.filter((id: string) => !MODULES.find((m) => m.id === id)?.isBasic).length >
           0 && (
-          <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg print:bg-transparent print:border-none print:p-0">
-            <h4 className="font-bold text-sm text-[#1b4382] mb-2 print:text-black">
+          <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+            <h4 className="font-bold text-sm text-[#1b4382] mb-2">
               Módulos Adicionais Contratados:
             </h4>
             <ul className="list-disc list-inside text-[11px] space-y-1">
@@ -179,7 +179,7 @@ export function ContractDocument({
         />
 
         <div className="mb-6 transition-colors duration-500 p-2 -mx-2 rounded-lg">
-          <h3 className="font-bold uppercase mt-4 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+          <h3 className="font-bold uppercase mt-4 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3">
             CLÁUSULA QUINTA - PREÇO, FORMA DE PAGAMENTO E SUSPENSÃO DOS SERVIÇOS.
           </h3>
           <p className="mb-3">
@@ -191,7 +191,7 @@ export function ContractDocument({
           <div className="overflow-x-auto my-4">
             <table className="w-full text-[10px] border-collapse border border-slate-300">
               <thead>
-                <tr className="bg-[#1b4382] text-white print:bg-slate-200 print:text-black">
+                <tr className="bg-[#1b4382] text-white">
                   <th className="border border-slate-300 p-1.5 text-left">PLANOS*</th>
                   <th className="border border-slate-300 p-1.5 text-right">Valor (R$)</th>
                   <th className="border border-slate-300 p-1.5 text-center">Ciclo</th>
@@ -201,14 +201,7 @@ export function ContractDocument({
               </thead>
               <tbody>
                 {PLANS.map((p) => (
-                  <tr
-                    key={p.id}
-                    className={
-                      selectedPlan === p.id
-                        ? 'bg-[#1b4382]/10 print:bg-transparent print:font-bold'
-                        : ''
-                    }
-                  >
+                  <tr key={p.id} className={selectedPlan === p.id ? 'bg-[#1b4382]/10' : ''}>
                     <td className="border border-slate-300 p-1.5">
                       {p.name} ({p.limit})
                     </td>
@@ -227,7 +220,7 @@ export function ContractDocument({
                         : 'Mensal'}
                     </td>
                     <td className="border border-slate-300 p-1.5 text-center">R$ 0,99</td>
-                    <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
+                    <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold">
                       {selectedPlan === p.id ? 'X' : ''}
                     </td>
                   </tr>
@@ -239,7 +232,7 @@ export function ContractDocument({
               (**) Ct-e, MDF-e, NF-e, NFS-e e Documentos cancelados.
             </p>
             {selectedPlan !== 'none' && planData && (
-              <p className="text-[10px] mt-1 font-medium text-[#1b4382] print:text-black">
+              <p className="text-[10px] mt-1 font-medium text-[#1b4382]">
                 Plano selecionado: <strong>{planData.name}</strong> — {planData.limit} documentos
                 eletrônicos por mês, no valor de {formatCurrency(planPrice)} mensais.
               </p>
@@ -258,7 +251,7 @@ export function ContractDocument({
             </p>
             <p className="pl-4">
               ● Os planos SL_TMS dão direito ao cadastro de apenas um CNPJ Matriz. Para a inclusão
-              de filiais (CNPJ’s de mesma raiz) será cobrado uma taxa de R$ 199,00 cada adicional.
+              de filiais (CNPJ's de mesma raiz) será cobrado uma taxa de R$ 199,00 cada adicional.
               {filiais && filiais.length > 0 && filiais.every((f: any) => f.isentar) && (
                 <span className="font-bold">
                   {' '}
@@ -284,7 +277,7 @@ export function ContractDocument({
           <div className="overflow-x-auto my-4">
             <table className="w-full text-[10px] border-collapse border border-slate-300">
               <thead>
-                <tr className="bg-[#1b4382] text-white print:bg-slate-200 print:text-black">
+                <tr className="bg-[#1b4382] text-white">
                   <th colSpan={3} className="border border-slate-300 p-1.5 text-center font-bold">
                     Empresas
                   </th>
@@ -350,7 +343,7 @@ export function ContractDocument({
           <div className="overflow-x-auto my-4 p-2 -mx-2 rounded-lg transition-colors duration-500">
             <table className="w-full text-[10px] border-collapse border border-slate-300">
               <thead>
-                <tr className="bg-[#1b4382] text-white print:bg-slate-200 print:text-black">
+                <tr className="bg-[#1b4382] text-white">
                   <th className="border border-slate-300 p-1.5 text-left">Módulo</th>
                   <th className="border border-slate-300 p-1.5 text-center w-12">Horas</th>
                   <th className="border border-slate-300 p-1.5 text-right w-20">Valor</th>
@@ -377,7 +370,7 @@ export function ContractDocument({
                     </td>
                     <td className="border border-slate-300 p-1.5 text-right">Incluso</td>
                     <td className="border border-slate-300 p-1.5 text-center">-</td>
-                    <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
+                    <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold">
                       X
                     </td>
                     <td className="border border-slate-300 p-1.5 text-right">
@@ -397,11 +390,7 @@ export function ContractDocument({
                   return (
                     <tr
                       key={m.id}
-                      className={
-                        selectedModules.includes(m.id)
-                          ? 'bg-[#1b4382]/10 print:bg-transparent print:font-bold'
-                          : ''
-                      }
+                      className={selectedModules.includes(m.id) ? 'bg-[#1b4382]/10' : ''}
                     >
                       <td className="border border-slate-300 p-1.5">
                         {m.name}
@@ -422,7 +411,7 @@ export function ContractDocument({
                             : 'Mensal'
                           : '-'}
                       </td>
-                      <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
+                      <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold">
                         {selectedModules.includes(m.id) ? 'X' : ''}
                       </td>
                       <td className="border border-slate-300 p-1.5 text-right">
@@ -439,10 +428,7 @@ export function ContractDocument({
                 })}
                 {includeDiagnosticVisit && diagnosticVisits.length > 0
                   ? diagnosticVisits.map((v: any, index: number) => (
-                      <tr
-                        key={`diag-${index}`}
-                        className="bg-[#1b4382]/10 print:bg-transparent print:font-bold"
-                      >
+                      <tr key={`diag-${index}`} className="bg-[#1b4382]/10">
                         <td className="border border-slate-300 p-1.5" colSpan={2}>
                           Visita Presencial de Diagnóstico
                           {v.date
@@ -452,7 +438,7 @@ export function ContractDocument({
                         <td className="border border-slate-300 p-1.5 text-right" colSpan={2}>
                           -
                         </td>
-                        <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
+                        <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold">
                           X
                         </td>
                         <td className="border border-slate-300 p-1.5 text-right">
@@ -461,7 +447,7 @@ export function ContractDocument({
                       </tr>
                     ))
                   : includeDiagnosticVisit && (
-                      <tr className="bg-[#1b4382]/10 print:bg-transparent print:font-bold">
+                      <tr className="bg-[#1b4382]/10">
                         <td className="border border-slate-300 p-1.5" colSpan={2}>
                           Visita Presencial de Diagnóstico
                           {diagnosticVisitDate
@@ -471,7 +457,7 @@ export function ContractDocument({
                         <td className="border border-slate-300 p-1.5 text-right" colSpan={2}>
                           -
                         </td>
-                        <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
+                        <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold">
                           X
                         </td>
                         <td className="border border-slate-300 p-1.5 text-right">
@@ -481,19 +467,19 @@ export function ContractDocument({
                     )}
                 {trainings &&
                   trainings.map((t: any) => (
-                    <tr key={t.id} className="bg-[#1b4382]/10 print:bg-transparent print:font-bold">
+                    <tr key={t.id} className="bg-[#1b4382]/10">
                       <td className="border border-slate-300 p-1.5" colSpan={2}>
                         Treinamento: {t.name}
                       </td>
                       <td className="border border-slate-300 p-1.5 text-right" colSpan={2}>
                         -
                       </td>
-                      <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold print:text-black">
+                      <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold">
                         X
                       </td>
                       <td className="border border-slate-300 p-1.5 text-right font-medium">
                         {t.isFree ? (
-                          <span className="text-emerald-700 print:text-black">Grátis</span>
+                          <span className="text-emerald-700">Grátis</span>
                         ) : (
                           formatCurrency(Number(t.price) || 0)
                         )}
@@ -502,7 +488,7 @@ export function ContractDocument({
                   ))}
               </tbody>
               <tfoot>
-                <tr className="bg-[#1b4382] text-white print:bg-slate-200 print:text-black font-bold">
+                <tr className="bg-[#1b4382] text-white font-bold">
                   <td className="border border-slate-300 p-1.5 text-right">Total</td>
                   <td className="border border-slate-300 p-1.5 text-center">
                     {(selectedPlan !== 'none' ? BASE_IMPLEMENTATION_HOURS : 0) + totalImplHours}
@@ -686,10 +672,9 @@ export function ContractDocument({
                   </tr>
                 )}
 
-                {/* Descontos Mensais */}
                 {calculatedDiscount > 0 && (
                   <>
-                    <tr className="bg-slate-50 print:bg-slate-100">
+                    <tr className="bg-slate-50">
                       <td className="border border-slate-300 p-2 font-bold text-right text-xs">
                         Subtotal Mensal (Valor Padrão)
                       </td>
@@ -721,7 +706,7 @@ export function ContractDocument({
                     </td>
                   </tr>
                 )}
-                <tr className="bg-[#1b4382]/5 print:bg-slate-200 text-[#1b4382] print:text-black">
+                <tr className="bg-[#1b4382]/5 text-[#1b4382]">
                   <td className="border border-slate-300 p-2 font-bold text-right">
                     Total Mensal Inicial
                   </td>
@@ -730,7 +715,6 @@ export function ContractDocument({
                   </td>
                 </tr>
 
-                {/* Ciclos Anuais Summary se existirem */}
                 {totalAnual > 0 && (
                   <>
                     <tr className="bg-slate-50">
@@ -782,7 +766,7 @@ export function ContractDocument({
                         </td>
                       </tr>
                     )}
-                    <tr className="bg-[#1b4382]/5 print:bg-slate-200 text-[#1b4382] print:text-black">
+                    <tr className="bg-[#1b4382]/5 text-[#1b4382]">
                       <td className="border border-slate-300 p-2 font-bold text-right">
                         Total Anual Inicial
                       </td>
@@ -793,7 +777,7 @@ export function ContractDocument({
                   </>
                 )}
 
-                <tr className="bg-[#1b4382]/5 print:bg-slate-200 text-[#1b4382] print:text-black">
+                <tr className="bg-[#1b4382]/5 text-[#1b4382]">
                   <td className="border border-slate-300 p-2 font-bold text-right">
                     Total Visitas / Implantação
                   </td>
@@ -806,8 +790,8 @@ export function ContractDocument({
           </div>
 
           {prazosConcedidos && (
-            <div className="mt-6 transition-colors duration-500 p-3 bg-slate-50 border border-slate-200 rounded-lg print:bg-transparent print:border-none print:p-0">
-              <h3 className="font-bold uppercase mb-2 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+            <div className="mt-6 transition-colors duration-500 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+              <h3 className="font-bold uppercase mb-2 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3">
                 CONDIÇÕES ESPECIAIS / PRAZOS CONCEDIDOS
               </h3>
               <p className="text-justify">{prazosConcedidos}</p>
@@ -830,15 +814,15 @@ export function ContractDocument({
         />
         <ClauseBlock title="CLÁUSULA DÉCIMA - DO FORO" texts={CONTRACT_TEXT.CLAUSULA_10} />
 
-        <div className="mt-16 print:mt-12">
+        <div className="mt-16 print:mt-12 break-inside-avoid">
           <p className="text-center mb-10 print:mb-12">
             E por estarem justos e contratados, assinam eletronicamente.
           </p>
           <div className="flex flex-col sm:flex-row sm:justify-between gap-10 sm:gap-16 print:flex-row print:gap-16 print:items-end">
             <div className="flex-1 flex flex-col items-center text-center min-w-0">
               <div className="h-12 sm:h-16 print:h-16 flex items-end" />
-              <div className="w-full border-t-2 border-[#1b4382] pt-3 print:border-black">
-                <p className="font-bold text-[#1b4382] print:text-black text-sm leading-snug break-words">
+              <div className="w-full border-t-2 border-[#1b4382] pt-3">
+                <p className="font-bold text-[#1b4382] text-sm leading-snug break-words">
                   CONTACTO SOLUÇÕES EM TECNOLOGIA - LTDA
                 </p>
                 <p className="text-[11px] text-slate-500 mt-1">CNPJ: 27.751.577/0001-91</p>
@@ -853,8 +837,8 @@ export function ContractDocument({
             <div className="hidden sm:block sm:w-8 print:block print:w-8" />
             <div className="flex-1 flex flex-col items-center text-center min-w-0">
               <div className="h-12 sm:h-16 print:h-16 flex items-end" />
-              <div className="w-full border-t-2 border-[#1b4382] pt-3 print:border-black">
-                <p className="font-bold uppercase text-[#1b4382] print:text-black text-sm leading-snug break-words">
+              <div className="w-full border-t-2 border-[#1b4382] pt-3">
+                <p className="font-bold uppercase text-[#1b4382] text-sm leading-snug break-words">
                   <Highlight value={name} fallback="[NOME DA EMPRESA]" />
                 </p>
                 <p className="text-[11px] text-slate-500 mt-1">

@@ -168,39 +168,6 @@ export default function ContractGeneratorPage() {
   const [sendToFinance, setSendToFinance] = useState(false)
 
   useEffect(() => {
-    const style = document.createElement('style')
-    style.id = 'hide-layout-elements-for-proposal'
-    style.innerHTML = `
-      header input[placeholder*="Buscar"],
-      header .relative:has(input[placeholder*="Buscar"]),
-      header form:has(input[placeholder*="Buscar"]) {
-        display: none !important;
-      }
-      
-      @page { size: A4; margin: 10mm; }
-      @media print {
-        * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
-        *::-webkit-scrollbar { display: none !important; }
-        .overflow-auto, .overflow-x-auto, .overflow-y-auto, .overflow-hidden, .overflow-scroll { overflow: visible !important; }
-        header, aside, nav, [data-sidebar="sidebar"], [data-sidebar], .sidebar-container,
-        [data-sidebar-wrapper], [data-sidebar-container], [data-sidebar-inset] { display: none !important; }
-        body, html { background-color: white !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
-        main { margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; overflow: visible !important; }
-        #quote-proposal-print { box-shadow: none !important; max-width: 100% !important; width: 100% !important; padding: 0 !important; margin: 0 auto !important; }
-        #quote-proposal-print > div { page-break-inside: avoid; }
-        table { page-break-inside: auto; }
-        tr { page-break-inside: avoid; page-break-after: auto; }
-        thead { display: table-header-group; }
-      }
-    `
-    document.head.appendChild(style)
-    return () => {
-      const el = document.getElementById('hide-layout-elements-for-proposal')
-      if (el) el.remove()
-    }
-  }, [])
-
-  useEffect(() => {
     const fetchClientes = async () => {
       const { data } = await supabase
         .from('clientes')

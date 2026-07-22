@@ -80,7 +80,6 @@ export function AddendumDocument({
     }
   }
 
-  // Fallback para observações do histórico se os módulos estiverem vazios
   if (formattedModules.length === 0 && (observacoes || tipo)) {
     if (
       tipo === 'Aditivo de Filial' ||
@@ -116,11 +115,11 @@ export function AddendumDocument({
   }
 
   return (
-    <div className="p-8 sm:p-12 text-[12px] text-slate-800 font-serif leading-relaxed space-y-5 bg-white print:p-0 print:text-black">
-      <div className="flex flex-col items-center mb-8 border-b-2 border-[#f37021] print:border-black pb-6">
+    <div className="p-8 sm:p-12 text-[12px] text-slate-800 font-serif leading-relaxed space-y-5 bg-white print:p-0">
+      <div className="flex flex-col items-center mb-8 border-b-2 border-[#f37021] pb-6">
         <div className="flex w-full justify-between items-center mb-6">
           <img src={logoUrl} alt="Service Logic" className="h-16 object-contain" />
-          <h1 className="text-sm font-bold uppercase w-2/3 text-right leading-tight text-[#1b4382] print:text-black">
+          <h1 className="text-sm font-bold uppercase w-2/3 text-right leading-tight text-[#1b4382]">
             ADITIVO CONTRATUAL DE INCLUSÃO DE MÓDULOS
           </h1>
         </div>
@@ -145,15 +144,13 @@ export function AddendumDocument({
           {currentPlanName && (
             <p className="mt-2">
               <strong>Plano Atual:</strong>{' '}
-              <span className="font-semibold text-[#1b4382] print:text-black">
-                {currentPlanName}
-              </span>
+              <span className="font-semibold text-[#1b4382]">{currentPlanName}</span>
             </p>
           )}
         </div>
 
         <div>
-          <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+          <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3">
             1. DO OBJETO DO ADITIVO
           </h3>
           <p className="mb-4">
@@ -165,7 +162,7 @@ export function AddendumDocument({
         </div>
 
         <div>
-          <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+          <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3">
             2. DOS SERVIÇOS E MÓDULOS ADICIONADOS
           </h3>
           <p className="mb-3">
@@ -174,7 +171,7 @@ export function AddendumDocument({
 
           <table className="w-full text-xs border-collapse border border-slate-300 mb-6">
             <thead>
-              <tr className="bg-[#1b4382] text-white print:bg-slate-200 print:text-black">
+              <tr className="bg-[#1b4382] text-white">
                 <th className="border border-slate-300 p-2 text-left">
                   Descrição do Item / Serviço
                 </th>
@@ -219,29 +216,29 @@ export function AddendumDocument({
               )}
             </tbody>
             <tfoot>
-              <tr className="bg-[#1b4382]/10 print:bg-slate-100 font-bold">
+              <tr className="bg-[#1b4382]/10 font-bold">
                 <td colSpan={2} className="border border-slate-300 p-2 text-right">
                   Acréscimo Total na Mensalidade
                 </td>
-                <td className="border border-slate-300 p-2 text-right text-emerald-700 print:text-black">
+                <td className="border border-slate-300 p-2 text-right text-emerald-700">
                   {formatCurrency(valorAdicional || 0)}
                 </td>
               </tr>
               {Number(valorAnualAdicional) > 0 && (
-                <tr className="bg-[#1b4382]/10 print:bg-slate-100 font-bold">
+                <tr className="bg-[#1b4382]/10 font-bold">
                   <td colSpan={2} className="border border-slate-300 p-2 text-right">
                     Acréscimo Total Anual
                   </td>
-                  <td className="border border-slate-300 p-2 text-right text-emerald-700 print:text-black">
+                  <td className="border border-slate-300 p-2 text-right text-emerald-700">
                     {formatCurrency(valorAnualAdicional)}
                   </td>
                 </tr>
               )}
-              <tr className="bg-[#1b4382]/20 print:bg-slate-200 font-bold">
+              <tr className="bg-[#1b4382]/20 font-bold">
                 <td colSpan={2} className="border border-slate-300 p-2 text-right">
                   Novo Valor Total do Contrato (Mensal)
                 </td>
-                <td className="border border-slate-300 p-2 text-right text-[#1b4382] print:text-black">
+                <td className="border border-slate-300 p-2 text-right text-[#1b4382]">
                   {formatCurrency(valorTotalAtual || 0)}
                 </td>
               </tr>
@@ -251,7 +248,7 @@ export function AddendumDocument({
 
         {prazosConcedidos && (
           <div>
-            <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+            <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3">
               3. CONDIÇÕES ESPECIAIS / PRAZOS CONCEDIDOS
             </h3>
             <p className="mb-4">{prazosConcedidos}</p>
@@ -259,7 +256,7 @@ export function AddendumDocument({
         )}
 
         <div>
-          <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3 print:text-black print:border-slate-800">
+          <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3">
             {prazosConcedidos ? '4' : '3'}. DISPOSIÇÕES GERAIS
           </h3>
           <p className="mb-4">
@@ -268,17 +265,15 @@ export function AddendumDocument({
           </p>
         </div>
 
-        <div className="mt-20 text-center space-y-12">
+        <div className="mt-20 text-center space-y-12 break-inside-avoid">
           <p>E por estarem justos e contratados, assinam eletronicamente o presente Aditivo.</p>
           <div className="grid grid-cols-2 gap-8 mt-12">
-            <div className="border-t border-[#1b4382] pt-2 text-center print:border-black">
-              <p className="font-bold text-[#1b4382] print:text-black">
-                CONTACTO SOLUÇÕES EM TECNOLOGIA - LTDA
-              </p>
+            <div className="border-t border-[#1b4382] pt-2 text-center">
+              <p className="font-bold text-[#1b4382]">CONTACTO SOLUÇÕES EM TECNOLOGIA - LTDA</p>
               <p className="text-[11px] text-slate-500">CONTRATADA</p>
             </div>
-            <div className="border-t border-[#1b4382] pt-2 text-center print:border-black">
-              <p className="font-bold uppercase text-[#1b4382] print:text-black">
+            <div className="border-t border-[#1b4382] pt-2 text-center">
+              <p className="font-bold uppercase text-[#1b4382]">
                 {clientName || '[NOME DA EMPRESA]'}
               </p>
               <p className="text-[11px] text-slate-500">CONTRATANTE</p>

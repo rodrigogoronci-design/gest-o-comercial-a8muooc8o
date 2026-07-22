@@ -62,23 +62,32 @@ async function fetchFromExternal(cleanCpf: string): Promise<CpfData> {
 }
 
 function generateMockCpfData(cpf: string): CpfData {
-  const names = ['Carlos Silva', 'Ana Souza', 'Marcos Oliveira', 'Juliana Lima', 'Roberto Santos', 'Fernanda Costa', 'Ricardo Pereira', 'Camila Alves'];
-  const index = parseInt(cpf.slice(0, 3) || '0') % names.length;
-  const baseName = names[index];
-  const lastNames = baseName.split(' ');
-  const lastName = lastNames[lastNames.length - 1];
+  const names = [
+    'Carlos Silva',
+    'Ana Souza',
+    'Marcos Oliveira',
+    'Juliana Lima',
+    'Roberto Santos',
+    'Fernanda Costa',
+    'Ricardo Pereira',
+    'Camila Alves',
+  ]
+  const index = parseInt(cpf.slice(0, 3) || '0') % names.length
+  const baseName = names[index]
+  const lastNames = baseName.split(' ')
+  const lastName = lastNames[lastNames.length - 1]
 
-  const year = 1960 + (parseInt(cpf.slice(3, 5) || '0') % 40);
-  const month = (parseInt(cpf.slice(5, 7) || '0') % 12) + 1;
-  const day = (parseInt(cpf.slice(7, 9) || '0') % 28) + 1;
+  const year = 1960 + (parseInt(cpf.slice(3, 5) || '0') % 40)
+  const month = (parseInt(cpf.slice(5, 7) || '0') % 12) + 1
+  const day = (parseInt(cpf.slice(7, 9) || '0') % 28) + 1
 
   return {
     nome: baseName,
     nome_mae: `Maria ${lastName}`,
     nome_pai: `João ${lastName}`,
     data_nascimento: `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`,
-    endereco: 'Rua Fictícia, 123, Centro, São Paulo, SP, CEP: 01000-000'
-  };
+    endereco: 'Rua Fictícia, 123, Centro, São Paulo, SP, CEP: 01000-000',
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -90,10 +99,10 @@ Deno.serve(async (req: Request) => {
     const cleanCpf = (cpf || '').replace(/\D/g, '')
 
     if (cleanCpf.length !== 11) {
-      return new Response(
-        JSON.stringify({ error: 'CPF inválido. Deve conter 11 dígitos.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      )
+      return new Response(JSON.stringify({ error: 'CPF inválido. Deve conter 11 dígitos.' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
     if (!validateCpf(cleanCpf)) {
@@ -133,17 +142,16 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!data || !data.nome) {
-      data = generateMockCpfData(cleanCpf);
+      data = generateMockCpfData(cleanCpf)
     }
 
-    return new Response(
-      JSON.stringify({ success: true, data, fallback: true }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    )
+    return new Response(JSON.stringify({ success: true, data, fallback: true }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   } catch {
-    return new Response(
-      JSON.stringify({ error: 'Erro interno ao processar a solicitação.' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    )
+    return new Response(JSON.stringify({ error: 'Erro interno ao processar a solicitação.' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 })
