@@ -22,7 +22,6 @@ import {
   Building2,
   UserRound,
   CalendarPlus,
-  CalendarRange,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { AtendimentoReportTab } from '@/components/AtendimentoReportTab'
@@ -110,10 +109,6 @@ export default function ReportsPage() {
           <TabsTrigger value="cliente-individual" className="flex items-center gap-2">
             <UserRound className="h-4 w-4" />
             <span className="hidden sm:inline">Relatório Individual</span>
-          </TabsTrigger>
-          <TabsTrigger value="adesao-clientes" className="flex items-center gap-2">
-            <CalendarRange className="h-4 w-4" />
-            <span className="hidden sm:inline">Adesão de Clientes</span>
           </TabsTrigger>
           <TabsTrigger value="adesao" className="flex items-center gap-2">
             <CalendarPlus className="h-4 w-4" />
@@ -264,10 +259,7 @@ export default function ReportsPage() {
           <ClientIndividualReport />
         </TabsContent>
 
-        <TabsContent value="adesao-clientes" className="mt-6 print:mt-0 print:h-full print:flex-1">
-          <ClientAdhesionReport />
-        </TabsContent>
-        <TabsContent value="adesao" className="mt-6 print:mt-0">
+        <TabsContent value="adesao" className="mt-6 print:mt-0 print:h-full print:flex-1">
           <ClientAdhesionReport />
         </TabsContent>
       </Tabs>
