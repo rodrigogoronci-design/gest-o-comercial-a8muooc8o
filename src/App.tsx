@@ -27,7 +27,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 import Index from './pages/Index'
 import CRMPage from './pages/CRMPage'
 import ClientsPage from './pages/ClientsPage'
-import ActivitiesPage from './pages/ActivitiesPage'
+
 import PlansPage from './pages/PlansPage'
 import ContractGeneratorPage from './pages/ContractGeneratorPage'
 import ReceiptsPage from './pages/ReceiptsPage'
@@ -60,7 +60,7 @@ const App = () => (
               <Route path="/colaboradores" element={<ColaboradoresPage />} />
               <Route path="/crm" element={<CRMPage />} />
               <Route path="/clientes" element={<ClientsPage />} />
-              <Route path="/atividades" element={<ActivitiesPage />} />
+
               <Route path="/planos" element={<PlansPage />} />
               <Route path="/contratos" element={<ContractGeneratorPage />} />
               <Route path="/recebimentos" element={<ReceiptsPage />} />

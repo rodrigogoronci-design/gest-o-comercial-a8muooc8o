@@ -39,7 +39,6 @@ export default function Index() {
   const [dashboardData, setDashboardData] = useState({
     clientes: [] as any[],
     leads: [] as any[],
-    atividades: [] as any[],
     eventos: [] as any[],
     isLoading: true,
   })
@@ -47,29 +46,22 @@ export default function Index() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [{ data: clientes }, { data: leads }, { data: atividades }, { data: eventos }] =
-          await Promise.all([
-            supabase
-              .from('clientes')
-              .select('id, nome, cnpj, filiais_detalhes, valor_total, created_at, status'),
-            supabase
-              .from('crm_prospects')
-              .select('id, empresa, contato_nome, status, data_followup, ultima_interacao'),
-            supabase
-              .from('atividades_comerciais')
-              .select('id, demanda, data_atividade, created_at, cliente_nome, clientes(nome)')
-              .order('created_at', { ascending: false })
-              .limit(10),
-            supabase
-              .from('agenda_eventos')
-              .select('id, titulo, data_evento, tipo, status, clientes(nome)')
-              .order('data_evento', { ascending: true }),
-          ])
+        const [{ data: clientes }, { data: leads }, { data: eventos }] = await Promise.all([
+          supabase
+            .from('clientes')
+            .select('id, nome, cnpj, filiais_detalhes, valor_total, created_at, status'),
+          supabase
+            .from('crm_prospects')
+            .select('id, empresa, contato_nome, status, data_followup, ultima_interacao'),
+          supabase
+            .from('agenda_eventos')
+            .select('id, titulo, data_evento, tipo, status, clientes(nome)')
+            .order('data_evento', { ascending: true }),
+        ])
 
         setDashboardData({
           clientes: clientes || [],
           leads: leads || [],
-          atividades: atividades || [],
           eventos: eventos || [],
           isLoading: false,
         })
@@ -82,7 +74,7 @@ export default function Index() {
     fetchDashboardData()
   }, [])
 
-  const { clientes, leads, atividades, eventos, isLoading } = dashboardData
+  const { clientes, leads, eventos, isLoading } = dashboardData
 
   const totalMRR = clientes.reduce((acc, c) => acc + (Number(c.valor_total) || 0), 0)
   const activeClients = clientes.length
@@ -177,13 +169,6 @@ export default function Index() {
   const recentClients = [...clientes]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 5)
-
-  const formattedAtividades = atividades.map((a) => ({
-    id: a.id,
-    title: a.demanda,
-    desc: a.clientes?.nome || a.cliente_nome || 'Cliente não especificado',
-    date: formatDt(a.created_at || a.data_atividade),
-  }))
 
   return (
     <div
@@ -450,40 +435,50 @@ export default function Index() {
 
         <Card className="col-span-3 shadow-sm border-slate-200/60">
           <CardHeader>
-            <CardTitle>Atividades Recentes</CardTitle>
-            <CardDescription>Últimos registros comerciais</CardDescription>
+            <CardTitle>Resumo de Negócios</CardTitle>
+            <CardDescription>Distribuição de clientes por status</CardDescription>
           </CardHeader>
           <CardContent>
-            {formattedAtividades.length > 0 ? (
-              <div className="space-y-6">
-                {formattedAtividades.map((activity, idx) => (
-                  <div key={activity.id || idx} className="flex gap-4 relative">
-                    <div
-                      className={cn(
-                        'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border',
-                        idx % 2 === 0
-                          ? 'text-indigo-600 bg-indigo-50 border-indigo-100'
-                          : 'text-emerald-600 bg-emerald-50 border-emerald-100',
-                      )}
-                    >
-                      <Activity className="h-4 w-4" />
+            {(() => {
+              const statusCounts = clientes.reduce((acc: Record<string, number>, c) => {
+                const status = c.status || 'Ativo'
+                acc[status] = (acc[status] || 0) + 1
+                return acc
+              }, {})
+              const statusEntries = Object.entries(statusCounts)
+              const statusColors: Record<string, string> = {
+                Ativo: 'text-emerald-600 bg-emerald-50 border-emerald-100',
+                'Em Implantação': 'text-blue-600 bg-blue-50 border-blue-100',
+                Inativo: 'text-slate-600 bg-slate-50 border-slate-100',
+                Cancelado: 'text-rose-600 bg-rose-50 border-rose-100',
+              }
+              return statusEntries.length > 0 ? (
+                <div className="space-y-4">
+                  {statusEntries.map(([status, count]) => (
+                    <div key={status} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={cn(
+                            'flex items-center justify-center h-8 w-8 rounded-full border shrink-0',
+                            statusColors[status] ||
+                              'text-indigo-600 bg-indigo-50 border-indigo-100',
+                          )}
+                        >
+                          <Briefcase className="h-4 w-4" />
+                        </div>
+                        <p className="text-sm font-medium text-slate-800">{status}</p>
+                      </div>
+                      <span className="text-lg font-bold text-slate-900">{count}</span>
                     </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-none text-slate-800">
-                        {activity.title}
-                      </p>
-                      <p className="text-xs text-slate-500 line-clamp-1">{activity.desc}</p>
-                      <p className="text-[10px] text-slate-400 mt-1">{activity.date}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground py-6">
-                <Activity className="h-10 w-10 text-slate-200 mb-3" />
-                <p>Nenhuma atividade recente.</p>
-              </div>
-            )}
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground py-6">
+                  <Briefcase className="h-10 w-10 text-slate-200 mb-3" />
+                  <p>Nenhum cliente cadastrado.</p>
+                </div>
+              )
+            })()}
           </CardContent>
         </Card>
       </div>
