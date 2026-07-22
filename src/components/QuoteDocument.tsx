@@ -110,6 +110,10 @@ export function QuoteDocument(props: QuoteDocumentProps) {
   const implItem = oneTimeItems.find((i) => i.id === 'impl-details')
   const implMode = implItem?.modo || 'Remoto'
 
+  const isAnnual = planBilling === 'anual'
+  const cycleLabel = isAnnual ? 'Anual' : 'Mensal'
+  const effectivePlanPrice = isAnnual ? planAnnualPrice || 0 : planPrice
+
   const planBaseContribution = showBasePlan && !isUpsell ? effectivePlanPrice : 0
   const totalRecorrenteBase =
     recurrentItems.reduce((acc, curr) => acc + (curr.price || 0), 0) + planBaseContribution
@@ -120,10 +124,6 @@ export function QuoteDocument(props: QuoteDocumentProps) {
     (acc, curr) => acc + (curr.isFree ? 0 : curr.price || 0),
     0,
   )
-
-  const isAnnual = planBilling === 'anual'
-  const cycleLabel = isAnnual ? 'Anual' : 'Mensal'
-  const effectivePlanPrice = isAnnual ? planAnnualPrice || 0 : planPrice
 
   return (
     <div
