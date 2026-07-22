@@ -128,11 +128,11 @@ export function QuoteDocument(props: QuoteDocumentProps) {
   return (
     <div
       id="quote-proposal-print"
-      className="bg-white text-slate-900 p-8 max-w-4xl mx-auto text-sm print:p-0 print:max-w-none font-sans"
+      className="bg-white text-slate-900 p-8 max-w-4xl mx-auto text-sm print:p-0 print:max-w-none print:text-[8.5pt] print:leading-tight font-sans"
     >
-      <div className="flex justify-between items-start mb-6">
+      <div className="flex justify-between items-start mb-6 print:mb-2">
         <div className="flex items-center gap-3">
-          <img src={logoUrl} alt="Logo" className="h-12 w-auto object-contain" />
+          <img src={logoUrl} alt="Logo" className="h-12 w-auto object-contain print:h-7" />
           <div className="flex flex-col">
             <span className="text-[10px] font-bold text-slate-700 leading-tight">
               SERVICE LOGIC SOLUÇÕES EM TECNOLOGIA
@@ -150,7 +150,7 @@ export function QuoteDocument(props: QuoteDocumentProps) {
         </div>
       </div>
 
-      <div className="flex flex-col mb-4 border-b-2 border-orange-500 pb-2">
+      <div className="flex flex-col mb-4 border-b-2 border-orange-500 pb-2 print:mb-2 print:pb-1">
         <h1 className="text-2xl font-bold uppercase tracking-wider text-[#1e3a8a] mb-1">
           {isUpsell ? 'PROPOSTA COMERCIAL - UPSELL' : 'PROPOSTA COMERCIAL'}
         </h1>
@@ -169,15 +169,15 @@ export function QuoteDocument(props: QuoteDocumentProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-white p-3 rounded border border-slate-200">
+      <div className="grid grid-cols-2 gap-4 mb-6 print:gap-2 print:mb-2">
+        <div className="bg-white p-3 rounded border border-slate-200 print:p-1">
           <span className="block text-[10px] text-slate-500 mb-1">Empresa</span>
           <strong className="text-slate-900 text-sm break-words block">
             {empresa || 'Não informado'}
           </strong>
           {cnpj && <span className="text-[10px] text-slate-500 mt-1 block">CNPJ: {cnpj}</span>}
         </div>
-        <div className="bg-white p-3 rounded border border-slate-200">
+        <div className="bg-white p-3 rounded border border-slate-200 print:p-1">
           <span className="block text-[10px] text-slate-500 mb-1">Aos Cuidados de</span>
           <strong className="text-slate-900 text-sm break-words block">
             {aosCuidadosDe || 'Não informado'}
@@ -186,14 +186,17 @@ export function QuoteDocument(props: QuoteDocumentProps) {
       </div>
 
       {showBasePlan && !isUpsell && (
-        <div className="mb-6">
-          <h3 className="font-bold text-sm text-[#1e3a8a] mb-3 flex items-center gap-2">
+        <div className="mb-6 print:mb-2">
+          <h3 className="font-bold text-sm text-[#1e3a8a] mb-3 flex items-center gap-2 print:mb-1">
             <div className="w-2 h-4 bg-orange-500 rounded-full" />
             Funcionalidades Inclusas no Plano Base
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 print:gap-2">
             {categoriesToRender.map((cat, i) => (
-              <div key={i} className="bg-white p-3 rounded-md border border-slate-200 shadow-sm">
+              <div
+                key={i}
+                className="bg-white p-3 rounded-md border border-slate-200 shadow-sm print:p-1"
+              >
                 <h4 className="font-bold text-[#1e3a8a] text-xs mb-2 pb-1 border-b border-slate-100">
                   {cat.title}
                 </h4>
@@ -215,8 +218,8 @@ export function QuoteDocument(props: QuoteDocumentProps) {
       )}
 
       {selectedModulesData.length > 0 && !isUpsell && (
-        <div className="mb-4">
-          <h3 className="font-bold text-sm text-[#1e3a8a] mb-2 flex items-center gap-2">
+        <div className="mb-4 print:mb-1">
+          <h3 className="font-bold text-sm text-[#1e3a8a] mb-2 flex items-center gap-2 print:mb-1">
             <div className="w-2 h-4 bg-orange-500 rounded-full" />
             Módulos Adicionais Contratados
           </h3>
@@ -234,8 +237,8 @@ export function QuoteDocument(props: QuoteDocumentProps) {
       )}
 
       {isUpsell && selectedModulesData.length > 0 && (
-        <div className="mb-4">
-          <h3 className="font-bold text-sm text-[#1e3a8a] mb-2 flex items-center gap-2">
+        <div className="mb-4 print:mb-1">
+          <h3 className="font-bold text-sm text-[#1e3a8a] mb-2 flex items-center gap-2 print:mb-1">
             <div className="w-2 h-4 bg-orange-500 rounded-full" />
             Módulos e Serviços Incluídos
           </h3>
@@ -262,8 +265,8 @@ export function QuoteDocument(props: QuoteDocumentProps) {
         </div>
       )}
 
-      <div className="mb-6">
-        <h3 className="font-bold text-sm text-[#1e3a8a] mb-3 flex items-center gap-2">
+      <div className="mb-6 print:mb-2">
+        <h3 className="font-bold text-sm text-[#1e3a8a] mb-3 flex items-center gap-2 print:mb-1">
           <div className="w-2 h-4 bg-orange-500 rounded-full" />
           Investimento Detalhado
         </h3>
@@ -271,19 +274,19 @@ export function QuoteDocument(props: QuoteDocumentProps) {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
               <tr>
-                <th className="p-2.5" style={{ width: '40%' }}>
+                <th className="p-2.5 print:px-1 print:py-0.5" style={{ width: '40%' }}>
                   Descrição
                 </th>
-                <th className="p-2.5 text-center" style={{ width: '10%' }}>
+                <th className="p-2.5 text-center print:px-1 print:py-0.5" style={{ width: '10%' }}>
                   Qtd
                 </th>
-                <th className="p-2.5 text-right" style={{ width: '16%' }}>
+                <th className="p-2.5 text-right print:px-1 print:py-0.5" style={{ width: '16%' }}>
                   V. Unitário
                 </th>
-                <th className="p-2.5 text-right" style={{ width: '16%' }}>
+                <th className="p-2.5 text-right print:px-1 print:py-0.5" style={{ width: '16%' }}>
                   V. Total
                 </th>
-                <th className="p-2.5 text-center" style={{ width: '18%' }}>
+                <th className="p-2.5 text-center print:px-1 print:py-0.5" style={{ width: '18%' }}>
                   Ciclo
                 </th>
               </tr>
@@ -363,8 +366,8 @@ export function QuoteDocument(props: QuoteDocumentProps) {
         </div>
       </div>
 
-      <div className="mb-6">
-        <h3 className="font-bold text-sm text-[#1e3a8a] mb-3 flex items-center gap-2">
+      <div className="mb-6 print:mb-2">
+        <h3 className="font-bold text-sm text-[#1e3a8a] mb-3 flex items-center gap-2 print:mb-1">
           <div className="w-2 h-4 bg-orange-500 rounded-full" />
           Termos e Condições
         </h3>
@@ -375,8 +378,8 @@ export function QuoteDocument(props: QuoteDocumentProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-10 break-inside-avoid">
-        <div className="bg-slate-50 border border-slate-200 p-4 rounded-md flex flex-col justify-between">
+      <div className="grid grid-cols-2 gap-4 mb-10 break-inside-avoid print:gap-2 print:mb-2">
+        <div className="bg-slate-50 border border-slate-200 p-4 rounded-md flex flex-col justify-between print:p-2">
           <div>
             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
               TOTAL RECORRENTE
@@ -400,9 +403,9 @@ export function QuoteDocument(props: QuoteDocumentProps) {
           </div>
         </div>
 
-        <div className="bg-slate-50 border border-slate-200 p-4 rounded-md flex flex-col justify-between">
+        <div className="bg-slate-50 border border-slate-200 p-4 rounded-md flex flex-col justify-between print:p-2">
           <div>
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 print:mb-1">
               TOTAL PARCELA ÚNICA
             </h4>
             {oneTimeItems
@@ -429,7 +432,7 @@ export function QuoteDocument(props: QuoteDocumentProps) {
         </div>
       </div>
 
-      <div className="text-center text-[10px] text-slate-500 pt-6 border-t border-slate-200 break-inside-avoid">
+      <div className="text-center text-[10px] text-slate-500 pt-6 border-t border-slate-200 break-inside-avoid print:pt-2">
         <p className="mb-1">Validade desta proposta: 15 dias corridos.</p>
         <p>Para dúvidas ou esclarecimentos, entre em contato conosco.</p>
       </div>

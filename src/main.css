@@ -91,7 +91,7 @@
 @media print {
   @page {
     size: A4;
-    margin: 20mm;
+    margin: 10mm;
   }
 
   * {
@@ -236,6 +236,161 @@
     break-inside: auto !important;
     page-break-after: auto !important;
     break-after: auto !important;
+  }
+}
+
+@media print {
+  #quote-proposal-print {
+    font-size: 8.5pt !important;
+    line-height: 1.25 !important;
+    zoom: 0.9;
+  }
+
+  #quote-proposal-print > div:first-child {
+    margin-bottom: 4px !important;
+  }
+
+  #quote-proposal-print img {
+    height: 28px !important;
+  }
+
+  #quote-proposal-print h1 {
+    font-size: 13pt !important;
+    margin-bottom: 2px !important;
+  }
+
+  #quote-proposal-print h3 {
+    margin-top: 4px !important;
+    margin-bottom: 3px !important;
+  }
+
+  #quote-proposal-print h4 {
+    margin-bottom: 2px !important;
+  }
+
+  #quote-proposal-print .mb-6 {
+    margin-bottom: 4px !important;
+  }
+
+  #quote-proposal-print .mb-4 {
+    margin-bottom: 3px !important;
+  }
+
+  #quote-proposal-print .mb-10 {
+    margin-bottom: 4px !important;
+  }
+
+  #quote-proposal-print .mb-3 {
+    margin-bottom: 2px !important;
+  }
+
+  #quote-proposal-print .mb-2 {
+    margin-bottom: 1px !important;
+  }
+
+  #quote-proposal-print .mb-1 {
+    margin-bottom: 1px !important;
+  }
+
+  #quote-proposal-print .mt-4 {
+    margin-top: 3px !important;
+  }
+
+  #quote-proposal-print .mt-1 {
+    margin-top: 1px !important;
+  }
+
+  #quote-proposal-print .pt-6 {
+    padding-top: 4px !important;
+  }
+
+  #quote-proposal-print .pt-3 {
+    padding-top: 2px !important;
+  }
+
+  #quote-proposal-print .pb-2 {
+    padding-bottom: 2px !important;
+  }
+
+  #quote-proposal-print .p-3 {
+    padding: 3px 5px !important;
+  }
+
+  #quote-proposal-print .p-4 {
+    padding: 4px 6px !important;
+  }
+
+  #quote-proposal-print .p-2\.5 {
+    padding: 2px 4px !important;
+  }
+
+  #quote-proposal-print .grid {
+    gap: 4px !important;
+  }
+
+  #quote-proposal-print .gap-3 {
+    gap: 3px !important;
+  }
+
+  #quote-proposal-print .gap-4 {
+    gap: 4px !important;
+  }
+
+  #quote-proposal-print .gap-2 {
+    gap: 2px !important;
+  }
+
+  #quote-proposal-print .space-y-1 > * + * {
+    margin-top: 1px !important;
+  }
+
+  #quote-proposal-print .space-y-3 > * + * {
+    margin-top: 2px !important;
+  }
+
+  #quote-proposal-print ul {
+    margin-top: 1px !important;
+  }
+
+  #quote-proposal-print li {
+    margin-top: 0 !important;
+  }
+
+  #quote-proposal-print table {
+    font-size: 7.5pt !important;
+  }
+
+  #quote-proposal-print th,
+  #quote-proposal-print td {
+    padding: 2px 4px !important;
+  }
+
+  #quote-proposal-print .text-2xl {
+    font-size: 13pt !important;
+  }
+
+  #quote-proposal-print .text-lg {
+    font-size: 10pt !important;
+  }
+
+  #quote-proposal-print .text-xs {
+    font-size: 7.5pt !important;
+  }
+
+  #quote-proposal-print .text-\[10px\] {
+    font-size: 6.5pt !important;
+  }
+
+  #quote-proposal-print .text-\[9px\] {
+    font-size: 6pt !important;
+  }
+
+  #quote-proposal-print .text-\[12px\] {
+    font-size: 8pt !important;
+  }
+
+  #quote-proposal-print .text-sm {
+    font-size: 8pt !important;
   }
 }
 
