@@ -11,6 +11,7 @@ import {
   Activity,
   Briefcase,
   AlertCircle,
+  CalendarPlus,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -206,6 +207,16 @@ export default function Index() {
               Gerar Contrato
             </Link>
           </Button>
+          <Button
+            variant="outline"
+            asChild
+            className="bg-white hover:bg-slate-50 transition-colors"
+          >
+            <Link to="/relatorios">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Relatórios
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -260,6 +271,28 @@ export default function Index() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="shadow-sm border-slate-200/60 bg-gradient-to-r from-[#1b4382] to-[#2a5fa3] text-white">
+        <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-5">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-white/15 p-3">
+              <CalendarPlus className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-base font-semibold">Relatório de Adesão de Clientes</p>
+              <p className="text-sm text-blue-100">
+                Analise o crescimento da base por período de adesão
+              </p>
+            </div>
+          </div>
+          <Button asChild variant="secondary" className="bg-white text-[#1b4382] hover:bg-blue-50">
+            <Link to="/relatorios?tab=adesao">
+              <CalendarPlus className="h-4 w-4 mr-2" />
+              Gerar Relatório
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4 shadow-sm border-slate-200/60">

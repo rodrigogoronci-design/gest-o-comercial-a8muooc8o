@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -20,14 +21,19 @@ import {
   FileSpreadsheet,
   Building2,
   UserRound,
+  CalendarPlus,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { AtendimentoReportTab } from '@/components/AtendimentoReportTab'
 import { GeneralAtendimentosReport } from '@/components/GeneralAtendimentosReport'
 import { ClientReportTab } from '@/components/ClientReportTab'
 import { ClientIndividualReport } from '@/components/ClientIndividualReport'
+import { ClientAdhesionReport } from '@/components/ClientAdhesionReport'
+import { ClientAdhesionReport } from '@/components/ClientAdhesionReport'
 
 export default function ReportsPage() {
+  const [searchParams] = useSearchParams()
+  const defaultTab = searchParams.get('tab') || 'dashboards'
   const [loading, setLoading] = useState(true)
   const [faturamentoData, setFaturamentoData] = useState<any[]>([])
   const [performanceData, setPerformanceData] = useState<any[]>([])
@@ -83,8 +89,8 @@ export default function ReportsPage() {
         </Button>
       </div>
 
-      <Tabs defaultValue="dashboards" className="w-full print:h-full print:flex print:flex-col">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 max-w-4xl print:hidden">
+      <Tabs defaultValue={defaultTab} className="w-full print:h-full print:flex print:flex-col">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 max-w-4xl print:hidden">
           <TabsTrigger value="dashboards" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             <span className="hidden sm:inline">Dashboards</span>
@@ -104,6 +110,14 @@ export default function ReportsPage() {
           <TabsTrigger value="cliente-individual" className="flex items-center gap-2">
             <UserRound className="h-4 w-4" />
             <span className="hidden sm:inline">Relatório Individual</span>
+          </TabsTrigger>
+          <TabsTrigger value="adesao-clientes" className="flex items-center gap-2">
+            <CalendarRange className="h-4 w-4" />
+            <span className="hidden sm:inline">Adesão de Clientes</span>
+          </TabsTrigger>
+          <TabsTrigger value="adesao" className="flex items-center gap-2">
+            <CalendarPlus className="h-4 w-4" />
+            <span className="hidden sm:inline">Adesão de Clientes</span>
           </TabsTrigger>
         </TabsList>
 
@@ -248,6 +262,13 @@ export default function ReportsPage() {
           className="mt-6 print:mt-0 print:h-full print:flex-1"
         >
           <ClientIndividualReport />
+        </TabsContent>
+
+        <TabsContent value="adesao-clientes" className="mt-6 print:mt-0 print:h-full print:flex-1">
+          <ClientAdhesionReport />
+        </TabsContent>
+        <TabsContent value="adesao" className="mt-6 print:mt-0">
+          <ClientAdhesionReport />
         </TabsContent>
       </Tabs>
     </div>
