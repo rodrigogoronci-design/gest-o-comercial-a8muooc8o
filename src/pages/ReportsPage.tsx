@@ -22,13 +22,13 @@ import {
   Building2,
   UserRound,
   CalendarPlus,
+  CalendarRange,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { AtendimentoReportTab } from '@/components/AtendimentoReportTab'
 import { GeneralAtendimentosReport } from '@/components/GeneralAtendimentosReport'
 import { ClientReportTab } from '@/components/ClientReportTab'
 import { ClientIndividualReport } from '@/components/ClientIndividualReport'
-import { ClientAdhesionReport } from '@/components/ClientAdhesionReport'
 import { ClientAdhesionReport } from '@/components/ClientAdhesionReport'
 
 export default function ReportsPage() {
