@@ -919,6 +919,9 @@ export default function ContractGeneratorPage() {
     isGratuito: isTreinamentoGratuito,
     tipoCobranca: 'mensal',
     parcelasImplantacao,
+    showBasePlan: selectedPlan !== 'none' && quoteTargetType !== 'cliente',
+    discountValue: validDescontoMensalidade,
+    discountType: tipoDesconto,
     items: quoteItems,
   }
 

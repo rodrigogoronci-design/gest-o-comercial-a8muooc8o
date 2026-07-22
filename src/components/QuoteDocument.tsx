@@ -110,7 +110,9 @@ export function QuoteDocument(props: QuoteDocumentProps) {
   const implItem = oneTimeItems.find((i) => i.id === 'impl-details')
   const implMode = implItem?.modo || 'Remoto'
 
-  const totalRecorrenteBase = recurrentItems.reduce((acc, curr) => acc + (curr.price || 0), 0)
+  const planBaseContribution = showBasePlan && !isUpsell ? effectivePlanPrice : 0
+  const totalRecorrenteBase =
+    recurrentItems.reduce((acc, curr) => acc + (curr.price || 0), 0) + planBaseContribution
   const discountAmount =
     discountType === 'valor' ? discountValue : (totalRecorrenteBase * discountValue) / 100
   const totalRecorrenteFinal = Math.max(0, totalRecorrenteBase - discountAmount)
