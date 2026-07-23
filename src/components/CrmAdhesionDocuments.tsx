@@ -32,22 +32,13 @@ export function CrmAdhesionDocuments({
     const files = Array.from(e.target.files || [])
     if (!files.length) return
 
-    if (!prospectId) {
-      toast({
-        title: 'Salve o prospect primeiro',
-        description: 'É necessário salvar o prospect antes de enviar documentos.',
-        variant: 'destructive',
-      })
-      if (fileInputRef.current) fileInputRef.current.value = ''
-      return
-    }
-
     setUploading(true)
     try {
+      const folder = prospectId || `temp/${Date.now()}`
       const newDocs: DocumentoAdesao[] = []
       for (const file of files) {
         const fileExt = file.name.split('.').pop()?.toLowerCase() || 'file'
-        const fileName = `${prospectId}/adesao/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+        const fileName = `${folder}/adesao/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
 
         const { error: uploadError } = await supabase.storage
           .from('prospect-documents')
@@ -167,12 +158,6 @@ export function CrmAdhesionDocuments({
             </div>
           ))}
         </div>
-      )}
-
-      {!prospectId && (
-        <p className="text-xs text-amber-600">
-          Salve o prospect primeiro para habilitar o upload de documentos.
-        </p>
       )}
     </div>
   )

@@ -16,6 +16,7 @@ interface CrmPropostaUploadProps {
   prospectId: string
   currentUrl: string | null
   onUrlChange: (url: string | null) => void
+  skipDbUpdate?: boolean
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -41,7 +42,12 @@ function getFileName(url: string): string {
   return last.length > 40 ? last.substring(0, 37) + '...' : last
 }
 
-export function CrmPropostaUpload({ prospectId, currentUrl, onUrlChange }: CrmPropostaUploadProps) {
+export function CrmPropostaUpload({
+  prospectId,
+  currentUrl,
+  onUrlChange,
+  skipDbUpdate,
+}: CrmPropostaUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [existingPropostas, setExistingPropostas] = useState<any[]>([])
@@ -90,8 +96,9 @@ export function CrmPropostaUpload({ prospectId, currentUrl, onUrlChange }: CrmPr
         await deleteOldFile(currentUrl)
       }
 
+      const folder = prospectId || `temp/${Date.now()}`
       const fileExt = file.name.split('.').pop() || 'pdf'
-      const fileName = `${prospectId}/proposta-${Date.now()}.${fileExt}`
+      const fileName = `${folder}/proposta-${Date.now()}.${fileExt}`
 
       const { error: uploadError } = await supabase.storage
         .from('proposals')
@@ -103,15 +110,17 @@ export function CrmPropostaUpload({ prospectId, currentUrl, onUrlChange }: CrmPr
 
       const newUrl = publicUrlData.publicUrl
 
-      const { error: updateError } = await supabase
-        .from('crm_prospects')
-        .update({
-          proposta_url: newUrl,
-          proposta_anexada_em: new Date().toISOString(),
-        })
-        .eq('id', prospectId)
+      if (prospectId && !skipDbUpdate) {
+        const { error: updateError } = await supabase
+          .from('crm_prospects')
+          .update({
+            proposta_url: newUrl,
+            proposta_anexada_em: new Date().toISOString(),
+          })
+          .eq('id', prospectId)
 
-      if (updateError) throw updateError
+        if (updateError) throw updateError
+      }
 
       onUrlChange(newUrl)
       toast({ title: 'Proposta anexada com sucesso!' })
@@ -132,11 +141,13 @@ export function CrmPropostaUpload({ prospectId, currentUrl, onUrlChange }: CrmPr
     setUploading(true)
     try {
       await deleteOldFile(currentUrl)
-      const { error } = await supabase
-        .from('crm_prospects')
-        .update({ proposta_url: null, proposta_anexada_em: null })
-        .eq('id', prospectId)
-      if (error) throw error
+      if (prospectId && !skipDbUpdate) {
+        const { error } = await supabase
+          .from('crm_prospects')
+          .update({ proposta_url: null, proposta_anexada_em: null })
+          .eq('id', prospectId)
+        if (error) throw error
+      }
       onUrlChange(null)
       toast({ title: 'Proposta removida' })
     } catch (error: any) {
@@ -173,14 +184,16 @@ export function CrmPropostaUpload({ prospectId, currentUrl, onUrlChange }: CrmPr
   const handleLinkExisting = async (url: string) => {
     setUploading(true)
     try {
-      const { error } = await supabase
-        .from('crm_prospects')
-        .update({
-          proposta_url: url,
-          proposta_anexada_em: new Date().toISOString(),
-        })
-        .eq('id', prospectId)
-      if (error) throw error
+      if (prospectId && !skipDbUpdate) {
+        const { error } = await supabase
+          .from('crm_prospects')
+          .update({
+            proposta_url: url,
+            proposta_anexada_em: new Date().toISOString(),
+          })
+          .eq('id', prospectId)
+        if (error) throw error
+      }
       onUrlChange(url)
       setShowLinkModal(false)
       toast({ title: 'Proposta vinculada com sucesso!' })

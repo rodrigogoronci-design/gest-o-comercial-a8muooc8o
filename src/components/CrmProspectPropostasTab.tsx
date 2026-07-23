@@ -44,6 +44,10 @@ export function CrmProspectPropostasTab({
   const { toast } = useToast()
 
   const loadPropostas = async () => {
+    if (!prospectId && !clienteId) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     if (prospectId) {
       const { data: prospectData } = await supabase
@@ -305,17 +309,15 @@ export function CrmProspectPropostasTab({
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      {prospectId && (
-        <CrmPropostaUpload
-          prospectId={prospectId}
-          currentUrl={localPropostaUrl}
-          onUrlChange={(url) => {
-            setLocalPropostaUrl(url)
-            onPropostaChange?.()
-            onUrlChange?.(url)
-          }}
-        />
-      )}
+      <CrmPropostaUpload
+        prospectId={prospectId || ''}
+        currentUrl={localPropostaUrl}
+        onUrlChange={(url) => {
+          setLocalPropostaUrl(url)
+          onPropostaChange?.()
+          onUrlChange?.(url)
+        }}
+      />
       <div className="flex justify-between items-center bg-slate-50 p-2 pl-4 rounded-lg border border-slate-100">
         <h3 className="text-sm font-semibold text-slate-700">Propostas Enviadas</h3>
         <Button

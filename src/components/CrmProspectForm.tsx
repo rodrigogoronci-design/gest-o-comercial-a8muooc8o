@@ -416,9 +416,10 @@ export function CrmProspectForm({
 
   return (
     <div className="w-full">
-      {initialData && initialData.id && (
-        <div className="flex space-x-1 p-1 bg-slate-100 rounded-lg mb-4 overflow-x-auto">
-          {(['dados', 'diagnostico', 'historico', 'propostas'] as const).map((tab) => (
+      <div className="flex space-x-1 p-1 bg-slate-100 rounded-lg mb-4 overflow-x-auto">
+        {(['dados', 'diagnostico', 'historico', 'propostas'] as const)
+          .filter((tab) => initialData?.id || tab === 'dados' || tab === 'propostas')
+          .map((tab) => (
             <button
               key={tab}
               type="button"
@@ -439,8 +440,7 @@ export function CrmProspectForm({
                     : 'Propostas'}
             </button>
           ))}
-        </div>
-      )}
+      </div>
 
       {activeTab === 'dados' ? (
         <Form {...form}>
@@ -931,11 +931,11 @@ export function CrmProspectForm({
         />
       ) : activeTab === 'historico' && initialData?.id ? (
         <CrmHistorico prospectId={initialData.id} />
-      ) : activeTab === 'propostas' && initialData?.id ? (
+      ) : activeTab === 'propostas' ? (
         <CrmProspectPropostasTab
-          prospectId={initialData.id}
-          prospectName={initialData.empresa || ''}
-          propostaUrl={initialData.proposta_url || null}
+          prospectId={initialData?.id}
+          prospectName={initialData?.empresa || ''}
+          propostaUrl={form.watch('proposta_url') || null}
           onPropostaChange={onPropostaChange}
           onUrlChange={(url) => form.setValue('proposta_url', url || '')}
         />
