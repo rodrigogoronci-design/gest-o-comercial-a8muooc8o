@@ -56,6 +56,7 @@ export const prospectFormSchema = z.object({
   observacoes_comerciais: z.string().optional(),
   responsavel_comercial: z.string().optional(),
   contrato_assinado: z.boolean().optional(),
+  proposta_url: z.string().optional(),
 })
 
 export type ProspectFormValues = z.infer<typeof prospectFormSchema>
@@ -187,6 +188,7 @@ export function CrmProspectForm({
       observacoes_comerciais: '',
       responsavel_comercial: '',
       contrato_assinado: false,
+      proposta_url: '',
     },
   })
 
@@ -220,6 +222,7 @@ export function CrmProspectForm({
         observacoes_comerciais: initialData.observacoes_comerciais || '',
         responsavel_comercial: initialData.responsavel_comercial || '',
         contrato_assinado: initialData.contrato_assinado || false,
+        proposta_url: (initialData.proposta_url as string) || '',
       })
     }
   }, [initialData, form, defaultTipoPessoa])

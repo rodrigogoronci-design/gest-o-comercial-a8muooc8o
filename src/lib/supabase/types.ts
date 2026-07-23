@@ -1381,6 +1381,7 @@ export type Database = {
           plano_apresentado: string | null
           plano_contratado: string | null
           plano_id: string | null
+          proposta_anexada_em: string | null
           proposta_url: string | null
           quantidade_uso: number | null
           razao_social: string | null
@@ -1417,6 +1418,7 @@ export type Database = {
           plano_apresentado?: string | null
           plano_contratado?: string | null
           plano_id?: string | null
+          proposta_anexada_em?: string | null
           proposta_url?: string | null
           quantidade_uso?: number | null
           razao_social?: string | null
@@ -1453,6 +1455,7 @@ export type Database = {
           plano_apresentado?: string | null
           plano_contratado?: string | null
           plano_id?: string | null
+          proposta_anexada_em?: string | null
           proposta_url?: string | null
           quantidade_uso?: number | null
           razao_social?: string | null

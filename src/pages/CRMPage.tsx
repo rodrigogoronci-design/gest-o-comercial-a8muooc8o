@@ -81,6 +81,13 @@ export type CrmProspect = {
   nome_mae?: string | null
   nome_pai?: string | null
   data_nascimento?: string | null
+  plano_apresentado?: string | null
+  plano_contratado?: string | null
+  modulos_contratados?: any[] | null
+  quantidade_uso?: number | null
+  observacoes_comerciais?: string | null
+  responsavel_comercial?: string | null
+  contrato_assinado?: boolean | null
 }
 
 export default function CRMPage() {
@@ -407,6 +414,14 @@ export default function CRMPage() {
         nome_mae: values.nome_mae || null,
         nome_pai: values.nome_pai || null,
         data_nascimento: values.data_nascimento || null,
+        plano_apresentado: values.plano_apresentado || null,
+        plano_contratado: values.plano_contratado || null,
+        modulos_contratados: values.modulos_contratados || [],
+        quantidade_uso: values.quantidade_uso ?? null,
+        observacoes_comerciais: values.observacoes_comerciais || null,
+        responsavel_comercial: values.responsavel_comercial || null,
+        contrato_assinado: values.contrato_assinado ?? false,
+        proposta_url: values.proposta_url || null,
       },
     ])
     setIsSubmitting(false)
@@ -445,6 +460,14 @@ export default function CRMPage() {
         nome_mae: values.nome_mae || null,
         nome_pai: values.nome_pai || null,
         data_nascimento: values.data_nascimento || null,
+        plano_apresentado: values.plano_apresentado || null,
+        plano_contratado: values.plano_contratado || null,
+        modulos_contratados: values.modulos_contratados || [],
+        quantidade_uso: values.quantidade_uso ?? null,
+        observacoes_comerciais: values.observacoes_comerciais || null,
+        responsavel_comercial: values.responsavel_comercial || null,
+        contrato_assinado: values.contrato_assinado ?? false,
+        proposta_url: editingProspect.proposta_url || null,
         ultima_interacao:
           statusChanged || classifChanged
             ? new Date().toISOString()
@@ -1099,6 +1122,14 @@ export default function CRMPage() {
                       nome_mae: editingProspect.nome_mae || '',
                       nome_pai: editingProspect.nome_pai || '',
                       data_nascimento: editingProspect.data_nascimento || '',
+                      plano_apresentado: editingProspect.plano_apresentado || '',
+                      plano_contratado: editingProspect.plano_contratado || '',
+                      modulos_contratados: editingProspect.modulos_contratados || [],
+                      quantidade_uso: editingProspect.quantidade_uso ?? undefined,
+                      observacoes_comerciais: editingProspect.observacoes_comerciais || '',
+                      responsavel_comercial: editingProspect.responsavel_comercial || '',
+                      contrato_assinado: editingProspect.contrato_assinado ?? false,
+                      proposta_url: editingProspect.proposta_url || null,
                     }}
                   />
                 )}
