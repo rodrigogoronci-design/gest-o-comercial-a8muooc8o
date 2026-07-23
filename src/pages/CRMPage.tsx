@@ -88,6 +88,7 @@ export type CrmProspect = {
   observacoes_comerciais?: string | null
   responsavel_comercial?: string | null
   contrato_assinado?: boolean | null
+  documentos_adesao?: any[] | null
 }
 
 export default function CRMPage() {
@@ -199,6 +200,13 @@ export default function CRMPage() {
   }
 
   const handleEfetivarCliente = async (p: CrmProspect) => {
+    const hasDocs = p.documentos_adesao && p.documentos_adesao.length > 0
+    if (hasDocs) {
+      const confirmed = window.confirm(
+        'Os documentos de adesão serão transferidos para o novo cliente. Deseja continuar?',
+      )
+      if (!confirmed) return
+    }
     if (!p.contrato_assinado_url) {
       return toast({
         title: 'Contrato assinado obrigatório',
@@ -232,6 +240,7 @@ export default function CRMPage() {
           tipo_desconto: diagExisting.tipo_desconto || 'valor',
           modulos: modulosExisting,
           plano_id: p.plano_id || null,
+          documentos_urls: [...(p.documentos_adesao || [])],
         })
         .eq('id', p.cliente_id)
       await supabase
@@ -316,6 +325,7 @@ export default function CRMPage() {
           tipo_desconto: diag.tipo_desconto || 'valor',
           modulos: modulosFromDiag,
           plano_id: p.plano_id || null,
+          documentos_urls: [...(p.documentos_adesao || [])],
         },
       ])
       .select()
@@ -422,6 +432,7 @@ export default function CRMPage() {
         responsavel_comercial: values.responsavel_comercial || null,
         contrato_assinado: values.contrato_assinado ?? false,
         proposta_url: values.proposta_url || null,
+        documentos_adesao: values.documentos_adesao || [],
       },
     ])
     setIsSubmitting(false)
@@ -468,6 +479,7 @@ export default function CRMPage() {
         responsavel_comercial: values.responsavel_comercial || null,
         contrato_assinado: values.contrato_assinado ?? false,
         proposta_url: editingProspect.proposta_url || null,
+        documentos_adesao: values.documentos_adesao || [],
         ultima_interacao:
           statusChanged || classifChanged
             ? new Date().toISOString()
@@ -1130,6 +1142,9 @@ export default function CRMPage() {
                       responsavel_comercial: editingProspect.responsavel_comercial || '',
                       contrato_assinado: editingProspect.contrato_assinado ?? false,
                       proposta_url: editingProspect.proposta_url || null,
+                      plano_id: editingProspect.plano_id || null,
+                      contrato_assinado_url: editingProspect.contrato_assinado_url || null,
+                      documentos_adesao: editingProspect.documentos_adesao || [],
                     }}
                   />
                 )}

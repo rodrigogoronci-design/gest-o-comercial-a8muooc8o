@@ -31,6 +31,8 @@ import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase/client'
 import { fetchCnpjData } from '@/services/cnpj'
 import { fetchCpfData } from '@/services/cpf'
+import { CrmAdhesionDocuments, type DocumentoAdesao } from '@/components/CrmAdhesionDocuments'
+import { CrmWhatsappChecklistButton } from '@/components/CrmWhatsappChecklistButton'
 
 export const prospectFormSchema = z.object({
   tipo_pessoa: z.string().default('PJ'),
@@ -57,6 +59,7 @@ export const prospectFormSchema = z.object({
   responsavel_comercial: z.string().optional(),
   contrato_assinado: z.boolean().optional(),
   proposta_url: z.string().optional(),
+  documentos_adesao: z.any().optional(),
 })
 
 export type ProspectFormValues = z.infer<typeof prospectFormSchema>
@@ -154,6 +157,7 @@ export function CrmProspectForm({
     proposta_url?: string | null
     contrato_assinado_url?: string | null
     modulos_contratados?: any
+    documentos_adesao?: DocumentoAdesao[]
   }
   defaultTipoPessoa?: 'PJ' | 'PF'
 }) {
@@ -189,10 +193,15 @@ export function CrmProspectForm({
       responsavel_comercial: '',
       contrato_assinado: false,
       proposta_url: '',
+      documentos_adesao: [],
     },
   })
 
   const tipoPessoa = form.watch('tipo_pessoa') || defaultTipoPessoa
+  const contratoAssinado = form.watch('contrato_assinado')
+  const telefoneWatch = form.watch('telefone') || ''
+  const planoContratadoWatch = form.watch('plano_contratado') || ''
+  const documentosAdesao = (form.watch('documentos_adesao') || []) as DocumentoAdesao[]
 
   useEffect(() => {
     if (initialData) {
@@ -223,6 +232,7 @@ export function CrmProspectForm({
         responsavel_comercial: initialData.responsavel_comercial || '',
         contrato_assinado: initialData.contrato_assinado || false,
         proposta_url: (initialData.proposta_url as string) || '',
+        documentos_adesao: (initialData.documentos_adesao as DocumentoAdesao[]) || [],
       })
     }
   }, [initialData, form, defaultTipoPessoa])
@@ -864,6 +874,24 @@ export function CrmProspectForm({
                   )}
                 />
               )}
+
+              {contratoAssinado && initialData?.id && (
+                <CrmWhatsappChecklistButton
+                  telefone={telefoneWatch}
+                  planoContratado={planoContratadoWatch}
+                  planoId={initialData.plano_id}
+                />
+              )}
+            </div>
+
+            <div className="space-y-3 pt-2 border-t">
+              <h4 className="text-sm font-semibold text-slate-700">Documentos para Adesão</h4>
+              <CrmAdhesionDocuments
+                prospectId={initialData?.id}
+                documents={documentosAdesao}
+                onDocumentsChange={(docs) => form.setValue('documentos_adesao', docs)}
+                disabled={isSubmitting}
+              />
             </div>
 
             <FormField
