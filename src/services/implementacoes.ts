@@ -17,7 +17,7 @@ export const getImplementacao = async (id: string) => {
   const { data, error } = await supabase
     .from('implementacoes' as any)
     .select(
-      '*, clientes(nome, cnpj, modulos, modo_implantacao, filiais_detalhes, quantidade_filiais, cobrar_filiais, planos_saude(descricao, codigo, franquia_quantidade)), colaboradores(nome), implementacao_etapas(*), crm_propostas(itens, quantidade_filiais, filiais_detalhes, cobrar_filiais), solicitacoes_servico(id, tipo, descricao, status)',
+      '*, clientes(nome, cnpj, modulos, modo_implantacao, filiais_detalhes, quantidade_filiais, cobrar_filiais, rep_nome, rep_cpf, rep_rg, planos_saude(descricao, codigo, franquia_quantidade)), colaboradores(nome), implementacao_etapas(*), crm_propostas(itens, quantidade_filiais, filiais_detalhes, cobrar_filiais), solicitacoes_servico(id, tipo, descricao, status)',
     )
     .eq('id', id)
     .single()

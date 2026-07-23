@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Save, Loader2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -14,21 +14,29 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { SECTIONS, type FieldDef } from '@/components/parametrizacao-config'
+import { TagsInput } from '@/components/TagsInput'
 import { updateDadosParametrizacao } from '@/services/implementacoes'
 import { toast } from 'sonner'
 
 export function ParametrizacaoSection({
   implementacaoId,
   dados,
+  clienteData,
 }: {
   implementacaoId: string
   dados: any
+  clienteData?: any
 }) {
   const [formData, setFormData] = useState<Record<string, any>>({})
   const [saving, setSaving] = useState(false)
+  const prevDadosRef = useRef('')
 
   useEffect(() => {
-    setFormData(dados || {})
+    const dadosStr = JSON.stringify(dados || {})
+    if (dadosStr !== prevDadosRef.current) {
+      prevDadosRef.current = dadosStr
+      setFormData(dados || {})
+    }
   }, [dados])
 
   const set = (key: string, val: any) => setFormData((prev) => ({ ...prev, [key]: val }))
@@ -96,6 +104,24 @@ export function ParametrizacaoSection({
             </SelectContent>
           </Select>
         )
+      case 'tags':
+        return (
+          <TagsInput
+            value={Array.isArray(val) ? val : []}
+            onChange={(v) => set(field.key, v)}
+            placeholder="Adicionar módulo..."
+          />
+        )
+      case 'readonly': {
+        const clientVal = clienteData?.[field.clientField || field.key]
+        return (
+          <Input
+            value={clientVal || ''}
+            readOnly
+            className="bg-slate-50 text-slate-600 cursor-not-allowed"
+          />
+        )
+      }
     }
   }
 

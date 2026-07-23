@@ -1,12 +1,13 @@
-import { Building2, FileCheck, Settings, User, Users } from 'lucide-react'
+import { Building2, FileCheck, Settings, User, Users, Package } from 'lucide-react'
 
-export type FieldType = 'text' | 'password' | 'radio' | 'toggle' | 'select'
+export type FieldType = 'text' | 'password' | 'radio' | 'toggle' | 'select' | 'tags' | 'readonly'
 
 export interface FieldDef {
   key: string
   label: string
   type: FieldType
   options?: string[]
+  clientField?: string
 }
 
 export interface SectionDef {
@@ -53,6 +54,19 @@ export const SECTIONS: SectionDef[] = [
     ],
   },
   {
+    title: 'Módulos e Treinamento',
+    icon: Package,
+    fields: [
+      { key: 'modulos_adicionais', label: 'Módulos Adicionais', type: 'tags' },
+      {
+        key: 'tipo_treinamento',
+        label: 'Tipo de Treinamento',
+        type: 'select',
+        options: ['Remoto', 'Presencial'],
+      },
+    ],
+  },
+  {
     title: 'Perfil Operacional',
     icon: Settings,
     fields: [
@@ -67,8 +81,19 @@ export const SECTIONS: SectionDef[] = [
     title: 'Responsável Legal',
     icon: User,
     fields: [
-      { key: 'responsavel_nome', label: 'Nome do Responsável Legal', type: 'text' },
-      { key: 'responsavel_telefone', label: 'Telefone para Contato', type: 'text' },
+      {
+        key: 'rep_nome',
+        label: 'Nome do Responsável Legal',
+        type: 'readonly',
+        clientField: 'rep_nome',
+      },
+      {
+        key: 'rep_cpf',
+        label: 'CPF do Responsável Legal',
+        type: 'readonly',
+        clientField: 'rep_cpf',
+      },
+      { key: 'rep_rg', label: 'RG do Responsável Legal', type: 'readonly', clientField: 'rep_rg' },
     ],
   },
   {

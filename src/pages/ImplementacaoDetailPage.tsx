@@ -508,7 +508,11 @@ export default function ImplementacaoDetailPage() {
         <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
           Parametrização do Sistema
         </h3>
-        <ParametrizacaoSection implementacaoId={impl.id} dados={impl.dados_parametrizacao} />
+        <ParametrizacaoSection
+          implementacaoId={impl.id}
+          dados={impl.dados_parametrizacao}
+          clienteData={impl.clientes}
+        />
       </div>
 
       {CATEGORIA_ORDER.map((categoria) => {

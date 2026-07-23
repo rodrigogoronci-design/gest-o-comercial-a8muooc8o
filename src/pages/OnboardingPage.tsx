@@ -18,8 +18,10 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { supabase } from '@/lib/supabase/client'
 import { parseModulosToList } from '@/lib/modules-parser'
+import { TagsInput } from '@/components/TagsInput'
 
 const STEPS = ['Identificação', 'Detalhes Técnicos', 'Documentos', 'Revisão']
 const MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -47,6 +49,8 @@ export default function OnboardingPage() {
     contato_telefone: '',
     contato_email: '',
     observacoes: '',
+    modulos_adicionais: [] as string[],
+    tipo_treinamento: '',
   })
   const [files, setFiles] = useState<File[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
@@ -62,14 +66,17 @@ export default function OnboardingPage() {
         setInvalid(true)
       } else {
         setImplData(data)
-        const existing = data.dados_parametrizacao?.onboarding
-        if (existing)
-          setForm({
-            contato_nome: existing.contato_nome || '',
-            contato_telefone: existing.contato_telefone || '',
-            contato_email: existing.contato_email || '',
-            observacoes: existing.observacoes || '',
-          })
+        const existingParam = data.dados_parametrizacao || {}
+        const existingOnboarding = existingParam.onboarding
+        const rawModulos = existingParam.modulos_adicionais || data.modulos_novos || []
+        setForm({
+          contato_nome: existingOnboarding?.contato_nome || '',
+          contato_telefone: existingOnboarding?.contato_telefone || '',
+          contato_email: existingOnboarding?.contato_email || '',
+          observacoes: existingOnboarding?.observacoes || '',
+          modulos_adicionais: Array.isArray(rawModulos) ? rawModulos : [],
+          tipo_treinamento: existingParam.tipo_treinamento || '',
+        })
       }
       setLoading(false)
     })
@@ -115,7 +122,17 @@ export default function OnboardingPage() {
       }
       const { data, error } = await supabase.rpc('submit_onboarding', {
         p_token: token,
-        p_data: { onboarding: { ...form, submitted_at: new Date().toISOString() } },
+        p_data: {
+          onboarding: {
+            contato_nome: form.contato_nome,
+            contato_telefone: form.contato_telefone,
+            contato_email: form.contato_email,
+            observacoes: form.observacoes,
+            submitted_at: new Date().toISOString(),
+          },
+          modulos_adicionais: form.modulos_adicionais,
+          tipo_treinamento: form.tipo_treinamento,
+        },
         p_arquivos: arquivos,
       })
       if (error) throw new Error('Erro ao enviar dados')
@@ -277,6 +294,38 @@ export default function OnboardingPage() {
                   )}
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label>Módulos Adicionais</Label>
+                <TagsInput
+                  value={form.modulos_adicionais}
+                  onChange={(v) => setForm({ ...form, modulos_adicionais: v })}
+                  placeholder="Adicionar módulo..."
+                />
+                <p className="text-xs text-slate-400">
+                  Adicione módulos extras que não estão no plano contratado.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo de Treinamento</Label>
+                <RadioGroup
+                  value={form.tipo_treinamento}
+                  onValueChange={(v) => setForm({ ...form, tipo_treinamento: v })}
+                  className="flex gap-4"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <RadioGroupItem value="Remoto" id="tipo-treinamento-remoto" />
+                    <Label htmlFor="tipo-treinamento-remoto" className="text-sm cursor-pointer">
+                      Remoto
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <RadioGroupItem value="Presencial" id="tipo-treinamento-presencial" />
+                    <Label htmlFor="tipo-treinamento-presencial" className="text-sm cursor-pointer">
+                      Presencial
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
             </div>
           )}
 
@@ -363,6 +412,18 @@ export default function OnboardingPage() {
                 <div className="flex justify-between">
                   <span className="text-xs text-slate-500">Arquivos</span>
                   <span className="text-sm font-medium">{files.length} arquivo(s)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-xs text-slate-500">Tipo de Treinamento</span>
+                  <span className="text-sm font-medium">{form.tipo_treinamento || '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-xs text-slate-500">Módulos Adicionais</span>
+                  <span className="text-sm font-medium">
+                    {form.modulos_adicionais.length > 0
+                      ? form.modulos_adicionais.join(', ')
+                      : 'Nenhum'}
+                  </span>
                 </div>
               </div>
               {form.observacoes && (
