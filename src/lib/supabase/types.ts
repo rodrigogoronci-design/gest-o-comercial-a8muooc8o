@@ -1994,6 +1994,7 @@ export type Database = {
           solicitacao_id: string | null
           status: string
           tipo: string
+          token_onboarding: string | null
           treinamento_data: string | null
           treinamento_motivo: string | null
           treinamento_topicos: string | null
@@ -2011,6 +2012,7 @@ export type Database = {
           solicitacao_id?: string | null
           status?: string
           tipo?: string
+          token_onboarding?: string | null
           treinamento_data?: string | null
           treinamento_motivo?: string | null
           treinamento_topicos?: string | null
@@ -2028,6 +2030,7 @@ export type Database = {
           solicitacao_id?: string | null
           status?: string
           tipo?: string
+          token_onboarding?: string | null
           treinamento_data?: string | null
           treinamento_motivo?: string | null
           treinamento_topicos?: string | null
@@ -3242,6 +3245,7 @@ export type Database = {
     Functions: {
       get_current_colaborador_id: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
+      get_implementacao_onboarding: { Args: { p_token: string }; Returns: Json }
       global_search: {
         Args: { search_query: string }
         Returns: {
@@ -3256,6 +3260,10 @@ export type Database = {
       is_in_my_team: { Args: { target_colab_id: string }; Returns: boolean }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { '': string }; Returns: string[] }
+      submit_onboarding: {
+        Args: { p_arquivos?: Json; p_data: Json; p_token: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

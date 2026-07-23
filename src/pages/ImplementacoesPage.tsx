@@ -127,6 +127,8 @@ export default function ImplementacoesPage() {
     'Em andamento': 'bg-blue-50 text-blue-700 border-blue-200',
     Atrasada: 'bg-red-50 text-red-700 border-red-200',
     Finalizada: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    onboarding_recebido: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    onboarding_completed: 'bg-indigo-50 text-indigo-700 border-indigo-200',
   }
 
   return (

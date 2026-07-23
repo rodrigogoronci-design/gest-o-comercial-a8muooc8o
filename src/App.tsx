@@ -37,6 +37,7 @@ import NotFound from './pages/NotFound'
 import ImplementacoesPage from './pages/ImplementacoesPage'
 import ImplementacaoDetailPage from './pages/ImplementacaoDetailPage'
 import CaptacaoPage from './pages/CaptacaoPage'
+import OnboardingPage from './pages/OnboardingPage'
 
 const App = () => (
   <AuthProvider>
@@ -47,6 +48,7 @@ const App = () => (
           <Sonner />
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/onboarding/:token" element={<OnboardingPage />} />
             <Route
               element={
                 <ProtectedRoute>

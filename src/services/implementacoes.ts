@@ -52,6 +52,45 @@ export const createImplementacao = async (params: {
   treinamento_data?: string | null
 }) => {
   const tipo = params.tipo || 'novo_cliente'
+
+  let modulosNovos = params.modulos_novos || []
+  let dadosParametrizacao: Record<string, any> = {}
+
+  if (params.cliente_id) {
+    try {
+      const { data: cliente } = await supabase
+        .from('clientes')
+        .select('modulos, plano_id, quantidade_filiais')
+        .eq('id', params.cliente_id)
+        .single()
+
+      let planoInfo: any = null
+      if (cliente?.plano_id) {
+        const { data: plano } = await supabase
+          .from('planos_saude')
+          .select('descricao, codigo, franquia_quantidade')
+          .eq('id', cliente.plano_id)
+          .single()
+        planoInfo = plano
+      }
+
+      const clientModules = parseModulosToList(cliente?.modulos)
+      if (modulosNovos.length === 0 && clientModules.length > 0) {
+        modulosNovos = clientModules
+      }
+
+      dadosParametrizacao = {
+        plano_descricao: planoInfo?.descricao || null,
+        plano_codigo: planoInfo?.codigo || null,
+        franquia_quantidade: planoInfo?.franquia_quantidade || cliente?.quantidade_filiais || null,
+        modulos_copiados: modulosNovos,
+        dados_replicados_em: new Date().toISOString(),
+      }
+    } catch {
+      // Continue without replicated data
+    }
+  }
+
   const { data, error } = await supabase
     .from('implementacoes' as any)
     .insert({
@@ -62,10 +101,11 @@ export const createImplementacao = async (params: {
       progresso: 0,
       tipo,
       solicitacao_id: params.solicitacao_id || null,
-      modulos_novos: params.modulos_novos || [],
+      modulos_novos: modulosNovos,
       treinamento_motivo: params.treinamento_motivo || null,
       treinamento_topicos: params.treinamento_topicos || null,
       treinamento_data: params.treinamento_data || null,
+      dados_parametrizacao: dadosParametrizacao,
     })
     .select()
     .single()

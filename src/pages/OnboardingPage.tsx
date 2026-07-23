@@ -196,6 +196,15 @@ export default function OnboardingPage() {
 
           {step === 0 && (
             <div className="space-y-4 animate-fade-in">
+              <div className="p-4 rounded-lg bg-indigo-50 border border-indigo-100">
+                <p className="text-sm text-indigo-800 font-medium">
+                  Bem-vindo(a) ao processo de implantação!
+                </p>
+                <p className="text-xs text-indigo-600 mt-1">
+                  Precisamos que você preencha alguns dados para iniciarmos a configuração do seu
+                  sistema. É rápido e fácil!
+                </p>
+              </div>
               <div className="space-y-2">
                 <Label>Empresa</Label>
                 <Input value={implData?.cliente_nome || ''} readOnly className="bg-slate-50" />

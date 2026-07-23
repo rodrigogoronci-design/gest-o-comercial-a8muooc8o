@@ -17,7 +17,7 @@ import {
   MessageSquare,
 } from 'lucide-react'
 import { useUserRole } from '@/hooks/use-user-role'
-import { useCoordinatorWhatsapp } from '@/hooks/use-coordinator-whatsapp'
+import { getOrCreateOnboardingToken, generateOnboardingUrl } from '@/services/onboarding'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -61,6 +61,15 @@ const STATUS_CONFIG: Record<string, { color: string; icon: any }> = {
   'Em andamento': { color: 'bg-amber-50 text-amber-700 border-amber-200', icon: AlertCircle },
   Concluída: { color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: CheckCircle },
   Atrasada: { color: 'bg-red-50 text-red-700 border-red-200', icon: AlertCircle },
+  onboarding_recebido: {
+    color: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    icon: CheckCircle,
+  },
+  onboarding_completed: {
+    color: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    icon: CheckCircle,
+  },
+  Finalizada: { color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: CheckCircle },
 }
 
 const STATUS_OPTIONS = ['Não iniciada', 'Agendada', 'Em andamento', 'Concluída', 'Atrasada']
@@ -104,8 +113,8 @@ export default function ImplementacaoDetailPage() {
   const [syncingModulos, setSyncingModulos] = useState(false)
   const [ratFile, setRatFile] = useState<File | null>(null)
   const [formData, setFormData] = useState<any>({})
+  const [sharingOnboarding, setSharingOnboarding] = useState(false)
   const { isFinancialRestricted } = useUserRole()
-  const { phoneNumber: coordWhatsapp } = useCoordinatorWhatsapp()
 
   useEffect(() => {
     if (id) loadImpl(id)
@@ -244,12 +253,21 @@ export default function ImplementacaoDetailPage() {
     }
   }
 
-  const handleShareWhatsapp = () => {
-    const clienteNome = impl?.clientes?.nome || 'cliente'
-    const message = encodeURIComponent(
-      `Olá Gesualdo, gostaria de compartilhar os detalhes da implantação do cliente ${clienteNome}. Segue o link para acesso: ${window.location.href}`,
-    )
-    window.open(`https://wa.me/${coordWhatsapp}?text=${message}`, '_blank', 'noopener,noreferrer')
+  const handleShareWhatsapp = async () => {
+    if (!impl) return
+    setSharingOnboarding(true)
+    try {
+      const token = await getOrCreateOnboardingToken(impl.id)
+      const onboardingUrl = generateOnboardingUrl(token)
+      const message = encodeURIComponent(
+        `Olá! Precisamos que você preencha a ficha de onboarding para iniciarmos a implantação. Acesse o link: ${onboardingUrl}`,
+      )
+      window.open(`https://wa.me/?text=${message}`, '_blank', 'noopener,noreferrer')
+    } catch (error: any) {
+      toast.error('Erro ao gerar link de onboarding: ' + (error.message || ''))
+    } finally {
+      setSharingOnboarding(false)
+    }
   }
 
   if (isLoading) {
@@ -342,11 +360,16 @@ export default function ImplementacaoDetailPage() {
             variant="outline"
             size="sm"
             onClick={handleShareWhatsapp}
+            disabled={sharingOnboarding}
             style={{ borderColor: '#25D366', color: '#25D366' }}
             className="hover:bg-[#25D366] hover:text-white"
           >
-            <MessageSquare className="h-4 w-4 sm:mr-1.5" />
-            <span className="hidden sm:inline">Enviar para WhatsApp</span>
+            {sharingOnboarding ? (
+              <Loader2 className="h-4 w-4 sm:mr-1.5 animate-spin" />
+            ) : (
+              <MessageSquare className="h-4 w-4 sm:mr-1.5" />
+            )}
+            <span className="hidden sm:inline">Enviar via WhatsApp</span>
           </Button>
         </div>
       </div>
