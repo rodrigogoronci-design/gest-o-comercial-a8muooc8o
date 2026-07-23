@@ -32,6 +32,7 @@ import { supabase } from '@/lib/supabase/client'
 import { fetchCnpjData } from '@/services/cnpj'
 import { fetchCpfData } from '@/services/cpf'
 import { CrmAdhesionDocuments, type DocumentoAdesao } from '@/components/CrmAdhesionDocuments'
+import { CrmDocumentList } from '@/components/CrmDocumentList'
 import { CrmWhatsappChecklistButton } from '@/components/CrmWhatsappChecklistButton'
 
 export const prospectFormSchema = z.object({
@@ -217,6 +218,7 @@ export function CrmProspectForm({
   const contratoAssinado = form.watch('contrato_assinado')
   const telefoneWatch = form.watch('telefone') || ''
   const planoContratadoWatch = form.watch('plano_contratado') || ''
+  const propostaUrlWatch = form.watch('proposta_url') || ''
   const rawDocumentosAdesao = form.watch('documentos_adesao')
   const documentosAdesao = Array.isArray(rawDocumentosAdesao) ? rawDocumentosAdesao : []
 
@@ -900,6 +902,12 @@ export function CrmProspectForm({
                 />
               )}
             </div>
+
+            <CrmDocumentList
+              propostaUrl={propostaUrlWatch || null}
+              documentosAdesao={documentosAdesao}
+              className="pt-2 border-t"
+            />
 
             <div className="space-y-3 pt-2 border-t">
               <h4 className="text-sm font-semibold text-slate-700">Documentos para Adesão</h4>

@@ -478,7 +478,7 @@ export default function CRMPage() {
         observacoes_comerciais: values.observacoes_comerciais || null,
         responsavel_comercial: values.responsavel_comercial || null,
         contrato_assinado: values.contrato_assinado ?? false,
-        proposta_url: editingProspect.proposta_url || null,
+        proposta_url: values.proposta_url || null,
         documentos_adesao: values.documentos_adesao || [],
         ultima_interacao:
           statusChanged || classifChanged
