@@ -20,12 +20,14 @@ export function CrmProspectPropostasTab({
   prospectName,
   propostaUrl,
   onPropostaChange,
+  onUrlChange,
 }: {
   prospectId?: string
   clienteId?: string
   prospectName: string
   propostaUrl?: string | null
   onPropostaChange?: () => void
+  onUrlChange?: (url: string | null) => void
 }) {
   const [propostas, setPropostas] = useState<any[]>([])
   const [entityData, setEntityData] = useState<any>(null)
@@ -310,6 +312,7 @@ export function CrmProspectPropostasTab({
           onUrlChange={(url) => {
             setLocalPropostaUrl(url)
             onPropostaChange?.()
+            onUrlChange?.(url)
           }}
         />
       )}

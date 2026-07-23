@@ -148,6 +148,7 @@ export function CrmProspectForm({
   isSubmitting,
   initialData,
   defaultTipoPessoa = 'PJ',
+  onPropostaChange,
 }: {
   onSubmit: (v: ProspectFormValues) => void
   isSubmitting?: boolean
@@ -160,6 +161,7 @@ export function CrmProspectForm({
     documentos_adesao?: DocumentoAdesao[]
   }
   defaultTipoPessoa?: 'PJ' | 'PF'
+  onPropostaChange?: () => void
 }) {
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'dados' | 'diagnostico' | 'historico' | 'propostas'>(
@@ -934,6 +936,8 @@ export function CrmProspectForm({
           prospectId={initialData.id}
           prospectName={initialData.empresa || ''}
           propostaUrl={initialData.proposta_url || null}
+          onPropostaChange={onPropostaChange}
+          onUrlChange={(url) => form.setValue('proposta_url', url || '')}
         />
       ) : null}
     </div>

@@ -1117,6 +1117,7 @@ export default function CRMPage() {
                   <CrmProspectForm
                     onSubmit={onEditSubmit}
                     isSubmitting={isSubmitting}
+                    onPropostaChange={fetchProspects}
                     initialData={{
                       cnpj: editingProspect.cnpj || '',
                       cpf: editingProspect.cpf || '',
@@ -1198,6 +1199,9 @@ export default function CRMPage() {
                     prospectName={editingProspect.empresa}
                     propostaUrl={editingProspect.proposta_url || null}
                     onPropostaChange={fetchProspects}
+                    onUrlChange={(url) => {
+                      setEditingProspect((prev) => (prev ? { ...prev, proposta_url: url } : prev))
+                    }}
                   />
                 )}
               </TabsContent>

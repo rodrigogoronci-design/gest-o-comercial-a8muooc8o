@@ -1369,6 +1369,7 @@ export type Database = {
           data_followup: string | null
           data_nascimento: string | null
           diagnostico: Json | null
+          documentos_adesao: Json | null
           email: string | null
           empresa: string
           endereco: string | null
@@ -1406,6 +1407,7 @@ export type Database = {
           data_followup?: string | null
           data_nascimento?: string | null
           diagnostico?: Json | null
+          documentos_adesao?: Json | null
           email?: string | null
           empresa: string
           endereco?: string | null
@@ -1443,6 +1445,7 @@ export type Database = {
           data_followup?: string | null
           data_nascimento?: string | null
           diagnostico?: Json | null
+          documentos_adesao?: Json | null
           email?: string | null
           empresa?: string
           endereco?: string | null
@@ -1577,6 +1580,41 @@ export type Database = {
             columns: ['colaborador_id']
             isOneToOne: false
             referencedRelation: 'colaboradores'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      documentos_obrigatorios: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome_documento: string
+          plano_id: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome_documento: string
+          plano_id?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome_documento?: string
+          plano_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'documentos_obrigatorios_plano_id_fkey'
+            columns: ['plano_id']
+            isOneToOne: false
+            referencedRelation: 'planos_saude'
             referencedColumns: ['id']
           },
         ]
