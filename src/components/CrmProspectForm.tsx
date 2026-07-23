@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -48,11 +49,25 @@ export const prospectFormSchema = z.object({
   nome_mae: z.string().optional(),
   nome_pai: z.string().optional(),
   data_nascimento: z.string().optional(),
+  plano_apresentado: z.string().optional(),
+  plano_contratado: z.string().optional(),
+  modulos_contratados: z.string().optional(),
+  quantidade_uso: z.number().optional(),
+  observacoes_comerciais: z.string().optional(),
+  responsavel_comercial: z.string().optional(),
+  contrato_assinado: z.boolean().optional(),
 })
 
 export type ProspectFormValues = z.infer<typeof prospectFormSchema>
 
 const PROSPECT_STATUSES = [
+  'Lead',
+  'Proposta Enviada',
+  'Aguardando Documentação',
+  'Contrato',
+  'Contrato Assinado',
+  'Implantação',
+  'Cliente Ativo',
   'Novo Lead',
   'Contato inicial',
   'Em negociação',
@@ -137,6 +152,7 @@ export function CrmProspectForm({
     plano_id?: string | null
     proposta_url?: string | null
     contrato_assinado_url?: string | null
+    modulos_contratados?: any
   }
   defaultTipoPessoa?: 'PJ' | 'PF'
 }) {
@@ -156,7 +172,7 @@ export function CrmProspectForm({
       contato_nome: '',
       telefone: '',
       email: '',
-      status: 'Novo Lead',
+      status: 'Lead',
       classificacao: 'Frio',
       data_followup: '',
       observacoes: '',
@@ -164,6 +180,13 @@ export function CrmProspectForm({
       nome_mae: '',
       nome_pai: '',
       data_nascimento: '',
+      plano_apresentado: '',
+      plano_contratado: '',
+      modulos_contratados: '',
+      quantidade_uso: undefined,
+      observacoes_comerciais: '',
+      responsavel_comercial: '',
+      contrato_assinado: false,
     },
   })
 
@@ -180,7 +203,7 @@ export function CrmProspectForm({
         contato_nome: initialData.contato_nome || '',
         telefone: initialData.telefone || '',
         email: initialData.email || '',
-        status: initialData.status || 'Novo Lead',
+        status: initialData.status || 'Lead',
         classificacao: initialData.classificacao || 'Frio',
         data_followup: initialData.data_followup || '',
         observacoes: initialData.observacoes || '',
@@ -188,6 +211,15 @@ export function CrmProspectForm({
         nome_mae: initialData.nome_mae || '',
         nome_pai: initialData.nome_pai || '',
         data_nascimento: initialData.data_nascimento || '',
+        plano_apresentado: initialData.plano_apresentado || '',
+        plano_contratado: initialData.plano_contratado || '',
+        modulos_contratados: Array.isArray(initialData.modulos_contratados)
+          ? initialData.modulos_contratados.join(', ')
+          : (initialData.modulos_contratados as string) || '',
+        quantidade_uso: initialData.quantidade_uso ?? undefined,
+        observacoes_comerciais: initialData.observacoes_comerciais || '',
+        responsavel_comercial: initialData.responsavel_comercial || '',
+        contrato_assinado: initialData.contrato_assinado || false,
       })
     }
   }, [initialData, form, defaultTipoPessoa])
@@ -397,7 +429,21 @@ export function CrmProspectForm({
 
       {activeTab === 'dados' ? (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 py-2">
+          <form
+            onSubmit={form.handleSubmit((values) => {
+              const transformed = {
+                ...values,
+                modulos_contratados: values.modulos_contratados
+                  ? values.modulos_contratados
+                      .split(',')
+                      .map((m: string) => m.trim())
+                      .filter(Boolean)
+                  : [],
+              }
+              onSubmit(transformed as ProspectFormValues)
+            })}
+            className="space-y-3 py-2"
+          >
             {!initialData && (
               <div className="flex justify-between items-center mb-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
                 <div className="text-sm text-slate-600">
@@ -695,6 +741,127 @@ export function CrmProspectForm({
                 </FormItem>
               )}
             />
+
+            <div className="space-y-3 pt-2 border-t">
+              <h4 className="text-sm font-semibold text-slate-700">Dados Comerciais</h4>
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="plano_apresentado"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Plano Apresentado</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Plano apresentado ao cliente" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="plano_contratado"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Plano Contratado</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Plano efetivamente contratado" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="modulos_contratados"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Módulos Contratados</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Módulo A, Módulo B, ..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="quantidade_uso"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Qtd. Usuários/Veículos/Emissões</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          value={field.value ?? ''}
+                          onChange={(e) =>
+                            field.onChange(e.target.value ? Number(e.target.value) : undefined)
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="responsavel_comercial"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Responsável Comercial pelo Atendimento</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nome do responsável comercial" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="observacoes_comerciais"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observações Comerciais</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        className="resize-none min-h-[80px]"
+                        placeholder="Observações comerciais relevantes..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {initialData && initialData.id && (
+                <FormField
+                  control={form.control}
+                  name="contrato_assinado"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-amber-50">
+                      <div className="space-y-0.5">
+                        <FormLabel>Contrato Assinado</FormLabel>
+                        <p className="text-xs text-muted-foreground">
+                          Marque para iniciar o handover à implantação
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
 
             <FormField
               control={form.control}

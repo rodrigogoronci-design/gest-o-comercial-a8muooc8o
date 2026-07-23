@@ -137,10 +137,19 @@ async function recalcProgress(implementacaoId: string) {
   const total = etapas.length
   const concluded = etapas.filter((e: any) => e.status === 'Concluída').length
   const progresso = total > 0 ? Math.round((concluded / total) * 100) : 0
-  const status = progresso === 100 ? 'Finalizada' : 'Em andamento'
+
+  const { data: impl } = await supabase
+    .from('implementacoes' as any)
+    .select('status')
+    .eq('id', implementacaoId)
+    .single()
+
+  if (impl?.status === 'Encerrado') return
+
+  const newStatus = progresso === 100 ? 'Finalizada' : 'Em andamento'
   await supabase
     .from('implementacoes' as any)
-    .update({ progresso, status })
+    .update({ progresso, status: newStatus })
     .eq('id', implementacaoId)
 }
 

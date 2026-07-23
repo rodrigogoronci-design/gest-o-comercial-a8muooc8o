@@ -392,6 +392,7 @@ export function CrmProspectPropostasTab({
                       <SelectItem value="Enviada">Enviada</SelectItem>
                       <SelectItem value="Em Análise">Em Análise</SelectItem>
                       <SelectItem value="Aprovada">Aprovada</SelectItem>
+                      <SelectItem value="Aceita">Aceita</SelectItem>
                       <SelectItem value="Recusada">Recusada</SelectItem>
                     </SelectContent>
                   </Select>
