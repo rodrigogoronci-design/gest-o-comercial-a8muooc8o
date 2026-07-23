@@ -76,7 +76,7 @@ BEGIN
 
     RETURN true;
 END;
-$;
+$$;
 
 GRANT EXECUTE ON FUNCTION public.get_implementacao_onboarding(uuid) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.submit_onboarding(uuid, jsonb, jsonb) TO anon, authenticated;
