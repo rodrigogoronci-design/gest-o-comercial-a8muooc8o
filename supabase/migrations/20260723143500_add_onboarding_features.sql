@@ -31,7 +31,7 @@ AS $$
     LEFT JOIN public.crm_propostas pr ON pr.id = i.contrato_id
     WHERE i.token_onboarding = p_token
     LIMIT 1;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.submit_onboarding(
     p_token uuid,
