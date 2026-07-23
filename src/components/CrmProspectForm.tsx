@@ -64,6 +64,20 @@ export const prospectFormSchema = z.object({
 
 export type ProspectFormValues = z.infer<typeof prospectFormSchema>
 
+function parseDocumentosAdesao(data: any): DocumentoAdesao[] {
+  if (!data) return []
+  if (Array.isArray(data)) return data
+  if (typeof data === 'string') {
+    try {
+      const parsed = JSON.parse(data)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
 const PROSPECT_STATUSES = [
   'Lead',
   'Proposta Enviada',
@@ -203,7 +217,8 @@ export function CrmProspectForm({
   const contratoAssinado = form.watch('contrato_assinado')
   const telefoneWatch = form.watch('telefone') || ''
   const planoContratadoWatch = form.watch('plano_contratado') || ''
-  const documentosAdesao = (form.watch('documentos_adesao') || []) as DocumentoAdesao[]
+  const rawDocumentosAdesao = form.watch('documentos_adesao')
+  const documentosAdesao = Array.isArray(rawDocumentosAdesao) ? rawDocumentosAdesao : []
 
   useEffect(() => {
     if (initialData) {
@@ -234,7 +249,7 @@ export function CrmProspectForm({
         responsavel_comercial: initialData.responsavel_comercial || '',
         contrato_assinado: initialData.contrato_assinado || false,
         proposta_url: (initialData.proposta_url as string) || '',
-        documentos_adesao: (initialData.documentos_adesao as DocumentoAdesao[]) || [],
+        documentos_adesao: parseDocumentosAdesao(initialData.documentos_adesao),
       })
     }
   }, [initialData, form, defaultTipoPessoa])

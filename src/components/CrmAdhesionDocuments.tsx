@@ -16,6 +16,7 @@ interface CrmAdhesionDocumentsProps {
   documents: DocumentoAdesao[]
   onDocumentsChange: (docs: DocumentoAdesao[]) => void
   disabled?: boolean
+  skipDbUpdate?: boolean
 }
 
 export function CrmAdhesionDocuments({
@@ -23,10 +24,20 @@ export function CrmAdhesionDocuments({
   documents,
   onDocumentsChange,
   disabled,
+  skipDbUpdate,
 }: CrmAdhesionDocumentsProps) {
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
+
+  const persistToDb = async (docs: DocumentoAdesao[]) => {
+    if (!prospectId || skipDbUpdate) return
+    const { error } = await supabase
+      .from('crm_prospects')
+      .update({ documentos_adesao: docs })
+      .eq('id', prospectId)
+    if (error) throw error
+  }
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -57,7 +68,9 @@ export function CrmAdhesionDocuments({
           tamanho: file.size,
         })
       }
-      onDocumentsChange([...documents, ...newDocs])
+      const updatedDocs = [...documents, ...newDocs]
+      onDocumentsChange(updatedDocs)
+      await persistToDb(updatedDocs)
       toast({
         title: 'Documentos enviados',
         description: `${newDocs.length} arquivo(s) enviado(s) com sucesso.`,
@@ -82,7 +95,13 @@ export function CrmAdhesionDocuments({
         await supabase.storage.from('prospect-documents').remove([pathMatch[1]])
       }
     }
-    onDocumentsChange(documents.filter((_, i) => i !== index))
+    const updatedDocs = documents.filter((_, i) => i !== index)
+    onDocumentsChange(updatedDocs)
+    try {
+      await persistToDb(updatedDocs)
+    } catch {
+      // ignore DB errors on remove
+    }
     toast({ title: 'Documento removido' })
   }
 
