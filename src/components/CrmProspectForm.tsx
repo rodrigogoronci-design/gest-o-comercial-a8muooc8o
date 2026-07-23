@@ -902,6 +902,7 @@ export function CrmProspectForm({
         <CrmProspectPropostasTab
           prospectId={initialData.id}
           prospectName={initialData.empresa || ''}
+          propostaUrl={initialData.proposta_url || null}
         />
       ) : null}
     </div>

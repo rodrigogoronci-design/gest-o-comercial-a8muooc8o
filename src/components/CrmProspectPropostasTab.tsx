@@ -12,18 +12,28 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase/client'
 import { CrmPropostaForm, type PropostaFormValues } from './CrmPropostaForm'
+import { CrmPropostaUpload } from './CrmPropostaUpload'
 
 export function CrmProspectPropostasTab({
   prospectId,
   clienteId,
   prospectName,
+  propostaUrl,
+  onPropostaChange,
 }: {
   prospectId?: string
   clienteId?: string
   prospectName: string
+  propostaUrl?: string | null
+  onPropostaChange?: () => void
 }) {
   const [propostas, setPropostas] = useState<any[]>([])
   const [entityData, setEntityData] = useState<any>(null)
+  const [localPropostaUrl, setLocalPropostaUrl] = useState<string | null>(propostaUrl || null)
+
+  useEffect(() => {
+    setLocalPropostaUrl(propostaUrl || null)
+  }, [propostaUrl])
   const [loading, setLoading] = useState(true)
   const [viewState, setViewState] = useState<'list' | 'create' | 'view'>('list')
   const [selectedProposta, setSelectedProposta] = useState<any>(null)
@@ -293,6 +303,16 @@ export function CrmProspectPropostasTab({
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      {prospectId && (
+        <CrmPropostaUpload
+          prospectId={prospectId}
+          currentUrl={localPropostaUrl}
+          onUrlChange={(url) => {
+            setLocalPropostaUrl(url)
+            onPropostaChange?.()
+          }}
+        />
+      )}
       <div className="flex justify-between items-center bg-slate-50 p-2 pl-4 rounded-lg border border-slate-100">
         <h3 className="text-sm font-semibold text-slate-700">Propostas Enviadas</h3>
         <Button

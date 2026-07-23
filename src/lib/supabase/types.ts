@@ -1361,6 +1361,7 @@ export type Database = {
           cliente_id: string | null
           cnpj: string | null
           contato_nome: string
+          contrato_assinado: boolean | null
           contrato_assinado_url: string | null
           cpf: string | null
           created_at: string | null
@@ -1372,12 +1373,18 @@ export type Database = {
           empresa: string
           endereco: string | null
           id: string
+          modulos_contratados: Json | null
           nome_mae: string | null
           nome_pai: string | null
           observacoes: string | null
+          observacoes_comerciais: string | null
+          plano_apresentado: string | null
+          plano_contratado: string | null
           plano_id: string | null
           proposta_url: string | null
+          quantidade_uso: number | null
           razao_social: string | null
+          responsavel_comercial: string | null
           status: string
           tags: Json | null
           telefone: string | null
@@ -1390,6 +1397,7 @@ export type Database = {
           cliente_id?: string | null
           cnpj?: string | null
           contato_nome: string
+          contrato_assinado?: boolean | null
           contrato_assinado_url?: string | null
           cpf?: string | null
           created_at?: string | null
@@ -1401,12 +1409,18 @@ export type Database = {
           empresa: string
           endereco?: string | null
           id?: string
+          modulos_contratados?: Json | null
           nome_mae?: string | null
           nome_pai?: string | null
           observacoes?: string | null
+          observacoes_comerciais?: string | null
+          plano_apresentado?: string | null
+          plano_contratado?: string | null
           plano_id?: string | null
           proposta_url?: string | null
+          quantidade_uso?: number | null
           razao_social?: string | null
+          responsavel_comercial?: string | null
           status?: string
           tags?: Json | null
           telefone?: string | null
@@ -1419,6 +1433,7 @@ export type Database = {
           cliente_id?: string | null
           cnpj?: string | null
           contato_nome?: string
+          contrato_assinado?: boolean | null
           contrato_assinado_url?: string | null
           cpf?: string | null
           created_at?: string | null
@@ -1430,12 +1445,18 @@ export type Database = {
           empresa?: string
           endereco?: string | null
           id?: string
+          modulos_contratados?: Json | null
           nome_mae?: string | null
           nome_pai?: string | null
           observacoes?: string | null
+          observacoes_comerciais?: string | null
+          plano_apresentado?: string | null
+          plano_contratado?: string | null
           plano_id?: string | null
           proposta_url?: string | null
+          quantidade_uso?: number | null
           razao_social?: string | null
+          responsavel_comercial?: string | null
           status?: string
           tags?: Json | null
           telefone?: string | null

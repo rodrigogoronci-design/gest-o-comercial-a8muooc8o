@@ -1150,6 +1150,8 @@ export default function CRMPage() {
                   <CrmProspectPropostasTab
                     prospectId={editingProspect.id}
                     prospectName={editingProspect.empresa}
+                    propostaUrl={editingProspect.proposta_url || null}
+                    onPropostaChange={fetchProspects}
                   />
                 )}
               </TabsContent>
