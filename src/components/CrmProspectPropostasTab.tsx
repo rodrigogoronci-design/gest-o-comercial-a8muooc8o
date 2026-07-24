@@ -38,6 +38,7 @@ export function CrmProspectPropostasTab({
   }, [propostaUrl])
   const [loading, setLoading] = useState(true)
   const [viewState, setViewState] = useState<'list' | 'create' | 'view'>('list')
+  const [availableModules, setAvailableModules] = useState<any[]>([])
   const [selectedProposta, setSelectedProposta] = useState<any>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -77,6 +78,22 @@ export function CrmProspectPropostasTab({
         .eq('cliente_id', clienteId)
         .order('created_at', { ascending: false })
       if (data) setPropostas(data)
+
+      const { data: planos } = await supabase
+        .from('planos_saude')
+        .select('id, descricao, valor_titular')
+        .order('descricao')
+      if (planos) {
+        setAvailableModules(
+          planos
+            .filter((p) => p.id !== clienteData?.plano_id)
+            .map((p) => ({
+              id: p.id,
+              nome: p.descricao,
+              valor: p.valor_titular || 0,
+            })),
+        )
+      }
     }
     setLoading(false)
   }
@@ -179,7 +196,12 @@ export function CrmProspectPropostasTab({
           </Button>
           <h3 className="font-semibold text-slate-800">Nova Proposta</h3>
         </div>
-        <CrmPropostaForm onSubmit={handleCreateProposta} isSubmitting={isSubmitting} />
+        <CrmPropostaForm
+          onSubmit={handleCreateProposta}
+          isSubmitting={isSubmitting}
+          currentMonthlyFee={entityData?.valor_mensalidade ?? null}
+          availableModules={clienteId ? availableModules : undefined}
+        />
       </div>
     )
   }

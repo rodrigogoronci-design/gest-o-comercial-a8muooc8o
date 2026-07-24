@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { formatCNPJ } from '@/lib/formatters'
+import { UpsellModuleSelector, type UpsellModule } from './UpsellModuleSelector'
 
 const filialSchema = z.object({
   nome: z.string().optional(),
@@ -41,18 +42,23 @@ export function CrmPropostaForm({
   onSubmit,
   isSubmitting,
   initialData,
+  currentMonthlyFee,
+  availableModules,
 }: {
   onSubmit: (v: PropostaFormValues, file: File | null) => void
   isSubmitting?: boolean
   initialData?: Partial<PropostaFormValues>
+  currentMonthlyFee?: number | null
+  availableModules?: UpsellModule[]
 }) {
   const [file, setFile] = useState<File | null>(null)
+  const [selectedModuleIds, setSelectedModuleIds] = useState<string[]>([])
 
   const form = useForm<PropostaFormValues>({
     resolver: zodResolver(propostaFormSchema),
     defaultValues: {
       valor_implantacao: initialData?.valor_implantacao || 0,
-      valor_mensalidade: initialData?.valor_mensalidade || 0,
+      valor_mensalidade: initialData?.valor_mensalidade || currentMonthlyFee || 0,
       valor_anual: initialData?.valor_anual || 0,
       tipo_cobranca: initialData?.tipo_cobranca || 'mensal',
       desconto_mensalidade: initialData?.desconto_mensalidade || 0,
@@ -79,6 +85,17 @@ export function CrmPropostaForm({
       form.setValue('quantidade_filiais', 1)
     }
   }, [cobrarFiliais])
+
+  useEffect(() => {
+    if (availableModules && availableModules.length > 0) {
+      const selected = availableModules.filter((m) => selectedModuleIds.includes(m.id))
+      form.setValue('itens', selected)
+      if (currentMonthlyFee != null) {
+        const additional = selected.reduce((sum, m) => sum + m.valor, 0)
+        form.setValue('valor_mensalidade', currentMonthlyFee + additional)
+      }
+    }
+  }, [selectedModuleIds, availableModules, currentMonthlyFee])
 
   return (
     <Form {...form}>
@@ -134,6 +151,8 @@ export function CrmPropostaForm({
                       step="0.01"
                       {...field}
                       onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      readOnly={!!availableModules?.length}
+                      className={availableModules?.length ? 'bg-slate-50 cursor-not-allowed' : ''}
                     />
                   </FormControl>
                   <FormMessage />
@@ -404,6 +423,21 @@ export function CrmPropostaForm({
             </div>
           )}
         </div>
+
+        {availableModules && availableModules.length > 0 && (
+          <div className="border-t pt-4 mt-4">
+            <UpsellModuleSelector
+              availableModules={availableModules}
+              selectedModuleIds={selectedModuleIds}
+              onToggleModule={(id) =>
+                setSelectedModuleIds((prev) =>
+                  prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id],
+                )
+              }
+              currentMonthlyFee={currentMonthlyFee ?? null}
+            />
+          </div>
+        )}
 
         <div className="pt-4 flex justify-end">
           <Button type="submit" disabled={isSubmitting}>
