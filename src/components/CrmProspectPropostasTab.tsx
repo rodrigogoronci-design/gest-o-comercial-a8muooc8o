@@ -317,6 +317,7 @@ export function CrmProspectPropostasTab({
           onPropostaChange?.()
           onUrlChange?.(url)
         }}
+        skipDbUpdate={!prospectId}
       />
       <div className="flex justify-between items-center bg-slate-50 p-2 pl-4 rounded-lg border border-slate-100">
         <h3 className="text-sm font-semibold text-slate-700">Propostas Enviadas</h3>

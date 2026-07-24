@@ -471,6 +471,10 @@ export function CrmProspectForm({
                       .map((m: string) => m.trim())
                       .filter(Boolean)
                   : [],
+                documentos_adesao: Array.isArray(values.documentos_adesao)
+                  ? values.documentos_adesao
+                  : parseDocumentosAdesao(values.documentos_adesao),
+                proposta_url: values.proposta_url || null,
               }
               onSubmit(transformed as ProspectFormValues)
             })}
@@ -916,6 +920,7 @@ export function CrmProspectForm({
                 documents={documentosAdesao}
                 onDocumentsChange={(docs) => form.setValue('documentos_adesao', docs)}
                 disabled={isSubmitting}
+                skipDbUpdate={!initialData?.id}
               />
             </div>
 

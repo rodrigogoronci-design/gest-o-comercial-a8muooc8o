@@ -1,4 +1,5 @@
 import { Bell, Search, UserCog, LogOut } from 'lucide-react'
+import { BugScanner } from '@/components/BugScanner'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -54,6 +55,7 @@ export function AppHeader() {
         </div>
       </div>
       <div className="flex items-center gap-3">
+        <BugScanner />
         <Button
           variant="ghost"
           size="icon"
