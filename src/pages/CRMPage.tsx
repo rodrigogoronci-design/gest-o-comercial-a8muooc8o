@@ -709,7 +709,7 @@ export default function CRMPage() {
               <Plus className="h-4 w-4" /> Novo Lead/Contato
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[550px]">
+          <DialogContent className="sm:max-w-[550px] rounded-xl border-slate-200/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
             <DialogHeader>
               <DialogTitle>Novo Contato</DialogTitle>
               <DialogDescription>Adicione as informações do novo lead ao CRM.</DialogDescription>
@@ -1138,8 +1138,8 @@ export default function CRMPage() {
       )}
 
       <Dialog open={!!editingProspect} onOpenChange={(open) => !open && setEditingProspect(null)}>
-        <DialogContent className="sm:max-w-[800px] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0">
-          <DialogHeader className="p-6 pb-4 shrink-0 border-b border-slate-100">
+        <DialogContent className="sm:max-w-[800px] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0 rounded-xl border-slate-200/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+          <DialogHeader className="p-6 pb-4 shrink-0 border-b border-slate-200/80">
             <DialogTitle>Detalhes do Prospecto</DialogTitle>
             <DialogDescription>
               Atualize informações, preencha o diagnóstico e acompanhe o histórico.
@@ -1152,9 +1152,9 @@ export default function CRMPage() {
               </Button>
             )}
           </DialogHeader>
-          <div className="flex-1 overflow-hidden p-6 pt-4 bg-slate-50/30">
+          <div className="flex-1 overflow-hidden p-6 pt-4 bg-slate-50/30 rounded-b-xl">
             <Tabs value={editingTab} onValueChange={setEditingTab} className="h-full flex flex-col">
-              <TabsList className="grid w-full grid-cols-4 mb-4 shrink-0 bg-slate-100">
+              <TabsList className="grid w-full grid-cols-4 mb-4 shrink-0 bg-slate-100 rounded-lg">
                 <TabsTrigger value="dados">Dados Básicos</TabsTrigger>
                 <TabsTrigger value="diagnostico">Diagnóstico</TabsTrigger>
                 <TabsTrigger value="historico">Histórico</TabsTrigger>
@@ -1171,6 +1171,7 @@ export default function CRMPage() {
                     isSubmitting={isSubmitting}
                     onPropostaChange={fetchProspects}
                     initialData={editingInitialData}
+                    hideInternalTabs
                   />
                 )}
               </TabsContent>

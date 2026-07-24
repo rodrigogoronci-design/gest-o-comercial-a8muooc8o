@@ -164,6 +164,7 @@ export function CrmProspectForm({
   initialData,
   defaultTipoPessoa = 'PJ',
   onPropostaChange,
+  hideInternalTabs = false,
 }: {
   onSubmit: (v: ProspectFormValues) => void
   isSubmitting?: boolean
@@ -177,6 +178,7 @@ export function CrmProspectForm({
   }
   defaultTipoPessoa?: 'PJ' | 'PF'
   onPropostaChange?: () => void
+  hideInternalTabs?: boolean
 }) {
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'dados' | 'diagnostico' | 'historico' | 'propostas'>(
@@ -442,31 +444,33 @@ export function CrmProspectForm({
 
   return (
     <div className="w-full">
-      <div className="flex space-x-1 p-1 bg-slate-100 rounded-lg mb-4 overflow-x-auto">
-        {(['dados', 'diagnostico', 'historico', 'propostas'] as const)
-          .filter((tab) => initialData?.id || tab === 'dados' || tab === 'propostas')
-          .map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={cn(
-                'flex-1 text-sm font-medium py-1.5 px-3 rounded-md transition-all whitespace-nowrap capitalize',
-                activeTab === tab
-                  ? 'bg-white shadow-sm text-slate-900'
-                  : 'text-slate-600 hover:text-slate-900',
-              )}
-            >
-              {tab === 'dados'
-                ? 'Dados Básicos'
-                : tab === 'diagnostico'
-                  ? 'Diagnóstico'
-                  : tab === 'historico'
-                    ? 'Histórico'
-                    : 'Propostas'}
-            </button>
-          ))}
-      </div>
+      {!hideInternalTabs && (
+        <div className="flex space-x-1 p-1 bg-slate-100 rounded-lg mb-4 overflow-x-auto">
+          {(['dados', 'diagnostico', 'historico', 'propostas'] as const)
+            .filter((tab) => initialData?.id || tab === 'dados' || tab === 'propostas')
+            .map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={cn(
+                  'flex-1 text-sm font-medium py-1.5 px-3 rounded-md transition-all whitespace-nowrap capitalize',
+                  activeTab === tab
+                    ? 'bg-white shadow-sm text-slate-900'
+                    : 'text-slate-600 hover:text-slate-900',
+                )}
+              >
+                {tab === 'dados'
+                  ? 'Dados Básicos'
+                  : tab === 'diagnostico'
+                    ? 'Diagnóstico'
+                    : tab === 'historico'
+                      ? 'Histórico'
+                      : 'Propostas'}
+              </button>
+            ))}
+        </div>
+      )}
 
       {activeTab === 'dados' ? (
         <Form {...form}>
@@ -497,7 +501,7 @@ export function CrmProspectForm({
             className="space-y-3 py-2"
           >
             {!initialData && (
-              <div className="flex justify-between items-center mb-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
+              <div className="flex justify-between items-center mb-2 bg-slate-50 p-3 rounded-xl border border-slate-200/80 shadow-sm">
                 <div className="text-sm text-slate-600">
                   <span className="font-semibold block text-slate-800">
                     Preenchimento Automático
@@ -794,7 +798,7 @@ export function CrmProspectForm({
               )}
             />
 
-            <div className="space-y-3 pt-2 border-t">
+            <div className="space-y-3 pt-4 mt-2 border-t border-slate-200/80">
               <h4 className="text-sm font-semibold text-slate-700">Dados Comerciais</h4>
 
               <div className="grid grid-cols-2 gap-3">
@@ -899,7 +903,7 @@ export function CrmProspectForm({
                   control={form.control}
                   name="contrato_assinado"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-amber-50">
+                    <FormItem className="flex flex-row items-center justify-between rounded-xl border border-amber-200/80 p-3 bg-amber-50 shadow-sm">
                       <div className="space-y-0.5">
                         <FormLabel>Contrato Assinado</FormLabel>
                         <p className="text-xs text-muted-foreground">
@@ -926,10 +930,10 @@ export function CrmProspectForm({
             <CrmDocumentList
               propostaUrl={propostaUrlWatch || null}
               documentosAdesao={documentosAdesao}
-              className="pt-2 border-t"
+              className="pt-4 mt-2 border-t border-slate-200/80"
             />
 
-            <div className="space-y-3 pt-2 border-t">
+            <div className="space-y-3 pt-4 mt-2 border-t border-slate-200/80">
               <h4 className="text-sm font-semibold text-slate-700">Documentos para Adesão</h4>
               <CrmAdhesionDocuments
                 prospectId={initialData?.id}
@@ -958,7 +962,7 @@ export function CrmProspectForm({
               )}
             />
 
-            <div className="pt-2 flex justify-end">
+            <div className="pt-4 mt-2 border-t border-slate-200/80 flex justify-end">
               <Button type="submit" disabled={isSubmitting || isLoading}>
                 {isSubmitting ? 'Salvando...' : 'Salvar Contato'}
               </Button>
