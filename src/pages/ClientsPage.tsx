@@ -124,6 +124,8 @@ import { AdvancedDatePicker } from '@/components/ui/advanced-date-picker'
 import { useAuth } from '@/hooks/use-auth'
 import { ClientAtendimentosTab } from '@/components/ClientAtendimentosTab'
 import { ClientContractUpload } from '@/components/ClientContractUpload'
+import { DocumentacaoAdesaoTab } from '@/components/DocumentacaoAdesaoTab'
+import { DocumentacaoStatusBanner } from '@/components/DocumentacaoStatusBanner'
 import { getSignedContractUrl } from '@/lib/storage'
 
 export interface ClienteRecord {
@@ -4679,8 +4681,9 @@ Obrigada.`)
 
           {viewingClient && (
             <Tabs defaultValue="resumo" className="mt-6 w-full h-full flex flex-col">
-              <TabsList className="grid w-full max-w-3xl grid-cols-3 bg-white border border-slate-200">
+              <TabsList className="grid w-full max-w-3xl grid-cols-4 bg-white border border-slate-200">
                 <TabsTrigger value="resumo">Resumo & Gestão</TabsTrigger>
+                <TabsTrigger value="documentacao">Documentação</TabsTrigger>
                 <TabsTrigger value="atendimentos">Atendimentos</TabsTrigger>
                 <TabsTrigger value="contrato">Contrato Inicial</TabsTrigger>
               </TabsList>
@@ -4705,7 +4708,8 @@ Obrigada.`)
                 value="contrato"
                 className="mt-4 flex-1 bg-white border rounded-md shadow-sm"
               >
-                <ScrollArea className="h-[calc(100vh-14rem)]">
+                <DocumentacaoStatusBanner clienteId={viewingClient.id} />
+                <ScrollArea className="h-[calc(100vh-16rem)]">
                   <div className="min-w-[600px] bg-white p-4">
                     <ClientContractUpload
                       clientId={viewingClient.id}
