@@ -438,7 +438,15 @@ export default function CRMPage() {
     setIsSubmitting(false)
     if (error)
       return toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' })
-    toast({ title: 'Sucesso', description: 'Contato adicionado com sucesso!' })
+    const docCount = Array.isArray(values.documentos_adesao) ? values.documentos_adesao.length : 0
+    const hasProp = !!values.proposta_url
+    toast({
+      title: 'Sucesso',
+      description:
+        docCount > 0 || hasProp
+          ? `Contato salvo! ${docCount} documento(s) de adesão${hasProp ? ' e proposta anexada' : ''}.`
+          : 'Contato adicionado com sucesso!',
+    })
     setIsDialogOpen(false)
     fetchProspects()
   }
@@ -517,7 +525,17 @@ export default function CRMPage() {
         description: error.message,
         variant: 'destructive',
       })
-    toast({ title: 'Sucesso', description: 'Contato atualizado com sucesso!' })
+    const editDocCount = Array.isArray(values.documentos_adesao)
+      ? values.documentos_adesao.length
+      : 0
+    const editHasProp = !!values.proposta_url
+    toast({
+      title: 'Sucesso',
+      description:
+        editDocCount > 0 || editHasProp
+          ? `Contato atualizado! ${editDocCount} documento(s) preservado(s)${editHasProp ? ' e proposta anexada' : ''}.`
+          : 'Contato atualizado com sucesso!',
+    })
     setEditingProspect(null)
     fetchProspects()
   }

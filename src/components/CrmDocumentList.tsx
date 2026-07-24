@@ -4,8 +4,27 @@ import type { DocumentoAdesao } from '@/components/CrmAdhesionDocuments'
 
 interface CrmDocumentListProps {
   propostaUrl: string | null | undefined
-  documentosAdesao: DocumentoAdesao[]
+  documentosAdesao: DocumentoAdesao[] | any
   className?: string
+}
+
+function normalizeDocumentosAdesao(data: any): DocumentoAdesao[] {
+  if (!data) return []
+  if (Array.isArray(data)) return data
+  if (typeof data === 'string') {
+    try {
+      const parsed = JSON.parse(data)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+  if (typeof data === 'object' && data !== null) {
+    return Object.values(data).filter(
+      (v) => v && typeof v === 'object' && 'url' in v,
+    ) as DocumentoAdesao[]
+  }
+  return []
 }
 
 function getFileNameFromUrl(url: string): string {
@@ -26,8 +45,9 @@ export function CrmDocumentList({
   documentosAdesao,
   className,
 }: CrmDocumentListProps) {
+  const safeDocs = normalizeDocumentosAdesao(documentosAdesao)
   const hasProposta = propostaUrl && propostaUrl.trim() !== ''
-  const hasAdesao = documentosAdesao && documentosAdesao.length > 0
+  const hasAdesao = safeDocs.length > 0
   const hasAny = hasProposta || hasAdesao
 
   return (
@@ -37,7 +57,7 @@ export function CrmDocumentList({
         <h4 className="text-sm font-semibold text-slate-700">Documentos Anexados</h4>
         {hasAny && (
           <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full">
-            {(hasProposta ? 1 : 0) + (hasAdesao ? documentosAdesao.length : 0)} arquivo(s)
+            {(hasProposta ? 1 : 0) + (hasAdesao ? safeDocs.length : 0)} arquivo(s)
           </span>
         )}
       </div>
@@ -66,7 +86,7 @@ export function CrmDocumentList({
           )}
 
           {hasAdesao &&
-            documentosAdesao.map((doc, index) => (
+            safeDocs.map((doc, index) => (
               <a
                 key={index}
                 href={doc.url}

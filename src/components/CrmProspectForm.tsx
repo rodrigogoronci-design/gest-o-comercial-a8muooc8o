@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { cn } from '@/lib/utils'
 import { CrmProspectPropostasTab } from './CrmProspectPropostasTab'
@@ -220,7 +220,13 @@ export function CrmProspectForm({
   const planoContratadoWatch = form.watch('plano_contratado') || ''
   const propostaUrlWatch = form.watch('proposta_url') || ''
   const rawDocumentosAdesao = form.watch('documentos_adesao')
-  const documentosAdesao = Array.isArray(rawDocumentosAdesao) ? rawDocumentosAdesao : []
+  const documentosAdesao = useMemo(
+    () =>
+      Array.isArray(rawDocumentosAdesao)
+        ? rawDocumentosAdesao
+        : parseDocumentosAdesao(rawDocumentosAdesao),
+    [rawDocumentosAdesao],
+  )
 
   useEffect(() => {
     if (initialData) {
@@ -463,6 +469,9 @@ export function CrmProspectForm({
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit((values) => {
+              const normalizedDocs = Array.isArray(values.documentos_adesao)
+                ? values.documentos_adesao
+                : parseDocumentosAdesao(values.documentos_adesao)
               const transformed = {
                 ...values,
                 modulos_contratados: values.modulos_contratados
@@ -471,10 +480,14 @@ export function CrmProspectForm({
                       .map((m: string) => m.trim())
                       .filter(Boolean)
                   : [],
-                documentos_adesao: Array.isArray(values.documentos_adesao)
-                  ? values.documentos_adesao
-                  : parseDocumentosAdesao(values.documentos_adesao),
+                documentos_adesao: normalizedDocs,
                 proposta_url: values.proposta_url || null,
+              }
+              if (normalizedDocs.length > 0 || transformed.proposta_url) {
+                toast({
+                  title: 'Persistindo documentos',
+                  description: `${normalizedDocs.length} documento(s) de adesão${transformed.proposta_url ? ' e proposta comercial' : ''} serão salvos.`,
+                })
               }
               onSubmit(transformed as ProspectFormValues)
             })}

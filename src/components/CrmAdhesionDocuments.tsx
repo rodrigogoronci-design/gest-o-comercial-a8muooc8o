@@ -3,6 +3,7 @@ import { Upload, FileText, X, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase/client'
 import { useToast } from '@/hooks/use-toast'
+import { extractStoragePath } from '@/lib/storage'
 
 export interface DocumentoAdesao {
   nome: string
@@ -32,11 +33,15 @@ export function CrmAdhesionDocuments({
 
   const persistToDb = async (docs: DocumentoAdesao[]) => {
     if (!prospectId || skipDbUpdate) return
+    const cleanDocs = Array.isArray(docs) ? docs : []
     const { error } = await supabase
       .from('crm_prospects')
-      .update({ documentos_adesao: docs })
+      .update({ documentos_adesao: cleanDocs })
       .eq('id', prospectId)
-    if (error) throw error
+    if (error) {
+      console.error('persistToDb error:', error)
+      throw error
+    }
   }
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,7 +78,7 @@ export function CrmAdhesionDocuments({
       await persistToDb(updatedDocs)
       toast({
         title: 'Documentos enviados',
-        description: `${newDocs.length} arquivo(s) enviado(s) com sucesso.`,
+        description: `${newDocs.length} arquivo(s) enviado(s) com sucesso. Clique em "Salvar Contato" para confirmar.`,
       })
     } catch (error: any) {
       toast({
@@ -89,18 +94,24 @@ export function CrmAdhesionDocuments({
 
   const handleRemove = async (index: number) => {
     const doc = documents[index]
+    if (!doc) return
     if (doc.url) {
-      const pathMatch = doc.url.match(/\/prospect-documents\/(.+)$/)
-      if (pathMatch) {
-        await supabase.storage.from('prospect-documents').remove([pathMatch[1]])
+      const path = extractStoragePath(doc.url, 'prospect-documents')
+      if (path) {
+        const { error: removeError } = await supabase.storage
+          .from('prospect-documents')
+          .remove([path])
+        if (removeError) {
+          console.error('Failed to delete file from storage:', removeError)
+        }
       }
     }
     const updatedDocs = documents.filter((_, i) => i !== index)
     onDocumentsChange(updatedDocs)
     try {
       await persistToDb(updatedDocs)
-    } catch {
-      // ignore DB errors on remove
+    } catch (err) {
+      console.error('Failed to persist document removal to DB:', err)
     }
     toast({ title: 'Documento removido' })
   }
