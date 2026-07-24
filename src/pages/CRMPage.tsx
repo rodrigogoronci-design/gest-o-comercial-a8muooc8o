@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Search,
@@ -660,6 +660,40 @@ export default function CRMPage() {
       !['Enviado para Implantação', 'Cliente Efetivado', 'Perdido'].includes(p.status),
   )
 
+  const editingInitialData = useMemo(() => {
+    if (!editingProspect) return undefined
+    return {
+      id: editingProspect.id,
+      cnpj: editingProspect.cnpj || '',
+      cpf: editingProspect.cpf || '',
+      tipo_pessoa: editingProspect.tipo_pessoa || 'PJ',
+      empresa: editingProspect.empresa,
+      endereco: editingProspect.endereco || '',
+      contato_nome: editingProspect.contato_nome,
+      telefone: editingProspect.telefone || '',
+      email: editingProspect.email || '',
+      status: editingProspect.status,
+      classificacao: editingProspect.classificacao || 'Frio',
+      data_followup: editingProspect.data_followup || '',
+      observacoes: editingProspect.observacoes || '',
+      data_assinatura: editingProspect.data_assinatura || '',
+      nome_mae: editingProspect.nome_mae || '',
+      nome_pai: editingProspect.nome_pai || '',
+      data_nascimento: editingProspect.data_nascimento || '',
+      plano_apresentado: editingProspect.plano_apresentado || '',
+      plano_contratado: editingProspect.plano_contratado || '',
+      modulos_contratados: editingProspect.modulos_contratados || [],
+      quantidade_uso: editingProspect.quantidade_uso ?? undefined,
+      observacoes_comerciais: editingProspect.observacoes_comerciais || '',
+      responsavel_comercial: editingProspect.responsavel_comercial || '',
+      contrato_assinado: editingProspect.contrato_assinado ?? false,
+      proposta_url: editingProspect.proposta_url || null,
+      plano_id: editingProspect.plano_id || null,
+      contrato_assinado_url: editingProspect.contrato_assinado_url || null,
+      documentos_adesao: editingProspect.documentos_adesao || [],
+    }
+  }, [editingProspect])
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -1136,35 +1170,7 @@ export default function CRMPage() {
                     onSubmit={onEditSubmit}
                     isSubmitting={isSubmitting}
                     onPropostaChange={fetchProspects}
-                    initialData={{
-                      cnpj: editingProspect.cnpj || '',
-                      cpf: editingProspect.cpf || '',
-                      tipo_pessoa: editingProspect.tipo_pessoa || 'PJ',
-                      empresa: editingProspect.empresa,
-                      endereco: editingProspect.endereco || '',
-                      contato_nome: editingProspect.contato_nome,
-                      telefone: editingProspect.telefone || '',
-                      email: editingProspect.email || '',
-                      status: editingProspect.status,
-                      classificacao: editingProspect.classificacao || 'Frio',
-                      data_followup: editingProspect.data_followup || '',
-                      observacoes: editingProspect.observacoes || '',
-                      data_assinatura: editingProspect.data_assinatura || '',
-                      nome_mae: editingProspect.nome_mae || '',
-                      nome_pai: editingProspect.nome_pai || '',
-                      data_nascimento: editingProspect.data_nascimento || '',
-                      plano_apresentado: editingProspect.plano_apresentado || '',
-                      plano_contratado: editingProspect.plano_contratado || '',
-                      modulos_contratados: editingProspect.modulos_contratados || [],
-                      quantidade_uso: editingProspect.quantidade_uso ?? undefined,
-                      observacoes_comerciais: editingProspect.observacoes_comerciais || '',
-                      responsavel_comercial: editingProspect.responsavel_comercial || '',
-                      contrato_assinado: editingProspect.contrato_assinado ?? false,
-                      proposta_url: editingProspect.proposta_url || null,
-                      plano_id: editingProspect.plano_id || null,
-                      contrato_assinado_url: editingProspect.contrato_assinado_url || null,
-                      documentos_adesao: editingProspect.documentos_adesao || [],
-                    }}
+                    initialData={editingInitialData}
                   />
                 )}
               </TabsContent>

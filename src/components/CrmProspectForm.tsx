@@ -228,6 +228,8 @@ export function CrmProspectForm({
     [rawDocumentosAdesao],
   )
 
+  const prospectId = initialData?.id
+
   useEffect(() => {
     if (initialData) {
       form.reset({
@@ -260,7 +262,8 @@ export function CrmProspectForm({
         documentos_adesao: parseDocumentosAdesao(initialData.documentos_adesao),
       })
     }
-  }, [initialData, form, defaultTipoPessoa])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prospectId, defaultTipoPessoa])
 
   const formatCnpj = (v: string) =>
     v
