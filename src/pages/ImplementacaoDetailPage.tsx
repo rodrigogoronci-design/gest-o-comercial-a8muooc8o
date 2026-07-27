@@ -506,7 +506,10 @@ export default function ImplementacaoDetailPage() {
         dadosParametrizacao={impl.dados_parametrizacao}
       />
 
-      <DigitalCertificateField dadosParametrizacao={impl.dados_parametrizacao} />
+      <DigitalCertificateField
+        dadosParametrizacao={impl.dados_parametrizacao}
+        implementacaoId={impl.id}
+      />
 
       {CATEGORIA_ORDER.map((categoria) => {
         const etapas = etapasByCategoria[categoria]
