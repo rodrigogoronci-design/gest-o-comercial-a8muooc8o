@@ -498,6 +498,7 @@ export default function ImplementacaoDetailPage() {
         etapas={impl.implementacao_etapas}
         redactFinancial={isFinancialRestricted}
         dadosParametrizacao={impl.dados_parametrizacao}
+        implementacaoId={impl.id}
       />
 
       <ImplementationDocumentRepository

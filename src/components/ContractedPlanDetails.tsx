@@ -19,6 +19,7 @@ import {
   getRelatedStagesForModule,
   computeScopeIndicator,
 } from '@/lib/scope-mapping'
+import { usePlanFallback } from '@/hooks/use-plan-fallback'
 
 interface ContractedPlanDetailsProps {
   proposta: any | null
@@ -26,6 +27,7 @@ interface ContractedPlanDetailsProps {
   etapas?: any[] | null
   redactFinancial?: boolean
   dadosParametrizacao?: any | null
+  implementacaoId?: string | null
 }
 
 function InfoRow({ icon: Icon, label, value }: { icon: any; label: string; value: ReactNode }) {
@@ -66,7 +68,15 @@ export function ContractedPlanDetails({
   etapas,
   redactFinancial = false,
   dadosParametrizacao,
+  implementacaoId,
 }: ContractedPlanDetailsProps) {
+  const { planDescription, planCode } = usePlanFallback(
+    implementacaoId,
+    dadosParametrizacao,
+    cliente,
+    proposta,
+  )
+
   if (!proposta && !cliente) {
     return (
       <Card>
@@ -86,11 +96,6 @@ export function ContractedPlanDetails({
     )
   }
 
-  const planDescription =
-    dadosParametrizacao?.plano_descricao ||
-    cliente?.planos_saude?.descricao ||
-    'Plano não identificado'
-  const planCode = dadosParametrizacao?.plano_codigo || cliente?.planos_saude?.codigo || null
   const modoImplantacao = cliente?.modo_implantacao
   const safeItems = parseItemsSafe(proposta?.itens)
   const modulos = parseModulosToList(cliente?.modulos)
