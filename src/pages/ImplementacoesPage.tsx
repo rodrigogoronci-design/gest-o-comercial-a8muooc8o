@@ -227,6 +227,7 @@ export default function ImplementacoesPage() {
             <TableHeader className="bg-slate-50/50">
               <TableRow>
                 <TableHead>Cliente</TableHead>
+                <TableHead>Plano</TableHead>
                 <TableHead>Analista</TableHead>
                 <TableHead>Etapa Atual</TableHead>
                 <TableHead>
@@ -264,7 +265,7 @@ export default function ImplementacoesPage() {
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                     Nenhuma implementação encontrada.
                   </TableCell>
                 </TableRow>
@@ -290,6 +291,9 @@ export default function ImplementacoesPage() {
                             </Badge>
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-slate-600">
+                        {impl.dados_parametrizacao?.plano_descricao || '—'}
                       </TableCell>
                       <TableCell>{impl.colaboradores?.nome || 'Não atribuído'}</TableCell>
                       <TableCell className="text-sm text-slate-600">

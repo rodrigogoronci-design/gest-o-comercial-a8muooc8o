@@ -136,6 +136,20 @@ export function ImplementacaoEditSheet({ open, onOpenChange, implementacaoId, on
                 Detalhes da Implementação
               </h3>
               <div className="space-y-2">
+                <Label>Plano (Franquia)</Label>
+                <Input
+                  value={
+                    impl?.dados_parametrizacao?.plano_descricao
+                      ? impl.dados_parametrizacao.plano_codigo
+                        ? `${impl.dados_parametrizacao.plano_descricao} (código: ${impl.dados_parametrizacao.plano_codigo})`
+                        : impl.dados_parametrizacao.plano_descricao
+                      : 'Não informado'
+                  }
+                  disabled
+                  className="bg-slate-50"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label>Tipo de Implementação</Label>
                 <Input
                   value={

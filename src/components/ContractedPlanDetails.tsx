@@ -25,6 +25,7 @@ interface ContractedPlanDetailsProps {
   cliente: any | null
   etapas?: any[] | null
   redactFinancial?: boolean
+  dadosParametrizacao?: any | null
 }
 
 function InfoRow({ icon: Icon, label, value }: { icon: any; label: string; value: ReactNode }) {
@@ -64,6 +65,7 @@ export function ContractedPlanDetails({
   cliente,
   etapas,
   redactFinancial = false,
+  dadosParametrizacao,
 }: ContractedPlanDetailsProps) {
   if (!proposta && !cliente) {
     return (
@@ -84,8 +86,11 @@ export function ContractedPlanDetails({
     )
   }
 
-  const planDescription = cliente?.planos_saude?.descricao || 'Plano não identificado'
-  const planCode = cliente?.planos_saude?.codigo
+  const planDescription =
+    dadosParametrizacao?.plano_descricao ||
+    cliente?.planos_saude?.descricao ||
+    'Plano não identificado'
+  const planCode = dadosParametrizacao?.plano_codigo || cliente?.planos_saude?.codigo || null
   const modoImplantacao = cliente?.modo_implantacao
   const safeItems = parseItemsSafe(proposta?.itens)
   const modulos = parseModulosToList(cliente?.modulos)
