@@ -111,7 +111,14 @@ export default function ImplementacoesPage() {
       return nome.toLowerCase().includes(searchTerm.toLowerCase())
     })
     .sort((a, b) => {
-      if (!sortField) return 0
+      if (!sortField) {
+        const sigA = a.clientes?.data_assinatura || ''
+        const sigB = b.clientes?.data_assinatura || ''
+        if (sigA === sigB) {
+          return (b.created_at || '').localeCompare(a.created_at || '')
+        }
+        return sigB.localeCompare(sigA)
+      }
       let cmp = 0
       if (sortField === 'progresso') {
         cmp = (a.progresso || 0) - (b.progresso || 0)

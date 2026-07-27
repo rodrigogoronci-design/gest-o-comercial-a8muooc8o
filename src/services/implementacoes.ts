@@ -6,8 +6,9 @@ export const getImplementacoes = async () => {
   const { data, error } = await supabase
     .from('implementacoes' as any)
     .select(
-      '*, clientes(nome), colaboradores(nome), implementacao_etapas(titulo, status, ordem, data_prevista)',
+      '*, clientes(nome, data_assinatura), colaboradores(nome), implementacao_etapas(titulo, status, ordem, data_prevista)',
     )
+    .order('clientes.data_assinatura', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
   if (error) throw error
   return data
