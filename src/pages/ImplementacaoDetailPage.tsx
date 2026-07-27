@@ -51,7 +51,7 @@ import {
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { ContractedPlanDetails } from '@/components/ContractedPlanDetails'
-import { ParametrizacaoSection } from '@/components/ParametrizacaoSection'
+
 import { ImplementationDocumentRepository } from '@/components/ImplementationDocumentRepository'
 import { getContractedModules, isStageRelatedToModules } from '@/lib/scope-mapping'
 
@@ -505,17 +505,6 @@ export default function ImplementacaoDetailPage() {
         implementacaoId={impl.id}
         dadosParametrizacao={impl.dados_parametrizacao}
       />
-
-      <div className="space-y-4">
-        <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
-          Parametrização do Sistema
-        </h3>
-        <ParametrizacaoSection
-          implementacaoId={impl.id}
-          dados={impl.dados_parametrizacao}
-          clienteData={impl.clientes}
-        />
-      </div>
 
       {CATEGORIA_ORDER.map((categoria) => {
         const etapas = etapasByCategoria[categoria]
