@@ -1584,6 +1584,85 @@ export type Database = {
           },
         ]
       }
+      documentacao_adesao: {
+        Row: {
+          arquivo_url: string | null
+          categoria: string
+          cliente_id: string | null
+          created_at: string | null
+          id: string
+          item: string
+          observacoes: string | null
+          status: string | null
+          updated_at: string | null
+          uploaded_at: string | null
+        }
+        Insert: {
+          arquivo_url?: string | null
+          categoria: string
+          cliente_id?: string | null
+          created_at?: string | null
+          id?: string
+          item: string
+          observacoes?: string | null
+          status?: string | null
+          updated_at?: string | null
+          uploaded_at?: string | null
+        }
+        Update: {
+          arquivo_url?: string | null
+          categoria?: string
+          cliente_id?: string | null
+          created_at?: string | null
+          id?: string
+          item?: string
+          observacoes?: string | null
+          status?: string | null
+          updated_at?: string | null
+          uploaded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'documentacao_adesao_cliente_id_fkey'
+            columns: ['cliente_id']
+            isOneToOne: false
+            referencedRelation: 'clientes'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      documentacao_status_cliente: {
+        Row: {
+          cliente_id: string | null
+          created_at: string | null
+          id: string
+          status_geral: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string | null
+          id?: string
+          status_geral?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string | null
+          id?: string
+          status_geral?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'documentacao_status_cliente_cliente_id_fkey'
+            columns: ['cliente_id']
+            isOneToOne: true
+            referencedRelation: 'clientes'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       documentos_obrigatorios: {
         Row: {
           ativo: boolean | null

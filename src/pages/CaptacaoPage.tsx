@@ -24,6 +24,8 @@ import { supabase } from '@/lib/supabase/client'
 import { CaptacaoForm, CaptacaoFormValues } from '@/components/CaptacaoForm'
 import { composeEndereco } from '@/lib/cpf-utils'
 import { cn } from '@/lib/utils'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ProspectDocumentacaoTab } from '@/components/ProspectDocumentacaoTab'
 
 interface CaptacaoProspect {
   id: string
@@ -39,6 +41,7 @@ interface CaptacaoProspect {
   data_nascimento: string | null
   classificacao: string | null
   ultima_interacao: string | null
+  observacoes: string | null
 }
 
 export default function CaptacaoPage() {
@@ -316,31 +319,46 @@ export default function CaptacaoPage() {
       </Card>
 
       <Dialog open={!!editingProspect} onOpenChange={(open) => !open && setEditingProspect(null)}>
-        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[680px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Lead</DialogTitle>
-            <DialogDescription>Atualize as informações do lead.</DialogDescription>
+            <DialogDescription>Atualize as informações e documentação do lead.</DialogDescription>
           </DialogHeader>
           {editingProspect && (
-            <CaptacaoForm
-              onSubmit={onEditSubmit}
-              isSubmitting={isSubmitting}
-              defaultTipoPessoa="PF"
-              initialData={{
-                tipo_pessoa: 'PF',
-                cpf: editingProspect.cpf || '',
-                empresa: editingProspect.empresa,
-                logradouro: editingProspect.endereco || '',
-                contato_nome: editingProspect.contato_nome,
-                telefone: editingProspect.telefone || '',
-                email: editingProspect.email || '',
-                classificacao: editingProspect.classificacao || 'Frio',
-                observacoes: editingProspect.observacoes || '',
-                nome_mae: editingProspect.nome_mae || '',
-                nome_pai: editingProspect.nome_pai || '',
-                data_nascimento: editingProspect.data_nascimento || '',
-              }}
-            />
+            <Tabs defaultValue="dados" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="dados">Dados Básicos</TabsTrigger>
+                <TabsTrigger value="documentacao">Documentação</TabsTrigger>
+              </TabsList>
+              <TabsContent value="dados">
+                <CaptacaoForm
+                  onSubmit={onEditSubmit}
+                  isSubmitting={isSubmitting}
+                  defaultTipoPessoa="PF"
+                  initialData={{
+                    tipo_pessoa: 'PF',
+                    cpf: editingProspect.cpf || '',
+                    empresa: editingProspect.empresa,
+                    logradouro: editingProspect.endereco || '',
+                    contato_nome: editingProspect.contato_nome,
+                    telefone: editingProspect.telefone || '',
+                    email: editingProspect.email || '',
+                    classificacao: editingProspect.classificacao || 'Frio',
+                    observacoes: editingProspect.observacoes || '',
+                    nome_mae: editingProspect.nome_mae || '',
+                    nome_pai: editingProspect.nome_pai || '',
+                    data_nascimento: editingProspect.data_nascimento || '',
+                  }}
+                />
+              </TabsContent>
+              <TabsContent value="documentacao">
+                <ProspectDocumentacaoTab
+                  prospectId={editingProspect.id}
+                  prospectName={editingProspect.empresa}
+                  telefone={editingProspect.telefone || ''}
+                />
+              </TabsContent>
+            </Tabs>
           )}
         </DialogContent>
       </Dialog>
