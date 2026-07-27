@@ -52,7 +52,8 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { ContractedPlanDetails } from '@/components/ContractedPlanDetails'
 import { DigitalCertificateField } from '@/components/DigitalCertificateField'
-import { ImplementationDocumentRepository } from '@/components/ImplementationDocumentRepository'import { getContractedModules, isStageRelatedToModules } from '@/lib/scope-mapping'
+import { ImplementationDocumentRepository } from '@/components/ImplementationDocumentRepository'
+import { getContractedModules, isStageRelatedToModules } from '@/lib/scope-mapping'
 
 const STATUS_CONFIG: Record<string, { color: string; icon: any }> = {
   'Não iniciada': { color: 'bg-slate-100 text-slate-600 border-slate-200', icon: Clock },
