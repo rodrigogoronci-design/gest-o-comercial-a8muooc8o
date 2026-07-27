@@ -2,6 +2,7 @@ import { type ReactNode } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Package,
   Layers,
@@ -70,12 +71,11 @@ export function ContractedPlanDetails({
   dadosParametrizacao,
   implementacaoId,
 }: ContractedPlanDetailsProps) {
-  const { planDescription, planCode } = usePlanFallback(
-    implementacaoId,
-    dadosParametrizacao,
-    cliente,
-    proposta,
-  )
+  const {
+    planDescription,
+    planCode,
+    isLoading: isPlanLoading,
+  } = usePlanFallback(implementacaoId, dadosParametrizacao, cliente, proposta)
 
   if (!proposta && !cliente) {
     return (
@@ -133,8 +133,20 @@ export function ContractedPlanDetails({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
-          <InfoRow icon={Package} label="Plano" value={planDescription} />
-          {planCode && <InfoRow icon={Building2} label="Código do Plano" value={planCode} />}
+          {isPlanLoading ? (
+            <div className="flex items-start gap-2 py-1.5 col-span-1">
+              <Package className="h-4 w-4 text-slate-400 mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0 space-y-1">
+                <span className="text-xs text-slate-500">Buscando plano contratado...</span>
+                <Skeleton className="h-4 w-40" />
+              </div>
+            </div>
+          ) : (
+            <>
+              <InfoRow icon={Package} label="Plano" value={planDescription} />
+              {planCode && <InfoRow icon={Building2} label="Código do Plano" value={planCode} />}
+            </>
+          )}
           <InfoRow
             icon={Building2}
             label="Modo de Implantação"

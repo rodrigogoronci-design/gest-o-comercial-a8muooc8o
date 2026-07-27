@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Loader2, Save, Plus, X } from 'lucide-react'
 import {
   getImplementacao,
@@ -29,6 +30,7 @@ import {
   updateClienteModulos,
 } from '@/services/implementacoes'
 import { parseModulosToList } from '@/lib/modules-parser'
+import { usePlanFallback } from '@/hooks/use-plan-fallback'
 import { toast } from 'sonner'
 
 const IMPL_STATUS = ['Em andamento', 'Atrasada', 'Finalizada']
@@ -50,6 +52,17 @@ export function ImplementacaoEditSheet({ open, onOpenChange, implementacaoId, on
   const [responsavelId, setResponsavelId] = useState('')
   const [modules, setModules] = useState<string[]>([])
   const [stages, setStages] = useState<any[]>([])
+
+  const {
+    planDescription,
+    planCode,
+    isLoading: isPlanLoading,
+  } = usePlanFallback(
+    implementacaoId,
+    impl?.dados_parametrizacao,
+    impl?.clientes,
+    impl?.crm_propostas,
+  )
 
   const loadData = useCallback(async () => {
     if (!implementacaoId) return
@@ -137,17 +150,21 @@ export function ImplementacaoEditSheet({ open, onOpenChange, implementacaoId, on
               </h3>
               <div className="space-y-2">
                 <Label>Plano (Franquia)</Label>
-                <Input
-                  value={
-                    impl?.dados_parametrizacao?.plano_descricao
-                      ? impl.dados_parametrizacao.plano_codigo
-                        ? `${impl.dados_parametrizacao.plano_descricao} (código: ${impl.dados_parametrizacao.plano_codigo})`
-                        : impl.dados_parametrizacao.plano_descricao
-                      : 'Não informado'
-                  }
-                  disabled
-                  className="bg-slate-50"
-                />
+                {isPlanLoading ? (
+                  <Skeleton className="h-9 w-full bg-slate-100" />
+                ) : (
+                  <Input
+                    value={
+                      planDescription !== 'Plano não identificado'
+                        ? planCode
+                          ? `${planDescription} (código: ${planCode})`
+                          : planDescription
+                        : 'Não informado'
+                    }
+                    disabled
+                    className="bg-slate-50"
+                  />
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Tipo de Implementação</Label>

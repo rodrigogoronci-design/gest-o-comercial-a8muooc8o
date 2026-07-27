@@ -5,6 +5,7 @@ import { updateDadosParametrizacao } from '@/services/implementacoes'
 interface UsePlanFallbackResult {
   planDescription: string
   planCode: string | null
+  isLoading: boolean
 }
 
 export function usePlanFallback(
@@ -13,100 +14,238 @@ export function usePlanFallback(
   cliente: any | null,
   proposta: any | null,
 ): UsePlanFallbackResult {
+  const primaryDesc = dadosParametrizacao?.plano_descricao || null
+  const primaryCode = dadosParametrizacao?.plano_codigo || null
+
   const [result, setResult] = useState<UsePlanFallbackResult>(() => {
-    const desc =
-      dadosParametrizacao?.plano_descricao ||
-      cliente?.planos_saude?.descricao ||
-      'Plano não identificado'
-    const code = dadosParametrizacao?.plano_codigo || cliente?.planos_saude?.codigo || null
-    return { planDescription: desc, planCode: code }
+    if (primaryDesc) {
+      return {
+        planDescription: primaryDesc,
+        planCode: primaryCode,
+        isLoading: false,
+      }
+    }
+    return {
+      planDescription: cliente?.planos_saude?.descricao || 'Plano não identificado',
+      planCode: cliente?.planos_saude?.codigo || null,
+      isLoading: Boolean(implementacaoId),
+    }
   })
 
   useEffect(() => {
-    if (!implementacaoId) return
+    // Primary Source: if already present in dados_parametrizacao, return immediately
+    if (primaryDesc) {
+      setResult({
+        planDescription: primaryDesc,
+        planCode: primaryCode,
+        isLoading: false,
+      })
+      return
+    }
 
-    const cachedDesc = dadosParametrizacao?.plano_descricao ?? null
-    const cachedCode = dadosParametrizacao?.plano_codigo ?? null
+    if (!implementacaoId) {
+      if (cliente?.planos_saude?.descricao) {
+        setResult({
+          planDescription: cliente.planos_saude.descricao,
+          planCode: cliente.planos_saude.codigo || null,
+          isLoading: false,
+        })
+      } else {
+        setResult({
+          planDescription: 'Plano não identificado',
+          planCode: null,
+          isLoading: false,
+        })
+      }
+      return
+    }
 
-    if (cachedDesc && cachedCode) return
+    let isMounted = true
+    setResult((prev) => ({ ...prev, isLoading: true }))
 
-    let cancelled = false
+    const resolveAndSavePlan = async () => {
+      let resolvedDesc: string | null = null
+      let resolvedCode: string | null = null
 
-    const run = async () => {
-      let resolvedDesc: string | null = cachedDesc
-      let resolvedCode: string | null = cachedCode
-
-      if (!resolvedDesc && cliente?.planos_saude?.descricao) {
+      // Secondary Source: Client -> planos_saude
+      if (cliente?.planos_saude?.descricao) {
         resolvedDesc = cliente.planos_saude.descricao
         resolvedCode = cliente.planos_saude.codigo || null
-      }
-
-      if (!resolvedDesc && cliente?.plano_id) {
+      } else if (cliente?.plano_id) {
         try {
-          const { data } = await supabase
+          const { data: plano } = await supabase
             .from('planos_saude')
             .select('descricao, codigo')
             .eq('id', cliente.plano_id)
             .maybeSingle()
-          if (data) {
-            resolvedDesc = data.descricao
-            resolvedCode = data.codigo || null
+          if (plano?.descricao) {
+            resolvedDesc = plano.descricao
+            resolvedCode = plano.codigo || null
           }
         } catch {
-          /* silent */
+          /* ignore */
         }
       }
 
-      if (!resolvedDesc && proposta?.prospect_id) {
+      if (!resolvedDesc && cliente?.id) {
         try {
-          const { data: prospect } = await supabase
-            .from('crm_prospects')
-            .select('plano_apresentado, plano_contratado, plano_id')
-            .eq('id', proposta.prospect_id)
+          const { data: clientDb } = await supabase
+            .from('clientes')
+            .select('plano_id, planos_saude(descricao, codigo)')
+            .eq('id', cliente.id)
             .maybeSingle()
-          if (prospect) {
-            if (prospect.plano_id) {
-              const { data: plano } = await supabase
-                .from('planos_saude')
-                .select('descricao, codigo')
-                .eq('id', prospect.plano_id)
-                .maybeSingle()
-              if (plano) {
-                resolvedDesc = plano.descricao
-                resolvedCode = plano.codigo || null
+
+          if (clientDb?.planos_saude && (clientDb.planos_saude as any).descricao) {
+            resolvedDesc = (clientDb.planos_saude as any).descricao
+            resolvedCode = (clientDb.planos_saude as any).codigo || null
+          } else if (clientDb?.plano_id) {
+            const { data: plano } = await supabase
+              .from('planos_saude')
+              .select('descricao, codigo')
+              .eq('id', clientDb.plano_id)
+              .maybeSingle()
+            if (plano?.descricao) {
+              resolvedDesc = plano.descricao
+              resolvedCode = plano.codigo || null
+            }
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+
+      // Tertiary Source: Proposal / Contract / Prospect
+      if (!resolvedDesc) {
+        let prospectId = proposta?.prospect_id || null
+
+        if (!prospectId && proposta?.id) {
+          try {
+            const { data: propDb } = await supabase
+              .from('crm_propostas')
+              .select('prospect_id')
+              .eq('id', proposta.id)
+              .maybeSingle()
+            if (propDb?.prospect_id) {
+              prospectId = propDb.prospect_id
+            }
+          } catch {
+            /* ignore */
+          }
+        }
+
+        if (prospectId) {
+          try {
+            const { data: prospect } = await supabase
+              .from('crm_prospects')
+              .select('plano_apresentado, plano_contratado, plano_id')
+              .eq('id', prospectId)
+              .maybeSingle()
+
+            if (prospect) {
+              if (prospect.plano_id) {
+                const { data: plano } = await supabase
+                  .from('planos_saude')
+                  .select('descricao, codigo')
+                  .eq('id', prospect.plano_id)
+                  .maybeSingle()
+                if (plano?.descricao) {
+                  resolvedDesc = plano.descricao
+                  resolvedCode = plano.codigo || null
+                }
+              }
+              if (!resolvedDesc) {
+                resolvedDesc = prospect.plano_contratado || prospect.plano_apresentado || null
               }
             }
-            if (!resolvedDesc) {
-              resolvedDesc = prospect.plano_contratado || prospect.plano_apresentado || null
-            }
+          } catch {
+            /* ignore */
           }
-        } catch {
-          /* silent */
+        }
+
+        if (!resolvedDesc && cliente?.id) {
+          try {
+            const { data: prospect } = await supabase
+              .from('crm_prospects')
+              .select('plano_apresentado, plano_contratado, plano_id')
+              .eq('cliente_id', cliente.id)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+
+            if (prospect) {
+              if (prospect.plano_id) {
+                const { data: plano } = await supabase
+                  .from('planos_saude')
+                  .select('descricao, codigo')
+                  .eq('id', prospect.plano_id)
+                  .maybeSingle()
+                if (plano?.descricao) {
+                  resolvedDesc = plano.descricao
+                  resolvedCode = plano.codigo || null
+                }
+              }
+              if (!resolvedDesc) {
+                resolvedDesc = prospect.plano_contratado || prospect.plano_apresentado || null
+              }
+            }
+          } catch {
+            /* ignore */
+          }
         }
       }
 
-      if (cancelled) return
+      if (!isMounted) return
 
       if (resolvedDesc) {
-        setResult({ planDescription: resolvedDesc, planCode: resolvedCode })
+        setResult({
+          planDescription: resolvedDesc,
+          planCode: resolvedCode,
+          isLoading: false,
+        })
+
+        // Automatic Persistence: Save resolved plan details to implementacoes.dados_parametrizacao
         try {
-          await updateDadosParametrizacao(implementacaoId, {
-            ...(dadosParametrizacao || {}),
+          const { data: impl } = await supabase
+            .from('implementacoes')
+            .select('dados_parametrizacao')
+            .eq('id', implementacaoId)
+            .maybeSingle()
+
+          const currentParams =
+            (impl?.dados_parametrizacao as Record<string, any>) || dadosParametrizacao || {}
+          const newParams = {
+            ...currentParams,
             plano_descricao: resolvedDesc,
             plano_codigo: resolvedCode,
-          })
+          }
+
+          await updateDadosParametrizacao(implementacaoId, newParams)
         } catch {
-          /* silent */
+          /* ignore */
         }
+      } else {
+        setResult({
+          planDescription: 'Plano não identificado',
+          planCode: null,
+          isLoading: false,
+        })
       }
     }
 
-    run()
+    resolveAndSavePlan()
 
     return () => {
-      cancelled = true
+      isMounted = false
     }
-  }, [implementacaoId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    implementacaoId,
+    primaryDesc,
+    primaryCode,
+    cliente?.id,
+    cliente?.plano_id,
+    proposta?.id,
+    proposta?.prospect_id,
+  ])
 
   return result
 }
