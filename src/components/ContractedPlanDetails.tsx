@@ -77,6 +77,13 @@ export function ContractedPlanDetails({
     isLoading: isPlanLoading,
   } = usePlanFallback(implementacaoId, dadosParametrizacao, cliente, proposta)
 
+  const planDisplay =
+    Boolean(planDescription) && planDescription !== 'Plano não identificado'
+      ? planCode && !planDescription.toLowerCase().includes(planCode.toLowerCase())
+        ? `${planCode} - ${planDescription}`
+        : planDescription
+      : 'Plano não identificado'
+
   if (!proposta && !cliente) {
     return (
       <Card>
@@ -143,8 +150,10 @@ export function ContractedPlanDetails({
             </div>
           ) : (
             <>
-              <InfoRow icon={Package} label="Plano" value={planDescription} />
-              {planCode && <InfoRow icon={Building2} label="Código do Plano" value={planCode} />}
+              <InfoRow icon={Package} label="Plano" value={planDisplay} />
+              {planCode && !planDescription?.toLowerCase().includes(planCode.toLowerCase()) && (
+                <InfoRow icon={Building2} label="Código do Plano" value={planCode} />
+              )}
             </>
           )}
           <InfoRow
