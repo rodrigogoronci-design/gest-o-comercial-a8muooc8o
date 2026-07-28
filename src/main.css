@@ -395,6 +395,20 @@
 }
 
 @layer utilities {
+  .sticky-actions-right {
+    position: sticky;
+    right: 0;
+    z-index: 10;
+    background: inherit;
+  }
+
+  .sticky-actions-left {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background: inherit;
+  }
+
   @keyframes accordion-down {
     from {
       height: 0;

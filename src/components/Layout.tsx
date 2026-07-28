@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from './AppSidebar'
 import { AppHeader } from './AppHeader'
+import { BackToTopButton } from './BackToTopButton'
 
 export default function Layout() {
   return (
@@ -14,6 +15,7 @@ export default function Layout() {
             <Outlet />
           </main>
         </SidebarInset>
+        <BackToTopButton />
       </div>
     </SidebarProvider>
   )

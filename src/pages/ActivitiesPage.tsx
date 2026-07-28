@@ -154,7 +154,9 @@ export default function ActivitiesPage() {
                     <TableHead className="w-[120px]">Status</TableHead>
                     <TableHead className="min-w-[250px]">Demanda / Observações</TableHead>
                     <TableHead className="w-[110px]">Follow-up</TableHead>
-                    <TableHead className="w-[80px] text-right">Ações</TableHead>
+                    <TableHead className="w-[80px] text-right sticky-actions-right bg-slate-50/50">
+                      Ações
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -198,7 +200,7 @@ export default function ActivitiesPage() {
                       <TableCell className="text-gray-500 whitespace-nowrap">
                         {formatDate(atividade.data_follow_up)}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right sticky-actions-right bg-white">
                         <div className="flex justify-end items-center gap-1">
                           <Button
                             variant="ghost"

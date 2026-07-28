@@ -792,7 +792,9 @@ export default function CRMPage() {
                   <TableHead>Follow-up</TableHead>
                   <TableHead>Classificação</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead className="text-right sticky-actions-right bg-slate-50/50">
+                    Ações
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -972,7 +974,7 @@ export default function CRMPage() {
                               </SelectContent>
                             </Select>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right sticky-actions-right bg-white">
                             <div className="flex items-center justify-end gap-1">
                               {p.status !== 'Cliente Efetivado' && (
                                 <Button

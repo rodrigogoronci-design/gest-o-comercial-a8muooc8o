@@ -4991,7 +4991,9 @@ Obrigada.`)
                 <TableHead>Plano</TableHead>
                 <TableHead>Módulos Contratados</TableHead>
                 <TableHead>Mensalidade</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead className="text-right sticky-actions-right bg-slate-50/50">
+                  Ações
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -5132,7 +5134,7 @@ Obrigada.`)
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right sticky-actions-right bg-white">
                       <div className="flex justify-end gap-1">
                         {client.originalData?.status?.toLowerCase() !== 'inativo' && (
                           <Button

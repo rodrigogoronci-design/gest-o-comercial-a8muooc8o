@@ -601,7 +601,9 @@ export default function ReceiptsPage() {
                       <TableHead>Contrato / Título</TableHead>
                       <TableHead className="text-right">Valor do Título</TableHead>
                       <TableHead className="text-center">Atraso</TableHead>
-                      <TableHead className="print:hidden">Status</TableHead>
+                      <TableHead className="print:hidden sticky-actions-right bg-slate-50/50">
+                        Status
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -648,7 +650,7 @@ export default function ReceiptsPage() {
                               <span className="text-muted-foreground">-</span>
                             )}
                           </TableCell>
-                          <TableCell className="print:hidden">
+                          <TableCell className="print:hidden sticky-actions-right bg-white">
                             {receipt.status === 'VENCIDO' ? (
                               <Badge
                                 variant="outline"

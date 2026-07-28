@@ -231,7 +231,9 @@ export default function CaptacaoPage() {
                 <TableHead>CPF</TableHead>
                 <TableHead>Contato</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead className="text-right sticky-actions-right bg-slate-50/50">
+                  Ações
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -288,7 +290,7 @@ export default function CaptacaoPage() {
                         {p.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right sticky-actions-right bg-white group-hover:bg-slate-50/80">
                       <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost"

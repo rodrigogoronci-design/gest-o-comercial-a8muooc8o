@@ -260,7 +260,9 @@ export default function ImplementacoesPage() {
                   </button>
                 </TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead className="text-right sticky-actions-right bg-slate-50/50">
+                  Ações
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -327,7 +329,7 @@ export default function ImplementacoesPage() {
                           {impl.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right sticky-actions-right bg-white">
                         <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"

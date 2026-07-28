@@ -467,7 +467,9 @@ export default function ColaboradoresPage() {
               <TableHead>E-mail</TableHead>
               <TableHead>Perfil</TableHead>
               <TableHead>Acesso</TableHead>
-              <TableHead className="w-[100px] text-right">Ações</TableHead>
+              <TableHead className="w-[100px] text-right sticky-actions-right bg-slate-50/50">
+                Ações
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -500,7 +502,7 @@ export default function ColaboradoresPage() {
                       </div>
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right sticky-actions-right bg-white">
                     <div className="flex items-center justify-end gap-2">
                       {!colab.user_id && (
                         <Button
