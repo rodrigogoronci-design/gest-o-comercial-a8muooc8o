@@ -1,8 +1,6 @@
 export const WHATSAPP_PRESENTATION_MESSAGE = `ola! Conheça a Service Logic | A solução completa para gestão de transportes
 
-https://lp-servicelogic-tms.vercel.app/
-
-Salve meu contato: https://gestao-comercial-80c78.goskip.app/vcard/rodrigo`
+https://lp-servicelogic-tms.vercel.app/`
 
 export function cleansePhoneNumber(phone: string): string {
   return phone.replace(/\D/g, '')
