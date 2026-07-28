@@ -1,260 +1,228 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Building2, User, Phone, Package, Send, Loader2 } from 'lucide-react'
+import { z } from 'zod'
+import { Loader2, Save, AlertCircle } from 'lucide-react'
+import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
-import { supabase } from '@/lib/supabase/client'
+import { MODULES } from '@/constants/contracts'
+import {
+  WHATSAPP_PRESENTATION_MESSAGE,
+  cleansePhoneNumber,
+  isValidBrazilianPhone,
+  buildWhatsAppUrl,
+} from '@/lib/whatsapp-utils'
 
-const MODULE_OPTIONS = [
-  'CT-e',
-  'MDF-e',
-  'Financeiro',
-  'Fiscal',
-  'Frota',
-  'Controle de Viagens',
-  'BI',
-  'EDI',
-  'DF-e',
-  'SL Track',
-  'SL Trip',
-  'Torre',
-  'Patrimônio',
-  'Comercial',
-  'Outro',
-]
-
-const PRESENTATION_URL = 'https://lp-servicelogic-tms.vercel.app/'
-const WHATSAPP_MESSAGE = `Olá! Segue o link da apresentação: ${PRESENTATION_URL}`
-
-const formSchema = z.object({
-  empresa: z.string().min(2, 'Nome da empresa é obrigatório'),
-  contato_nome: z.string().min(2, 'Nome do contato é obrigatório'),
-  telefone: z.string().min(10, 'Telefone inválido'),
+const captacaoSchema = z.object({
+  empresa: z.string().min(1, 'Nome da empresa é obrigatório'),
+  contato_nome: z.string().min(1, 'Nome do contato é obrigatório'),
+  telefone: z.string().min(1, 'Telefone é obrigatório'),
+  email: z.string().email('E-mail inválido').optional().or(z.literal('')),
+  modulos: z.array(z.string()).default([]),
+  outro: z.string().optional().default(''),
+  observacoes: z.string().optional().default(''),
 })
 
-type FormValues = z.infer<typeof formSchema>
-
-function normalizePhone(phone: string): string {
-  const digits = phone.replace(/\D/g, '')
-  if (digits.length >= 12 && digits.startsWith('55')) return digits
-  return '55' + digits
-}
+type CaptacaoFormValues = z.infer<typeof captacaoSchema>
 
 export function CaptacaoSimplifiedForm() {
-  const [selectedModules, setSelectedModules] = useState<string[]>([])
-  const [outroValue, setOutroValue] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
+  const [saving, setSaving] = useState(false)
+  const [whatsappError, setWhatsappError] = useState<string | null>(null)
+  const [selectedModules, setSelectedModules] = useState<string[]>([])
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<CaptacaoFormValues>({
+    resolver: zodResolver(captacaoSchema),
     defaultValues: {
       empresa: '',
       contato_nome: '',
       telefone: '',
+      email: '',
+      modulos: [],
+      outro: '',
+      observacoes: '',
     },
   })
 
-  const toggleModule = (mod: string) => {
+  const toggleModule = (moduleId: string) => {
     setSelectedModules((prev) =>
-      prev.includes(mod) ? prev.filter((m) => m !== mod) : [...prev, mod],
+      prev.includes(moduleId) ? prev.filter((id) => id !== moduleId) : [...prev, moduleId],
     )
   }
 
-  const onSubmit = async (values: FormValues) => {
-    if (selectedModules.length === 0) {
-      toast({
-        title: 'Módulos obrigatórios',
-        description: 'Selecione ao menos um módulo apresentado.',
-        variant: 'destructive',
-      })
-      return
-    }
+  const onSubmit = async (values: CaptacaoFormValues) => {
+    setSaving(true)
+    setWhatsappError(null)
 
-    const modulosParaSalvar = selectedModules.map((m) =>
-      m === 'Outro' && outroValue.trim() ? outroValue.trim() : m,
-    )
-
-    const telefoneNormalizado = normalizePhone(values.telefone)
-
-    setIsSubmitting(true)
     try {
-      const { error } = await supabase.from('crm_prospects').insert({
-        empresa: values.empresa,
-        contato_nome: values.contato_nome,
-        telefone: telefoneNormalizado,
-        modulos_contratados: modulosParaSalvar,
-        status: 'Novo Lead',
-        tipo_pessoa: 'PJ',
-      })
+      const { data, error } = await supabase
+        .from('crm_prospects')
+        .insert({
+          empresa: values.empresa,
+          contato_nome: values.contato_nome,
+          telefone: values.telefone,
+          email: values.email || null,
+          status: 'Novo Lead',
+          modulos_contratados: selectedModules.length > 0 ? selectedModules : null,
+          observacoes: values.outro
+            ? `Outro: ${values.outro}${values.observacoes ? ` | ${values.observacoes}` : ''}`
+            : values.observacoes || null,
+          classificacao: 'Frio',
+          tipo_pessoa: 'PJ',
+        })
+        .select()
+        .single()
 
       if (error) throw error
 
       toast({
-        title: 'Contato salvo!',
-        description: 'Redirecionando para o WhatsApp...',
+        title: 'Contato salvo com sucesso!',
+        description: 'O lead foi registrado no CRM.',
       })
 
-      const whatsappUrl = `https://wa.me/${telefoneNormalizado}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`
-      window.open(whatsappUrl, '_blank')
+      const phoneDigits = cleansePhoneNumber(values.telefone)
 
-      form.reset()
+      if (!isValidBrazilianPhone(values.telefone)) {
+        setWhatsappError(
+          'Número de WhatsApp inválido ou não informado. O lead foi salvo, mas não foi possível abrir o WhatsApp.',
+        )
+        setSaving(false)
+        reset()
+        setSelectedModules([])
+        return
+      }
+
+      const whatsappUrl = buildWhatsAppUrl(values.telefone, WHATSAPP_PRESENTATION_MESSAGE)
+      if (whatsappUrl) {
+        window.open(whatsappUrl, '_blank')
+      }
+
+      setSaving(false)
+      reset()
       setSelectedModules([])
-      setOutroValue('')
     } catch (err: any) {
       toast({
         title: 'Erro ao salvar contato',
-        description: err.message || 'Tente novamente.',
+        description: err.message || 'Ocorreu um erro inesperado.',
         variant: 'destructive',
       })
-    } finally {
-      setIsSubmitting(false)
+      setSaving(false)
     }
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <Card className="border-slate-200/60 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Building2 className="h-5 w-5 text-indigo-600" />
-              Empresa
-            </CardTitle>
-            <CardDescription>Informações da empresa visitada</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <FormField
-              control={form.control}
-              name="empresa"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome da Empresa *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: Transportadora Alpha" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200/60 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <User className="h-5 w-5 text-indigo-600" />
-              Contato
-            </CardTitle>
-            <CardDescription>Dados da pessoa de contato</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="contato_nome"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome do Contato *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: Carlos Silva" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="telefone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Telefone / WhatsApp *</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Phone className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input className="pl-9" placeholder="(11) 99999-9999" {...field} />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200/60 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Package className="h-5 w-5 text-indigo-600" />
-              Módulos Apresentados
-            </CardTitle>
-            <CardDescription>Selecione os módulos apresentados na visita</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {MODULE_OPTIONS.map((mod) => (
-                <div key={mod} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`mod-${mod}`}
-                    checked={selectedModules.includes(mod)}
-                    onCheckedChange={() => toggleModule(mod)}
-                  />
-                  <Label htmlFor={`mod-${mod}`} className="text-sm cursor-pointer">
-                    {mod}
-                  </Label>
-                </div>
-              ))}
-            </div>
-
-            {selectedModules.includes('Outro') && (
-              <div className="mt-3 animate-fade-in">
-                <Label htmlFor="outro-modulo" className="text-sm">
-                  Especifique o módulo
-                </Label>
-                <Input
-                  id="outro-modulo"
-                  placeholder="Nome do módulo personalizado"
-                  value={outroValue}
-                  onChange={(e) => setOutroValue(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full sm:w-auto gap-2"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Send className="h-5 w-5" />
-            )}
-            Salvar Contato
-          </Button>
-          <p className="text-sm text-muted-foreground text-center sm:text-left">
-            Após salvar, o WhatsApp será aberto com o link da apresentação.
-          </p>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="empresa">
+            Empresa <span className="text-destructive">*</span>
+          </Label>
+          <Input id="empresa" placeholder="Nome da empresa" {...register('empresa')} />
+          {errors.empresa && <p className="text-sm text-destructive">{errors.empresa.message}</p>}
         </div>
-      </form>
-    </Form>
+
+        <div className="space-y-2">
+          <Label htmlFor="contato_nome">
+            Nome do Contato <span className="text-destructive">*</span>
+          </Label>
+          <Input id="contato_nome" placeholder="Nome do contato" {...register('contato_nome')} />
+          {errors.contato_nome && (
+            <p className="text-sm text-destructive">{errors.contato_nome.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="telefone">
+            Telefone / WhatsApp <span className="text-destructive">*</span>
+          </Label>
+          <Input id="telefone" placeholder="(11) 99999-9999" {...register('telefone')} />
+          {errors.telefone && <p className="text-sm text-destructive">{errors.telefone.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="email">E-mail</Label>
+          <Input id="email" type="email" placeholder="contato@empresa.com" {...register('email')} />
+          {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <Label>Módulos de Interesse</Label>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {MODULES.map((module: any) => (
+            <div key={module.id} className="flex items-center space-x-2">
+              <Checkbox
+                id={`module-${module.id}`}
+                checked={selectedModules.includes(module.id)}
+                onCheckedChange={() => toggleModule(module.id)}
+              />
+              <Label htmlFor={`module-${module.id}`} className="text-sm font-normal cursor-pointer">
+                {module.name || module.label || module.id}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="outro">Outro (especifique)</Label>
+        <Input
+          id="outro"
+          placeholder="Descreva outro módulo ou necessidade"
+          {...register('outro')}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="observacoes">Observações</Label>
+        <Textarea
+          id="observacoes"
+          placeholder="Anotações sobre o contato..."
+          rows={3}
+          {...register('observacoes')}
+        />
+      </div>
+
+      {whatsappError && (
+        <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3">
+          <AlertCircle className="h-5 w-5 flex-shrink-0 text-amber-600 mt-0.5" />
+          <p className="text-sm text-amber-700">{whatsappError}</p>
+        </div>
+      )}
+
+      <div className="flex justify-end gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            reset()
+            setSelectedModules([])
+            setWhatsappError(null)
+          }}
+          disabled={saving}
+        >
+          Limpar
+        </Button>
+        <Button type="submit" disabled={saving} className="gap-2">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          Salvar Contato
+        </Button>
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        Ao salvar, o WhatsApp será aberto automaticamente com a mensagem de apresentação para envio
+        ao contato.
+      </p>
+    </form>
   )
 }
