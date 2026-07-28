@@ -1,18 +1,11 @@
-export const WHATSAPP_PRESENTATION_MESSAGE =
-  'Olá! Segue o link da apresentação: https://lp-servicelogic-tms.vercel.app/'
+export const WHATSAPP_PRESENTATION_MESSAGE = `ola! Conheça a Service Logic | A solução completa para gestão de transportes
 
-export const PRESENTATION_LINK = 'https://lp-servicelogic-tms.vercel.app/'
+https://lp-servicelogic-tms.vercel.app/
+
+Salve meu contato: https://gestao-comercial-80c78.goskip.app/vcard/rodrigo`
 
 export function cleansePhoneNumber(phone: string): string {
   return phone.replace(/\D/g, '')
-}
-
-export function formatBrazilianWhatsAppNumber(phone: string): string {
-  const digits = cleansePhoneNumber(phone)
-  if (digits.startsWith('55') && digits.length >= 12) {
-    return digits
-  }
-  return `55${digits}`
 }
 
 export function isValidBrazilianPhone(phone: string): boolean {
@@ -20,22 +13,11 @@ export function isValidBrazilianPhone(phone: string): boolean {
   return digits.length >= 10
 }
 
-export function buildWhatsAppUrl(
-  phone: string,
-  message: string = WHATSAPP_PRESENTATION_MESSAGE,
-): string | null {
+export function buildWhatsAppUrl(phone: string, message: string): string | null {
   const digits = cleansePhoneNumber(phone)
   if (digits.length < 10) return null
-  const formatted = formatBrazilianWhatsAppNumber(phone)
-  return `https://wa.me/${formatted}?text=${encodeURIComponent(message)}`
-}
 
-export function openWhatsApp(
-  phone: string,
-  message: string = WHATSAPP_PRESENTATION_MESSAGE,
-): boolean {
-  const url = buildWhatsAppUrl(phone, message)
-  if (!url) return false
-  window.open(url, '_blank')
-  return true
+  const withCountryCode = digits.startsWith('55') && digits.length > 11 ? digits : `55${digits}`
+  const encodedMessage = encodeURIComponent(message)
+  return `https://wa.me/${withCountryCode}?text=${encodedMessage}`
 }

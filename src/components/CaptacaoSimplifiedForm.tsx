@@ -23,7 +23,6 @@ const captacaoSchema = z.object({
   contato_nome: z.string().min(1, 'Nome do contato é obrigatório'),
   telefone: z.string().min(1, 'Telefone é obrigatório'),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
-  modulos: z.array(z.string()).default([]),
   outro: z.string().optional().default(''),
   observacoes: z.string().optional().default(''),
 })
@@ -35,6 +34,7 @@ export function CaptacaoSimplifiedForm() {
   const [saving, setSaving] = useState(false)
   const [whatsappError, setWhatsappError] = useState<string | null>(null)
   const [selectedModules, setSelectedModules] = useState<string[]>([])
+  const [moduleError, setModuleError] = useState<string | null>(null)
 
   const {
     register,
@@ -48,7 +48,6 @@ export function CaptacaoSimplifiedForm() {
       contato_nome: '',
       telefone: '',
       email: '',
-      modulos: [],
       outro: '',
       observacoes: '',
     },
@@ -58,30 +57,38 @@ export function CaptacaoSimplifiedForm() {
     setSelectedModules((prev) =>
       prev.includes(moduleId) ? prev.filter((id) => id !== moduleId) : [...prev, moduleId],
     )
+    setModuleError(null)
   }
 
   const onSubmit = async (values: CaptacaoFormValues) => {
-    setSaving(true)
     setWhatsappError(null)
 
+    if (selectedModules.length === 0) {
+      setModuleError('Selecione pelo menos um módulo de interesse')
+      toast({
+        title: 'Módulo obrigatório',
+        description: 'Selecione pelo menos um módulo de interesse.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setSaving(true)
+
     try {
-      const { data, error } = await supabase
-        .from('crm_prospects')
-        .insert({
-          empresa: values.empresa,
-          contato_nome: values.contato_nome,
-          telefone: values.telefone,
-          email: values.email || null,
-          status: 'Novo Lead',
-          modulos_contratados: selectedModules.length > 0 ? selectedModules : null,
-          observacoes: values.outro
-            ? `Outro: ${values.outro}${values.observacoes ? ` | ${values.observacoes}` : ''}`
-            : values.observacoes || null,
-          classificacao: 'Frio',
-          tipo_pessoa: 'PJ',
-        })
-        .select()
-        .single()
+      const { error } = await supabase.from('crm_prospects').insert({
+        empresa: values.empresa,
+        contato_nome: values.contato_nome,
+        telefone: values.telefone,
+        email: values.email || null,
+        status: 'Novo Lead',
+        modulos_contratados: selectedModules.length > 0 ? selectedModules : null,
+        observacoes: values.outro
+          ? `Outro: ${values.outro}${values.observacoes ? ` | ${values.observacoes}` : ''}`
+          : values.observacoes || null,
+        classificacao: 'Frio',
+        tipo_pessoa: 'PJ',
+      })
 
       if (error) throw error
 
@@ -93,18 +100,21 @@ export function CaptacaoSimplifiedForm() {
       const phoneDigits = cleansePhoneNumber(values.telefone)
 
       if (!isValidBrazilianPhone(values.telefone)) {
-        setWhatsappError(
-          'Número de WhatsApp inválido ou não informado. O lead foi salvo, mas não foi possível abrir o WhatsApp.',
-        )
+        setWhatsappError('Número de telefone inválido. O WhatsApp não será aberto.')
+        toast({
+          title: 'WhatsApp não aberto',
+          description: 'Número de telefone inválido. O WhatsApp não será aberto.',
+          variant: 'destructive',
+        })
         setSaving(false)
         reset()
         setSelectedModules([])
         return
       }
 
-      const whatsappUrl = buildWhatsAppUrl(values.telefone, WHATSAPP_PRESENTATION_MESSAGE)
+      const whatsappUrl = buildWhatsAppUrl(phoneDigits, WHATSAPP_PRESENTATION_MESSAGE)
       if (whatsappUrl) {
-        window.open(whatsappUrl, '_blank')
+        window.location.href = whatsappUrl
       }
 
       setSaving(false)
@@ -157,7 +167,9 @@ export function CaptacaoSimplifiedForm() {
       </div>
 
       <div className="space-y-3">
-        <Label>Módulos de Interesse</Label>
+        <Label>
+          Módulos de Interesse <span className="text-destructive">*</span>
+        </Label>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {MODULES.map((module: any) => (
             <div key={module.id} className="flex items-center space-x-2">
@@ -172,6 +184,7 @@ export function CaptacaoSimplifiedForm() {
             </div>
           ))}
         </div>
+        {moduleError && <p className="text-sm text-destructive">{moduleError}</p>}
       </div>
 
       <div className="space-y-2">
@@ -208,6 +221,7 @@ export function CaptacaoSimplifiedForm() {
             reset()
             setSelectedModules([])
             setWhatsappError(null)
+            setModuleError(null)
           }}
           disabled={saving}
         >

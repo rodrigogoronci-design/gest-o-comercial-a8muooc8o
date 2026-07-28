@@ -38,6 +38,7 @@ import ImplementacoesPage from './pages/ImplementacoesPage'
 import ImplementacaoDetailPage from './pages/ImplementacaoDetailPage'
 import CaptacaoPage from './pages/CaptacaoPage'
 import OnboardingPage from './pages/OnboardingPage'
+import VCardPage from './pages/VCardPage'
 
 const App = () => (
   <AuthProvider>
@@ -49,6 +50,7 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/onboarding/:token" element={<OnboardingPage />} />
+            <Route path="/vcard/:slug" element={<VCardPage />} />
             <Route
               element={
                 <ProtectedRoute>
