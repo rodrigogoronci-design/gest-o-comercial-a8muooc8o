@@ -44,6 +44,9 @@ export function ContractDocument({
   selectedModules,
   planData,
   planPrice,
+  isCustomPlan = false,
+  customPlanModules = [],
+  customPlanName = '',
   modulesPrice,
   selectedDfe,
   dfeData,
@@ -225,16 +228,43 @@ export function ContractDocument({
                     </td>
                   </tr>
                 ))}
+                {isCustomPlan && (
+                  <tr className="bg-[#1b4382]/10">
+                    <td className="border border-slate-300 p-1.5">
+                      {customPlanName || 'Plano Personalizado'} (Personalizado)
+                    </td>
+                    <td className="border border-slate-300 p-1.5 text-right">
+                      {formatCurrency(planPrice)}
+                    </td>
+                    <td className="border border-slate-300 p-1.5 text-center">Mensal</td>
+                    <td className="border border-slate-300 p-1.5 text-center">—</td>
+                    <td className="border border-slate-300 p-1.5 text-center text-[#f37021] font-bold">
+                      X
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
             <p className="text-[10px] mt-1 text-slate-600">
-              (*) Módulos inclusos nos Planos: {getPlanIncludedModuleNames(selectedPlan)}. <br />
+              (*) Módulos inclusos nos Planos:{' '}
+              {isCustomPlan
+                ? customPlanModules
+                    .map((id) => MODULES.find((m) => m.id === id)?.name)
+                    .filter(Boolean)
+                    .join(', ')
+                : getPlanIncludedModuleNames(selectedPlan)}
+              . <br />
               (**) Ct-e, MDF-e, NF-e, NFS-e e Documentos cancelados.
             </p>
             {selectedPlan !== 'none' && planData && (
               <p className="text-[10px] mt-1 font-medium text-[#1b4382]">
-                Plano selecionado: <strong>{planData.name}</strong> — {planData.limit} documentos
-                eletrônicos por mês, no valor de {formatCurrency(planPrice)} mensais.
+                Plano selecionado: <strong>{planData.name}</strong>{' '}
+                {isCustomPlan
+                  ? `— Módulos inclusos: ${customPlanModules
+                      .map((id) => MODULES.find((m) => m.id === id)?.name)
+                      .filter(Boolean)
+                      .join(', ')}, no valor de ${formatCurrency(planPrice)} mensais.`
+                  : `— ${planData.limit} documentos eletrônicos por mês, no valor de ${formatCurrency(planPrice)} mensais.`}
               </p>
             )}
           </div>
@@ -379,7 +409,13 @@ export function ContractDocument({
                   </tr>
                 )}
                 {MODULES.map((m) => {
-                  if (getPlanDefaultModules(selectedPlan).includes(m.id)) return null
+                  if (
+                    (isCustomPlan
+                      ? customPlanModules
+                      : getPlanDefaultModules(selectedPlan)
+                    ).includes(m.id)
+                  )
+                    return null
 
                   const cicle = moduleBilling[m.id] || 'mensal'
                   const modPrice =

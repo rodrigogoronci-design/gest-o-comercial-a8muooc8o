@@ -12,6 +12,8 @@ export interface QuoteDocumentProps {
   showBasePlan?: boolean
   isUpsell?: boolean
   isGratuito?: boolean
+  isCustomPlan?: boolean
+  customPlanModuleNames?: string[]
   currentClientValue?: number
   items?: any[]
   discountValue?: number
@@ -62,6 +64,8 @@ export function QuoteDocument(props: QuoteDocumentProps) {
     showBasePlan = true,
     isUpsell = false,
     isGratuito = false,
+    isCustomPlan = false,
+    customPlanModuleNames = [],
     currentClientValue = 0,
     items = [],
     discountValue = 0,
@@ -73,9 +77,11 @@ export function QuoteDocument(props: QuoteDocumentProps) {
 
   const isTms30 =
     planName?.toLowerCase().includes('tms-30') || planName?.toLowerCase().includes('tms 30')
-  const includedBaseModules = isTms30
-    ? ['Administração', 'Básico', 'Carga', 'Comercial']
-    : ['Administração', 'Básico', 'Carga', 'Comercial', 'Faturamento', 'Financeiro']
+  const includedBaseModules = isCustomPlan
+    ? customPlanModuleNames
+    : isTms30
+      ? ['Administração', 'Básico', 'Carga', 'Comercial']
+      : ['Administração', 'Básico', 'Carga', 'Comercial', 'Faturamento', 'Financeiro']
 
   const categoriesToRender = includedBaseModules.map((name) => ({
     title: name,

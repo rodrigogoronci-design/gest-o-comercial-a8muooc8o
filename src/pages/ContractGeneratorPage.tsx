@@ -59,6 +59,7 @@ import { getPlanDefaultModules } from '@/lib/plan-modules'
 import { ContractDocument } from '@/components/ContractDocument'
 import { SignedContractUpload } from '@/components/SignedContractUpload'
 import { cn } from '@/lib/utils'
+import { CustomPlanFields } from '@/components/CustomPlanFields'
 
 const MODULES = [...BASE_MODULES]
 
@@ -110,6 +111,9 @@ export default function ContractGeneratorPage() {
 
   const [manualPlanPrice, setManualPlanPrice] = useState<string>('')
   const [isPlanPriceManual, setIsPlanPriceManual] = useState(false)
+  const [customPlanName, setCustomPlanName] = useState('')
+  const [customPlanModules, setCustomPlanModules] = useState<string[]>([])
+  const [customPlanPrice, setCustomPlanPrice] = useState<number>(0)
 
   const [descontoMensalidade, setDescontoMensalidade] = useState<number>(0)
   const [tipoDesconto, setTipoDesconto] = useState<'valor' | 'percentual'>('valor')
@@ -309,7 +313,12 @@ export default function ContractGeneratorPage() {
     }
 
     items.forEach((item) => {
-      if (item.type === 'plan' || PLANS.find((p) => p.id === item.id)) {
+      if (item.type === 'custom-plan') {
+        foundPlan = 'custom'
+        setCustomPlanName(item.name || '')
+        setCustomPlanPrice(item.price || 0)
+        setCustomPlanModules(item.modules || [])
+      } else if (item.type === 'plan' || PLANS.find((p) => p.id === item.id)) {
         foundPlan = item.id
         const defPrice = PLANS.find((p) => p.id === item.id)?.price || 0
         if (item.price !== undefined && item.price !== defPrice) {
@@ -380,7 +389,17 @@ export default function ContractGeneratorPage() {
     if (diagVisits.length > 0) setDiagnosticVisits(diagVisits)
   }
 
-  const planData = useMemo(() => PLANS.find((p) => p.id === selectedPlan), [selectedPlan])
+  const planData = useMemo(() => {
+    if (selectedPlan === 'custom') {
+      return {
+        id: 'custom',
+        name: customPlanName || 'Plano Personalizado',
+        price: customPlanPrice,
+        limit: 'Personalizado',
+      }
+    }
+    return PLANS.find((p) => p.id === selectedPlan)
+  }, [selectedPlan, customPlanName, customPlanPrice])
   const defaultPlanPrice =
     selectedPlan === 'none' ||
     (activeTab === 'cotacao' && quoteTargetType === 'cliente') ||
@@ -751,6 +770,9 @@ export default function ContractGeneratorPage() {
     selectedModules,
     planData,
     planPrice,
+    isCustomPlan: selectedPlan === 'custom',
+    customPlanModules: selectedPlan === 'custom' ? customPlanModules : [],
+    customPlanName: selectedPlan === 'custom' ? customPlanName || 'Plano Personalizado' : '',
     items: quoteItems,
     discountValue: validDescontoMensalidade,
     discountType: tipoDesconto,
@@ -827,6 +849,11 @@ export default function ContractGeneratorPage() {
       selectedPlan === 'none' || (activeTab === 'cotacao' && quoteTargetType === 'cliente')
         ? 'Nenhum'
         : planData?.name || 'Plano Personalizado',
+    isCustomPlan: selectedPlan === 'custom',
+    customPlanModuleNames:
+      selectedPlan === 'custom'
+        ? customPlanModules.map((id) => MODULES.find((m) => m.id === id)?.name).filter(Boolean)
+        : [],
     selectedModulesData: selectedModules
       .map((id) => {
         const m = MODULES.find((m) => m.id === id) as any
@@ -1021,6 +1048,11 @@ export default function ContractGeneratorPage() {
     setSelectedPlan(val)
     setIsPlanPriceManual(false)
     setManualPlanPrice('')
+    if (val === 'custom') {
+      setCustomPlanModules([...getPlanDefaultModules('tms-50')])
+      setCustomPlanPrice(0)
+      setCustomPlanName('')
+    }
     if (val === 'tms-30') {
       const tms30ModuleIds = getPlanDefaultModules('tms-30')
       setSelectedModules(tms30ModuleIds)
@@ -1264,6 +1296,15 @@ export default function ContractGeneratorPage() {
       return
     }
 
+    if (selectedPlan === 'custom' && customPlanModules.length === 0) {
+      toast({
+        title: 'Atenção',
+        description: 'Selecione pelo menos um módulo para o Plano Personalizado.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     if (selectedPlan === 'tms-30') {
       const tms30ModuleIds = getPlanDefaultModules('tms-30')
       const hasDisallowedModules = selectedModules.some((id) => !tms30ModuleIds.includes(id))
@@ -1284,9 +1325,19 @@ export default function ContractGeneratorPage() {
     }
 
     const proposalItems = [
-      ...(selectedPlan !== 'none'
-        ? [{ id: selectedPlan, type: 'plan', name: planData?.name, price: planPrice }]
-        : []),
+      ...(selectedPlan === 'custom'
+        ? [
+            {
+              id: 'custom',
+              type: 'custom-plan',
+              name: customPlanName || 'Plano Personalizado',
+              price: customPlanPrice,
+              modules: customPlanModules,
+            },
+          ]
+        : selectedPlan !== 'none'
+          ? [{ id: selectedPlan, type: 'plan', name: planData?.name, price: planPrice }]
+          : []),
       ...selectedModules
         .filter((id) => !MODULES.find((mod) => mod.id === id)?.isBasic)
         .map((id) => {
@@ -1538,6 +1589,15 @@ export default function ContractGeneratorPage() {
       return
     }
 
+    if (selectedPlan === 'custom' && customPlanModules.length === 0) {
+      toast({
+        title: 'Atenção',
+        description: 'Selecione pelo menos um módulo para o Plano Personalizado.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     if (selectedPlan === 'tms-30') {
       const tms30ModuleIds = getPlanDefaultModules('tms-30')
       const nonBasicSelected = selectedModules.filter(
@@ -1620,9 +1680,14 @@ export default function ContractGeneratorPage() {
 
       const modulosFormatados = {
         plano_base:
-          planData?.name !== 'Nenhum'
-            ? planData?.name
-            : existingClient?.modulos?.plano_base || selectedPlan,
+          selectedPlan === 'custom'
+            ? customPlanName || 'Plano Personalizado'
+            : planData?.name !== 'Nenhum'
+              ? planData?.name
+              : existingClient?.modulos?.plano_base || selectedPlan,
+        ...(selectedPlan === 'custom'
+          ? { is_custom_plan: true, modulos_inclusos: customPlanModules }
+          : {}),
         filiais: (existingClient?.modulos?.filiais || 0) + additionalBranches,
         adicionais: newAdicionais.map((a: any) => {
           const m = MODULES.find((mod) => mod.name === a.name)
@@ -1672,6 +1737,7 @@ export default function ContractGeneratorPage() {
           modo_implantacao: implMode,
           modulos: modulosFormatados,
           valor_total: (existingClient.valor_total || 0) + totalValue,
+          ...(selectedPlan === 'custom' ? { valor_mensalidade: totalValue, plano_id: null } : {}),
           desconto_mensalidade: validDescontoMensalidade,
           tipo_desconto: tipoDesconto,
           cobrancas: updatedCobrancas,
@@ -1750,6 +1816,7 @@ export default function ContractGeneratorPage() {
           modo_implantacao: implMode,
           modulos: modulosFormatados,
           valor_total: totalValue,
+          ...(selectedPlan === 'custom' ? { valor_mensalidade: totalValue, plano_id: null } : {}),
           desconto_mensalidade: validDescontoMensalidade,
           tipo_desconto: tipoDesconto,
           cobrancas: updatedCobrancas,
@@ -2269,6 +2336,7 @@ export default function ContractGeneratorPage() {
                                 <SelectItem value="none">
                                   Nenhum (Somente Módulos / Upsell)
                                 </SelectItem>
+                                <SelectItem value="custom">Plano Personalizado</SelectItem>
                                 {PLANS.map((p) => (
                                   <SelectItem key={p.id} value={p.id}>
                                     {p.name} - {formatCurrency(p.price)}
@@ -2277,7 +2345,7 @@ export default function ContractGeneratorPage() {
                               </SelectContent>
                             </Select>
                           </div>
-                          {selectedPlan !== 'none' && (
+                          {selectedPlan !== 'none' && selectedPlan !== 'custom' && (
                             <div className="w-32">
                               <Input
                                 type="number"
@@ -2305,6 +2373,16 @@ export default function ContractGeneratorPage() {
                         </div>
                       </div>
                       <Separator />
+                      {selectedPlan === 'custom' && (
+                        <CustomPlanFields
+                          customPlanName={customPlanName}
+                          setCustomPlanName={setCustomPlanName}
+                          customPlanModules={customPlanModules}
+                          setCustomPlanModules={setCustomPlanModules}
+                          customPlanPrice={customPlanPrice}
+                          setCustomPlanPrice={setCustomPlanPrice}
+                        />
+                      )}
                     </>
                   )}
                   <div className="space-y-3">
@@ -3354,6 +3432,7 @@ export default function ContractGeneratorPage() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">Nenhum (Somente Módulos / Upsell)</SelectItem>
+                            <SelectItem value="custom">Plano Personalizado</SelectItem>
                             {PLANS.map((p) => (
                               <SelectItem key={p.id} value={p.id}>
                                 {p.name} - {formatCurrency(p.price)}
@@ -3379,7 +3458,7 @@ export default function ContractGeneratorPage() {
                             )
                           })()}
                       </div>
-                      {selectedPlan !== 'none' && (
+                      {selectedPlan !== 'none' && selectedPlan !== 'custom' && (
                         <div className="w-32">
                           <Input
                             type="number"
@@ -3407,6 +3486,16 @@ export default function ContractGeneratorPage() {
                     </div>
                   </div>
                   <Separator />
+                  {selectedPlan === 'custom' && (
+                    <CustomPlanFields
+                      customPlanName={customPlanName}
+                      setCustomPlanName={setCustomPlanName}
+                      customPlanModules={customPlanModules}
+                      setCustomPlanModules={setCustomPlanModules}
+                      customPlanPrice={customPlanPrice}
+                      setCustomPlanPrice={setCustomPlanPrice}
+                    />
+                  )}
                   <div className="space-y-3">
                     <Label className="text-sm font-bold">Módulos Adicionais</Label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
