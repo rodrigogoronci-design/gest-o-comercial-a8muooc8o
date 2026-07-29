@@ -1,6 +1,5 @@
 import { formatCurrency } from '@/lib/formatters'
-import logoUrl from '@/assets/logomarca-service-ea011.png'
-import logoUrl from '@/assets/logomarca-service-ea011.png'
+import logoUrlAsset from '@/assets/logomarca-service-ea011.png'
 
 export interface QuoteDocumentProps {
   empresa?: string
