@@ -1,4 +1,6 @@
 import { formatCurrency } from '@/lib/formatters'
+import logoUrl from '@/assets/logomarca-service-ea011.png'
+import logoUrl from '@/assets/logomarca-service-ea011.png'
 
 export interface QuoteDocumentProps {
   empresa?: string
@@ -70,7 +72,7 @@ export function QuoteDocument(props: QuoteDocumentProps) {
     items = [],
     discountValue = 0,
     discountType = 'valor',
-    logoUrl = '/skip.png',
+    logoUrl = logoUrlAsset,
     selectedModulesData = [],
     trainings = [],
   } = props

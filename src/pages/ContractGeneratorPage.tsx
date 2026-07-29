@@ -60,6 +60,7 @@ import { ContractDocument } from '@/components/ContractDocument'
 import { SignedContractUpload } from '@/components/SignedContractUpload'
 import { cn } from '@/lib/utils'
 import { CustomPlanFields } from '@/components/CustomPlanFields'
+import logoUrl from '@/assets/logomarca-service-ea011.png'
 
 const MODULES = [...BASE_MODULES]
 
@@ -917,6 +918,7 @@ export default function ContractGeneratorPage() {
     discountValue: validDescontoMensalidade,
     discountType: tipoDesconto,
     items: quoteItems,
+    logoUrl,
   }
 
   const fetchCnpjData = async (cnpjValue: string) => {
