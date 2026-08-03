@@ -165,6 +165,7 @@ export interface ClienteRecord {
   data_cancelamento?: string | null
   motivo_cancelamento?: string | null
   link_assinatura?: string | null
+  indice_reajuste_ipca?: number | null
 }
 
 type ModuleItem = { name: string; price: number }
@@ -337,6 +338,7 @@ const clientSchema = z.object({
     .default([]),
   data_assinatura: z.string().optional().or(z.literal('')),
   vencimento_mensal: z.number().min(1, 'Dia inválido').max(31, 'Dia inválido').optional(),
+  indice_reajuste_ipca: z.number().min(0).max(100).optional().default(0),
 })
 
 type ClientFormValues = z.infer<typeof clientSchema>
@@ -901,6 +903,7 @@ export default function ClientsPage() {
       quantidade_filiais: 0,
       data_assinatura: '',
       vencimento_mensal: undefined,
+      indice_reajuste_ipca: 0,
       filiais_detalhes: [],
     },
   })
@@ -1129,6 +1132,7 @@ export default function ClientsPage() {
       quantidade_filiais: 0,
       data_assinatura: '',
       vencimento_mensal: undefined,
+      indice_reajuste_ipca: 0,
       filiais_detalhes: [],
     })
     setIsSheetOpen(true)
@@ -1160,6 +1164,7 @@ export default function ClientsPage() {
         0,
       data_assinatura: client.data_assinatura || '',
       vencimento_mensal: client.vencimento_mensal ?? undefined,
+      indice_reajuste_ipca: client.originalData?.indice_reajuste_ipca ?? 0,
       filiais_detalhes: client.originalData?.filiais_detalhes || [],
     })
     setIsSheetOpen(true)
@@ -1398,6 +1403,7 @@ Obrigada,`
       filiais_detalhes: data.filiais_detalhes,
       data_assinatura: data.data_assinatura || null,
       vencimento_mensal: data.vencimento_mensal ?? null,
+      indice_reajuste_ipca: data.indice_reajuste_ipca ?? null,
       plano_id,
       modulos: {
         plano_base: data.plano_base,
@@ -4552,6 +4558,62 @@ Obrigada.`)
                       )}
                     />
                   </div>
+                </div>
+
+                <div className="bg-amber-50 p-4 rounded-lg border border-amber-100 mt-6 space-y-3">
+                  <FormField
+                    control={form.control}
+                    name="indice_reajuste_ipca"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-amber-900 font-semibold text-sm">
+                          Índice de Reajuste Anual (IPCA) - %
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="100"
+                            placeholder="Ex: 5.00"
+                            value={field.value ?? ''}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            className="bg-white text-lg h-12 text-amber-700 border-amber-200 font-bold"
+                          />
+                        </FormControl>
+                        <p className="text-xs text-amber-600/80 mt-1">
+                          Informe o percentual do IPCA para cálculo do reajuste anual do contrato.
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {(form.watch('indice_reajuste_ipca') || 0) > 0 && (
+                    <div className="bg-white p-3 rounded-md border border-amber-200 space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-600">Valor Mensal Atual:</span>
+                        <span className="font-medium text-slate-800">
+                          {formatCurrency(form.watch('valor_total') || 0)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-600">Índice IPCA:</span>
+                        <span className="font-medium text-amber-700">
+                          {form.watch('indice_reajuste_ipca')}%
+                        </span>
+                      </div>
+                      <Separator className="my-2" />
+                      <div className="flex justify-between text-base">
+                        <span className="font-bold text-amber-900">Valor Reajustado:</span>
+                        <span className="font-bold text-emerald-700">
+                          {formatCurrency(
+                            (form.watch('valor_total') || 0) *
+                              (1 + (form.watch('indice_reajuste_ipca') || 0) / 100),
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-6 flex justify-end gap-3">
