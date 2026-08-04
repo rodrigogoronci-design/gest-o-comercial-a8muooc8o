@@ -15,9 +15,12 @@ import {
   GraduationCap,
   Calendar,
   MessageSquare,
+  ClipboardList,
 } from 'lucide-react'
 import { useUserRole } from '@/hooks/use-user-role'
 import { getOrCreateOnboardingToken, generateOnboardingUrl } from '@/services/onboarding'
+import { getOrCreateConsultoriaToken, generateConsultoriaUrl } from '@/services/consultoria'
+import { ConsultoriaResponses } from '@/components/ConsultoriaResponses'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -81,6 +84,7 @@ const TIPO_CONFIG: Record<string, { label: string; color: string }> = {
     color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   },
   treinamento: { label: 'Treinamento', color: 'bg-violet-50 text-violet-700 border-violet-200' },
+  consultoria: { label: 'Consultoria', color: 'bg-amber-50 text-amber-700 border-amber-200' },
 }
 
 const CATEGORIA_ORDER = [
@@ -114,6 +118,7 @@ export default function ImplementacaoDetailPage() {
   const [ratFile, setRatFile] = useState<File | null>(null)
   const [formData, setFormData] = useState<any>({})
   const [sharingOnboarding, setSharingOnboarding] = useState(false)
+  const [sharingConsultoria, setSharingConsultoria] = useState(false)
   const { isFinancialRestricted } = useUserRole()
 
   useEffect(() => {
@@ -270,6 +275,23 @@ export default function ImplementacaoDetailPage() {
     }
   }
 
+  const handleShareConsultoria = async () => {
+    if (!impl) return
+    setSharingConsultoria(true)
+    try {
+      const token = await getOrCreateConsultoriaToken(impl.id)
+      const consultoriaUrl = generateConsultoriaUrl(token)
+      const message = encodeURIComponent(
+        `Olá! Precisamos que você preencha o formulário de início da consultoria. Acesse o link: ${consultoriaUrl}`,
+      )
+      window.open(`https://wa.me/?text=${message}`, '_blank', 'noopener,noreferrer')
+    } catch (error: any) {
+      toast.error('Erro ao gerar link do formulário: ' + (error.message || ''))
+    } finally {
+      setSharingConsultoria(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -356,21 +378,39 @@ export default function ImplementacaoDetailPage() {
           <Badge variant="outline" className={cn('text-sm', STATUS_CONFIG[impl.status]?.color)}>
             {impl.status}
           </Badge>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleShareWhatsapp}
-            disabled={sharingOnboarding}
-            style={{ borderColor: '#25D366', color: '#25D366' }}
-            className="hover:bg-[#25D366] hover:text-white"
-          >
-            {sharingOnboarding ? (
-              <Loader2 className="h-4 w-4 sm:mr-1.5 animate-spin" />
-            ) : (
-              <MessageSquare className="h-4 w-4 sm:mr-1.5" />
-            )}
-            <span className="hidden sm:inline">Enviar via WhatsApp</span>
-          </Button>
+          {impl.tipo === 'consultoria' ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShareConsultoria}
+              disabled={sharingConsultoria}
+              style={{ borderColor: '#25D366', color: '#25D366' }}
+              className="hover:bg-[#25D366] hover:text-white"
+            >
+              {sharingConsultoria ? (
+                <Loader2 className="h-4 w-4 sm:mr-1.5 animate-spin" />
+              ) : (
+                <MessageSquare className="h-4 w-4 sm:mr-1.5" />
+              )}
+              <span className="hidden sm:inline">Enviar Formulário</span>
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShareWhatsapp}
+              disabled={sharingOnboarding}
+              style={{ borderColor: '#25D366', color: '#25D366' }}
+              className="hover:bg-[#25D366] hover:text-white"
+            >
+              {sharingOnboarding ? (
+                <Loader2 className="h-4 w-4 sm:mr-1.5 animate-spin" />
+              ) : (
+                <MessageSquare className="h-4 w-4 sm:mr-1.5" />
+              )}
+              <span className="hidden sm:inline">Enviar via WhatsApp</span>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -480,6 +520,32 @@ export default function ImplementacaoDetailPage() {
         </Card>
       )}
 
+      {impl.tipo === 'consultoria' && (
+        <Card>
+          <CardContent className="p-6 space-y-3">
+            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+              <ClipboardList className="h-4 w-4 text-amber-600" />
+              Detalhes da Consultoria
+            </h3>
+            {impl.consultoria_titulo && (
+              <div className="flex items-start gap-2">
+                <span className="text-sm text-muted-foreground min-w-[100px]">Título:</span>
+                <span className="text-sm font-medium">{impl.consultoria_titulo}</span>
+              </div>
+            )}
+            {impl.consultoria_texto && (
+              <div className="flex items-start gap-2">
+                <span className="text-sm text-muted-foreground min-w-[100px]">Texto:</span>
+                <p className="text-sm whitespace-pre-wrap">{impl.consultoria_texto}</p>
+              </div>
+            )}
+            <p className="text-xs text-amber-600">
+              Service Logic | {impl.clientes?.nome || 'Cliente'}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {impl.solicitacao_id && (
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
@@ -510,6 +576,10 @@ export default function ImplementacaoDetailPage() {
         dadosParametrizacao={impl.dados_parametrizacao}
         implementacaoId={impl.id}
       />
+
+      {impl.tipo === 'consultoria' && impl.consultoria_form_data && (
+        <ConsultoriaResponses data={impl.consultoria_form_data} />
+      )}
 
       {CATEGORIA_ORDER.map((categoria) => {
         const etapas = etapasByCategoria[categoria]

@@ -44,12 +44,14 @@ export const createImplementacao = async (params: {
   cliente_id: string
   contrato_id?: string | null
   responsavel_id?: string | null
-  tipo?: 'novo_cliente' | 'inclusao_modulo' | 'treinamento'
+  tipo?: 'novo_cliente' | 'inclusao_modulo' | 'treinamento' | 'consultoria'
   solicitacao_id?: string | null
   modulos_novos?: string[]
   treinamento_motivo?: string | null
   treinamento_topicos?: string | null
   treinamento_data?: string | null
+  consultoria_titulo?: string | null
+  consultoria_texto?: string | null
 }) => {
   const tipo = params.tipo || 'novo_cliente'
 
@@ -105,6 +107,8 @@ export const createImplementacao = async (params: {
       treinamento_motivo: params.treinamento_motivo || null,
       treinamento_topicos: params.treinamento_topicos || null,
       treinamento_data: params.treinamento_data || null,
+      consultoria_titulo: params.consultoria_titulo || null,
+      consultoria_texto: params.consultoria_texto || null,
       dados_parametrizacao: dadosParametrizacao,
     })
     .select()
@@ -146,7 +150,13 @@ async function recalcProgress(implementacaoId: string) {
 
   if (impl?.status === 'Encerrado') return
 
-  const newStatus = progresso === 100 ? 'Finalizada' : 'Em andamento'
+  const preserveStatuses = ['consultoria_recebido', 'onboarding_recebido', 'onboarding_completed']
+  const newStatus =
+    progresso === 100
+      ? 'Finalizada'
+      : preserveStatuses.includes(impl?.status)
+        ? impl.status
+        : 'Em andamento'
   await supabase
     .from('implementacoes' as any)
     .update({ progresso, status: newStatus })
@@ -275,12 +285,14 @@ export const getSolicitacoes = async () => {
 export const createImplementacaoFromAtendimento = async (params: {
   atendimento_id: string
   cliente_id: string
-  tipo: 'novo_cliente' | 'inclusao_modulo' | 'treinamento'
+  tipo: 'novo_cliente' | 'inclusao_modulo' | 'treinamento' | 'consultoria'
   responsavel_id?: string | null
   modulos_novos?: string[]
   treinamento_motivo?: string | null
   treinamento_topicos?: string | null
   treinamento_data?: string | null
+  consultoria_titulo?: string | null
+  consultoria_texto?: string | null
 }) => {
   const { data, error } = await supabase
     .from('implementacoes' as any)
@@ -295,6 +307,8 @@ export const createImplementacaoFromAtendimento = async (params: {
       treinamento_motivo: params.treinamento_motivo || null,
       treinamento_topicos: params.treinamento_topicos || null,
       treinamento_data: params.treinamento_data || null,
+      consultoria_titulo: params.consultoria_titulo || null,
+      consultoria_texto: params.consultoria_texto || null,
     })
     .select()
     .single()

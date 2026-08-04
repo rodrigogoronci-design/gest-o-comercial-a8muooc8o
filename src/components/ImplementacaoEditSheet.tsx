@@ -174,7 +174,9 @@ export function ImplementacaoEditSheet({ open, onOpenChange, implementacaoId, on
                       ? 'Inclusão de Módulo'
                       : impl?.tipo === 'treinamento'
                         ? 'Treinamento'
-                        : 'Novo Cliente'
+                        : impl?.tipo === 'consultoria'
+                          ? 'Consultoria'
+                          : 'Novo Cliente'
                   }
                   disabled
                   className="bg-slate-50"

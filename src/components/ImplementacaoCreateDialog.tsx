@@ -22,6 +22,7 @@ import { Loader2, Plus, X } from 'lucide-react'
 import { createImplementacao, getColaboradores, getSolicitacoes } from '@/services/implementacoes'
 import { getClientes } from '@/services/clientes'
 import { toast } from 'sonner'
+import { CONSULTORIA_DEFAULT_TITULO, CONSULTORIA_DEFAULT_TEXTO } from '@/lib/consultoria-config'
 
 interface Props {
   open: boolean
@@ -34,9 +35,9 @@ export function ImplementacaoCreateDialog({ open, onOpenChange, onCreated }: Pro
   const [clientes, setClientes] = useState<any[]>([])
   const [colaboradores, setColaboradores] = useState<any[]>([])
   const [solicitacoes, setSolicitacoes] = useState<any[]>([])
-  const [tipo, setTipo] = useState<'novo_cliente' | 'inclusao_modulo' | 'treinamento'>(
-    'novo_cliente',
-  )
+  const [tipo, setTipo] = useState<
+    'novo_cliente' | 'inclusao_modulo' | 'treinamento' | 'consultoria'
+  >('novo_cliente')
   const [clienteId, setClienteId] = useState('')
   const [responsavelId, setResponsavelId] = useState('')
   const [solicitacaoId, setSolicitacaoId] = useState('')
@@ -44,6 +45,8 @@ export function ImplementacaoCreateDialog({ open, onOpenChange, onCreated }: Pro
   const [treinamentoMotivo, setTreinamentoMotivo] = useState('')
   const [treinamentoTopicos, setTreinamentoTopicos] = useState('')
   const [treinamentoData, setTreinamentoData] = useState('')
+  const [consultoriaTitulo, setConsultoriaTitulo] = useState(CONSULTORIA_DEFAULT_TITULO)
+  const [consultoriaTexto, setConsultoriaTexto] = useState(CONSULTORIA_DEFAULT_TEXTO)
 
   useEffect(() => {
     if (open) {
@@ -73,6 +76,8 @@ export function ImplementacaoCreateDialog({ open, onOpenChange, onCreated }: Pro
         treinamento_motivo: tipo === 'treinamento' ? treinamentoMotivo || null : null,
         treinamento_topicos: tipo === 'treinamento' ? treinamentoTopicos || null : null,
         treinamento_data: tipo === 'treinamento' ? treinamentoData || null : null,
+        consultoria_titulo: tipo === 'consultoria' ? consultoriaTitulo || null : null,
+        consultoria_texto: tipo === 'consultoria' ? consultoriaTexto || null : null,
       })
       toast.success('Implementação criada com sucesso!')
       onOpenChange(false)
@@ -85,6 +90,8 @@ export function ImplementacaoCreateDialog({ open, onOpenChange, onCreated }: Pro
       setTreinamentoMotivo('')
       setTreinamentoTopicos('')
       setTreinamentoData('')
+      setConsultoriaTitulo(CONSULTORIA_DEFAULT_TITULO)
+      setConsultoriaTexto(CONSULTORIA_DEFAULT_TEXTO)
     } catch (error: any) {
       toast.error('Erro ao criar implementação: ' + (error.message || ''))
     } finally {
@@ -112,6 +119,7 @@ export function ImplementacaoCreateDialog({ open, onOpenChange, onCreated }: Pro
                 <SelectItem value="novo_cliente">Novo Cliente</SelectItem>
                 <SelectItem value="inclusao_modulo">Inclusão de Módulo</SelectItem>
                 <SelectItem value="treinamento">Treinamento</SelectItem>
+                <SelectItem value="consultoria">Consultoria</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -223,6 +231,31 @@ export function ImplementacaoCreateDialog({ open, onOpenChange, onCreated }: Pro
                   value={treinamentoData}
                   onChange={(e) => setTreinamentoData(e.target.value)}
                 />
+              </div>
+            </>
+          )}
+          {tipo === 'consultoria' && (
+            <>
+              <div className="space-y-2">
+                <Label>Título da Consultoria</Label>
+                <Input
+                  value={consultoriaTitulo}
+                  onChange={(e) => setConsultoriaTitulo(e.target.value)}
+                  placeholder="Título exibido no formulário enviado ao cliente"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Texto Introdutório</Label>
+                <Textarea
+                  value={consultoriaTexto}
+                  onChange={(e) => setConsultoriaTexto(e.target.value)}
+                  placeholder="Texto exibido no início do formulário"
+                  rows={5}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Este texto será exibido no formulário enviado ao cliente. O nome da empresa
+                  (Service Logic | Cliente) é gerado automaticamente.
+                </p>
               </div>
             </>
           )}

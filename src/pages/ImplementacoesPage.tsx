@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Rocket, Eye, Pencil, Lock, Plus, Package, GraduationCap } from 'lucide-react'
+import { Rocket, Eye, Pencil, Lock, Plus, Package, GraduationCap, Briefcase } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   Table,
@@ -28,6 +28,7 @@ const TIPO_ICONS: Record<string, any> = {
   novo_cliente: Rocket,
   inclusao_modulo: Package,
   treinamento: GraduationCap,
+  consultoria: Briefcase,
 }
 
 export default function ImplementacoesPage() {
@@ -200,6 +201,7 @@ export default function ImplementacoesPage() {
           { key: 'novo_cliente', label: 'Novo Cliente' },
           { key: 'inclusao_modulo', label: 'Inclusão de Módulo' },
           { key: 'treinamento', label: 'Treinamentos' },
+          { key: 'consultoria', label: 'Consultorias' },
         ].map((f) => (
           <Button
             key={f.key}
@@ -217,6 +219,9 @@ export default function ImplementacoesPage() {
               tipoFilter === f.key &&
                 f.key === 'treinamento' &&
                 'bg-violet-100 text-violet-700 hover:bg-violet-200',
+              tipoFilter === f.key &&
+                f.key === 'consultoria' &&
+                'bg-amber-100 text-amber-700 hover:bg-amber-200',
             )}
           >
             {f.label}

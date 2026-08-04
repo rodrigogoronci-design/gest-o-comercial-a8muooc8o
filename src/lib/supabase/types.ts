@@ -880,6 +880,7 @@ export type Database = {
           endereco: string | null
           filiais_detalhes: Json | null
           id: string
+          indice_reajuste_ipca: number | null
           link_assinatura: string | null
           modo_implantacao: string | null
           modulos: Json | null
@@ -915,6 +916,7 @@ export type Database = {
           endereco?: string | null
           filiais_detalhes?: Json | null
           id?: string
+          indice_reajuste_ipca?: number | null
           link_assinatura?: string | null
           modo_implantacao?: string | null
           modulos?: Json | null
@@ -950,6 +952,7 @@ export type Database = {
           endereco?: string | null
           filiais_detalhes?: Json | null
           id?: string
+          indice_reajuste_ipca?: number | null
           link_assinatura?: string | null
           modo_implantacao?: string | null
           modulos?: Json | null

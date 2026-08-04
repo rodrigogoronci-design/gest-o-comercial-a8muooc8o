@@ -61,6 +61,19 @@ export const ETAPAS_TREINAMENTO: EtapaTemplate[] = [
   { titulo: 'Termo de Encerramento', categoria: 'Encerramento', ordem: 6, semana: 3 },
 ]
 
+export const ETAPAS_CONSULTORIA: EtapaTemplate[] = [
+  { titulo: 'Handover Comercial', categoria: 'Pré-Consultoria', ordem: 1, semana: 0 },
+  { titulo: 'Kick-off', categoria: 'Pré-Consultoria', ordem: 2, semana: 0 },
+  { titulo: 'Envio do Formulário de Início', categoria: 'Pré-Consultoria', ordem: 3, semana: 0 },
+  { titulo: 'Recebimento das Informações', categoria: 'Análise', ordem: 4, semana: 1 },
+  { titulo: 'Análise Documental', categoria: 'Análise', ordem: 5, semana: 2 },
+  { titulo: 'Diagnóstico Operacional', categoria: 'Análise', ordem: 6, semana: 3 },
+  { titulo: 'Elaboração de Recomendações', categoria: 'Execução', ordem: 7, semana: 4 },
+  { titulo: 'Apresentação de Resultados', categoria: 'Execução', ordem: 8, semana: 5 },
+  { titulo: 'Entrega de Documentação', categoria: 'Encerramento', ordem: 9, semana: 6 },
+  { titulo: 'Termo de Encerramento', categoria: 'Encerramento', ordem: 10, semana: 6 },
+]
+
 export const TIPO_CONFIG: Record<string, { label: string; color: string }> = {
   novo_cliente: { label: 'Novo Cliente', color: 'bg-blue-50 text-blue-700 border-blue-200' },
   inclusao_modulo: {
@@ -68,6 +81,7 @@ export const TIPO_CONFIG: Record<string, { label: string; color: string }> = {
     color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   },
   treinamento: { label: 'Treinamento', color: 'bg-violet-50 text-violet-700 border-violet-200' },
+  consultoria: { label: 'Consultoria', color: 'bg-amber-50 text-amber-700 border-amber-200' },
 }
 
 export function getEtapasForTipo(tipo: string): EtapaTemplate[] {
@@ -76,6 +90,8 @@ export function getEtapasForTipo(tipo: string): EtapaTemplate[] {
       return ETAPAS_INCLUSAO_MODULO
     case 'treinamento':
       return ETAPAS_TREINAMENTO
+    case 'consultoria':
+      return ETAPAS_CONSULTORIA
     default:
       return ETAPAS_NOVO_CLIENTE
   }
