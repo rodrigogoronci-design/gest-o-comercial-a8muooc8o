@@ -262,6 +262,22 @@ export const uploadRat = async (file: File, implementacaoId: string, etapaId: st
   return publicUrlData.publicUrl
 }
 
+export const deleteImplementacao = async (id: string) => {
+  const { data: arquivos } = await supabase
+    .from('implementacao_arquivos' as any)
+    .select('file_path')
+    .eq('implementacao_id', id)
+  if (arquivos && arquivos.length > 0) {
+    const filePaths = arquivos.map((a: any) => a.file_path)
+    await supabase.storage.from('implementation-docs').remove(filePaths)
+  }
+  const { error } = await supabase
+    .from('implementacoes' as any)
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
 export const getColaboradores = async () => {
   const { data, error } = await supabase
     .from('colaboradores')

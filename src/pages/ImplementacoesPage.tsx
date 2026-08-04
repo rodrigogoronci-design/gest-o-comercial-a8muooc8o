@@ -1,6 +1,27 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Rocket, Eye, Pencil, Lock, Plus, Package, GraduationCap, Briefcase } from 'lucide-react'
+import {
+  Rocket,
+  Eye,
+  Pencil,
+  Lock,
+  Plus,
+  Package,
+  GraduationCap,
+  Briefcase,
+  Trash2,
+} from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { deleteImplementacao } from '@/services/implementacoes'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   Table,
@@ -41,6 +62,9 @@ export default function ImplementacoesPage() {
   const [editId, setEditId] = useState<string | null>(null)
   const [editOpen, setEditOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [sortField, setSortField] = useState<'progresso' | 'data_prevista' | null>(null)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const { user } = useAuth()
@@ -130,6 +154,22 @@ export default function ImplementacoesPage() {
       }
       return sortDir === 'asc' ? cmp : -cmp
     })
+
+  const handleDelete = async () => {
+    if (!deleteId) return
+    setIsDeleting(true)
+    try {
+      await deleteImplementacao(deleteId)
+      toast.success('Implementação excluída com sucesso!')
+      setDeleteOpen(false)
+      setDeleteId(null)
+      loadImplementacoes()
+    } catch (error: any) {
+      toast.error('Erro ao excluir implementação: ' + (error.message || ''))
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   const statusColors: Record<string, string> = {
     'Em andamento': 'bg-blue-50 text-blue-700 border-blue-200',
@@ -351,6 +391,17 @@ export default function ImplementacoesPage() {
                               <Eye className="h-4 w-4" />
                             </Link>
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => {
+                              setDeleteId(impl.id)
+                              setDeleteOpen(true)
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -373,6 +424,36 @@ export default function ImplementacoesPage() {
         onOpenChange={setCreateOpen}
         onCreated={loadImplementacoes}
       />
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Implementação</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta implementação? Esta ação não pode ser desfeita.
+              Todos os dados relacionados (etapas e arquivos) serão permanentemente removidos. O
+              registro do cliente não será afetado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setDeleteId(null)
+                setDeleteOpen(false)
+              }}
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
