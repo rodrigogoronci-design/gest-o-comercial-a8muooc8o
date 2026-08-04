@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   Building2,
 } from 'lucide-react'
+import logoUrl from '@/assets/logomarca-service-ea011.png'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -150,6 +151,13 @@ export default function ConsultoriaFormPage() {
       <Card className="shadow-xl border-slate-200/80">
         <CardContent className="p-6 sm:p-8">
           <div className="mb-6">
+            <div className="flex justify-center mb-4">
+              <img
+                src={logoUrl}
+                alt="Service Logic"
+                className="h-10 sm:h-12 w-auto object-contain"
+              />
+            </div>
             <div className="flex items-center gap-2 mb-1">
               <Building2 className="h-5 w-5 text-amber-600" />
               <h1 className="text-lg font-bold text-slate-800">Formulário de Início do Projeto</h1>

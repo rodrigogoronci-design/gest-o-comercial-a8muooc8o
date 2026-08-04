@@ -2128,6 +2128,10 @@ export type Database = {
         Row: {
           atendimento_id: string | null
           cliente_id: string | null
+          consultoria_form_data: Json | null
+          consultoria_texto: string | null
+          consultoria_titulo: string | null
+          consultoria_token: string | null
           contrato_id: string | null
           created_at: string
           dados_parametrizacao: Json | null
@@ -2146,6 +2150,10 @@ export type Database = {
         Insert: {
           atendimento_id?: string | null
           cliente_id?: string | null
+          consultoria_form_data?: Json | null
+          consultoria_texto?: string | null
+          consultoria_titulo?: string | null
+          consultoria_token?: string | null
           contrato_id?: string | null
           created_at?: string
           dados_parametrizacao?: Json | null
@@ -2164,6 +2172,10 @@ export type Database = {
         Update: {
           atendimento_id?: string | null
           cliente_id?: string | null
+          consultoria_form_data?: Json | null
+          consultoria_texto?: string | null
+          consultoria_titulo?: string | null
+          consultoria_token?: string | null
           contrato_id?: string | null
           created_at?: string
           dados_parametrizacao?: Json | null
@@ -3431,6 +3443,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_consultoria_form: { Args: { p_token: string }; Returns: Json }
       get_current_colaborador_id: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
       get_implementacao_onboarding: { Args: { p_token: string }; Returns: Json }
@@ -3448,6 +3461,10 @@ export type Database = {
       is_in_my_team: { Args: { target_colab_id: string }; Returns: boolean }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { '': string }; Returns: string[] }
+      submit_consultoria_form: {
+        Args: { p_data: Json; p_token: string }
+        Returns: boolean
+      }
       submit_onboarding: {
         Args: { p_arquivos?: Json; p_data: Json; p_token: string }
         Returns: boolean
