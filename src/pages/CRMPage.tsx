@@ -1286,15 +1286,23 @@ export default function CRMPage() {
                   <strong>Assunto:</strong> Proposta Comercial – {sendingEmailData.prospect.empresa}
                   {'\n'}
                   <hr className="my-2 border-slate-200" />
-                  Prezado(a) {sendingEmailData.prospect.contato_nome},{'\n\n'}
-                  Espero que esteja bem.{'\n\n'}
-                  Conforme alinhado em nossa conversa e apresentação do sistema, segue em anexo a
-                  sua proposta comercial com a solução mais adequada para a sua operação.{'\n\n'}A
-                  cotação foi elaborada com base nas informações levantadas durante nosso
-                  atendimento e contempla as melhores condições disponíveis no momento.{'\n\n'}
-                  Caso tenha qualquer dúvida ou precise de algum ajuste na proposta, estou à
-                  disposição para te auxiliar.{'\n\n'}
-                  Fico no aguardo do seu retorno para darmos sequência.{'\n\n'}
+                  Olá, {sendingEmailData.prospect.contato_nome}
+                  {'\n\n'}
+                  Conforme nossa conversa, encaminho em anexo a proposta comercial da Service Logic,
+                  elaborada de acordo com as necessidades apresentadas pela{' '}
+                  {sendingEmailData.prospect.empresa}
+                  {'\n\n'}
+                  Nossa solução foi desenvolvida para proporcionar mais controle, agilidade e
+                  segurança na gestão da transportadora, integrando os processos operacionais,
+                  financeiros, fiscais e logísticos em uma única plataforma.{'\n\n'}
+                  Na proposta você encontrará todos os detalhes da solução, os módulos contemplados,
+                  valores e as condições comerciais. Caso tenha qualquer dúvida ou deseje analisar
+                  algum ponto em conjunto, estarei à disposição para apresentar a proposta e
+                  esclarecer todas as informações necessárias.{'\n\n'}
+                  Após a aprovação, seguiremos com as próximas etapas, que incluem a assinatura
+                  eletrônica do contrato, envio da documentação, parametrização do sistema,
+                  treinamentos e acompanhamento da implantação até o início da operação.{'\n\n'}
+                  Agradeço pela oportunidade e fico no aguardo do seu retorno.{'\n\n'}
                   Atenciosamente,{'\n'}
                   {user?.user_metadata?.name || 'Comercial'}
                 </div>

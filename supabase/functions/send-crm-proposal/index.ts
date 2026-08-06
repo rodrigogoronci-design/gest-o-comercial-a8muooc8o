@@ -55,17 +55,17 @@ Deno.serve(async (req: Request) => {
 
     let emailBody =
       customMessage ||
-      `Prezado(a) ${contactName},
+      `Olá, ${contactName}
 
-Espero que esteja bem.
+Conforme nossa conversa, encaminho em anexo a proposta comercial da Service Logic, elaborada de acordo com as necessidades apresentadas pela ${companyName}
 
-Conforme alinhado em nossa conversa e apresentação do sistema, segue em anexo a sua proposta comercial com a solução mais adequada para a sua operação.
+Nossa solução foi desenvolvida para proporcionar mais controle, agilidade e segurança na gestão da transportadora, integrando os processos operacionais, financeiros, fiscais e logísticos em uma única plataforma.
 
-A cotação foi elaborada com base nas informações levantadas durante nosso atendimento e contempla as melhores condições disponíveis no momento.
+Na proposta você encontrará todos os detalhes da solução, os módulos contemplados, valores e as condições comerciais. Caso tenha qualquer dúvida ou deseje analisar algum ponto em conjunto, estarei à disposição para apresentar a proposta e esclarecer todas as informações necessárias.
 
-Caso tenha qualquer dúvida ou precise de algum ajuste na proposta, estou à disposição para te auxiliar.
+Após a aprovação, seguiremos com as próximas etapas, que incluem a assinatura eletrônica do contrato, envio da documentação, parametrização do sistema, treinamentos e acompanhamento da implantação até o início da operação.
 
-Fico no aguardo do seu retorno para darmos sequência.
+Agradeço pela oportunidade e fico no aguardo do seu retorno.
 
 Atenciosamente,
 ${senderName || 'Comercial'}`

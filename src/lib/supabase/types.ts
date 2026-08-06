@@ -2128,6 +2128,7 @@ export type Database = {
         Row: {
           atendimento_id: string | null
           cliente_id: string | null
+          cliente_nome: string | null
           consultoria_form_data: Json | null
           consultoria_texto: string | null
           consultoria_titulo: string | null
@@ -2150,6 +2151,7 @@ export type Database = {
         Insert: {
           atendimento_id?: string | null
           cliente_id?: string | null
+          cliente_nome?: string | null
           consultoria_form_data?: Json | null
           consultoria_texto?: string | null
           consultoria_titulo?: string | null
@@ -2172,6 +2174,7 @@ export type Database = {
         Update: {
           atendimento_id?: string | null
           cliente_id?: string | null
+          cliente_nome?: string | null
           consultoria_form_data?: Json | null
           consultoria_texto?: string | null
           consultoria_titulo?: string | null

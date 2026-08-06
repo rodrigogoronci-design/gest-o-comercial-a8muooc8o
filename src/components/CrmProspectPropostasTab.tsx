@@ -9,7 +9,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/hooks/use-auth'
 import { supabase } from '@/lib/supabase/client'
 import { CrmPropostaForm, type PropostaFormValues } from './CrmPropostaForm'
 import { CrmPropostaUpload } from './CrmPropostaUpload'
@@ -41,8 +51,11 @@ export function CrmProspectPropostasTab({
   const [availableModules, setAvailableModules] = useState<any[]>([])
   const [selectedProposta, setSelectedProposta] = useState<any>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [sendingProposal, setSendingProposal] = useState<any | null>(null)
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
 
   const { toast } = useToast()
+  const { user } = useAuth()
 
   const loadPropostas = async () => {
     if (!prospectId && !clienteId) {
@@ -98,19 +111,64 @@ export function CrmProspectPropostasTab({
     setLoading(false)
   }
 
-  const handleOpenEmailModal = (p: any) => {
-    const subject = encodeURIComponent(`Proposta Comercial - ${prospectName}`)
-    const body = encodeURIComponent(
-      `Olá ${p.aos_cuidados_de || prospectName},\n\nSegue o link para acesso à nossa proposta comercial:\n${p.documento_url || 'Documento não anexado'}\n\nFicamos à disposição para qualquer dúvida.\n\nAtenciosamente,`,
-    )
-    const email = entityData?.email || ''
+  const handleSendProposalClick = (p: any) => {
+    if (!entityData?.email) {
+      toast({
+        title: 'E-mail não cadastrado',
+        description: 'Cadastre um e-mail no cadastro do contato antes de enviar a proposta.',
+        variant: 'destructive',
+      })
+      return
+    }
+    setSendingProposal(p)
+  }
 
-    window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank')
+  const handleConfirmSendProposal = async () => {
+    if (!sendingProposal) return
+    const senderName = user?.user_metadata?.name || 'Comercial'
+    setIsSendingEmail(true)
 
-    handleUpdateProposta(p.id, {
+    const { error } = await supabase.functions.invoke('send-crm-proposal', {
+      body: {
+        to: entityData?.email,
+        companyName: prospectName,
+        contactName: sendingProposal.aos_cuidados_de || entityData?.contato_nome || prospectName,
+        senderName,
+        proposalId: sendingProposal.id,
+        proposalUrl: sendingProposal.documento_url,
+      },
+    })
+
+    setIsSendingEmail(false)
+
+    if (error) {
+      toast({
+        title: 'Falha ao enviar e-mail',
+        description: error.message || 'Ocorreu um erro desconhecido.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    toast({ title: 'Sucesso', description: 'E-mail enviado com sucesso!' })
+
+    await handleUpdateProposta(sendingProposal.id, {
       status_negociacao: 'Enviada',
       data_envio: new Date().toISOString(),
     })
+
+    if (prospectId) {
+      await supabase.from('crm_historico_interacoes').insert([
+        {
+          prospect_id: prospectId,
+          tipo_contato: 'E-mail',
+          resumo: 'Envio de Proposta',
+          detalhes: 'Proposta comercial enviada por e-mail com sucesso.',
+        },
+      ])
+    }
+
+    setSendingProposal(null)
   }
 
   useEffect(() => {
@@ -404,7 +462,7 @@ export function CrmProspectPropostasTab({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleOpenEmailModal(p)}
+                    onClick={() => handleSendProposalClick(p)}
                     className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-8 px-2"
                     disabled={!p.documento_url}
                   >
@@ -475,6 +533,87 @@ export function CrmProspectPropostasTab({
           ))}
         </div>
       )}
+
+      <Dialog open={!!sendingProposal} onOpenChange={(open) => !open && setSendingProposal(null)}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Enviar Proposta por E-mail</DialogTitle>
+            <DialogDescription>
+              Revise a mensagem antes de enviar para <strong>{prospectName}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          {sendingProposal && (
+            <div className="space-y-4 py-4">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-slate-700">Destinatário:</span>
+                <Input value={entityData?.email || ''} readOnly className="bg-slate-50" />
+              </div>
+
+              {!sendingProposal.documento_url ? (
+                <Alert className="bg-amber-50 border-amber-200 text-amber-800">
+                  <AlertTitle className="text-sm font-semibold">Atenção!</AlertTitle>
+                  <AlertDescription className="text-xs">
+                    Esta proposta não possui um documento PDF vinculado. O e-mail será enviado sem
+                    anexo.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Alert className="bg-emerald-50 border-emerald-200 text-emerald-800">
+                  <AlertTitle className="text-sm font-semibold">Documento Anexado</AlertTitle>
+                  <AlertDescription className="text-xs flex items-center gap-1">
+                    <FileText className="h-3.5 w-3.5" />O PDF da proposta será anexado
+                    automaticamente ao e-mail.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-slate-700">
+                  Pré-visualização do e-mail:
+                </span>
+                <div className="border border-slate-200 rounded-md p-4 bg-slate-50 text-sm whitespace-pre-wrap font-sans text-slate-800 h-64 overflow-y-auto">
+                  <strong>Assunto:</strong> Proposta Comercial – {prospectName}
+                  {'\n'}
+                  <hr className="my-2 border-slate-200" />
+                  Olá, {sendingProposal.aos_cuidados_de || entityData?.contato_nome || prospectName}
+                  {'\n\n'}
+                  Conforme nossa conversa, encaminho em anexo a proposta comercial da Service Logic,
+                  elaborada de acordo com as necessidades apresentadas pela {prospectName}
+                  {'\n\n'}
+                  Nossa solução foi desenvolvida para proporcionar mais controle, agilidade e
+                  segurança na gestão da transportadora, integrando os processos operacionais,
+                  financeiros, fiscais e logísticos em uma única plataforma.{'\n\n'}
+                  Na proposta você encontrará todos os detalhes da solução, os módulos contemplados,
+                  valores e as condições comerciais. Caso tenha qualquer dúvida ou deseje analisar
+                  algum ponto em conjunto, estarei à disposição para apresentar a proposta e
+                  esclarecer todas as informações necessárias.{'\n\n'}
+                  Após a aprovação, seguiremos com as próximas etapas, que incluem a assinatura
+                  eletrônica do contrato, envio da documentação, parametrização do sistema,
+                  treinamentos e acompanhamento da implantação até o início da operação.{'\n\n'}
+                  Agradeço pela oportunidade e fico no aguardo do seu retorno.{'\n\n'}
+                  Atenciosamente,{'\n'}
+                  {user?.user_metadata?.name || 'Comercial'}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setSendingProposal(null)}
+              disabled={isSendingEmail}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmSendProposal} disabled={isSendingEmail} className="gap-2">
+              <Send className="h-4 w-4" />
+              {isSendingEmail ? 'Enviando...' : 'Enviar E-mail'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
