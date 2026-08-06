@@ -366,7 +366,9 @@ export default function ImplementacaoDetailPage() {
           </Link>
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold tracking-tight">{impl.clientes?.nome}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {impl.clientes?.nome || impl.cliente_nome}
+          </h1>
           <p className="text-sm text-muted-foreground">Projeto de Implantação</p>
         </div>
         <div className="flex items-center gap-2">
@@ -540,7 +542,7 @@ export default function ImplementacaoDetailPage() {
               </div>
             )}
             <p className="text-xs text-amber-600">
-              Service Logic | {impl.clientes?.nome || 'Cliente'}
+              Service Logic | {impl.clientes?.nome || impl.cliente_nome || 'Cliente'}
             </p>
           </CardContent>
         </Card>

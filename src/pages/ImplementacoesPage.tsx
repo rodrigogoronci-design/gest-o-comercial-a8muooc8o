@@ -132,7 +132,7 @@ export default function ImplementacoesPage() {
       return (impl.tipo || 'novo_cliente') === tipoFilter
     })
     .filter((impl) => {
-      const nome = impl.clientes?.nome || ''
+      const nome = impl.clientes?.nome || impl.cliente_nome || ''
       return nome.toLowerCase().includes(searchTerm.toLowerCase())
     })
     .sort((a, b) => {
@@ -336,7 +336,9 @@ export default function ImplementacoesPage() {
                             <TipoIcon className="h-3 w-3" />
                           </div>
                           <div>
-                            <div className="font-medium">{impl.clientes?.nome || 'N/A'}</div>
+                            <div className="font-medium">
+                              {impl.clientes?.nome || impl.cliente_nome || 'N/A'}
+                            </div>
                             <Badge
                               variant="outline"
                               className={cn('text-[9px] mt-0.5', tipoCfg?.color)}

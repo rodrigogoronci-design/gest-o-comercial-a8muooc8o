@@ -41,7 +41,8 @@ export const getImplementacaoByCliente = async (clienteId: string) => {
 }
 
 export const createImplementacao = async (params: {
-  cliente_id: string
+  cliente_id: string | null
+  cliente_nome?: string | null
   contrato_id?: string | null
   responsavel_id?: string | null
   tipo?: 'novo_cliente' | 'inclusao_modulo' | 'treinamento' | 'consultoria'
@@ -97,6 +98,7 @@ export const createImplementacao = async (params: {
     .from('implementacoes' as any)
     .insert({
       cliente_id: params.cliente_id,
+      cliente_nome: params.cliente_nome || null,
       contrato_id: params.contrato_id || null,
       responsavel_id: params.responsavel_id || null,
       status: 'Em andamento',

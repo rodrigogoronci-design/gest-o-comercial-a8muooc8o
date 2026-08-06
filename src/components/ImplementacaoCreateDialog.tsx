@@ -39,6 +39,7 @@ export function ImplementacaoCreateDialog({ open, onOpenChange, onCreated }: Pro
     'novo_cliente' | 'inclusao_modulo' | 'treinamento' | 'consultoria'
   >('novo_cliente')
   const [clienteId, setClienteId] = useState('')
+  const [clienteNome, setClienteNome] = useState('')
   const [responsavelId, setResponsavelId] = useState('')
   const [solicitacaoId, setSolicitacaoId] = useState('')
   const [modulosNovos, setModulosNovos] = useState<string[]>([])
@@ -61,14 +62,20 @@ export function ImplementacaoCreateDialog({ open, onOpenChange, onCreated }: Pro
   }, [open])
 
   const handleSubmit = async () => {
-    if (!clienteId) {
+    if (tipo === 'consultoria') {
+      if (!clienteNome.trim() && !clienteId) {
+        toast.error('Informe o nome do cliente')
+        return
+      }
+    } else if (!clienteId) {
       toast.error('Selecione um cliente')
       return
     }
     setSaving(true)
     try {
       await createImplementacao({
-        cliente_id: clienteId,
+        cliente_id: tipo === 'consultoria' ? clienteId || null : clienteId,
+        cliente_nome: tipo === 'consultoria' && !clienteId ? clienteNome.trim() : null,
         responsavel_id: responsavelId || null,
         solicitacao_id: solicitacaoId || null,
         tipo,
@@ -84,6 +91,7 @@ export function ImplementacaoCreateDialog({ open, onOpenChange, onCreated }: Pro
       onCreated()
       setTipo('novo_cliente')
       setClienteId('')
+      setClienteNome('')
       setResponsavelId('')
       setSolicitacaoId('')
       setModulosNovos([])
@@ -123,21 +131,54 @@ export function ImplementacaoCreateDialog({ open, onOpenChange, onCreated }: Pro
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label>Cliente</Label>
-            <Select value={clienteId} onValueChange={setClienteId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um cliente..." />
-              </SelectTrigger>
-              <SelectContent>
-                {clientes.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {tipo === 'consultoria' ? (
+            <div className="space-y-2">
+              <Label>Nome do Cliente *</Label>
+              <Input
+                value={clienteNome}
+                onChange={(e) => {
+                  setClienteNome(e.target.value)
+                  setClienteId('')
+                }}
+                placeholder="Digite o nome do cliente..."
+              />
+              <Select
+                value={clienteId}
+                onValueChange={(v) => {
+                  setClienteId(v)
+                  const found = clientes.find((c) => c.id === v)
+                  if (found) setClienteNome(found.nome)
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Vincular a cliente existente (opcional)..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {clientes.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>Cliente</Label>
+              <Select value={clienteId} onValueChange={setClienteId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um cliente..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {clientes.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="space-y-2">
             <Label>Responsável</Label>
             <Select value={responsavelId} onValueChange={setResponsavelId}>
