@@ -22,6 +22,7 @@ export interface QuoteDocumentProps {
   logoUrl?: string
   selectedModulesData?: any[]
   trainings?: any[]
+  prazosConcedidos?: string
 }
 
 const SUB_FEATURES: Record<string, string[]> = {
@@ -74,6 +75,7 @@ export function QuoteDocument(props: QuoteDocumentProps) {
     logoUrl = logoUrlAsset,
     selectedModulesData = [],
     trainings = [],
+    prazosConcedidos = '',
   } = props
 
   const isTms30 =
@@ -384,6 +386,18 @@ export function QuoteDocument(props: QuoteDocumentProps) {
           </span>
         </div>
       </div>
+
+      {prazosConcedidos && (
+        <div className="mb-6 print:mb-2">
+          <h3 className="font-bold text-sm text-[#1e3a8a] mb-3 flex items-center gap-2 print:mb-1">
+            <div className="w-2 h-4 bg-orange-500 rounded-full" />
+            Condições Especiais / Prazos Concedidos
+          </h3>
+          <div className="bg-slate-50 border border-slate-200 p-3 rounded-md">
+            <p className="text-xs text-slate-700 text-justify">{prazosConcedidos}</p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4 mb-10 break-inside-avoid print:gap-2 print:mb-2">
         <div className="bg-slate-50 border border-slate-200 p-4 rounded-md flex flex-col justify-between print:p-2">
