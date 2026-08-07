@@ -127,6 +127,7 @@ import { ClientContractUpload } from '@/components/ClientContractUpload'
 import { DocumentacaoAdesaoTab } from '@/components/DocumentacaoAdesaoTab'
 import { DocumentacaoStatusBanner } from '@/components/DocumentacaoStatusBanner'
 import { getSignedContractUrl } from '@/lib/storage'
+import { TableActionsMenu } from '@/components/TableActionsMenu'
 
 export interface ClienteRecord {
   id: string
@@ -5045,7 +5046,7 @@ Obrigada.`)
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 table-scroll-wrapper">
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow>
@@ -5198,33 +5199,6 @@ Obrigada.`)
                     </TableCell>
                     <TableCell className="text-right sticky-actions-right bg-white">
                       <div className="flex justify-end gap-1">
-                        {client.originalData?.status?.toLowerCase() !== 'inativo' && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-slate-600 hover:text-red-600 hover:bg-red-50"
-                            title="Informar Cancelamento"
-                            onClick={() => {
-                              setCancelClient(client)
-                              setCancelDate(new Date().toISOString().split('T')[0])
-                              setCancelMotivo('')
-                              setIsCancelModalOpen(true)
-                            }}
-                          >
-                            <Ban className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {client.contratoUrl && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                            title="Ver Contrato Original"
-                            onClick={() => handleOpenContractUrl(client.contratoUrl)}
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                        )}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -5243,15 +5217,39 @@ Obrigada.`)
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-slate-600 hover:text-red-600 hover:bg-red-50"
-                          title="Excluir Cliente"
-                          onClick={() => setClientToDelete(client)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <TableActionsMenu
+                          items={[
+                            ...(client.originalData?.status?.toLowerCase() !== 'inativo'
+                              ? [
+                                  {
+                                    icon: Ban,
+                                    label: 'Informar Cancelamento',
+                                    onClick: () => {
+                                      setCancelClient(client)
+                                      setCancelDate(new Date().toISOString().split('T')[0])
+                                      setCancelMotivo('')
+                                      setIsCancelModalOpen(true)
+                                    },
+                                  },
+                                ]
+                              : []),
+                            ...(client.contratoUrl
+                              ? [
+                                  {
+                                    icon: FileText,
+                                    label: 'Ver Contrato Original',
+                                    onClick: () => handleOpenContractUrl(client.contratoUrl),
+                                  },
+                                ]
+                              : []),
+                            {
+                              icon: Trash2,
+                              label: 'Excluir Cliente',
+                              onClick: () => setClientToDelete(client),
+                              variant: 'destructive' as const,
+                            },
+                          ]}
+                        />
                       </div>
                     </TableCell>
                   </TableRow>

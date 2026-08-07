@@ -1,0 +1,29 @@
+.sticky-actions-right {
+  position: sticky;
+  right: 0;
+  z-index: 10;
+  background-color: white;
+  box-shadow: -4px 0 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+tbody tr:hover .sticky-actions-right {
+  background-color: rgb(248 250 252);
+}
+
+thead .sticky-actions-right {
+  background-color: rgb(248 250 252);
+}
+
+.table-scroll-wrapper .relative.w-full.overflow-auto {
+  max-height: calc(100vh - 280px);
+}
+
+@media print {
+  .table-scroll-wrapper .relative.w-full.overflow-auto {
+    max-height: none;
+  }
+  .sticky-actions-right {
+    position: static;
+    box-shadow: none;
+  }
+}

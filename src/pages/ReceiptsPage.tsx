@@ -592,7 +592,7 @@ export default function ReceiptsPage() {
                 </Select>
               </div>
 
-              <div className="rounded-md border print:border-0 overflow-hidden">
+              <div className="rounded-md border print:border-0 overflow-hidden table-scroll-wrapper">
                 <Table>
                   <TableHeader>
                     <TableRow className="print:border-b-2 print:border-gray-800">
@@ -700,7 +700,7 @@ export default function ReceiptsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border overflow-hidden">
+              <div className="rounded-md border overflow-hidden table-scroll-wrapper">
                 <Table>
                   <TableHeader>
                     <TableRow>

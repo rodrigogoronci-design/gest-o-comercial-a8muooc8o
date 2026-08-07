@@ -39,6 +39,7 @@ import { getImplementacoes } from '@/services/implementacoes'
 import { TIPO_CONFIG } from '@/lib/implantacao-config'
 import { ImplementacaoEditSheet } from '@/components/ImplementacaoEditSheet'
 import { ImplementacaoCreateDialog } from '@/components/ImplementacaoCreateDialog'
+import { TableActionsMenu } from '@/components/TableActionsMenu'
 import { useAuth } from '@/hooks/use-auth'
 import { useUserRole } from '@/hooks/use-user-role'
 import { supabase } from '@/lib/supabase/client'
@@ -274,7 +275,7 @@ export default function ImplementacoesPage() {
           <CardTitle className="text-lg">Projetos de Implantação</CardTitle>
           <CardDescription>{filtered.length} implementações encontradas.</CardDescription>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 table-scroll-wrapper">
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow>
@@ -378,32 +379,32 @@ export default function ImplementacoesPage() {
                       </TableCell>
                       <TableCell className="text-right sticky-actions-right bg-white">
                         <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setEditId(impl.id)
-                              setEditOpen(true)
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" asChild>
+                          <Button variant="ghost" size="icon" asChild title="Visualizar">
                             <Link to={`/implementacoes/${impl.id}`}>
                               <Eye className="h-4 w-4" />
                             </Link>
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => {
-                              setDeleteId(impl.id)
-                              setDeleteOpen(true)
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <TableActionsMenu
+                            items={[
+                              {
+                                icon: Pencil,
+                                label: 'Editar',
+                                onClick: () => {
+                                  setEditId(impl.id)
+                                  setEditOpen(true)
+                                },
+                              },
+                              {
+                                icon: Trash2,
+                                label: 'Excluir',
+                                onClick: () => {
+                                  setDeleteId(impl.id)
+                                  setDeleteOpen(true)
+                                },
+                                variant: 'destructive' as const,
+                              },
+                            ]}
+                          />
                         </div>
                       </TableCell>
                     </TableRow>

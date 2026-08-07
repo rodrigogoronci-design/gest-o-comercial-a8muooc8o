@@ -447,7 +447,7 @@ export default function ColaboradoresPage() {
         </Dialog>
       </div>
 
-      <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl border shadow-sm overflow-hidden table-scroll-wrapper">
         <div className="p-4 border-b">
           <div className="relative max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

@@ -144,7 +144,7 @@ export default function ActivitiesPage() {
               <p>Importe sua planilha ou clique em "Nova Atividade".</p>
             </div>
           ) : (
-            <div className="rounded-md border overflow-x-auto">
+            <div className="rounded-md border overflow-x-auto table-scroll-wrapper">
               <Table>
                 <TableHeader>
                   <TableRow>

@@ -55,6 +55,7 @@ import { CrmDiagnosticoForm } from '@/components/CrmDiagnosticoForm'
 import { CrmHistorico } from '@/components/CrmHistorico'
 import { CrmKanbanBoard } from '@/components/CrmKanbanBoard'
 import { CrmProspectPropostasTab } from '@/components/CrmProspectPropostasTab'
+import { TableActionsMenu } from '@/components/TableActionsMenu'
 
 export type CrmProspect = {
   id: string
@@ -783,7 +784,7 @@ export default function CRMPage() {
               Lista atualizada de todas as negociações em andamento.
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 table-scroll-wrapper">
             <Table>
               <TableHeader className="bg-slate-50/50">
                 <TableRow>
@@ -976,54 +977,6 @@ export default function CRMPage() {
                           </TableCell>
                           <TableCell className="text-right sticky-actions-right bg-white">
                             <div className="flex items-center justify-end gap-1">
-                              {p.status !== 'Cliente Efetivado' && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                                  onClick={() => handleEfetivarCliente(p)}
-                                  disabled={isSubmitting}
-                                  title="Efetivar Cliente"
-                                >
-                                  <UserCheck className="h-4 w-4" />
-                                  <span className="hidden lg:inline">Efetivar</span>
-                                </Button>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 gap-1 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                                asChild
-                              >
-                                <Link
-                                  to={`/contratos?prospect=${encodeURIComponent(p.empresa)}&cnpj=${p.cnpj ? p.cnpj.replace(/\D/g, '') : ''}`}
-                                >
-                                  <FileSignature className="h-4 w-4" />
-                                  <span className="hidden lg:inline">Gerar Contrato</span>
-                                </Link>
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 gap-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                                asChild
-                              >
-                                <Link
-                                  to={`/contratos?tab=cotacao&prospectId=${p.id}&prospect=${encodeURIComponent(p.empresa)}&contato=${encodeURIComponent(p.contato_nome)}`}
-                                >
-                                  <FileText className="h-4 w-4" />
-                                  <span className="hidden lg:inline">Gerar Proposta</span>
-                                </Link>
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
-                                onClick={() => handleSendProposalClick(p)}
-                                title="Enviar Proposta por E-mail"
-                              >
-                                <Mail className="h-4 w-4" />
-                              </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -1036,15 +989,41 @@ export default function CRMPage() {
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
-                                onClick={() => handleDelete(p.id)}
-                                title="Excluir"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              <TableActionsMenu
+                                items={[
+                                  ...(p.status !== 'Cliente Efetivado'
+                                    ? [
+                                        {
+                                          icon: UserCheck,
+                                          label: 'Efetivar Cliente',
+                                          onClick: () => handleEfetivarCliente(p),
+                                          disabled: isSubmitting,
+                                        },
+                                      ]
+                                    : []),
+                                  {
+                                    icon: FileSignature,
+                                    label: 'Gerar Contrato',
+                                    to: `/contratos?prospect=${encodeURIComponent(p.empresa)}&cnpj=${p.cnpj ? p.cnpj.replace(/\D/g, '') : ''}`,
+                                  },
+                                  {
+                                    icon: FileText,
+                                    label: 'Gerar Proposta',
+                                    to: `/contratos?tab=cotacao&prospectId=${p.id}&prospect=${encodeURIComponent(p.empresa)}&contato=${encodeURIComponent(p.contato_nome)}`,
+                                  },
+                                  {
+                                    icon: Mail,
+                                    label: 'Enviar Proposta',
+                                    onClick: () => handleSendProposalClick(p),
+                                  },
+                                  {
+                                    icon: Trash2,
+                                    label: 'Excluir',
+                                    onClick: () => handleDelete(p.id),
+                                    variant: 'destructive' as const,
+                                  },
+                                ]}
+                              />
                             </div>
                           </TableCell>
                         </TableRow>
