@@ -236,6 +236,52 @@ export function CrmProspectPropostasTab({
 
       if (error) throw error
 
+      if (documento_url) {
+        if (prospectId) {
+          await supabase
+            .from('crm_prospects')
+            .update({
+              proposta_url: documento_url,
+              proposta_anexada_em: new Date().toISOString(),
+            })
+            .eq('id', prospectId)
+        }
+
+        const targetClienteId = clienteId || entityData?.cliente_id
+        if (targetClienteId) {
+          const { data: clienteData } = await supabase
+            .from('clientes')
+            .select('documentos_urls')
+            .eq('id', targetClienteId)
+            .single()
+
+          const existingDocs: any[] = Array.isArray(clienteData?.documentos_urls)
+            ? clienteData.documentos_urls
+            : []
+
+          const alreadyExists = existingDocs.some((d: any) => d?.url === documento_url)
+          if (!alreadyExists) {
+            const updatedDocs = [
+              ...existingDocs,
+              {
+                name: `Proposta - ${new Date().toLocaleDateString('pt-BR')}`,
+                url: documento_url,
+                category: 'Proposta',
+                uploaded_at: new Date().toISOString(),
+              },
+            ]
+            await supabase
+              .from('clientes')
+              .update({ documentos_urls: updatedDocs })
+              .eq('id', targetClienteId)
+          }
+        }
+
+        setLocalPropostaUrl(documento_url)
+        onPropostaChange?.()
+        onUrlChange?.(documento_url)
+      }
+
       toast({ title: 'Proposta salva com sucesso!' })
       setViewState('list')
     } catch (e: any) {
