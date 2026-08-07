@@ -90,6 +90,8 @@ export type CrmProspect = {
   responsavel_comercial?: string | null
   contrato_assinado?: boolean | null
   documentos_adesao?: any[] | null
+  razao_social?: string | null
+  ata_primeiro_atendimento?: string | null
 }
 
 export default function CRMPage() {
@@ -434,6 +436,8 @@ export default function CRMPage() {
         contrato_assinado: values.contrato_assinado ?? false,
         proposta_url: values.proposta_url || null,
         documentos_adesao: values.documentos_adesao || [],
+        razao_social: values.razao_social || null,
+        ata_primeiro_atendimento: values.ata_primeiro_atendimento || null,
       },
     ])
     setIsSubmitting(false)
@@ -489,6 +493,8 @@ export default function CRMPage() {
         contrato_assinado: values.contrato_assinado ?? false,
         proposta_url: values.proposta_url || null,
         documentos_adesao: values.documentos_adesao || [],
+        razao_social: values.razao_social || null,
+        ata_primeiro_atendimento: values.ata_primeiro_atendimento || null,
         ultima_interacao:
           statusChanged || classifChanged
             ? new Date().toISOString()
@@ -692,6 +698,8 @@ export default function CRMPage() {
       plano_id: editingProspect.plano_id || null,
       contrato_assinado_url: editingProspect.contrato_assinado_url || null,
       documentos_adesao: editingProspect.documentos_adesao || [],
+      razao_social: editingProspect.razao_social || '',
+      ata_primeiro_atendimento: editingProspect.ata_primeiro_atendimento || '',
     }
   }, [editingProspect])
 

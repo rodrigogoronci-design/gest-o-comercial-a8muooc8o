@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { cn } from '@/lib/utils'
 import { CrmProspectPropostasTab } from './CrmProspectPropostasTab'
@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -30,16 +29,13 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase/client'
 import { fetchCnpjData } from '@/services/cnpj'
-import { fetchCpfData } from '@/services/cpf'
-import { CrmAdhesionDocuments, type DocumentoAdesao } from '@/components/CrmAdhesionDocuments'
-import { CrmDocumentList } from '@/components/CrmDocumentList'
-import { CrmWhatsappChecklistButton } from '@/components/CrmWhatsappChecklistButton'
 
 export const prospectFormSchema = z.object({
   tipo_pessoa: z.string().default('PJ'),
   cnpj: z.string().optional(),
   cpf: z.string().optional(),
   empresa: z.string().min(2, 'Obrigatório'),
+  razao_social: z.string().optional(),
   endereco: z.string().optional(),
   contato_nome: z.string().min(2, 'Obrigatório'),
   telefone: z.string().optional(),
@@ -47,7 +43,6 @@ export const prospectFormSchema = z.object({
   status: z.string().min(1, 'Obrigatório'),
   classificacao: z.string().optional(),
   data_followup: z.string().optional(),
-  observacoes: z.string().optional(),
   data_assinatura: z.string().optional(),
   nome_mae: z.string().optional(),
   nome_pai: z.string().optional(),
@@ -61,23 +56,10 @@ export const prospectFormSchema = z.object({
   contrato_assinado: z.boolean().optional(),
   proposta_url: z.string().optional(),
   documentos_adesao: z.any().optional(),
+  ata_primeiro_atendimento: z.string().optional(),
 })
 
 export type ProspectFormValues = z.infer<typeof prospectFormSchema>
-
-function parseDocumentosAdesao(data: any): DocumentoAdesao[] {
-  if (!data) return []
-  if (Array.isArray(data)) return data
-  if (typeof data === 'string') {
-    try {
-      const parsed = JSON.parse(data)
-      return Array.isArray(parsed) ? parsed : []
-    } catch {
-      return []
-    }
-  }
-  return []
-}
 
 const PROSPECT_STATUSES = [
   'Lead',
@@ -96,67 +78,14 @@ const PROSPECT_STATUSES = [
   'Perdido',
 ]
 
-function StatusSelect({ form }: { form: any }) {
-  return (
-    <FormField
-      control={form.control}
-      name="status"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Status *</FormLabel>
-          <Select onValueChange={field.onChange} defaultValue={field.value}>
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {!PROSPECT_STATUSES.includes(field.value) && (
-                <SelectItem value={field.value} className="hidden">
-                  {field.value}
-                </SelectItem>
-              )}
-              {PROSPECT_STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-function ClassificacaoSelect({ form }: { form: any }) {
-  return (
-    <FormField
-      control={form.control}
-      name="classificacao"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Classificação</FormLabel>
-          <Select onValueChange={field.onChange} defaultValue={field.value || 'Frio'}>
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              <SelectItem value="Frio">Frio</SelectItem>
-              <SelectItem value="Morno">Morno</SelectItem>
-              <SelectItem value="Quente">Quente</SelectItem>
-              <SelectItem value="Muito Quente">Muito Quente</SelectItem>
-            </SelectContent>
-          </Select>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
+const formatCnpj = (v: string) =>
+  v
+    .replace(/\D/g, '')
+    .replace(
+      /^(\d{2})(\d{3})?(\d{3})?(\d{4})?(\d{2})?/,
+      (_m, p1, p2, p3, p4, p5) =>
+        `${p1}${p2 ? `.${p2}` : ''}${p3 ? `.${p3}` : ''}${p4 ? `/${p4}` : ''}${p5 ? `-${p5}` : ''}`,
+    )
 
 export function CrmProspectForm({
   onSubmit,
@@ -174,7 +103,9 @@ export function CrmProspectForm({
     proposta_url?: string | null
     contrato_assinado_url?: string | null
     modulos_contratados?: any
-    documentos_adesao?: DocumentoAdesao[]
+    documentos_adesao?: any[]
+    razao_social?: string | null
+    ata_primeiro_atendimento?: string | null
   }
   defaultTipoPessoa?: 'PJ' | 'PF'
   onPropostaChange?: () => void
@@ -185,6 +116,7 @@ export function CrmProspectForm({
     'dados',
   )
   const { toast } = useToast()
+
   const form = useForm<ProspectFormValues>({
     resolver: zodResolver(prospectFormSchema),
     defaultValues: initialData || {
@@ -192,6 +124,7 @@ export function CrmProspectForm({
       cnpj: '',
       cpf: '',
       empresa: '',
+      razao_social: '',
       endereco: '',
       contato_nome: '',
       telefone: '',
@@ -199,7 +132,6 @@ export function CrmProspectForm({
       status: 'Lead',
       classificacao: 'Frio',
       data_followup: '',
-      observacoes: '',
       data_assinatura: '',
       nome_mae: '',
       nome_pai: '',
@@ -213,23 +145,11 @@ export function CrmProspectForm({
       contrato_assinado: false,
       proposta_url: '',
       documentos_adesao: [],
+      ata_primeiro_atendimento: '',
     },
   })
 
   const tipoPessoa = form.watch('tipo_pessoa') || defaultTipoPessoa
-  const contratoAssinado = form.watch('contrato_assinado')
-  const telefoneWatch = form.watch('telefone') || ''
-  const planoContratadoWatch = form.watch('plano_contratado') || ''
-  const propostaUrlWatch = form.watch('proposta_url') || ''
-  const rawDocumentosAdesao = form.watch('documentos_adesao')
-  const documentosAdesao = useMemo(
-    () =>
-      Array.isArray(rawDocumentosAdesao)
-        ? rawDocumentosAdesao
-        : parseDocumentosAdesao(rawDocumentosAdesao),
-    [rawDocumentosAdesao],
-  )
-
   const prospectId = initialData?.id
 
   useEffect(() => {
@@ -239,6 +159,7 @@ export function CrmProspectForm({
         cnpj: initialData.cnpj || '',
         cpf: initialData.cpf || '',
         empresa: initialData.empresa || '',
+        razao_social: initialData.razao_social || '',
         endereco: initialData.endereco || '',
         contato_nome: initialData.contato_nome || '',
         telefone: initialData.telefone || '',
@@ -246,7 +167,6 @@ export function CrmProspectForm({
         status: initialData.status || 'Lead',
         classificacao: initialData.classificacao || 'Frio',
         data_followup: initialData.data_followup || '',
-        observacoes: initialData.observacoes || '',
         data_assinatura: initialData.data_assinatura || '',
         nome_mae: initialData.nome_mae || '',
         nome_pai: initialData.nome_pai || '',
@@ -261,27 +181,14 @@ export function CrmProspectForm({
         responsavel_comercial: initialData.responsavel_comercial || '',
         contrato_assinado: initialData.contrato_assinado || false,
         proposta_url: (initialData.proposta_url as string) || '',
-        documentos_adesao: parseDocumentosAdesao(initialData.documentos_adesao),
+        documentos_adesao: Array.isArray(initialData.documentos_adesao)
+          ? initialData.documentos_adesao
+          : [],
+        ata_primeiro_atendimento: initialData.ata_primeiro_atendimento || '',
       })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prospectId, defaultTipoPessoa])
-
-  const formatCnpj = (v: string) =>
-    v
-      .replace(/\D/g, '')
-      .replace(
-        /^(\d{2})(\d{3})?(\d{3})?(\d{4})?(\d{2})?/,
-        (m, p1, p2, p3, p4, p5) =>
-          `${p1}${p2 ? `.${p2}` : ''}${p3 ? `.${p3}` : ''}${p4 ? `/${p4}` : ''}${p5 ? `-${p5}` : ''}`,
-      )
-
-  const formatCpf = (v: string) =>
-    v
-      .replace(/\D/g, '')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
 
   const handleCnpjChange = async (val: string) => {
     const formatted = formatCnpj(val)
@@ -331,63 +238,6 @@ export function CrmProspectForm({
     }
   }
 
-  const handleCpfChange = async (val: string) => {
-    const formatted = formatCpf(val)
-    form.setValue('cpf', formatted)
-    const clean = formatted.replace(/\D/g, '')
-    if (clean.length !== 11) return
-    setIsLoading(true)
-    try {
-      const { data: existing } = await supabase
-        .from('crm_prospects')
-        .select('*')
-        .eq('cpf', formatted)
-        .maybeSingle()
-      if (existing) {
-        toast({
-          title: 'Prospect Encontrado',
-          description: 'Preenchendo dados do prospect existente.',
-        })
-        if (existing.contato_nome) form.setValue('contato_nome', existing.contato_nome)
-        if (existing.empresa) form.setValue('empresa', existing.empresa)
-        if (existing.endereco) form.setValue('endereco', existing.endereco || '')
-        if (existing.telefone) form.setValue('telefone', existing.telefone || '')
-        if (existing.email) form.setValue('email', existing.email || '')
-        if (existing.nome_mae) form.setValue('nome_mae', existing.nome_mae || '')
-        if (existing.nome_pai) form.setValue('nome_pai', existing.nome_pai || '')
-        if (existing.data_nascimento)
-          form.setValue('data_nascimento', existing.data_nascimento || '')
-        return
-      }
-      const { data: cpfData, error: cpfError } = await fetchCpfData(clean)
-      if (cpfData) {
-        if (cpfData.nome) {
-          form.setValue('contato_nome', cpfData.nome)
-          form.setValue('empresa', cpfData.nome)
-        }
-        if (cpfData.nome_mae) form.setValue('nome_mae', cpfData.nome_mae)
-        if (cpfData.nome_pai) form.setValue('nome_pai', cpfData.nome_pai)
-        if (cpfData.data_nascimento) form.setValue('data_nascimento', cpfData.data_nascimento)
-        if (cpfData.endereco && !form.getValues('endereco'))
-          form.setValue('endereco', cpfData.endereco)
-        toast({ title: 'Sucesso', description: 'Dados do CPF carregados com sucesso' })
-      } else if (cpfError) {
-        if (cpfError.includes('não encontrado') || cpfError.includes('nao encontrados')) {
-          toast({
-            title: 'Dados não encontrados',
-            description: 'Dados não encontrados automaticamente. Por favor, preencha manualmente.',
-          })
-        } else {
-          toast({ title: 'Consulta CPF', description: cpfError, variant: 'destructive' })
-        }
-      }
-    } catch {
-      toast({ title: 'Erro na consulta', variant: 'destructive' })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -408,9 +258,7 @@ export function CrmProspectForm({
       )
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'Falha ao processar arquivo')
-      const text = result.text
-      const cnpjMatch = text.match(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/)
-      const cpfMatch = text.match(/\d{3}\.\d{3}\.\d{3}-\d{2}/)
+      const cnpjMatch = result.text?.match(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/)
       if (cnpjMatch) {
         toast({
           title: 'CNPJ Identificado',
@@ -419,18 +267,10 @@ export function CrmProspectForm({
         form.setValue('tipo_pessoa', 'PJ')
         form.setValue('cnpj', cnpjMatch[0])
         await handleCnpjChange(cnpjMatch[0])
-      } else if (cpfMatch) {
-        toast({
-          title: 'CPF Identificado',
-          description: `Consultando dados para o CPF ${cpfMatch[0]}...`,
-        })
-        form.setValue('tipo_pessoa', 'PF')
-        form.setValue('cpf', cpfMatch[0])
-        await handleCpfChange(cpfMatch[0])
       } else {
         toast({
-          title: 'Nenhum documento',
-          description: 'Não foi possível identificar CNPJ ou CPF no arquivo.',
+          title: 'Nenhum CNPJ',
+          description: 'Não foi possível identificar CNPJ no arquivo.',
           variant: 'destructive',
         })
       }
@@ -476,25 +316,19 @@ export function CrmProspectForm({
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit((values) => {
-              const normalizedDocs = Array.isArray(values.documentos_adesao)
-                ? values.documentos_adesao
-                : parseDocumentosAdesao(values.documentos_adesao)
               const transformed = {
                 ...values,
-                modulos_contratados: values.modulos_contratados
-                  ? values.modulos_contratados
-                      .split(',')
-                      .map((m: string) => m.trim())
-                      .filter(Boolean)
+                modulos_contratados:
+                  typeof values.modulos_contratados === 'string'
+                    ? values.modulos_contratados
+                        .split(',')
+                        .map((m: string) => m.trim())
+                        .filter(Boolean)
+                    : values.modulos_contratados || [],
+                documentos_adesao: Array.isArray(values.documentos_adesao)
+                  ? values.documentos_adesao
                   : [],
-                documentos_adesao: normalizedDocs,
                 proposta_url: values.proposta_url || null,
-              }
-              if (normalizedDocs.length > 0 || transformed.proposta_url) {
-                toast({
-                  title: 'Persistindo documentos',
-                  description: `${normalizedDocs.length} documento(s) de adesão${transformed.proposta_url ? ' e proposta comercial' : ''} serão salvos.`,
-                })
               }
               onSubmit(transformed as ProspectFormValues)
             })}
@@ -506,7 +340,7 @@ export function CrmProspectForm({
                   <span className="font-semibold block text-slate-800">
                     Preenchimento Automático
                   </span>
-                  Importe o Cartão CNPJ/CPF em PDF para preencher os dados.
+                  Importe o Cartão CNPJ em PDF para preencher os dados.
                 </div>
                 <div>
                   <Input
@@ -566,65 +400,32 @@ export function CrmProspectForm({
             />
 
             <div className="grid grid-cols-2 gap-3">
-              {tipoPessoa === 'PJ' ? (
-                <FormField
-                  control={form.control}
-                  name="cnpj"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CNPJ</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input
-                            placeholder="00.000.000/0001-00"
-                            maxLength={18}
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e)
-                              handleCnpjChange(e.target.value)
-                            }}
-                          />
-                          {isLoading && (
-                            <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
-                          )}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ) : (
-                <FormField
-                  control={form.control}
-                  name="cpf"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CPF</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input
-                            placeholder="000.000.000-00"
-                            maxLength={14}
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e)
-                              handleCpfChange(e.target.value)
-                            }}
-                            onBlur={() => {
-                              const v = field.value || ''
-                              if (v.replace(/\D/g, '').length === 11) handleCpfChange(v)
-                            }}
-                          />
-                          {isLoading && (
-                            <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
-                          )}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
+              <FormField
+                control={form.control}
+                name="cnpj"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CNPJ</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          placeholder="00.000.000/0001-00"
+                          maxLength={18}
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e)
+                            handleCnpjChange(e.target.value)
+                          }}
+                        />
+                        {isLoading && (
+                          <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="empresa"
@@ -633,7 +434,7 @@ export function CrmProspectForm({
                     <FormLabel>{tipoPessoa === 'PF' ? 'Nome Completo *' : 'Empresa *'}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder={tipoPessoa === 'PF' ? 'Nome completo' : 'Razão Social'}
+                        placeholder={tipoPessoa === 'PF' ? 'Nome completo' : 'Nome fantasia'}
                         {...field}
                       />
                     </FormControl>
@@ -643,36 +444,33 @@ export function CrmProspectForm({
               />
             </div>
 
-            {tipoPessoa === 'PF' && (
-              <div className="grid grid-cols-2 gap-3">
-                <FormField
-                  control={form.control}
-                  name="nome_mae"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome da Mãe</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nome da mãe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="nome_pai"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do Pai</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nome do pai" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
+            <FormField
+              control={form.control}
+              name="razao_social"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Razão Social</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Razão social oficial" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="endereco"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Endereço</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Rua, Número, Cidade, Estado" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="grid grid-cols-2 gap-3">
               <FormField
@@ -705,70 +503,73 @@ export function CrmProspectForm({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>E-mail</FormLabel>
-                    <FormControl>
-                      <Input placeholder="email@empresa.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {tipoPessoa === 'PF' ? (
-                <FormField
-                  control={form.control}
-                  name="data_nascimento"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Data de Nascimento</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ) : (
-                <FormField
-                  control={form.control}
-                  name="endereco"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Endereço</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Rua, Número, Cidade" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>E-mail</FormLabel>
+                  <FormControl>
+                    <Input placeholder="email@empresa.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
-            </div>
-
-            {tipoPessoa === 'PF' && (
-              <FormField
-                control={form.control}
-                name="endereco"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Endereço</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Rua, Número, Cidade, Estado" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+            />
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <StatusSelect form={form} />
-              <ClassificacaoSelect form={form} />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {!PROSPECT_STATUSES.includes(field.value) && (
+                          <SelectItem value={field.value} className="hidden">
+                            {field.value}
+                          </SelectItem>
+                        )}
+                        {PROSPECT_STATUSES.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="classificacao"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Classificação</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value || 'Frio'}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Frio">Frio</SelectItem>
+                        <SelectItem value="Morno">Morno</SelectItem>
+                        <SelectItem value="Quente">Quente</SelectItem>
+                        <SelectItem value="Muito Quente">Muito Quente</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="data_followup"
@@ -786,174 +587,14 @@ export function CrmProspectForm({
 
             <FormField
               control={form.control}
-              name="data_assinatura"
+              name="ata_primeiro_atendimento"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Data da Assinatura do Contrato</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="space-y-3 pt-4 mt-2 border-t border-slate-200/80">
-              <h4 className="text-sm font-semibold text-slate-700">Dados Comerciais</h4>
-
-              <div className="grid grid-cols-2 gap-3">
-                <FormField
-                  control={form.control}
-                  name="plano_apresentado"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Plano Apresentado</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Plano apresentado ao cliente" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="plano_contratado"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Plano Contratado</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Plano efetivamente contratado" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <FormField
-                  control={form.control}
-                  name="modulos_contratados"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Módulos Contratados</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Módulo A, Módulo B, ..." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="quantidade_uso"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Qtd. Usuários/Veículos/Emissões</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          value={field.value ?? ''}
-                          onChange={(e) =>
-                            field.onChange(e.target.value ? Number(e.target.value) : undefined)
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="responsavel_comercial"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Responsável Comercial pelo Atendimento</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nome do responsável comercial" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="observacoes_comerciais"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Observações Comerciais</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        className="resize-none min-h-[80px]"
-                        placeholder="Observações comerciais relevantes..."
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {initialData && initialData.id && (
-                <FormField
-                  control={form.control}
-                  name="contrato_assinado"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-xl border border-amber-200/80 p-3 bg-amber-50 shadow-sm">
-                      <div className="space-y-0.5">
-                        <FormLabel>Contrato Assinado</FormLabel>
-                        <p className="text-xs text-muted-foreground">
-                          Marque para iniciar o handover à implantação
-                        </p>
-                      </div>
-                      <FormControl>
-                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              {contratoAssinado && initialData?.id && (
-                <CrmWhatsappChecklistButton
-                  telefone={telefoneWatch}
-                  planoContratado={planoContratadoWatch}
-                  planoId={initialData.plano_id}
-                />
-              )}
-            </div>
-
-            <CrmDocumentList
-              propostaUrl={propostaUrlWatch || null}
-              documentosAdesao={documentosAdesao}
-              className="pt-4 mt-2 border-t border-slate-200/80"
-            />
-
-            <div className="space-y-3 pt-4 mt-2 border-t border-slate-200/80">
-              <h4 className="text-sm font-semibold text-slate-700">Documentos para Adesão</h4>
-              <CrmAdhesionDocuments
-                prospectId={initialData?.id}
-                documents={documentosAdesao}
-                onDocumentsChange={(docs) => form.setValue('documentos_adesao', docs)}
-                disabled={isSubmitting}
-                skipDbUpdate={!initialData?.id}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="observacoes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Observações</FormLabel>
+                  <FormLabel>Ata do Primeiro Atendimento</FormLabel>
                   <FormControl>
                     <Textarea
-                      className="resize-none min-h-[100px]"
-                      placeholder="Adicione notas ou histórico de follow-ups aqui..."
+                      className="resize-none min-h-[160px]"
+                      placeholder="Cole aqui a ata do primeiro atendimento: detalhes da conversa, pontos de negociação, necessidades do cliente, etc."
                       {...field}
                     />
                   </FormControl>
