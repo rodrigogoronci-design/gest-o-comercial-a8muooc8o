@@ -29,9 +29,26 @@ export const getImplementacao = async (id: string) => {
 }
 
 export const updateObservacoesGerais = async (implementacaoId: string, observacoes: string) => {
+  const { data: current, error: fetchError } = await supabase
+    .from('implementacoes' as any)
+    .select('observacoes_gerais')
+    .eq('id', implementacaoId)
+    .single()
+  if (fetchError) throw fetchError
+
+  const existing = (current?.observacoes_gerais || '').trim()
+  const now = new Date().toLocaleString('pt-BR')
+
+  let combined: string
+  if (existing) {
+    combined = `${existing}\n\n--- ${now} ---\n${observacoes.trim()}`
+  } else {
+    combined = `--- ${now} ---\n${observacoes.trim()}`
+  }
+
   const { data, error } = await supabase
     .from('implementacoes' as any)
-    .update({ observacoes_gerais: observacoes })
+    .update({ observacoes_gerais: combined })
     .eq('id', implementacaoId)
     .select()
     .single()

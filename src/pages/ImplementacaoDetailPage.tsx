@@ -121,6 +121,7 @@ export default function ImplementacaoDetailPage() {
   const [sharingOnboarding, setSharingOnboarding] = useState(false)
   const [sharingConsultoria, setSharingConsultoria] = useState(false)
   const [observacoesGerais, setObservacoesGerais] = useState('')
+  const [newObservacao, setNewObservacao] = useState('')
   const [savingObservacoes, setSavingObservacoes] = useState(false)
   const { isFinancialRestricted } = useUserRole()
 
@@ -280,14 +281,16 @@ export default function ImplementacaoDetailPage() {
   }
 
   const handleSaveObservacoes = async () => {
-    if (!impl) return
+    if (!impl || !newObservacao.trim()) return
     setSavingObservacoes(true)
     try {
-      const updated = await updateObservacoesGerais(impl.id, observacoesGerais)
+      const updated = await updateObservacoesGerais(impl.id, newObservacao.trim())
       setImpl({ ...impl, observacoes_gerais: updated.observacoes_gerais })
-      toast.success('Observações salvas com sucesso!')
+      setObservacoesGerais(updated.observacoes_gerais || '')
+      setNewObservacao('')
+      toast.success('Observação adicionada com sucesso!')
     } catch (error: any) {
-      toast.error('Erro ao salvar observações: ' + (error.message || ''))
+      toast.error('Erro ao salvar observação: ' + (error.message || ''))
     } finally {
       setSavingObservacoes(false)
     }
@@ -468,31 +471,43 @@ export default function ImplementacaoDetailPage() {
 
       <Card>
         <CardContent className="p-6 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-              <FileText className="h-4 w-4 text-indigo-600" />
-              Observações Gerais
-            </h3>
-            <Button
-              size="sm"
-              onClick={handleSaveObservacoes}
-              disabled={savingObservacoes}
-              className="bg-indigo-600 hover:bg-indigo-700"
-            >
-              {savingObservacoes ? (
-                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-              ) : (
-                <CheckCircle className="h-3 w-3 mr-1" />
-              )}
-              Salvar
-            </Button>
+          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+            <FileText className="h-4 w-4 text-indigo-600" />
+            Observações Gerais da Jornada
+          </h3>
+          {observacoesGerais ? (
+            <div className="bg-slate-50 rounded-md p-4 max-h-[240px] overflow-y-auto border border-slate-200">
+              <p className="text-sm text-slate-700 whitespace-pre-wrap">{observacoesGerais}</p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">
+              Nenhuma observação registrada ainda.
+            </p>
+          )}
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            <Label className="text-xs text-slate-500">Adicionar nova observação</Label>
+            <Textarea
+              value={newObservacao}
+              onChange={(e) => setNewObservacao(e.target.value)}
+              placeholder="Registre uma nova observação sobre a jornada de implantação do cliente: pontos de conversa, negociação, notas de onboarding, etc..."
+              className="min-h-[80px] resize-y"
+            />
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                onClick={handleSaveObservacoes}
+                disabled={savingObservacoes || !newObservacao.trim()}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                {savingObservacoes ? (
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                )}
+                Adicionar Observação
+              </Button>
+            </div>
           </div>
-          <Textarea
-            value={observacoesGerais}
-            onChange={(e) => setObservacoesGerais(e.target.value)}
-            placeholder="Registre observações gerais sobre a jornada de implantação do cliente: pontos de conversa, negociação, notas de onboarding, etc..."
-            className="min-h-[120px] resize-y"
-          />
         </CardContent>
       </Card>
 
