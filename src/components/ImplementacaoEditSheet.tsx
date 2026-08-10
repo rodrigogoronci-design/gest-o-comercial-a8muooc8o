@@ -31,6 +31,7 @@ import {
 } from '@/services/implementacoes'
 import { parseModulosToList } from '@/lib/modules-parser'
 import { usePlanFallback } from '@/hooks/use-plan-fallback'
+import { ImplementacaoObservacoes } from '@/components/ImplementacaoObservacoes'
 import { toast } from 'sonner'
 
 const IMPL_STATUS = ['Em andamento', 'Atrasada', 'Finalizada']
@@ -315,6 +316,13 @@ export function ImplementacaoEditSheet({ open, onOpenChange, implementacaoId, on
                   </div>
                 ))}
               </div>
+            </div>
+            <Separator />
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+                Observações Gerais da Jornada
+              </h3>
+              {impl && <ImplementacaoObservacoes implementacaoId={impl.id} />}
             </div>
           </div>
         )}
