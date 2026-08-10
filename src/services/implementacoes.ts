@@ -28,6 +28,17 @@ export const getImplementacao = async (id: string) => {
   return data
 }
 
+export const updateObservacoesGerais = async (implementacaoId: string, observacoes: string) => {
+  const { data, error } = await supabase
+    .from('implementacoes' as any)
+    .update({ observacoes_gerais: observacoes })
+    .eq('id', implementacaoId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
 export const getImplementacaoByCliente = async (clienteId: string) => {
   const { data, error } = await supabase
     .from('implementacoes' as any)

@@ -50,6 +50,7 @@ import {
   uploadRat,
   getColaboradores,
   syncModulosToCliente,
+  updateObservacoesGerais,
 } from '@/services/implementacoes'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -119,6 +120,8 @@ export default function ImplementacaoDetailPage() {
   const [formData, setFormData] = useState<any>({})
   const [sharingOnboarding, setSharingOnboarding] = useState(false)
   const [sharingConsultoria, setSharingConsultoria] = useState(false)
+  const [observacoesGerais, setObservacoesGerais] = useState('')
+  const [savingObservacoes, setSavingObservacoes] = useState(false)
   const { isFinancialRestricted } = useUserRole()
 
   useEffect(() => {
@@ -134,6 +137,7 @@ export default function ImplementacaoDetailPage() {
     try {
       const data = await getImplementacao(implId)
       setImpl(data)
+      setObservacoesGerais(data?.observacoes_gerais || '')
     } catch (error) {
       console.error(error)
       setLoadError(true)
@@ -272,6 +276,20 @@ export default function ImplementacaoDetailPage() {
       toast.error('Erro ao gerar link de onboarding: ' + (error.message || ''))
     } finally {
       setSharingOnboarding(false)
+    }
+  }
+
+  const handleSaveObservacoes = async () => {
+    if (!impl) return
+    setSavingObservacoes(true)
+    try {
+      const updated = await updateObservacoesGerais(impl.id, observacoesGerais)
+      setImpl({ ...impl, observacoes_gerais: updated.observacoes_gerais })
+      toast.success('Observações salvas com sucesso!')
+    } catch (error: any) {
+      toast.error('Erro ao salvar observações: ' + (error.message || ''))
+    } finally {
+      setSavingObservacoes(false)
     }
   }
 
@@ -445,6 +463,36 @@ export default function ImplementacaoDetailPage() {
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+              <FileText className="h-4 w-4 text-indigo-600" />
+              Observações Gerais
+            </h3>
+            <Button
+              size="sm"
+              onClick={handleSaveObservacoes}
+              disabled={savingObservacoes}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              {savingObservacoes ? (
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              ) : (
+                <CheckCircle className="h-3 w-3 mr-1" />
+              )}
+              Salvar
+            </Button>
+          </div>
+          <Textarea
+            value={observacoesGerais}
+            onChange={(e) => setObservacoesGerais(e.target.value)}
+            placeholder="Registre observações gerais sobre a jornada de implantação do cliente: pontos de conversa, negociação, notas de onboarding, etc..."
+            className="min-h-[120px] resize-y"
+          />
         </CardContent>
       </Card>
 
