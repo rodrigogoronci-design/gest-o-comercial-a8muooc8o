@@ -22,6 +22,8 @@ import {
   PenLine,
   Rocket,
   DollarSign,
+  Video,
+  ClipboardList,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -128,6 +130,9 @@ import { DocumentacaoAdesaoTab } from '@/components/DocumentacaoAdesaoTab'
 import { DocumentacaoStatusBanner } from '@/components/DocumentacaoStatusBanner'
 import { getSignedContractUrl } from '@/lib/storage'
 import { TableActionsMenu } from '@/components/TableActionsMenu'
+import { SectionNav, type SectionNavItem } from '@/components/section-nav'
+import { CollapsibleSection } from '@/components/collapsible-section'
+import { ClientReunioesTab } from '@/components/ClientReunioesTab'
 
 export interface ClienteRecord {
   id: string
@@ -2665,13 +2670,19 @@ Obrigada.`)
   const ClientDetailsPanel = ({ client }: { client: MergedClient }) => {
     const plan = PLANS.find((p) => p.id === client.plano_base || p.name === client.plano_base)
 
+    const navItems: SectionNavItem[] = [
+      { id: 'implantacao', label: 'Implantação', icon: <Rocket className="h-3.5 w-3.5" /> },
+      { id: 'cnpjs', label: 'CNPJs', icon: <Building2 className="h-3.5 w-3.5" /> },
+      { id: 'assinatura', label: 'Assinatura', icon: <PenLine className="h-3.5 w-3.5" /> },
+      { id: 'reunioes', label: 'Reuniões', icon: <Video className="h-3.5 w-3.5" /> },
+      { id: 'pacote', label: 'Pacote', icon: <CheckCircle className="h-3.5 w-3.5" /> },
+    ]
+
     return (
-      <div className="mt-6 space-y-8">
+      <div className="mt-2 space-y-3">
+        <SectionNav items={navItems} />
         {/* Implantação */}
-        <div>
-          <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">
-            <Rocket className="h-4 w-4 text-indigo-500" /> Implantação
-          </h4>
+        <CollapsibleSection id="implantacao" title="Implantação" icon={<Rocket className="h-4 w-4 text-indigo-600" />} defaultOpen>
           {clientImplementacao ? (
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
@@ -2734,13 +2745,10 @@ Obrigada.`)
               </Button>
             </div>
           )}
-        </div>
+        </CollapsibleSection>
 
         {/* CNPJs Vinculados */}
-        <div>
-          <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-indigo-500" /> CNPJs Vinculados
-          </h4>
+        <CollapsibleSection id="cnpjs" title="CNPJs Vinculados" icon={<Building2 className="h-4 w-4 text-indigo-600" />}>
           <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
             <div className="p-3 bg-slate-50 border-b border-slate-100">
               <div className="flex items-center gap-2">
@@ -2777,13 +2785,10 @@ Obrigada.`)
               </div>
             )}
           </div>
-        </div>
+        </CollapsibleSection>
 
         {/* Link de Assinatura */}
-        <div>
-          <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">
-            <PenLine className="h-4 w-4 text-violet-500" /> Assinatura Eletrônica
-          </h4>
+        <CollapsibleSection id="assinatura" title="Assinatura Eletrônica" icon={<PenLine className="h-4 w-4 text-violet-600" />}>
           <div className="bg-white rounded-lg border border-slate-200 p-3 shadow-sm">
             {client.link_assinatura ? (
               <div className="flex items-center justify-between gap-2">
@@ -2831,14 +2836,16 @@ Obrigada.`)
               </div>
             )}
           </div>
-        </div>
+        </CollapsibleSection>
+
+        {/* Reuniões */}
+        <CollapsibleSection id="reunioes" title="Reuniões" icon={<Video className="h-4 w-4 text-indigo-600" />}>
+          <ClientReunioesTab clienteId={client.id} />
+        </CollapsibleSection>
 
         {/* Cancelamento */}
         {client.originalData?.status?.toLowerCase() === 'inativo' && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <h4 className="text-sm font-bold text-red-800 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Ban className="h-4 w-4" /> Contrato Cancelado
-            </h4>
+          <CollapsibleSection id="cancelamento" title="Contrato Cancelado" icon={<Ban className="h-4 w-4 text-red-600" />}>
             <div className="space-y-2 text-sm">
               <div className="flex gap-2">
                 <span className="text-red-600 font-medium min-w-[140px]">
@@ -2856,16 +2863,12 @@ Obrigada.`)
                   {client.motivo_cancelamento || 'Não informado'}
                 </span>
               </div>
-            </div>
-          </div>
+          </CollapsibleSection>
         )}
 
         {/* Resumo Atual */}
-        <div>
+        <CollapsibleSection id="pacote" title="Pacote Contratado Vigente" icon={<CheckCircle className="h-4 w-4 text-emerald-600" />} defaultOpen>
           <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-            <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-emerald-500" /> Pacote Contratado Vigente
-            </h4>
             <div className="flex items-center gap-2">
               {client.stats && client.stats.relevantTitulos > 0 && (
                 <Badge variant="outline" className={`${client.stats.color}`}>
@@ -3046,7 +3049,7 @@ Obrigada.`)
               )}
             </div>
           </div>
-        </div>
+        </CollapsibleSection>
       </div>
     )
   }
@@ -3088,6 +3091,10 @@ Obrigada.`)
           </Button>
         </div>
       </div>
+
+      <SectionNav items={[
+        { id: 'carteira-ativa', label: 'Carteira Ativa', icon: <Building2 className="h-3.5 w-3.5" /> },
+      ]} />
 
       {/* Adicionar Módulo Dialog */}
       <Dialog open={isAddModuleOpen} onOpenChange={setIsAddModuleOpen}>
@@ -3949,11 +3956,14 @@ Obrigada.`)
 
           <ScrollArea className="flex-1 -mx-6 px-6 mt-4">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 pb-6">
+                <SectionNav items={[
+                  { id: 'dados-empresa', label: 'Dados', icon: <Building2 className="h-3.5 w-3.5" /> },
+                  { id: 'composicao-contrato', label: 'Contrato', icon: <ClipboardList className="h-3.5 w-3.5" /> },
+                  { id: 'reajuste-ipca', label: 'Reajuste', icon: <Calendar className="h-3.5 w-3.5" /> },
+                ]} />
+                <CollapsibleSection id="dados-empresa" title="Dados da Empresa" icon={<Building2 className="h-4 w-4 text-indigo-600" />} defaultOpen>
                 <div className="space-y-4">
-                  <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider border-b pb-2">
-                    Dados da Empresa
-                  </h4>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField
@@ -4146,11 +4156,9 @@ Obrigada.`)
                     />
                   </div>
                 </div>
-
+                </CollapsibleSection>
+                <CollapsibleSection id="composicao-contrato" title="Composição do Contrato" icon={<ClipboardList className="h-4 w-4 text-indigo-600" />} defaultOpen>
                 <div className="space-y-4 pt-2">
-                  <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider border-b pb-2">
-                    Composição do Contrato
-                  </h4>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-100">
                     <FormField
@@ -4560,8 +4568,9 @@ Obrigada.`)
                     />
                   </div>
                 </div>
-
-                <div className="bg-amber-50 p-4 rounded-lg border border-amber-100 mt-6 space-y-3">
+                </CollapsibleSection>
+                <CollapsibleSection id="reajuste-ipca" title="Reajuste Anual (IPCA)" icon={<Calendar className="h-4 w-4 text-amber-600" />}>
+                <div className="bg-amber-50 p-4 rounded-lg border border-amber-100 space-y-3">
                   <FormField
                     control={form.control}
                     name="indice_reajuste_ipca"
@@ -4616,6 +4625,7 @@ Obrigada.`)
                     </div>
                   )}
                 </div>
+                </CollapsibleSection>
 
                 <div className="pt-6 flex justify-end gap-3">
                   <Button variant="outline" type="button" onClick={() => setIsSheetOpen(false)}>
@@ -4752,9 +4762,9 @@ Obrigada.`)
               </TabsList>
 
               <TabsContent value="resumo" className="mt-4 flex-1">
-                <ScrollArea className="h-[calc(100vh-14rem)] pr-4">
+                <div className="h-[calc(100vh-14rem)] overflow-y-auto overflow-x-hidden pr-2">
                   <ClientDetailsPanel client={viewingClient} />
-                </ScrollArea>
+                </div>
               </TabsContent>
 
               <TabsContent
@@ -4987,6 +4997,7 @@ Obrigada.`)
         </AlertDialogContent>
       </AlertDialog>
 
+      <CollapsibleSection id="carteira-ativa" title="Carteira Ativa" icon={<Building2 className="h-4 w-4 text-indigo-600" />} defaultOpen>
       <Card className="border-slate-200/60 shadow-sm">
         <CardHeader className="pb-3 border-b border-slate-100 mb-2">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -5259,6 +5270,7 @@ Obrigada.`)
           </Table>
         </CardContent>
       </Card>
+      </CollapsibleSection>
 
       <Dialog
         open={isSignatureLinkOpen}
