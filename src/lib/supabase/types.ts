@@ -2127,6 +2127,38 @@ export type Database = {
           },
         ]
       }
+      implementacao_observacoes: {
+        Row: {
+          created_at: string
+          id: string
+          implementacao_id: string
+          observacao: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          implementacao_id: string
+          observacao: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          implementacao_id?: string
+          observacao?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'implementacao_observacoes_implementacao_id_fkey'
+            columns: ['implementacao_id']
+            isOneToOne: false
+            referencedRelation: 'implementacoes'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       implementacoes: {
         Row: {
           atendimento_id: string | null
