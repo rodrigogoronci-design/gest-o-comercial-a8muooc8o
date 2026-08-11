@@ -2682,7 +2682,12 @@ Obrigada.`)
       <div className="mt-2 space-y-3">
         <SectionNav items={navItems} />
         {/* Implantação */}
-        <CollapsibleSection id="implantacao" title="Implantação" icon={<Rocket className="h-4 w-4 text-indigo-600" />} defaultOpen>
+        <CollapsibleSection
+          id="implantacao"
+          title="Implantação"
+          icon={<Rocket className="h-4 w-4 text-indigo-600" />}
+          defaultOpen
+        >
           {clientImplementacao ? (
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
@@ -2748,7 +2753,11 @@ Obrigada.`)
         </CollapsibleSection>
 
         {/* CNPJs Vinculados */}
-        <CollapsibleSection id="cnpjs" title="CNPJs Vinculados" icon={<Building2 className="h-4 w-4 text-indigo-600" />}>
+        <CollapsibleSection
+          id="cnpjs"
+          title="CNPJs Vinculados"
+          icon={<Building2 className="h-4 w-4 text-indigo-600" />}
+        >
           <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
             <div className="p-3 bg-slate-50 border-b border-slate-100">
               <div className="flex items-center gap-2">
@@ -2788,7 +2797,11 @@ Obrigada.`)
         </CollapsibleSection>
 
         {/* Link de Assinatura */}
-        <CollapsibleSection id="assinatura" title="Assinatura Eletrônica" icon={<PenLine className="h-4 w-4 text-violet-600" />}>
+        <CollapsibleSection
+          id="assinatura"
+          title="Assinatura Eletrônica"
+          icon={<PenLine className="h-4 w-4 text-violet-600" />}
+        >
           <div className="bg-white rounded-lg border border-slate-200 p-3 shadow-sm">
             {client.link_assinatura ? (
               <div className="flex items-center justify-between gap-2">
@@ -2839,13 +2852,21 @@ Obrigada.`)
         </CollapsibleSection>
 
         {/* Reuniões */}
-        <CollapsibleSection id="reunioes" title="Reuniões" icon={<Video className="h-4 w-4 text-indigo-600" />}>
+        <CollapsibleSection
+          id="reunioes"
+          title="Reuniões"
+          icon={<Video className="h-4 w-4 text-indigo-600" />}
+        >
           <ClientReunioesTab clienteId={client.id} />
         </CollapsibleSection>
 
         {/* Cancelamento */}
         {client.originalData?.status?.toLowerCase() === 'inativo' && (
-          <CollapsibleSection id="cancelamento" title="Contrato Cancelado" icon={<Ban className="h-4 w-4 text-red-600" />}>
+          <CollapsibleSection
+            id="cancelamento"
+            title="Contrato Cancelado"
+            icon={<Ban className="h-4 w-4 text-red-600" />}
+          >
             <div className="space-y-2 text-sm">
               <div className="flex gap-2">
                 <span className="text-red-600 font-medium min-w-[140px]">
@@ -2863,11 +2884,17 @@ Obrigada.`)
                   {client.motivo_cancelamento || 'Não informado'}
                 </span>
               </div>
+            </div>
           </CollapsibleSection>
         )}
 
         {/* Resumo Atual */}
-        <CollapsibleSection id="pacote" title="Pacote Contratado Vigente" icon={<CheckCircle className="h-4 w-4 text-emerald-600" />} defaultOpen>
+        <CollapsibleSection
+          id="pacote"
+          title="Pacote Contratado Vigente"
+          icon={<CheckCircle className="h-4 w-4 text-emerald-600" />}
+          defaultOpen
+        >
           <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
             <div className="flex items-center gap-2">
               {client.stats && client.stats.relevantTitulos > 0 && (
@@ -3092,9 +3119,15 @@ Obrigada.`)
         </div>
       </div>
 
-      <SectionNav items={[
-        { id: 'carteira-ativa', label: 'Carteira Ativa', icon: <Building2 className="h-3.5 w-3.5" /> },
-      ]} />
+      <SectionNav
+        items={[
+          {
+            id: 'carteira-ativa',
+            label: 'Carteira Ativa',
+            icon: <Building2 className="h-3.5 w-3.5" />,
+          },
+        ]}
+      />
 
       {/* Adicionar Módulo Dialog */}
       <Dialog open={isAddModuleOpen} onOpenChange={setIsAddModuleOpen}>
@@ -3957,674 +3990,703 @@ Obrigada.`)
           <ScrollArea className="flex-1 -mx-6 px-6 mt-4">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 pb-6">
-                <SectionNav items={[
-                  { id: 'dados-empresa', label: 'Dados', icon: <Building2 className="h-3.5 w-3.5" /> },
-                  { id: 'composicao-contrato', label: 'Contrato', icon: <ClipboardList className="h-3.5 w-3.5" /> },
-                  { id: 'reajuste-ipca', label: 'Reajuste', icon: <Calendar className="h-3.5 w-3.5" /> },
-                ]} />
-                <CollapsibleSection id="dados-empresa" title="Dados da Empresa" icon={<Building2 className="h-4 w-4 text-indigo-600" />} defaultOpen>
-                <div className="space-y-4">
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="nome"
-                      render={({ field }) => (
-                        <FormItem className="sm:col-span-2">
-                          <FormLabel>Razão Social</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Building2 className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                              <Input
-                                placeholder="Ex: Transporte Rápido LTDA"
-                                className="pl-9"
-                                {...field}
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="cnpj"
-                      render={({ field }) => (
-                        <FormItem className="sm:col-span-2">
-                          <FormLabel>CNPJ</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Hash className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                              <Input
-                                placeholder="00.000.000/0001-00"
-                                className="pl-9"
-                                {...field}
-                                onChange={(e) => {
-                                  field.onChange(e)
-                                  handleCnpjChange(e.target.value)
-                                }}
-                              />
-                              {isLoadingCnpj && (
-                                <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-slate-400" />
-                              )}
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>E-mail (Opcional)</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                              <Input
-                                type="email"
-                                placeholder="contato@empresa.com"
-                                className="pl-9"
-                                {...field}
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="telefone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Telefone (Opcional)</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Phone className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                              <Input placeholder="(00) 0000-0000" className="pl-9" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="endereco"
-                      render={({ field }) => (
-                        <FormItem className="sm:col-span-2">
-                          <FormLabel>Endereço Completo</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Av. Paulista, 1000 - SP" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="rep_nome"
-                      render={({ field }) => (
-                        <FormItem className="sm:col-span-2">
-                          <FormLabel>Representante Legal</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Nome Completo do Representante" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="rep_cpf"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>CPF do Rep.</FormLabel>
-                          <FormControl>
-                            <Input placeholder="000.000.000-00" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="rep_rg"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>RG do Rep.</FormLabel>
-                          <FormControl>
-                            <Input placeholder="00.000.000-0" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="data_assinatura"
-                      render={({ field }) => (
-                        <FormItem className="sm:col-span-2">
-                          <FormLabel>Data de Assinatura do Contrato</FormLabel>
-                          <FormControl>
-                            <AdvancedDatePicker
-                              value={field.value || ''}
-                              onChange={field.onChange}
-                              placeholder="Selecione a data de assinatura"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="vencimento_mensal"
-                      render={({ field }) => (
-                        <FormItem className="sm:col-span-2">
-                          <FormLabel>Dia de Vencimento (Mensal)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min={1}
-                              max={31}
-                              placeholder="Ex: 10"
-                              value={field.value ?? ''}
-                              onChange={(e) => {
-                                const val = e.target.value
-                                if (val === '') {
-                                  field.onChange(undefined)
-                                } else {
-                                  const num = parseInt(val, 10)
-                                  if (!isNaN(num) && num >= 1 && num <= 31) {
-                                    field.onChange(num)
-                                  }
-                                }
-                              }}
-                            />
-                          </FormControl>
-                          <p className="text-xs text-slate-500">
-                            Dia do mês para o vencimento recorrente (1 a 31).
-                          </p>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-                </CollapsibleSection>
-                <CollapsibleSection id="composicao-contrato" title="Composição do Contrato" icon={<ClipboardList className="h-4 w-4 text-indigo-600" />} defaultOpen>
-                <div className="space-y-4 pt-2">
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                    <FormField
-                      control={form.control}
-                      name="plano_base"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Plano Base / Emissões</FormLabel>
-                          <FormControl>
-                            <div className="flex gap-2">
-                              <Input
-                                placeholder="Ex: TMS 30 ou selecione..."
-                                value={field.value || ''}
-                                onChange={field.onChange}
-                                className="bg-white flex-1"
-                              />
-                              <Select
-                                onValueChange={field.onChange}
-                                value={
-                                  PLANS.some((p) => p.name === field.value)
-                                    ? field.value
-                                    : undefined
-                                }
-                              >
-                                <SelectTrigger className="w-12 bg-white flex justify-center px-0">
-                                  <ChevronDown className="h-4 w-4 opacity-50" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {PLANS.map((plan) => (
-                                    <SelectItem key={plan.id} value={plan.name}>
-                                      {plan.name} - {formatCurrency(plan.price)}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="filiais"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nº Filiais Adicionais</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min={0}
-                              className="bg-white"
-                              value={field.value}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                          <p className="text-xs text-slate-500">R$ 199,00 por filial</p>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="border-t pt-4 mt-4 pb-2">
-                    <h3 className="font-semibold text-sm mb-4">Filiais Vinculadas (DF-e)</h3>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
+                <SectionNav
+                  items={[
+                    {
+                      id: 'dados-empresa',
+                      label: 'Dados',
+                      icon: <Building2 className="h-3.5 w-3.5" />,
+                    },
+                    {
+                      id: 'composicao-contrato',
+                      label: 'Contrato',
+                      icon: <ClipboardList className="h-3.5 w-3.5" />,
+                    },
+                    {
+                      id: 'reajuste-ipca',
+                      label: 'Reajuste',
+                      icon: <Calendar className="h-3.5 w-3.5" />,
+                    },
+                  ]}
+                />
+                <CollapsibleSection
+                  id="dados-empresa"
+                  title="Dados da Empresa"
+                  icon={<Building2 className="h-4 w-4 text-indigo-600" />}
+                  defaultOpen
+                >
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
-                        name="cobrar_filiais"
+                        name="nome"
                         render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-white">
-                            <div className="space-y-0.5">
-                              <FormLabel>Cobrar por Filiais</FormLabel>
-                              <div className="text-[11px] text-muted-foreground">
-                                Aplicar custos no total do contrato
-                              </div>
-                            </div>
+                          <FormItem className="sm:col-span-2">
+                            <FormLabel>Razão Social</FormLabel>
                             <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={(c) => {
-                                  field.onChange(c)
-                                  if (!c) {
-                                    form.setValue('quantidade_filiais', 0)
-                                    form.setValue('filiais_detalhes', [])
-                                  }
-                                }}
-                              />
+                              <div className="relative">
+                                <Building2 className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                                <Input
+                                  placeholder="Ex: Transporte Rápido LTDA"
+                                  className="pl-9"
+                                  {...field}
+                                />
+                              </div>
                             </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
 
-                      {form.watch('cobrar_filiais') && (
+                      <FormField
+                        control={form.control}
+                        name="cnpj"
+                        render={({ field }) => (
+                          <FormItem className="sm:col-span-2">
+                            <FormLabel>CNPJ</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <Hash className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                                <Input
+                                  placeholder="00.000.000/0001-00"
+                                  className="pl-9"
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(e)
+                                    handleCnpjChange(e.target.value)
+                                  }}
+                                />
+                                {isLoadingCnpj && (
+                                  <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-slate-400" />
+                                )}
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>E-mail (Opcional)</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                                <Input
+                                  type="email"
+                                  placeholder="contato@empresa.com"
+                                  className="pl-9"
+                                  {...field}
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="telefone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Telefone (Opcional)</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <Phone className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                                <Input placeholder="(00) 0000-0000" className="pl-9" {...field} />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="endereco"
+                        render={({ field }) => (
+                          <FormItem className="sm:col-span-2">
+                            <FormLabel>Endereço Completo</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Av. Paulista, 1000 - SP" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="rep_nome"
+                        render={({ field }) => (
+                          <FormItem className="sm:col-span-2">
+                            <FormLabel>Representante Legal</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Nome Completo do Representante" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="rep_cpf"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>CPF do Rep.</FormLabel>
+                            <FormControl>
+                              <Input placeholder="000.000.000-00" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="rep_rg"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>RG do Rep.</FormLabel>
+                            <FormControl>
+                              <Input placeholder="00.000.000-0" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="data_assinatura"
+                        render={({ field }) => (
+                          <FormItem className="sm:col-span-2">
+                            <FormLabel>Data de Assinatura do Contrato</FormLabel>
+                            <FormControl>
+                              <AdvancedDatePicker
+                                value={field.value || ''}
+                                onChange={field.onChange}
+                                placeholder="Selecione a data de assinatura"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="vencimento_mensal"
+                        render={({ field }) => (
+                          <FormItem className="sm:col-span-2">
+                            <FormLabel>Dia de Vencimento (Mensal)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={1}
+                                max={31}
+                                placeholder="Ex: 10"
+                                value={field.value ?? ''}
+                                onChange={(e) => {
+                                  const val = e.target.value
+                                  if (val === '') {
+                                    field.onChange(undefined)
+                                  } else {
+                                    const num = parseInt(val, 10)
+                                    if (!isNaN(num) && num >= 1 && num <= 31) {
+                                      field.onChange(num)
+                                    }
+                                  }
+                                }}
+                              />
+                            </FormControl>
+                            <p className="text-xs text-slate-500">
+                              Dia do mês para o vencimento recorrente (1 a 31).
+                            </p>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </CollapsibleSection>
+                <CollapsibleSection
+                  id="composicao-contrato"
+                  title="Composição do Contrato"
+                  icon={<ClipboardList className="h-4 w-4 text-indigo-600" />}
+                  defaultOpen
+                >
+                  <div className="space-y-4 pt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-100">
+                      <FormField
+                        control={form.control}
+                        name="plano_base"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Plano Base / Emissões</FormLabel>
+                            <FormControl>
+                              <div className="flex gap-2">
+                                <Input
+                                  placeholder="Ex: TMS 30 ou selecione..."
+                                  value={field.value || ''}
+                                  onChange={field.onChange}
+                                  className="bg-white flex-1"
+                                />
+                                <Select
+                                  onValueChange={field.onChange}
+                                  value={
+                                    PLANS.some((p) => p.name === field.value)
+                                      ? field.value
+                                      : undefined
+                                  }
+                                >
+                                  <SelectTrigger className="w-12 bg-white flex justify-center px-0">
+                                    <ChevronDown className="h-4 w-4 opacity-50" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {PLANS.map((plan) => (
+                                      <SelectItem key={plan.id} value={plan.name}>
+                                        {plan.name} - {formatCurrency(plan.price)}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="filiais"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nº Filiais Adicionais</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={0}
+                                className="bg-white"
+                                value={field.value}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <p className="text-xs text-slate-500">R$ 199,00 por filial</p>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="border-t pt-4 mt-4 pb-2">
+                      <h3 className="font-semibold text-sm mb-4">Filiais Vinculadas (DF-e)</h3>
+                      <div className="grid grid-cols-2 gap-4 mb-4">
                         <FormField
                           control={form.control}
-                          name="quantidade_filiais"
+                          name="cobrar_filiais"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Quantidade de Filiais</FormLabel>
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-white">
+                              <div className="space-y-0.5">
+                                <FormLabel>Cobrar por Filiais</FormLabel>
+                                <div className="text-[11px] text-muted-foreground">
+                                  Aplicar custos no total do contrato
+                                </div>
+                              </div>
                               <FormControl>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  {...field}
-                                  value={filiaisFields.length}
-                                  readOnly
-                                  className="bg-slate-50 cursor-not-allowed"
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={(c) => {
+                                    field.onChange(c)
+                                    if (!c) {
+                                      form.setValue('quantidade_filiais', 0)
+                                      form.setValue('filiais_detalhes', [])
+                                    }
+                                  }}
                                 />
                               </FormControl>
-                              <FormMessage />
                             </FormItem>
                           )}
                         />
+
+                        {form.watch('cobrar_filiais') && (
+                          <FormField
+                            control={form.control}
+                            name="quantidade_filiais"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Quantidade de Filiais</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    {...field}
+                                    value={filiaisFields.length}
+                                    readOnly
+                                    className="bg-slate-50 cursor-not-allowed"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
+                      </div>
+
+                      {form.watch('cobrar_filiais') && (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <FormLabel className="text-sm font-bold">
+                              CNPJs das Filiais Vinculadas
+                            </FormLabel>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                appendFilial({ nome: '', cnpj: '' })
+                                form.setValue('quantidade_filiais', filiaisFields.length + 1)
+                              }}
+                            >
+                              <Plus className="mr-2 h-4 w-4" />
+                              Adicionar Filial
+                            </Button>
+                          </div>
+                          {filiaisFields.map((field, index) => (
+                            <div
+                              key={field.id}
+                              className="relative grid grid-cols-2 gap-4 p-3 bg-slate-50 rounded-md border mt-2"
+                            >
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute -top-3 -right-3 h-6 w-6 rounded-full bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 z-10"
+                                onClick={() => {
+                                  removeFilial(index)
+                                  form.setValue('quantidade_filiais', filiaisFields.length - 1)
+                                }}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                              <FormField
+                                control={form.control}
+                                name={`filiais_detalhes.${index}.nome`}
+                                render={({ field: nameField }) => (
+                                  <FormItem>
+                                    <FormLabel>Nome da Filial {index + 1}</FormLabel>
+                                    <FormControl>
+                                      <Input placeholder="Nome da Filial" {...nameField} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`filiais_detalhes.${index}.cnpj`}
+                                render={({ field: cnpjField }) => (
+                                  <FormItem>
+                                    <FormLabel>CNPJ da Filial {index + 1}</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        placeholder="00.000.000/0000-00"
+                                        {...cnpjField}
+                                        onChange={(e) => {
+                                          const raw = e.target.value.replace(/\D/g, '')
+                                          const formatted =
+                                            raw.length <= 14 ? formatCNPJ(raw) : e.target.value
+                                          cnpjField.onChange(formatted)
+
+                                          if (raw.length === 14) {
+                                            fetchCnpjData(raw)
+                                              .then(({ data: cnpjData }) => {
+                                                if (
+                                                  cnpjData?.nome &&
+                                                  !form.getValues(`filiais_detalhes.${index}.nome`)
+                                                ) {
+                                                  form.setValue(
+                                                    `filiais_detalhes.${index}.nome`,
+                                                    cnpjData.nome,
+                                                  )
+                                                }
+                                              })
+                                              .catch(() => {})
+                                          }
+                                        }}
+                                        maxLength={18}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
 
-                    {form.watch('cobrar_filiais') && (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <FormLabel className="text-sm font-bold">
-                            CNPJs das Filiais Vinculadas
-                          </FormLabel>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              appendFilial({ nome: '', cnpj: '' })
-                              form.setValue('quantidade_filiais', filiaisFields.length + 1)
-                            }}
-                          >
-                            <Plus className="mr-2 h-4 w-4" />
-                            Adicionar Filial
-                          </Button>
-                        </div>
-                        {filiaisFields.map((field, index) => (
-                          <div
-                            key={field.id}
-                            className="relative grid grid-cols-2 gap-4 p-3 bg-slate-50 rounded-md border mt-2"
-                          >
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="absolute -top-3 -right-3 h-6 w-6 rounded-full bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 z-10"
-                              onClick={() => {
-                                removeFilial(index)
-                                form.setValue('quantidade_filiais', filiaisFields.length - 1)
-                              }}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                            <FormField
-                              control={form.control}
-                              name={`filiais_detalhes.${index}.nome`}
-                              render={({ field: nameField }) => (
-                                <FormItem>
-                                  <FormLabel>Nome da Filial {index + 1}</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="Nome da Filial" {...nameField} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={form.control}
-                              name={`filiais_detalhes.${index}.cnpj`}
-                              render={({ field: cnpjField }) => (
-                                <FormItem>
-                                  <FormLabel>CNPJ da Filial {index + 1}</FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      placeholder="00.000.000/0000-00"
-                                      {...cnpjField}
-                                      onChange={(e) => {
-                                        const raw = e.target.value.replace(/\D/g, '')
-                                        const formatted =
-                                          raw.length <= 14 ? formatCNPJ(raw) : e.target.value
-                                        cnpjField.onChange(formatted)
-
-                                        if (raw.length === 14) {
-                                          fetchCnpjData(raw)
-                                            .then(({ data: cnpjData }) => {
-                                              if (
-                                                cnpjData?.nome &&
-                                                !form.getValues(`filiais_detalhes.${index}.nome`)
-                                              ) {
-                                                form.setValue(
-                                                  `filiais_detalhes.${index}.nome`,
-                                                  cnpjData.nome,
-                                                )
-                                              }
-                                            })
-                                            .catch(() => {})
-                                        }
-                                      }}
-                                      maxLength={18}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <FormField
-                    control={form.control}
-                    name="modulos"
-                    render={() => {
-                      const renderModule = (module: any) => {
-                        const isSelected = form
-                          .watch('modulos')
-                          ?.some((m: any) =>
-                            typeof m === 'string' ? m === module.name : m.name === module.name,
-                          )
-                        const selectedModule = form
-                          .watch('modulos')
-                          ?.find((m: any) =>
-                            typeof m === 'string' ? m === module.name : m.name === module.name,
-                          )
-                        const currentPrice =
-                          selectedModule && typeof selectedModule !== 'string'
-                            ? selectedModule.price
-                            : module.price
-
-                        return (
-                          <FormField
-                            key={module.id}
-                            control={form.control}
-                            name="modulos"
-                            render={({ field }) => {
-                              return (
-                                <div className="flex flex-col rounded-md border bg-white hover:bg-slate-50 transition-colors overflow-hidden">
-                                  <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3">
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={isSelected}
-                                        onCheckedChange={(checked) => {
-                                          const currentValues = field.value || []
-                                          if (checked) {
-                                            field.onChange([
-                                              ...currentValues,
-                                              { name: module.name, price: module.price },
-                                            ])
-                                          } else {
-                                            field.onChange(
-                                              currentValues.filter((m: any) =>
-                                                typeof m === 'string'
-                                                  ? m !== module.name
-                                                  : m.name !== module.name,
-                                              ),
-                                            )
-                                          }
-                                        }}
-                                      />
-                                    </FormControl>
-                                    <div className="flex-1 flex justify-between items-center">
-                                      <FormLabel className="font-medium cursor-pointer w-full h-full text-sm leading-none">
-                                        {module.name}
-                                      </FormLabel>
-                                      {!isSelected && (
-                                        <span className="text-xs text-slate-500 whitespace-nowrap ml-2 font-mono">
-                                          {module.price > 0
-                                            ? formatCurrency(module.price)
-                                            : 'Incluso'}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </FormItem>
-
-                                  {isSelected && (
-                                    <div className="flex items-center gap-2 px-3 pb-3 pt-1 bg-slate-50/50 border-t border-slate-100">
-                                      <span className="text-xs text-slate-500 font-medium">
-                                        {module.isBasic
-                                          ? 'Valor (Desconto se negativo):'
-                                          : 'Valor Mensal:'}
-                                      </span>
-                                      <div className="relative flex-1">
-                                        <span className="absolute left-2.5 top-1.5 text-xs text-slate-400">
-                                          R$
-                                        </span>
-                                        <Input
-                                          type="number"
-                                          step="0.01"
-                                          className="h-7 text-xs pl-7 bg-white border-slate-200"
-                                          value={currentPrice}
-                                          onChange={(e) => {
-                                            const newPrice = parseFloat(e.target.value) || 0
-                                            const currentValues = field.value || []
-                                            const updated = currentValues.map((m: any) => {
-                                              const mName = typeof m === 'string' ? m : m.name
-                                              if (mName === module.name) {
-                                                return { name: module.name, price: newPrice }
-                                              }
-                                              return m
-                                            })
-                                            field.onChange(updated)
-                                          }}
-                                        />
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              )
-                            }}
-                          />
-                        )
-                      }
-
-                      return (
-                        <FormItem>
-                          <FormLabel className="text-base text-slate-700 block mb-2">
-                            Módulos do Plano Básico
-                          </FormLabel>
-                          <div className="space-y-2 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:space-y-0">
-                            {MODULES.filter((m: any) => m.isBasic).map(renderModule)}
-                          </div>
-
-                          <FormLabel className="text-base text-slate-700 block mt-6 mb-2">
-                            Módulos Adicionais
-                          </FormLabel>
-                          <div className="space-y-2 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:space-y-0">
-                            {MODULES.filter((m: any) => !m.isBasic).map(renderModule)}
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )
-                    }}
-                  />
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-                    <div className="space-y-2">
-                      <FormLabel className="text-sm">Desconto na Mensalidade</FormLabel>
-                      <div className="flex items-center gap-2">
-                        <FormField
-                          control={form.control}
-                          name="tipo_desconto"
-                          render={({ field }) => (
-                            <FormItem className="w-24">
-                              <FormControl>
-                                <Select value={field.value} onValueChange={field.onChange}>
-                                  <SelectTrigger className="bg-white">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="valor">R$</SelectItem>
-                                    <SelectItem value="percentual">%</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="desconto_mensalidade"
-                          render={({ field }) => (
-                            <FormItem className="flex-1">
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  {...field}
-                                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                  className="bg-white"
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100 mt-6 space-y-3">
                     <FormField
                       control={form.control}
-                      name="valor_total"
+                      name="modulos"
+                      render={() => {
+                        const renderModule = (module: any) => {
+                          const isSelected = form
+                            .watch('modulos')
+                            ?.some((m: any) =>
+                              typeof m === 'string' ? m === module.name : m.name === module.name,
+                            )
+                          const selectedModule = form
+                            .watch('modulos')
+                            ?.find((m: any) =>
+                              typeof m === 'string' ? m === module.name : m.name === module.name,
+                            )
+                          const currentPrice =
+                            selectedModule && typeof selectedModule !== 'string'
+                              ? selectedModule.price
+                              : module.price
+
+                          return (
+                            <FormField
+                              key={module.id}
+                              control={form.control}
+                              name="modulos"
+                              render={({ field }) => {
+                                return (
+                                  <div className="flex flex-col rounded-md border bg-white hover:bg-slate-50 transition-colors overflow-hidden">
+                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3">
+                                      <FormControl>
+                                        <Checkbox
+                                          checked={isSelected}
+                                          onCheckedChange={(checked) => {
+                                            const currentValues = field.value || []
+                                            if (checked) {
+                                              field.onChange([
+                                                ...currentValues,
+                                                { name: module.name, price: module.price },
+                                              ])
+                                            } else {
+                                              field.onChange(
+                                                currentValues.filter((m: any) =>
+                                                  typeof m === 'string'
+                                                    ? m !== module.name
+                                                    : m.name !== module.name,
+                                                ),
+                                              )
+                                            }
+                                          }}
+                                        />
+                                      </FormControl>
+                                      <div className="flex-1 flex justify-between items-center">
+                                        <FormLabel className="font-medium cursor-pointer w-full h-full text-sm leading-none">
+                                          {module.name}
+                                        </FormLabel>
+                                        {!isSelected && (
+                                          <span className="text-xs text-slate-500 whitespace-nowrap ml-2 font-mono">
+                                            {module.price > 0
+                                              ? formatCurrency(module.price)
+                                              : 'Incluso'}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </FormItem>
+
+                                    {isSelected && (
+                                      <div className="flex items-center gap-2 px-3 pb-3 pt-1 bg-slate-50/50 border-t border-slate-100">
+                                        <span className="text-xs text-slate-500 font-medium">
+                                          {module.isBasic
+                                            ? 'Valor (Desconto se negativo):'
+                                            : 'Valor Mensal:'}
+                                        </span>
+                                        <div className="relative flex-1">
+                                          <span className="absolute left-2.5 top-1.5 text-xs text-slate-400">
+                                            R$
+                                          </span>
+                                          <Input
+                                            type="number"
+                                            step="0.01"
+                                            className="h-7 text-xs pl-7 bg-white border-slate-200"
+                                            value={currentPrice}
+                                            onChange={(e) => {
+                                              const newPrice = parseFloat(e.target.value) || 0
+                                              const currentValues = field.value || []
+                                              const updated = currentValues.map((m: any) => {
+                                                const mName = typeof m === 'string' ? m : m.name
+                                                if (mName === module.name) {
+                                                  return { name: module.name, price: newPrice }
+                                                }
+                                                return m
+                                              })
+                                              field.onChange(updated)
+                                            }}
+                                          />
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              }}
+                            />
+                          )
+                        }
+
+                        return (
+                          <FormItem>
+                            <FormLabel className="text-base text-slate-700 block mb-2">
+                              Módulos do Plano Básico
+                            </FormLabel>
+                            <div className="space-y-2 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:space-y-0">
+                              {MODULES.filter((m: any) => m.isBasic).map(renderModule)}
+                            </div>
+
+                            <FormLabel className="text-base text-slate-700 block mt-6 mb-2">
+                              Módulos Adicionais
+                            </FormLabel>
+                            <div className="space-y-2 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:space-y-0">
+                              {MODULES.filter((m: any) => !m.isBasic).map(renderModule)}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )
+                      }}
+                    />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                      <div className="space-y-2">
+                        <FormLabel className="text-sm">Desconto na Mensalidade</FormLabel>
+                        <div className="flex items-center gap-2">
+                          <FormField
+                            control={form.control}
+                            name="tipo_desconto"
+                            render={({ field }) => (
+                              <FormItem className="w-24">
+                                <FormControl>
+                                  <Select value={field.value} onValueChange={field.onChange}>
+                                    <SelectTrigger className="bg-white">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="valor">R$</SelectItem>
+                                      <SelectItem value="percentual">%</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="desconto_mensalidade"
+                            render={({ field }) => (
+                              <FormItem className="flex-1">
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    {...field}
+                                    onChange={(e) =>
+                                      field.onChange(parseFloat(e.target.value) || 0)
+                                    }
+                                    className="bg-white"
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100 mt-6 space-y-3">
+                      <FormField
+                        control={form.control}
+                        name="valor_total"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-emerald-900 font-semibold text-sm">
+                              Valor Total do Contrato (R$)
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={field.value || ''}
+                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                className="font-bold bg-white text-lg h-12 text-emerald-700 border-emerald-200"
+                              />
+                            </FormControl>
+                            <p className="text-xs text-emerald-600/80 mt-1">
+                              Calculado automaticamente. Você pode alterar manualmente se
+                              necessário.
+                            </p>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </CollapsibleSection>
+                <CollapsibleSection
+                  id="reajuste-ipca"
+                  title="Reajuste Anual (IPCA)"
+                  icon={<Calendar className="h-4 w-4 text-amber-600" />}
+                >
+                  <div className="bg-amber-50 p-4 rounded-lg border border-amber-100 space-y-3">
+                    <FormField
+                      control={form.control}
+                      name="indice_reajuste_ipca"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-emerald-900 font-semibold text-sm">
-                            Valor Total do Contrato (R$)
+                          <FormLabel className="text-amber-900 font-semibold text-sm">
+                            Índice de Reajuste Anual (IPCA) - %
                           </FormLabel>
                           <FormControl>
                             <Input
                               type="number"
                               step="0.01"
-                              value={field.value || ''}
+                              min="0"
+                              max="100"
+                              placeholder="Ex: 5.00"
+                              value={field.value ?? ''}
                               onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              className="font-bold bg-white text-lg h-12 text-emerald-700 border-emerald-200"
+                              className="bg-white text-lg h-12 text-amber-700 border-amber-200 font-bold"
                             />
                           </FormControl>
-                          <p className="text-xs text-emerald-600/80 mt-1">
-                            Calculado automaticamente. Você pode alterar manualmente se necessário.
+                          <p className="text-xs text-amber-600/80 mt-1">
+                            Informe o percentual do IPCA para cálculo do reajuste anual do contrato.
                           </p>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  </div>
-                </div>
-                </CollapsibleSection>
-                <CollapsibleSection id="reajuste-ipca" title="Reajuste Anual (IPCA)" icon={<Calendar className="h-4 w-4 text-amber-600" />}>
-                <div className="bg-amber-50 p-4 rounded-lg border border-amber-100 space-y-3">
-                  <FormField
-                    control={form.control}
-                    name="indice_reajuste_ipca"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-amber-900 font-semibold text-sm">
-                          Índice de Reajuste Anual (IPCA) - %
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max="100"
-                            placeholder="Ex: 5.00"
-                            value={field.value ?? ''}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                            className="bg-white text-lg h-12 text-amber-700 border-amber-200 font-bold"
-                          />
-                        </FormControl>
-                        <p className="text-xs text-amber-600/80 mt-1">
-                          Informe o percentual do IPCA para cálculo do reajuste anual do contrato.
-                        </p>
-                        <FormMessage />
-                      </FormItem>
+                    {(form.watch('indice_reajuste_ipca') || 0) > 0 && (
+                      <div className="bg-white p-3 rounded-md border border-amber-200 space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-600">Valor Mensal Atual:</span>
+                          <span className="font-medium text-slate-800">
+                            {formatCurrency(form.watch('valor_total') || 0)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-600">Índice IPCA:</span>
+                          <span className="font-medium text-amber-700">
+                            {form.watch('indice_reajuste_ipca')}%
+                          </span>
+                        </div>
+                        <Separator className="my-2" />
+                        <div className="flex justify-between text-base">
+                          <span className="font-bold text-amber-900">Valor Reajustado:</span>
+                          <span className="font-bold text-emerald-700">
+                            {formatCurrency(
+                              (form.watch('valor_total') || 0) *
+                                (1 + (form.watch('indice_reajuste_ipca') || 0) / 100),
+                            )}
+                          </span>
+                        </div>
+                      </div>
                     )}
-                  />
-                  {(form.watch('indice_reajuste_ipca') || 0) > 0 && (
-                    <div className="bg-white p-3 rounded-md border border-amber-200 space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-600">Valor Mensal Atual:</span>
-                        <span className="font-medium text-slate-800">
-                          {formatCurrency(form.watch('valor_total') || 0)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-600">Índice IPCA:</span>
-                        <span className="font-medium text-amber-700">
-                          {form.watch('indice_reajuste_ipca')}%
-                        </span>
-                      </div>
-                      <Separator className="my-2" />
-                      <div className="flex justify-between text-base">
-                        <span className="font-bold text-amber-900">Valor Reajustado:</span>
-                        <span className="font-bold text-emerald-700">
-                          {formatCurrency(
-                            (form.watch('valor_total') || 0) *
-                              (1 + (form.watch('indice_reajuste_ipca') || 0) / 100),
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                  </div>
                 </CollapsibleSection>
 
                 <div className="pt-6 flex justify-end gap-3">
@@ -4997,279 +5059,284 @@ Obrigada.`)
         </AlertDialogContent>
       </AlertDialog>
 
-      <CollapsibleSection id="carteira-ativa" title="Carteira Ativa" icon={<Building2 className="h-4 w-4 text-indigo-600" />} defaultOpen>
-      <Card className="border-slate-200/60 shadow-sm">
-        <CardHeader className="pb-3 border-b border-slate-100 mb-2">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <CardTitle className="text-lg">Carteira Ativa</CardTitle>
-              <CardDescription>
-                {mergedClients.length} empresas com contratos vigentes.
-              </CardDescription>
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-64">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nome ou CNPJ..."
-                  className="pl-9 h-9 bg-slate-50"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+      <CollapsibleSection
+        id="carteira-ativa"
+        title="Carteira Ativa"
+        icon={<Building2 className="h-4 w-4 text-indigo-600" />}
+        defaultOpen
+      >
+        <Card className="border-slate-200/60 shadow-sm">
+          <CardHeader className="pb-3 border-b border-slate-100 mb-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <CardTitle className="text-lg">Carteira Ativa</CardTitle>
+                <CardDescription>
+                  {mergedClients.length} empresas com contratos vigentes.
+                </CardDescription>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-9 w-9">
-                    <Filter className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
-                  <DropdownMenuRadioGroup
-                    value={filterType}
-                    onValueChange={(val: any) => setFilterType(val)}
-                  >
-                    <DropdownMenuRadioItem value="all" className="cursor-pointer">
-                      Todos os clientes
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="with_contract" className="cursor-pointer">
-                      Com contrato ativo
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="without_contract" className="cursor-pointer">
-                      Sem contrato / Pendente
-                    </DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel>Ordenar Alfabeticamente</DropdownMenuLabel>
-                  <DropdownMenuRadioGroup
-                    value={sortOrder}
-                    onValueChange={(val: any) => setSortOrder(val)}
-                  >
-                    <DropdownMenuRadioItem value="asc" className="cursor-pointer">
-                      A - Z (Crescente)
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="desc" className="cursor-pointer">
-                      Z - A (Decrescente)
-                    </DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <div className="relative flex-1 sm:w-64">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nome ou CNPJ..."
+                    className="pl-9 h-9 bg-slate-50"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" className="h-9 w-9">
+                      <Filter className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
+                    <DropdownMenuRadioGroup
+                      value={filterType}
+                      onValueChange={(val: any) => setFilterType(val)}
+                    >
+                      <DropdownMenuRadioItem value="all" className="cursor-pointer">
+                        Todos os clientes
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="with_contract" className="cursor-pointer">
+                        Com contrato ativo
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="without_contract" className="cursor-pointer">
+                        Sem contrato / Pendente
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Ordenar Alfabeticamente</DropdownMenuLabel>
+                    <DropdownMenuRadioGroup
+                      value={sortOrder}
+                      onValueChange={(val: any) => setSortOrder(val)}
+                    >
+                      <DropdownMenuRadioItem value="asc" className="cursor-pointer">
+                        A - Z (Crescente)
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="desc" className="cursor-pointer">
+                        Z - A (Decrescente)
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0 table-scroll-wrapper">
-          <Table>
-            <TableHeader className="bg-slate-50/50">
-              <TableRow>
-                <TableHead>Empresa / CNPJ</TableHead>
-                <TableHead>Plano</TableHead>
-                <TableHead>Módulos Contratados</TableHead>
-                <TableHead>Mensalidade</TableHead>
-                <TableHead className="text-right sticky-actions-right bg-slate-50/50">
-                  Ações
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
+          </CardHeader>
+          <CardContent className="p-0 table-scroll-wrapper">
+            <Table>
+              <TableHeader className="bg-slate-50/50">
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                    Carregando clientes...
-                  </TableCell>
+                  <TableHead>Empresa / CNPJ</TableHead>
+                  <TableHead>Plano</TableHead>
+                  <TableHead>Módulos Contratados</TableHead>
+                  <TableHead>Mensalidade</TableHead>
+                  <TableHead className="text-right sticky-actions-right bg-slate-50/50">
+                    Ações
+                  </TableHead>
                 </TableRow>
-              ) : filteredClients.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                    Nenhum cliente encontrado.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredClients.map((client) => (
-                  <TableRow
-                    key={client.id}
-                    className={cn(
-                      'group transition-colors',
-                      client.originalData?.status?.toLowerCase() === 'inativo'
-                        ? 'opacity-60 hover:opacity-80'
-                        : 'hover:bg-slate-50/80',
-                    )}
-                  >
-                    <TableCell>
-                      <div className="font-medium text-slate-900">{client.name}</div>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-1">
-                        <span className="text-xs text-slate-500 font-mono">
-                          {formatCNPJ(client.cnpj)}
-                        </span>
-                        {client.filiais_detalhes && client.filiais_detalhes.length > 0 && (
-                          <div className="flex flex-col gap-0.5 sm:ml-2 sm:pl-2 sm:border-l sm:border-slate-200">
-                            {client.filiais_detalhes.map((f, idx) => (
-                              <span key={idx} className="text-[10px] text-slate-400 font-mono">
-                                ↳ {formatCNPJ(f.cnpj)}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        {client.originalData?.status === 'Em Implantação' && (
-                          <Badge
-                            variant="outline"
-                            className="w-fit text-[10px] px-1.5 py-0 h-4 leading-none text-blue-600 bg-blue-50 border-blue-200"
-                          >
-                            Em Implantação
-                          </Badge>
-                        )}
-                        {client.originalData?.status === 'Faturamento' && (
-                          <Badge
-                            variant="outline"
-                            className="w-fit text-[10px] px-1.5 py-0 h-4 leading-none text-emerald-600 bg-emerald-50 border-emerald-200"
-                          >
-                            Faturamento
-                          </Badge>
-                        )}
-                        {client.originalData?.status?.toLowerCase() === 'inativo' && (
-                          <Badge
-                            variant="outline"
-                            className="w-fit text-[10px] px-1.5 py-0 h-4 leading-none text-red-600 bg-red-50 border-red-200"
-                          >
-                            Inativo
-                          </Badge>
-                        )}
-                        {client.stats && client.stats.relevantTitulos > 0 && (
-                          <Badge
-                            variant="outline"
-                            className={`w-fit text-[10px] px-1.5 py-0 h-4 leading-none ${client.stats.color}`}
-                          >
-                            {client.stats.classification}
-                          </Badge>
-                        )}
-                      </div>
-                      {client.tags && client.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {client.tags.slice(0, 3).map((tag, idx) => (
-                            <Badge
-                              key={idx}
-                              variant="secondary"
-                              className="text-[9px] px-1.5 py-0 h-4 font-normal bg-purple-50 text-purple-700 border-purple-200"
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                          {client.tags.length > 3 && (
-                            <span className="text-[10px] text-slate-400">
-                              +{client.tags.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {client.plano_descricao || client.plano_base ? (
-                        <div className="flex flex-col gap-0.5">
-                          <Badge
-                            variant="outline"
-                            className="w-fit bg-indigo-50 text-indigo-700 border-indigo-100 font-medium text-[10px] uppercase"
-                          >
-                            {client.plano_descricao || client.plano_base}
-                          </Badge>
-                          {client.plano_codigo && (
-                            <span className="text-[10px] text-slate-400 font-mono">
-                              {client.plano_codigo}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-slate-400 italic">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1 max-w-[250px]">
-                        {client.modules.length > 0 ? (
-                          client.modules.map((mod) => (
-                            <Badge
-                              key={mod.name}
-                              variant="secondary"
-                              className="bg-slate-100 text-slate-700 border-slate-200 font-normal text-xs"
-                            >
-                              {mod.name}
-                            </Badge>
-                          ))
-                        ) : (
-                          <span className="text-xs text-slate-400 italic">Sem módulos</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {client.totalValue > 0 ? (
-                        <span className="font-medium text-emerald-600">
-                          {formatCurrency(client.totalValue)}
-                        </span>
-                      ) : (
-                        <span className="text-amber-600 font-medium text-sm bg-amber-50 px-2 py-1 rounded border border-amber-100">
-                          Pendente
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right sticky-actions-right bg-white">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                          title="Visualizar Gestão/Aditivos"
-                          onClick={() => handleOpenView(client)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-slate-600 hover:text-blue-600 hover:bg-blue-50"
-                          title="Editar Cliente"
-                          onClick={() => handleOpenEdit(client)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <TableActionsMenu
-                          items={[
-                            ...(client.originalData?.status?.toLowerCase() !== 'inativo'
-                              ? [
-                                  {
-                                    icon: Ban,
-                                    label: 'Informar Cancelamento',
-                                    onClick: () => {
-                                      setCancelClient(client)
-                                      setCancelDate(new Date().toISOString().split('T')[0])
-                                      setCancelMotivo('')
-                                      setIsCancelModalOpen(true)
-                                    },
-                                  },
-                                ]
-                              : []),
-                            ...(client.contratoUrl
-                              ? [
-                                  {
-                                    icon: FileText,
-                                    label: 'Ver Contrato Original',
-                                    onClick: () => handleOpenContractUrl(client.contratoUrl),
-                                  },
-                                ]
-                              : []),
-                            {
-                              icon: Trash2,
-                              label: 'Excluir Cliente',
-                              onClick: () => setClientToDelete(client),
-                              variant: 'destructive' as const,
-                            },
-                          ]}
-                        />
-                      </div>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                      Carregando clientes...
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                ) : filteredClients.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                      Nenhum cliente encontrado.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredClients.map((client) => (
+                    <TableRow
+                      key={client.id}
+                      className={cn(
+                        'group transition-colors',
+                        client.originalData?.status?.toLowerCase() === 'inativo'
+                          ? 'opacity-60 hover:opacity-80'
+                          : 'hover:bg-slate-50/80',
+                      )}
+                    >
+                      <TableCell>
+                        <div className="font-medium text-slate-900">{client.name}</div>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-1">
+                          <span className="text-xs text-slate-500 font-mono">
+                            {formatCNPJ(client.cnpj)}
+                          </span>
+                          {client.filiais_detalhes && client.filiais_detalhes.length > 0 && (
+                            <div className="flex flex-col gap-0.5 sm:ml-2 sm:pl-2 sm:border-l sm:border-slate-200">
+                              {client.filiais_detalhes.map((f, idx) => (
+                                <span key={idx} className="text-[10px] text-slate-400 font-mono">
+                                  ↳ {formatCNPJ(f.cnpj)}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {client.originalData?.status === 'Em Implantação' && (
+                            <Badge
+                              variant="outline"
+                              className="w-fit text-[10px] px-1.5 py-0 h-4 leading-none text-blue-600 bg-blue-50 border-blue-200"
+                            >
+                              Em Implantação
+                            </Badge>
+                          )}
+                          {client.originalData?.status === 'Faturamento' && (
+                            <Badge
+                              variant="outline"
+                              className="w-fit text-[10px] px-1.5 py-0 h-4 leading-none text-emerald-600 bg-emerald-50 border-emerald-200"
+                            >
+                              Faturamento
+                            </Badge>
+                          )}
+                          {client.originalData?.status?.toLowerCase() === 'inativo' && (
+                            <Badge
+                              variant="outline"
+                              className="w-fit text-[10px] px-1.5 py-0 h-4 leading-none text-red-600 bg-red-50 border-red-200"
+                            >
+                              Inativo
+                            </Badge>
+                          )}
+                          {client.stats && client.stats.relevantTitulos > 0 && (
+                            <Badge
+                              variant="outline"
+                              className={`w-fit text-[10px] px-1.5 py-0 h-4 leading-none ${client.stats.color}`}
+                            >
+                              {client.stats.classification}
+                            </Badge>
+                          )}
+                        </div>
+                        {client.tags && client.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {client.tags.slice(0, 3).map((tag, idx) => (
+                              <Badge
+                                key={idx}
+                                variant="secondary"
+                                className="text-[9px] px-1.5 py-0 h-4 font-normal bg-purple-50 text-purple-700 border-purple-200"
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+                            {client.tags.length > 3 && (
+                              <span className="text-[10px] text-slate-400">
+                                +{client.tags.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {client.plano_descricao || client.plano_base ? (
+                          <div className="flex flex-col gap-0.5">
+                            <Badge
+                              variant="outline"
+                              className="w-fit bg-indigo-50 text-indigo-700 border-indigo-100 font-medium text-[10px] uppercase"
+                            >
+                              {client.plano_descricao || client.plano_base}
+                            </Badge>
+                            {client.plano_codigo && (
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {client.plano_codigo}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1 max-w-[250px]">
+                          {client.modules.length > 0 ? (
+                            client.modules.map((mod) => (
+                              <Badge
+                                key={mod.name}
+                                variant="secondary"
+                                className="bg-slate-100 text-slate-700 border-slate-200 font-normal text-xs"
+                              >
+                                {mod.name}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-xs text-slate-400 italic">Sem módulos</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {client.totalValue > 0 ? (
+                          <span className="font-medium text-emerald-600">
+                            {formatCurrency(client.totalValue)}
+                          </span>
+                        ) : (
+                          <span className="text-amber-600 font-medium text-sm bg-amber-50 px-2 py-1 rounded border border-amber-100">
+                            Pendente
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right sticky-actions-right bg-white">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                            title="Visualizar Gestão/Aditivos"
+                            onClick={() => handleOpenView(client)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-slate-600 hover:text-blue-600 hover:bg-blue-50"
+                            title="Editar Cliente"
+                            onClick={() => handleOpenEdit(client)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <TableActionsMenu
+                            items={[
+                              ...(client.originalData?.status?.toLowerCase() !== 'inativo'
+                                ? [
+                                    {
+                                      icon: Ban,
+                                      label: 'Informar Cancelamento',
+                                      onClick: () => {
+                                        setCancelClient(client)
+                                        setCancelDate(new Date().toISOString().split('T')[0])
+                                        setCancelMotivo('')
+                                        setIsCancelModalOpen(true)
+                                      },
+                                    },
+                                  ]
+                                : []),
+                              ...(client.contratoUrl
+                                ? [
+                                    {
+                                      icon: FileText,
+                                      label: 'Ver Contrato Original',
+                                      onClick: () => handleOpenContractUrl(client.contratoUrl),
+                                    },
+                                  ]
+                                : []),
+                              {
+                                icon: Trash2,
+                                label: 'Excluir Cliente',
+                                onClick: () => setClientToDelete(client),
+                                variant: 'destructive' as const,
+                              },
+                            ]}
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </CollapsibleSection>
 
       <Dialog
