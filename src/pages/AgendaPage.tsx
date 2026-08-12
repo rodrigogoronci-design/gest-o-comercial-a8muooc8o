@@ -12,7 +12,7 @@ import {
   subMonths,
 } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -33,6 +33,8 @@ import {
   deleteEvento,
   getClientesParaAgenda,
 } from '@/services/agenda'
+import { SectionNav, type SectionNavItem } from '@/components/section-nav'
+import { CollapsibleSection } from '@/components/collapsible-section'
 
 export default function AgendaPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -202,111 +204,130 @@ export default function AgendaPage() {
         </div>
       </div>
 
-      <div className="rounded-md border bg-card shadow-sm mt-4">
-        <div className="grid grid-cols-7 gap-px border-b bg-muted text-center text-sm font-medium">
-          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
-            <div key={day} className="py-3">
-              {day}
-            </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-7 gap-px bg-border">
-          {days.map((day) => {
-            const filteredEvents = events.filter((e) => {
-              if (filterTipo !== 'Todos' && e.tipo !== filterTipo) return false
-              if (filterStatus !== 'Todos' && e.status !== filterStatus) return false
-              return true
-            })
-            const dayEvents = filteredEvents.filter((e) => isSameDay(new Date(e.data_evento), day))
-            const isCurrentMonth = isSameMonth(day, currentDate)
-            const isToday = isSameDay(day, new Date())
+      <SectionNav
+        items={[
+          { id: 'calendario', label: 'Calendário', icon: <Calendar className="h-3.5 w-3.5" /> },
+        ]}
+      />
 
-            return (
-              <div
-                key={day.toString()}
-                onClick={() => openNewEventDialog(day)}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={async (e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  const eventId = e.dataTransfer.getData('eventId')
-                  if (eventId) {
-                    const evt = events.find((ev) => ev.id === eventId)
-                    if (evt) {
-                      const oldDate = new Date(evt.data_evento)
-                      const newDate = new Date(day)
-                      newDate.setHours(oldDate.getHours(), oldDate.getMinutes())
-                      try {
-                        await updateEvento(eventId, { data_evento: newDate.toISOString() })
-                        toast({ title: 'Sucesso', description: 'Evento reagendado com sucesso.' })
-                        loadData()
-                      } catch (error: any) {
-                        toast({ title: 'Erro', description: error.message, variant: 'destructive' })
+      <CollapsibleSection
+        id="calendario"
+        title="Calendário"
+        icon={<Calendar className="h-4 w-4 text-indigo-600" />}
+        defaultOpen
+      >
+        <div className="rounded-md border bg-card shadow-sm">
+          <div className="grid grid-cols-7 gap-px border-b bg-muted text-center text-sm font-medium">
+            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
+              <div key={day} className="py-3">
+                {day}
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-px bg-border">
+            {days.map((day) => {
+              const filteredEvents = events.filter((e) => {
+                if (filterTipo !== 'Todos' && e.tipo !== filterTipo) return false
+                if (filterStatus !== 'Todos' && e.status !== filterStatus) return false
+                return true
+              })
+              const dayEvents = filteredEvents.filter((e) =>
+                isSameDay(new Date(e.data_evento), day),
+              )
+              const isCurrentMonth = isSameMonth(day, currentDate)
+              const isToday = isSameDay(day, new Date())
+
+              return (
+                <div
+                  key={day.toString()}
+                  onClick={() => openNewEventDialog(day)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={async (e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    const eventId = e.dataTransfer.getData('eventId')
+                    if (eventId) {
+                      const evt = events.find((ev) => ev.id === eventId)
+                      if (evt) {
+                        const oldDate = new Date(evt.data_evento)
+                        const newDate = new Date(day)
+                        newDate.setHours(oldDate.getHours(), oldDate.getMinutes())
+                        try {
+                          await updateEvento(eventId, { data_evento: newDate.toISOString() })
+                          toast({ title: 'Sucesso', description: 'Evento reagendado com sucesso.' })
+                          loadData()
+                        } catch (error: any) {
+                          toast({
+                            title: 'Erro',
+                            description: error.message,
+                            variant: 'destructive',
+                          })
+                        }
                       }
                     }
-                  }
-                }}
-                className={`min-h-[140px] bg-background p-2 cursor-pointer transition-colors hover:bg-accent/50 group ${
-                  !isCurrentMonth ? 'text-muted-foreground bg-muted/20' : ''
-                }`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <span
-                    className={`text-sm font-medium h-7 w-7 flex items-center justify-center rounded-full ${
-                      isToday ? 'bg-primary text-primary-foreground' : 'group-hover:bg-muted'
-                    }`}
-                  >
-                    {format(day, 'd')}
-                  </span>
-                  {dayEvents.length > 0 && (
-                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 rounded">
-                      {dayEvents.length}
+                  }}
+                  className={`min-h-[140px] bg-background p-2 cursor-pointer transition-colors hover:bg-accent/50 group ${
+                    !isCurrentMonth ? 'text-muted-foreground bg-muted/20' : ''
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <span
+                      className={`text-sm font-medium h-7 w-7 flex items-center justify-center rounded-full ${
+                        isToday ? 'bg-primary text-primary-foreground' : 'group-hover:bg-muted'
+                      }`}
+                    >
+                      {format(day, 'd')}
                     </span>
-                  )}
-                </div>
-                <div className="space-y-1.5 h-[100px] overflow-y-auto no-scrollbar">
-                  {dayEvents.map((evt) => {
-                    let eventClass =
-                      'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                    {dayEvents.length > 0 && (
+                      <span className="text-[10px] text-muted-foreground bg-muted px-1.5 rounded">
+                        {dayEvents.length}
+                      </span>
+                    )}
+                  </div>
+                  <div className="space-y-1.5 h-[100px] overflow-y-auto no-scrollbar">
+                    {dayEvents.map((evt) => {
+                      let eventClass =
+                        'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
 
-                    if (evt.status === 'Confirmado' || evt.status === 'Agendado')
-                      eventClass =
-                        'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800/50'
-                    else if (evt.status === 'Concluído')
-                      eventClass =
-                        'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800/50'
-                    else if (evt.status === 'Pendente')
-                      eventClass =
-                        'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800/50'
-                    else if (evt.status === 'Cancelado')
-                      eventClass =
-                        'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'
+                      if (evt.status === 'Confirmado' || evt.status === 'Agendado')
+                        eventClass =
+                          'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800/50'
+                      else if (evt.status === 'Concluído')
+                        eventClass =
+                          'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800/50'
+                      else if (evt.status === 'Pendente')
+                        eventClass =
+                          'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800/50'
+                      else if (evt.status === 'Cancelado')
+                        eventClass =
+                          'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'
 
-                    return (
-                      <div
-                        key={evt.id}
-                        draggable
-                        onDragStart={(e) => {
-                          e.stopPropagation()
-                          e.dataTransfer.setData('eventId', evt.id)
-                        }}
-                        onClick={(e) => openEditEventDialog(e, evt)}
-                        className={`text-[11px] px-1.5 py-1 rounded truncate border cursor-pointer hover:brightness-95 transition-all flex items-center gap-1 ${eventClass}`}
-                        title={evt.titulo}
-                      >
-                        <span className="font-semibold whitespace-nowrap">
-                          {format(new Date(evt.data_evento), 'HH:mm')}
-                        </span>
-                        <span className="truncate">{evt.titulo}</span>
-                      </div>
-                    )
-                  })}
+                      return (
+                        <div
+                          key={evt.id}
+                          draggable
+                          onDragStart={(e) => {
+                            e.stopPropagation()
+                            e.dataTransfer.setData('eventId', evt.id)
+                          }}
+                          onClick={(e) => openEditEventDialog(e, evt)}
+                          className={`text-[11px] px-1.5 py-1 rounded truncate border cursor-pointer hover:brightness-95 transition-all flex items-center gap-1 ${eventClass}`}
+                          title={evt.titulo}
+                        >
+                          <span className="font-semibold whitespace-nowrap">
+                            {format(new Date(evt.data_evento), 'HH:mm')}
+                          </span>
+                          <span className="truncate">{evt.titulo}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
-      </div>
+      </CollapsibleSection>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[450px]">

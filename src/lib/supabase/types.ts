@@ -72,7 +72,9 @@ export type Database = {
           created_at: string
           data_evento: string
           descricao: string | null
+          gravacao_url: string | null
           id: string
+          link_reuniao: string | null
           status: string
           tipo: string
           titulo: string
@@ -83,7 +85,9 @@ export type Database = {
           created_at?: string
           data_evento: string
           descricao?: string | null
+          gravacao_url?: string | null
           id?: string
+          link_reuniao?: string | null
           status?: string
           tipo?: string
           titulo: string
@@ -94,7 +98,9 @@ export type Database = {
           created_at?: string
           data_evento?: string
           descricao?: string | null
+          gravacao_url?: string | null
           id?: string
+          link_reuniao?: string | null
           status?: string
           tipo?: string
           titulo?: string

@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Loader2, MessageSquare, Save, Building2, FileCheck, Clock } from 'lucide-react'
+import {
+  ArrowLeft,
+  Loader2,
+  MessageSquare,
+  Save,
+  Building2,
+  FileCheck,
+  Clock,
+  FileText,
+} from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -17,6 +26,8 @@ import { getOrCreateConsultoriaToken, generateConsultoriaUrl } from '@/services/
 import { ConsultoriaResponses } from '@/components/ConsultoriaResponses'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { SectionNav, type SectionNavItem } from '@/components/section-nav'
+import { CollapsibleSection } from '@/components/collapsible-section'
 
 const STATUS_COLORS: Record<string, string> = {
   'Em andamento': 'bg-blue-50 text-blue-700 border-blue-200',
@@ -125,7 +136,7 @@ export default function CrmConsultoriaDetailPage() {
     project.consultoria_form_data && Object.keys(project.consultoria_form_data).length > 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
           <Link to="/crm/consultoria">
@@ -160,8 +171,23 @@ export default function CrmConsultoriaDetailPage() {
         </Button>
       </div>
 
-      <Card>
-        <CardContent className="p-6 space-y-4">
+      <SectionNav
+        items={[
+          { id: 'formulario', label: 'Formulário', icon: <FileText className="h-3.5 w-3.5" /> },
+          { id: 'status', label: 'Status', icon: <Clock className="h-3.5 w-3.5" /> },
+          ...(hasResponses
+            ? [{ id: 'respostas', label: 'Respostas', icon: <FileCheck className="h-3.5 w-3.5" /> }]
+            : []),
+        ]}
+      />
+
+      <CollapsibleSection
+        id="formulario"
+        title="Editar Formulário"
+        icon={<FileText className="h-4 w-4 text-amber-600" />}
+        defaultOpen
+      >
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
               Editar Formulário
@@ -192,14 +218,15 @@ export default function CrmConsultoriaDetailPage() {
             O nome da empresa (Service Logic | Cliente) é gerado automaticamente. Estes textos são
             exibidos no formulário enviado ao cliente.
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </CollapsibleSection>
 
-      <Card>
-        <CardContent className="p-6 space-y-3">
-          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
-            Status das Respostas
-          </h3>
+      <CollapsibleSection
+        id="status"
+        title="Status das Respostas"
+        icon={<Clock className="h-4 w-4 text-amber-600" />}
+      >
+        <div className="space-y-3">
           <div className="flex items-center gap-3">
             {hasResponses ? (
               <div className="flex items-center gap-2 text-emerald-600">
@@ -213,11 +240,18 @@ export default function CrmConsultoriaDetailPage() {
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </CollapsibleSection>
 
       {hasResponses && project.consultoria_form_data && (
-        <ConsultoriaResponses data={project.consultoria_form_data} />
+        <CollapsibleSection
+          id="respostas"
+          title="Respostas da Consultoria"
+          icon={<FileCheck className="h-4 w-4 text-amber-600" />}
+          defaultOpen
+        >
+          <ConsultoriaResponses data={project.consultoria_form_data} />
+        </CollapsibleSection>
       )}
     </div>
   )

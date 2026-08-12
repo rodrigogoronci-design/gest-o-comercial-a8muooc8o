@@ -14,6 +14,8 @@ import {
   Send,
   ChevronDown,
   ChevronRight,
+  Stethoscope,
+  History,
 } from 'lucide-react'
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -56,6 +58,8 @@ import { CrmHistorico } from '@/components/CrmHistorico'
 import { CrmKanbanBoard } from '@/components/CrmKanbanBoard'
 import { CrmProspectPropostasTab } from '@/components/CrmProspectPropostasTab'
 import { TableActionsMenu } from '@/components/TableActionsMenu'
+import { SectionNav, type SectionNavItem } from '@/components/section-nav'
+import { CollapsibleSection } from '@/components/collapsible-section'
 
 export type CrmProspect = {
   id: string
@@ -1141,18 +1145,37 @@ export default function CRMPage() {
               </Button>
             )}
           </DialogHeader>
-          <div className="flex-1 overflow-hidden p-6 pt-4 bg-slate-50/30 rounded-b-xl">
-            <Tabs value={editingTab} onValueChange={setEditingTab} className="h-full flex flex-col">
-              <TabsList className="grid w-full grid-cols-4 mb-4 shrink-0 bg-slate-100 rounded-lg">
-                <TabsTrigger value="dados">Dados Básicos</TabsTrigger>
-                <TabsTrigger value="diagnostico">Diagnóstico</TabsTrigger>
-                <TabsTrigger value="historico">Histórico</TabsTrigger>
-                <TabsTrigger value="propostas">Propostas</TabsTrigger>
-              </TabsList>
-
-              <TabsContent
-                value="dados"
-                className="flex-1 overflow-y-auto pr-2 pb-4 focus-visible:outline-none"
+          <div className="flex-1 overflow-y-auto p-6 pt-4 bg-slate-50/30 rounded-b-xl">
+            <SectionNav
+              items={[
+                {
+                  id: 'prospect-dados',
+                  label: 'Dados Básicos',
+                  icon: <FileText className="h-3.5 w-3.5" />,
+                },
+                {
+                  id: 'prospect-diagnostico',
+                  label: 'Diagnóstico',
+                  icon: <Stethoscope className="h-3.5 w-3.5" />,
+                },
+                {
+                  id: 'prospect-historico',
+                  label: 'Histórico',
+                  icon: <History className="h-3.5 w-3.5" />,
+                },
+                {
+                  id: 'prospect-propostas',
+                  label: 'Propostas',
+                  icon: <FileSignature className="h-3.5 w-3.5" />,
+                },
+              ]}
+            />
+            <div className="space-y-3 mt-4">
+              <CollapsibleSection
+                id="prospect-dados"
+                title="Dados Básicos"
+                icon={<FileText className="h-4 w-4 text-indigo-600" />}
+                defaultOpen
               >
                 {editingProspect && (
                   <CrmProspectForm
@@ -1163,11 +1186,12 @@ export default function CRMPage() {
                     hideInternalTabs
                   />
                 )}
-              </TabsContent>
+              </CollapsibleSection>
 
-              <TabsContent
-                value="diagnostico"
-                className="flex-1 overflow-y-auto pr-2 pb-4 focus-visible:outline-none"
+              <CollapsibleSection
+                id="prospect-diagnostico"
+                title="Diagnóstico"
+                icon={<Stethoscope className="h-4 w-4 text-indigo-600" />}
               >
                 {editingProspect && (
                   <CrmDiagnosticoForm
@@ -1194,18 +1218,20 @@ export default function CRMPage() {
                     }}
                   />
                 )}
-              </TabsContent>
+              </CollapsibleSection>
 
-              <TabsContent
-                value="historico"
-                className="flex-1 overflow-y-auto pr-2 pb-4 focus-visible:outline-none"
+              <CollapsibleSection
+                id="prospect-historico"
+                title="Histórico de Interações"
+                icon={<History className="h-4 w-4 text-indigo-600" />}
               >
                 {editingProspect && <CrmHistorico prospectId={editingProspect.id} />}
-              </TabsContent>
+              </CollapsibleSection>
 
-              <TabsContent
-                value="propostas"
-                className="flex-1 overflow-y-auto pr-2 pb-4 focus-visible:outline-none"
+              <CollapsibleSection
+                id="prospect-propostas"
+                title="Propostas"
+                icon={<FileSignature className="h-4 w-4 text-indigo-600" />}
               >
                 {editingProspect && (
                   <CrmProspectPropostasTab
@@ -1218,8 +1244,8 @@ export default function CRMPage() {
                     }}
                   />
                 )}
-              </TabsContent>
-            </Tabs>
+              </CollapsibleSection>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
