@@ -62,6 +62,8 @@ export default function ImplementacaoDetailPage() {
   const [sharingConsultoria, setSharingConsultoria] = useState(false)
   const { isFinancialRestricted } = useUserRole()
 
+  const isTrainingOnly = impl?.tipo === 'treinamento'
+
   useEffect(() => {
     if (id) loadImpl(id)
     getColaboradores()
@@ -118,6 +120,20 @@ export default function ImplementacaoDetailPage() {
 
   const navItems = useMemo((): SectionNavItem[] => {
     if (!impl) return []
+    if (impl.tipo === 'treinamento') {
+      return [
+        {
+          id: 'detalhes-treinamento',
+          label: 'Detalhes',
+          icon: <GraduationCap className="h-3.5 w-3.5" />,
+        },
+        {
+          id: 'execucao-treinamento',
+          label: 'Execução',
+          icon: <ListChecks className="h-3.5 w-3.5" />,
+        },
+      ]
+    }
     const items: SectionNavItem[] = [
       {
         id: 'visao-geral',
@@ -286,7 +302,9 @@ export default function ImplementacaoDetailPage() {
           <h1 className="text-2xl font-bold tracking-tight">
             {impl.clientes?.nome || impl.cliente_nome}
           </h1>
-          <p className="text-sm text-muted-foreground">Projeto de Implantação</p>
+          <p className="text-sm text-muted-foreground">
+            {isTrainingOnly ? 'Solicitação de Treinamento' : 'Projeto de Implantação'}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {impl.tipo && impl.tipo !== 'novo_cliente' && (
@@ -297,263 +315,344 @@ export default function ImplementacaoDetailPage() {
           <Badge variant="outline" className={cn('text-sm', STATUS_CONFIG[impl.status]?.color)}>
             {impl.status}
           </Badge>
-          {impl.tipo === 'consultoria' ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleShareConsultoria}
-              disabled={sharingConsultoria}
-              style={{ borderColor: '#25D366', color: '#25D366' }}
-              className="hover:bg-[#25D366] hover:text-white"
-            >
-              {sharingConsultoria ? (
-                <Loader2 className="h-4 w-4 sm:mr-1.5 animate-spin" />
-              ) : (
-                <MessageSquare className="h-4 w-4 sm:mr-1.5" />
-              )}
-              <span className="hidden sm:inline">Enviar Formulário</span>
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleShareWhatsapp}
-              disabled={sharingOnboarding}
-              style={{ borderColor: '#25D366', color: '#25D366' }}
-              className="hover:bg-[#25D366] hover:text-white"
-            >
-              {sharingOnboarding ? (
-                <Loader2 className="h-4 w-4 sm:mr-1.5 animate-spin" />
-              ) : (
-                <MessageSquare className="h-4 w-4 sm:mr-1.5" />
-              )}
-              <span className="hidden sm:inline">Enviar via WhatsApp</span>
-            </Button>
-          )}
+          {!isTrainingOnly &&
+            (impl.tipo === 'consultoria' ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleShareConsultoria}
+                disabled={sharingConsultoria}
+                style={{ borderColor: '#25D366', color: '#25D366' }}
+                className="hover:bg-[#25D366] hover:text-white"
+              >
+                {sharingConsultoria ? (
+                  <Loader2 className="h-4 w-4 sm:mr-1.5 animate-spin" />
+                ) : (
+                  <MessageSquare className="h-4 w-4 sm:mr-1.5" />
+                )}
+                <span className="hidden sm:inline">Enviar Formulário</span>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleShareWhatsapp}
+                disabled={sharingOnboarding}
+                style={{ borderColor: '#25D366', color: '#25D366' }}
+                className="hover:bg-[#25D366] hover:text-white"
+              >
+                {sharingOnboarding ? (
+                  <Loader2 className="h-4 w-4 sm:mr-1.5 animate-spin" />
+                ) : (
+                  <MessageSquare className="h-4 w-4 sm:mr-1.5" />
+                )}
+                <span className="hidden sm:inline">Enviar via WhatsApp</span>
+              </Button>
+            ))}
         </div>
       </div>
 
       <SectionNav items={navItems} />
 
-      <CollapsibleSection
-        id="visao-geral"
-        title="Visão Geral"
-        icon={<LayoutDashboard className="h-4 w-4 text-indigo-600" />}
-        defaultOpen
-      >
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-slate-600">Progresso Geral</span>
-          <span className="text-2xl font-bold text-indigo-600">{impl.progresso}%</span>
-        </div>
-        <Progress value={impl.progresso} className="h-3 mb-4" />
-        <div className="flex flex-wrap items-center gap-4 text-sm">
-          {proximaEtapa && (
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-slate-400" />
-              <span className="text-slate-500">Próxima atividade:</span>
-              <span className="font-medium text-slate-800">{proximaEtapa.titulo}</span>
-              {proximaEtapa.data_prevista && (
-                <span className="text-slate-400">
-                  — Previsto para {new Date(proximaEtapa.data_prevista).toLocaleDateString('pt-BR')}
-                </span>
+      {isTrainingOnly ? (
+        <>
+          <CollapsibleSection
+            id="detalhes-treinamento"
+            title="Detalhes do Treinamento"
+            icon={<GraduationCap className="h-4 w-4 text-violet-600" />}
+            defaultOpen
+          >
+            <div className="space-y-3">
+              {impl.clientes?.nome && (
+                <div className="flex items-start gap-2">
+                  <span className="text-sm text-muted-foreground min-w-[100px]">Cliente:</span>
+                  <span className="text-sm font-medium">{impl.clientes.nome}</span>
+                </div>
+              )}
+              {impl.treinamento_motivo && (
+                <div className="flex items-start gap-2">
+                  <span className="text-sm text-muted-foreground min-w-[100px]">Motivo:</span>
+                  <span className="text-sm font-medium">{impl.treinamento_motivo}</span>
+                </div>
+              )}
+              {impl.treinamento_topicos && (
+                <div className="flex items-start gap-2">
+                  <span className="text-sm text-muted-foreground min-w-[100px]">Tópicos:</span>
+                  <span className="text-sm font-medium whitespace-pre-wrap">
+                    {impl.treinamento_topicos}
+                  </span>
+                </div>
+              )}
+              {impl.treinamento_data && (
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-slate-400" />
+                  <span className="text-sm text-muted-foreground">Data agendada:</span>
+                  <span className="text-sm font-medium">
+                    {new Date(impl.treinamento_data).toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
+              )}
+              {impl.colaboradores?.nome && (
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-slate-400" />
+                  <span className="text-sm text-muted-foreground">Analista:</span>
+                  <span className="text-sm font-medium">{impl.colaboradores.nome}</span>
+                </div>
+              )}
+              {!impl.treinamento_motivo && !impl.treinamento_topicos && !impl.treinamento_data && (
+                <p className="text-sm text-muted-foreground">
+                  Nenhum detalhe de treinamento informado.
+                </p>
               )}
             </div>
-          )}
-          {impl.colaboradores?.nome && (
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-slate-400" />
-              <span className="text-slate-500">Analista:</span>
-              <span className="font-medium text-slate-800">{impl.colaboradores.nome}</span>
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            id="execucao-treinamento"
+            title="Execução do Treinamento"
+            icon={<ListChecks className="h-4 w-4 text-violet-600" />}
+            defaultOpen
+          >
+            <div className="mb-3 p-3 rounded-lg bg-violet-50 border border-violet-200">
+              <p className="text-xs text-violet-700 flex items-center gap-1.5">
+                <AlertCircle className="h-3.5 w-3.5" />O RAT (Relatório de Atendimento Técnico) é
+                obrigatório para concluir a etapa de execução do treinamento.
+              </p>
             </div>
+            <EtapaList
+              etapasByCategoria={etapasByCategoria}
+              colabMap={colabMap}
+              contractedModules={contractedModules}
+              onEditEtapa={setEditingEtapa}
+            />
+          </CollapsibleSection>
+        </>
+      ) : (
+        <>
+          <CollapsibleSection
+            id="visao-geral"
+            title="Visão Geral"
+            icon={<LayoutDashboard className="h-4 w-4 text-indigo-600" />}
+            defaultOpen
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-slate-600">Progresso Geral</span>
+              <span className="text-2xl font-bold text-indigo-600">{impl.progresso}%</span>
+            </div>
+            <Progress value={impl.progresso} className="h-3 mb-4" />
+            <div className="flex flex-wrap items-center gap-4 text-sm">
+              {proximaEtapa && (
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-slate-400" />
+                  <span className="text-slate-500">Próxima atividade:</span>
+                  <span className="font-medium text-slate-800">{proximaEtapa.titulo}</span>
+                  {proximaEtapa.data_prevista && (
+                    <span className="text-slate-400">
+                      — Previsto para{' '}
+                      {new Date(proximaEtapa.data_prevista).toLocaleDateString('pt-BR')}
+                    </span>
+                  )}
+                </div>
+              )}
+              {impl.colaboradores?.nome && (
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-slate-400" />
+                  <span className="text-slate-500">Analista:</span>
+                  <span className="font-medium text-slate-800">{impl.colaboradores.nome}</span>
+                </div>
+              )}
+            </div>
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            id="observacoes"
+            title="Observações da Jornada"
+            icon={<MessageSquare className="h-4 w-4 text-indigo-600" />}
+            defaultOpen
+          >
+            <ImplementacaoObservacoes implementacaoId={impl.id} />
+          </CollapsibleSection>
+
+          {impl.tipo === 'inclusao_modulo' && (
+            <CollapsibleSection
+              id="detalhes-tipo"
+              title="Módulos em Inclusão"
+              icon={<Package className="h-4 w-4 text-emerald-600" />}
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleSyncModulos}
+                    disabled={syncingModulos}
+                    className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                  >
+                    {syncingModulos ? (
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                    )}
+                    Sincronizar com Cliente
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(impl.modulos_novos || []).length === 0 ? (
+                    <span className="text-sm text-muted-foreground">
+                      Nenhum módulo especificado.
+                    </span>
+                  ) : (
+                    (impl.modulos_novos as string[]).map((mod, i) => (
+                      <Badge key={i} variant="secondary" className="bg-emerald-50 text-emerald-700">
+                        {mod}
+                      </Badge>
+                    ))
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  A sincronização adiciona estes módulos ao perfil do cliente. Use com cautela para
+                  evitar substituições acidentais.
+                </p>
+              </div>
+            </CollapsibleSection>
           )}
-        </div>
-      </CollapsibleSection>
 
-      <CollapsibleSection
-        id="observacoes"
-        title="Observações da Jornada"
-        icon={<MessageSquare className="h-4 w-4 text-indigo-600" />}
-        defaultOpen
-      >
-        <ImplementacaoObservacoes implementacaoId={impl.id} />
-      </CollapsibleSection>
-
-      {impl.tipo === 'inclusao_modulo' && (
-        <CollapsibleSection
-          id="detalhes-tipo"
-          title="Módulos em Inclusão"
-          icon={<Package className="h-4 w-4 text-emerald-600" />}
-        >
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleSyncModulos}
-                disabled={syncingModulos}
-                className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-              >
-                {syncingModulos ? (
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-3 w-3 mr-1" />
+          {impl.tipo === 'treinamento' && (
+            <CollapsibleSection
+              id="detalhes-tipo"
+              title="Detalhes do Treinamento"
+              icon={<GraduationCap className="h-4 w-4 text-violet-600" />}
+            >
+              <div className="space-y-3">
+                {impl.treinamento_motivo && (
+                  <div className="flex items-start gap-2">
+                    <span className="text-sm text-muted-foreground min-w-[100px]">Motivo:</span>
+                    <span className="text-sm font-medium">{impl.treinamento_motivo}</span>
+                  </div>
                 )}
-                Sincronizar com Cliente
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {(impl.modulos_novos || []).length === 0 ? (
-                <span className="text-sm text-muted-foreground">Nenhum módulo especificado.</span>
-              ) : (
-                (impl.modulos_novos as string[]).map((mod, i) => (
-                  <Badge key={i} variant="secondary" className="bg-emerald-50 text-emerald-700">
-                    {mod}
-                  </Badge>
-                ))
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              A sincronização adiciona estes módulos ao perfil do cliente. Use com cautela para
-              evitar substituições acidentais.
-            </p>
-          </div>
-        </CollapsibleSection>
-      )}
+                {impl.treinamento_topicos && (
+                  <div className="flex items-start gap-2">
+                    <span className="text-sm text-muted-foreground min-w-[100px]">Tópicos:</span>
+                    <span className="text-sm font-medium">{impl.treinamento_topicos}</span>
+                  </div>
+                )}
+                {impl.treinamento_data && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-slate-400" />
+                    <span className="text-sm text-muted-foreground">Data agendada:</span>
+                    <span className="text-sm font-medium">
+                      {new Date(impl.treinamento_data).toLocaleDateString('pt-BR')}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </CollapsibleSection>
+          )}
 
-      {impl.tipo === 'treinamento' && (
-        <CollapsibleSection
-          id="detalhes-tipo"
-          title="Detalhes do Treinamento"
-          icon={<GraduationCap className="h-4 w-4 text-violet-600" />}
-        >
-          <div className="space-y-3">
-            {impl.treinamento_motivo && (
-              <div className="flex items-start gap-2">
-                <span className="text-sm text-muted-foreground min-w-[100px]">Motivo:</span>
-                <span className="text-sm font-medium">{impl.treinamento_motivo}</span>
+          {impl.tipo === 'consultoria' && (
+            <CollapsibleSection
+              id="detalhes-tipo"
+              title="Detalhes da Consultoria"
+              icon={<ClipboardList className="h-4 w-4 text-amber-600" />}
+            >
+              <div className="space-y-3">
+                {impl.consultoria_titulo && (
+                  <div className="flex items-start gap-2">
+                    <span className="text-sm text-muted-foreground min-w-[100px]">Título:</span>
+                    <span className="text-sm font-medium">{impl.consultoria_titulo}</span>
+                  </div>
+                )}
+                {impl.consultoria_texto && (
+                  <div className="flex items-start gap-2">
+                    <span className="text-sm text-muted-foreground min-w-[100px]">Texto:</span>
+                    <p className="text-sm whitespace-pre-wrap">{impl.consultoria_texto}</p>
+                  </div>
+                )}
+                <p className="text-xs text-amber-600">
+                  Service Logic | {impl.clientes?.nome || impl.cliente_nome || 'Cliente'}
+                </p>
               </div>
-            )}
-            {impl.treinamento_topicos && (
-              <div className="flex items-start gap-2">
-                <span className="text-sm text-muted-foreground min-w-[100px]">Tópicos:</span>
-                <span className="text-sm font-medium">{impl.treinamento_topicos}</span>
-              </div>
-            )}
-            {impl.treinamento_data && (
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-slate-400" />
-                <span className="text-sm text-muted-foreground">Data agendada:</span>
+            </CollapsibleSection>
+          )}
+
+          {impl.solicitacao_id && (
+            <CollapsibleSection
+              id="solicitacao"
+              title="Solicitação de Serviço"
+              icon={<FileText className="h-4 w-4 text-slate-600" />}
+            >
+              <div className="flex items-center gap-3 p-2">
+                <FileText className="h-4 w-4 text-slate-400" />
+                <span className="text-sm text-muted-foreground">Descrição:</span>
                 <span className="text-sm font-medium">
-                  {new Date(impl.treinamento_data).toLocaleDateString('pt-BR')}
+                  {impl.solicitacoes_servico?.descricao || impl.solicitacao_id}
                 </span>
               </div>
-            )}
-          </div>
-        </CollapsibleSection>
+            </CollapsibleSection>
+          )}
+
+          <CollapsibleSection
+            id="plano-contratado"
+            title="Plano Contratado"
+            icon={<ClipboardList className="h-4 w-4 text-indigo-600" />}
+          >
+            <ContractedPlanDetails
+              proposta={impl.crm_propostas}
+              cliente={impl.clientes}
+              etapas={impl.implementacao_etapas}
+              redactFinancial={isFinancialRestricted}
+              dadosParametrizacao={impl.dados_parametrizacao}
+              implementacaoId={impl.id}
+            />
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            id="documentos"
+            title="Documentos"
+            icon={<FolderOpen className="h-4 w-4 text-indigo-600" />}
+          >
+            <ImplementationDocumentRepository
+              implementacaoId={impl.id}
+              dadosParametrizacao={impl.dados_parametrizacao}
+            />
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            id="certificado-digital"
+            title="Certificado Digital"
+            icon={<Award className="h-4 w-4 text-indigo-600" />}
+          >
+            <DigitalCertificateField
+              dadosParametrizacao={impl.dados_parametrizacao}
+              implementacaoId={impl.id}
+            />
+          </CollapsibleSection>
+
+          {impl.tipo === 'consultoria' && impl.consultoria_form_data && (
+            <CollapsibleSection
+              id="consultoria-respostas"
+              title="Respostas da Consultoria"
+              icon={<ClipboardList className="h-4 w-4 text-amber-600" />}
+            >
+              <ConsultoriaResponses data={impl.consultoria_form_data} />
+            </CollapsibleSection>
+          )}
+
+          <CollapsibleSection
+            id="etapas"
+            title="Etapas de Implantação"
+            icon={<ListChecks className="h-4 w-4 text-indigo-600" />}
+            defaultOpen
+          >
+            <EtapaList
+              etapasByCategoria={etapasByCategoria}
+              colabMap={colabMap}
+              contractedModules={contractedModules}
+              onEditEtapa={setEditingEtapa}
+            />
+          </CollapsibleSection>
+        </>
       )}
-
-      {impl.tipo === 'consultoria' && (
-        <CollapsibleSection
-          id="detalhes-tipo"
-          title="Detalhes da Consultoria"
-          icon={<ClipboardList className="h-4 w-4 text-amber-600" />}
-        >
-          <div className="space-y-3">
-            {impl.consultoria_titulo && (
-              <div className="flex items-start gap-2">
-                <span className="text-sm text-muted-foreground min-w-[100px]">Título:</span>
-                <span className="text-sm font-medium">{impl.consultoria_titulo}</span>
-              </div>
-            )}
-            {impl.consultoria_texto && (
-              <div className="flex items-start gap-2">
-                <span className="text-sm text-muted-foreground min-w-[100px]">Texto:</span>
-                <p className="text-sm whitespace-pre-wrap">{impl.consultoria_texto}</p>
-              </div>
-            )}
-            <p className="text-xs text-amber-600">
-              Service Logic | {impl.clientes?.nome || impl.cliente_nome || 'Cliente'}
-            </p>
-          </div>
-        </CollapsibleSection>
-      )}
-
-      {impl.solicitacao_id && (
-        <CollapsibleSection
-          id="solicitacao"
-          title="Solicitação de Serviço"
-          icon={<FileText className="h-4 w-4 text-slate-600" />}
-        >
-          <div className="flex items-center gap-3 p-2">
-            <FileText className="h-4 w-4 text-slate-400" />
-            <span className="text-sm text-muted-foreground">Descrição:</span>
-            <span className="text-sm font-medium">
-              {impl.solicitacoes_servico?.descricao || impl.solicitacao_id}
-            </span>
-          </div>
-        </CollapsibleSection>
-      )}
-
-      <CollapsibleSection
-        id="plano-contratado"
-        title="Plano Contratado"
-        icon={<ClipboardList className="h-4 w-4 text-indigo-600" />}
-      >
-        <ContractedPlanDetails
-          proposta={impl.crm_propostas}
-          cliente={impl.clientes}
-          etapas={impl.implementacao_etapas}
-          redactFinancial={isFinancialRestricted}
-          dadosParametrizacao={impl.dados_parametrizacao}
-          implementacaoId={impl.id}
-        />
-      </CollapsibleSection>
-
-      <CollapsibleSection
-        id="documentos"
-        title="Documentos"
-        icon={<FolderOpen className="h-4 w-4 text-indigo-600" />}
-      >
-        <ImplementationDocumentRepository
-          implementacaoId={impl.id}
-          dadosParametrizacao={impl.dados_parametrizacao}
-        />
-      </CollapsibleSection>
-
-      <CollapsibleSection
-        id="certificado-digital"
-        title="Certificado Digital"
-        icon={<Award className="h-4 w-4 text-indigo-600" />}
-      >
-        <DigitalCertificateField
-          dadosParametrizacao={impl.dados_parametrizacao}
-          implementacaoId={impl.id}
-        />
-      </CollapsibleSection>
-
-      {impl.tipo === 'consultoria' && impl.consultoria_form_data && (
-        <CollapsibleSection
-          id="consultoria-respostas"
-          title="Respostas da Consultoria"
-          icon={<ClipboardList className="h-4 w-4 text-amber-600" />}
-        >
-          <ConsultoriaResponses data={impl.consultoria_form_data} />
-        </CollapsibleSection>
-      )}
-
-      <CollapsibleSection
-        id="etapas"
-        title="Etapas de Implantação"
-        icon={<ListChecks className="h-4 w-4 text-indigo-600" />}
-        defaultOpen
-      >
-        <EtapaList
-          etapasByCategoria={etapasByCategoria}
-          colabMap={colabMap}
-          contractedModules={contractedModules}
-          onEditEtapa={setEditingEtapa}
-        />
-      </CollapsibleSection>
 
       <EtapaEditDialog
         etapa={editingEtapa}

@@ -61,7 +61,12 @@ export function EtapaEditDialog({
     }
   }, [etapa])
 
-  const isTreinamentoEtapa = useMemo(() => etapa?.categoria === 'Ciclo de Treinamentos', [etapa])
+  const isTreinamentoEtapa = useMemo(
+    () =>
+      etapa?.categoria === 'Ciclo de Treinamentos' ||
+      (etapa?.titulo || '').toLowerCase().includes('treinamento'),
+    [etapa],
+  )
 
   const canConcluir = useMemo(() => {
     if (!isTreinamentoEtapa) return true
