@@ -308,6 +308,24 @@ export const deleteImplementacao = async (id: string) => {
   if (error) throw error
 }
 
+export const updateTreinamentoDetails = async (
+  id: string,
+  data: {
+    treinamento_data: string | null
+    treinamento_motivo: string | null
+    treinamento_topicos: string | null
+  },
+) => {
+  const { data: result, error } = await supabase
+    .from('implementacoes' as any)
+    .update(data)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return result
+}
+
 export const getColaboradores = async () => {
   const { data, error } = await supabase
     .from('colaboradores')

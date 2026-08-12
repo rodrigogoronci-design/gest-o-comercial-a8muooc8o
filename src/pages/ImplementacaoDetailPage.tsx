@@ -35,6 +35,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { getImplementacao, getColaboradores, syncModulosToCliente } from '@/services/implementacoes'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { TreinamentoDetailsEditor } from '@/components/TreinamentoDetailsEditor'
 import { ContractedPlanDetails } from '@/components/ContractedPlanDetails'
 import { DigitalCertificateField } from '@/components/DigitalCertificateField'
 import { ImplementationDocumentRepository } from '@/components/ImplementationDocumentRepository'
@@ -373,49 +374,15 @@ export default function ImplementacaoDetailPage() {
             icon={<GraduationCap className="h-4 w-4 text-violet-600" />}
             defaultOpen
           >
-            <div className="space-y-3">
-              {impl.clientes?.nome && (
-                <div className="flex items-start gap-2">
-                  <span className="text-sm text-muted-foreground min-w-[100px]">Cliente:</span>
-                  <span className="text-sm font-medium">{impl.clientes.nome}</span>
-                </div>
-              )}
-              {impl.treinamento_motivo && (
-                <div className="flex items-start gap-2">
-                  <span className="text-sm text-muted-foreground min-w-[100px]">Motivo:</span>
-                  <span className="text-sm font-medium">{impl.treinamento_motivo}</span>
-                </div>
-              )}
-              {impl.treinamento_topicos && (
-                <div className="flex items-start gap-2">
-                  <span className="text-sm text-muted-foreground min-w-[100px]">Tópicos:</span>
-                  <span className="text-sm font-medium whitespace-pre-wrap">
-                    {impl.treinamento_topicos}
-                  </span>
-                </div>
-              )}
-              {impl.treinamento_data && (
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-slate-400" />
-                  <span className="text-sm text-muted-foreground">Data agendada:</span>
-                  <span className="text-sm font-medium">
-                    {new Date(impl.treinamento_data).toLocaleDateString('pt-BR')}
-                  </span>
-                </div>
-              )}
-              {impl.colaboradores?.nome && (
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-slate-400" />
-                  <span className="text-sm text-muted-foreground">Analista:</span>
-                  <span className="text-sm font-medium">{impl.colaboradores.nome}</span>
-                </div>
-              )}
-              {!impl.treinamento_motivo && !impl.treinamento_topicos && !impl.treinamento_data && (
-                <p className="text-sm text-muted-foreground">
-                  Nenhum detalhe de treinamento informado.
-                </p>
-              )}
-            </div>
+            <TreinamentoDetailsEditor
+              implId={impl.id}
+              treinamentoData={impl.treinamento_data}
+              treinamentoMotivo={impl.treinamento_motivo}
+              treinamentoTopicos={impl.treinamento_topicos}
+              clienteNome={impl.clientes?.nome || null}
+              analistaNome={impl.colaboradores?.nome || null}
+              onSaved={() => loadImpl(impl.id)}
+            />
           </CollapsibleSection>
 
           <CollapsibleSection
