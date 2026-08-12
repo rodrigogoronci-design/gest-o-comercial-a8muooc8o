@@ -40,6 +40,7 @@ import { ContractedPlanDetails } from '@/components/ContractedPlanDetails'
 import { DigitalCertificateField } from '@/components/DigitalCertificateField'
 import { ImplementationDocumentRepository } from '@/components/ImplementationDocumentRepository'
 import { getContractedModules } from '@/lib/scope-mapping'
+import { generateExecutionTitle } from '@/lib/atendimento-utils'
 
 const TIPO_CONFIG: Record<string, { label: string; color: string }> = {
   novo_cliente: { label: 'Novo Cliente', color: 'bg-blue-50 text-blue-700 border-blue-200' },
@@ -64,6 +65,15 @@ export default function ImplementacaoDetailPage() {
   const { isFinancialRestricted } = useUserRole()
 
   const isTrainingOnly = impl?.tipo === 'treinamento'
+
+  const executionTitle = useMemo(() => {
+    if (!impl) return 'Execução'
+    return generateExecutionTitle(
+      impl.tipo,
+      impl.treinamento_motivo,
+      impl.modulos_novos as string[] | null,
+    )
+  }, [impl])
 
   useEffect(() => {
     if (id) loadImpl(id)
@@ -387,7 +397,7 @@ export default function ImplementacaoDetailPage() {
 
           <CollapsibleSection
             id="execucao-treinamento"
-            title="Execução do Treinamento"
+            title={executionTitle}
             icon={<ListChecks className="h-4 w-4 text-violet-600" />}
             defaultOpen
           >
@@ -454,7 +464,7 @@ export default function ImplementacaoDetailPage() {
           {impl.tipo === 'inclusao_modulo' && (
             <CollapsibleSection
               id="detalhes-tipo"
-              title="Módulos em Inclusão"
+              title={executionTitle}
               icon={<Package className="h-4 w-4 text-emerald-600" />}
             >
               <div className="space-y-4">

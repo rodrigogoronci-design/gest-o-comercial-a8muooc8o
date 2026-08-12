@@ -8,9 +8,15 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Loader2, Save, Upload, FileText, X } from 'lucide-react'
 import { AdvancedDatePicker } from '@/components/ui/advanced-date-picker'
 import {
@@ -18,6 +24,12 @@ import {
   uploadAtendimentoDocumento,
   type AtendimentoInput,
 } from '@/services/atendimentos'
+import {
+  SOLICITACAO_OPTIONS,
+  getModuleNames,
+  formatSolicitacao,
+  type SolicitacaoTipo,
+} from '@/lib/atendimento-utils'
 import { toast } from 'sonner'
 
 interface AtendimentoFormDialogProps {
@@ -34,7 +46,8 @@ export function AtendimentoFormDialog({
   onSaved,
 }: AtendimentoFormDialogProps) {
   const [dataAtendimento, setDataAtendimento] = useState('')
-  const [solicitacao, setSolicitacao] = useState('')
+  const [tipoSolicitacao, setTipoSolicitacao] = useState<SolicitacaoTipo | ''>('')
+  const [moduloSelecionado, setModuloSelecionado] = useState('')
   const [relatorio, setRelatorio] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -42,7 +55,8 @@ export function AtendimentoFormDialog({
 
   const resetForm = () => {
     setDataAtendimento('')
-    setSolicitacao('')
+    setTipoSolicitacao('')
+    setModuloSelecionado('')
     setRelatorio('')
     setSelectedFile(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
@@ -65,13 +79,19 @@ export function AtendimentoFormDialog({
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  const needsModule = tipoSolicitacao === 'Treinamento' || tipoSolicitacao === 'Inclusão de Modulo'
+
   const handleSubmit = async () => {
     if (!dataAtendimento) {
       toast.error('A data do atendimento é obrigatória')
       return
     }
-    if (!solicitacao.trim()) {
-      toast.error('A solicitação é obrigatória')
+    if (!tipoSolicitacao) {
+      toast.error('O tipo de solicitação é obrigatório')
+      return
+    }
+    if (needsModule && !moduloSelecionado) {
+      toast.error('Selecione um módulo para este tipo de solicitação')
       return
     }
     if (!relatorio.trim()) {
@@ -87,10 +107,15 @@ export function AtendimentoFormDialog({
         documentoUrl = await uploadAtendimentoDocumento(clienteId, selectedFile)
       }
 
+      const solicitacaoFormatada = formatSolicitacao(
+        tipoSolicitacao as SolicitacaoTipo,
+        moduloSelecionado || null,
+      )
+
       const payload: AtendimentoInput = {
         cliente_id: clienteId,
         data_atendimento: new Date(dataAtendimento + 'T12:00:00').toISOString(),
-        solicitacao: solicitacao.trim(),
+        solicitacao: solicitacaoFormatada,
         relatorio: relatorio.trim(),
         documento_url: documentoUrl,
       }
@@ -132,12 +157,42 @@ export function AtendimentoFormDialog({
           </div>
           <div className="space-y-2">
             <Label>Solicitação</Label>
-            <Input
-              placeholder="Ex: Reunião de alinhamento, solicitação de novo módulo, visita técnica..."
-              value={solicitacao}
-              onChange={(e) => setSolicitacao(e.target.value)}
-            />
+            <Select
+              value={tipoSolicitacao}
+              onValueChange={(v) => {
+                setTipoSolicitacao(v as SolicitacaoTipo)
+                if (v === 'Suporte') setModuloSelecionado('')
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo de solicitação" />
+              </SelectTrigger>
+              <SelectContent>
+                {SOLICITACAO_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+          {needsModule && (
+            <div className="space-y-2">
+              <Label>Módulo</Label>
+              <Select value={moduloSelecionado} onValueChange={setModuloSelecionado}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o módulo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getModuleNames().map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="space-y-2">
             <Label>Relatório do Atendimento</Label>
             <Textarea

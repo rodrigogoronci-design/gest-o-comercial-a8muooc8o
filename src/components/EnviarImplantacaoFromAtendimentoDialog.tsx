@@ -21,6 +21,7 @@ import {
 import { Loader2, Plus, X, FileText } from 'lucide-react'
 import { createImplementacaoFromAtendimento, getColaboradores } from '@/services/implementacoes'
 import type { Atendimento } from '@/services/atendimentos'
+import { parseSolicitacao, mapTipoToImplantacaoTipo } from '@/lib/atendimento-utils'
 import { toast } from 'sonner'
 
 interface Props {
@@ -51,9 +52,16 @@ export function EnviarImplantacaoFromAtendimentoDialog({
 
   useEffect(() => {
     if (open && atendimento) {
-      setTipo('novo_cliente')
+      const parsed = parseSolicitacao(atendimento.solicitacao)
+      const mappedTipo = parsed.tipo
+        ? (mapTipoToImplantacaoTipo(parsed.tipo) as
+            | 'novo_cliente'
+            | 'inclusao_modulo'
+            | 'treinamento')
+        : 'novo_cliente'
+      setTipo(mappedTipo)
       setResponsavelId('')
-      setModulosNovos(atendimento.solicitacao ? [atendimento.solicitacao] : [''])
+      setModulosNovos(parsed.modulo ? [parsed.modulo] : [''])
       setTreinamentoMotivo(atendimento.solicitacao || '')
       setTreinamentoTopicos(atendimento.relatorio || '')
       setTreinamentoData('')
