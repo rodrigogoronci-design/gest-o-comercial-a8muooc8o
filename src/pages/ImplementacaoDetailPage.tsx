@@ -85,9 +85,20 @@ export default function ImplementacaoDetailPage() {
     }
   }
 
+  const HIDDEN_TREINAMENTO_ETAPAS = [
+    'Levantamento de Necessidades',
+    'Preparação de Material',
+    'Termo de Encerramento',
+  ]
+
   const etapasByCategoria = useMemo(() => {
     if (!impl?.implementacao_etapas) return {}
+    const isTraining = impl?.tipo === 'treinamento'
     return [...impl.implementacao_etapas]
+      .filter((e: any) => {
+        if (!isTraining) return true
+        return !HIDDEN_TREINAMENTO_ETAPAS.includes(e.titulo)
+      })
       .sort((a: any, b: any) => a.ordem - b.ordem)
       .reduce((acc: Record<string, any[]>, e: any) => {
         if (!acc[e.categoria]) acc[e.categoria] = []
