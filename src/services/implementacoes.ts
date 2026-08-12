@@ -312,6 +312,7 @@ export const updateTreinamentoDetails = async (
   id: string,
   data: {
     treinamento_data: string | null
+    treinamento_hora: string | null
     treinamento_motivo: string | null
     treinamento_topicos: string | null
   },

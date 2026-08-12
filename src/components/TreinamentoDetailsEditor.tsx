@@ -3,13 +3,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Calendar, User, Pencil, Save, X, Loader2, AlertCircle } from 'lucide-react'
+import { Calendar, User, Pencil, Save, X, Loader2, AlertCircle, Clock } from 'lucide-react'
 import { updateTreinamentoDetails } from '@/services/implementacoes'
 import { toast } from 'sonner'
+
+const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d])$/
 
 interface TreinamentoDetailsEditorProps {
   implId: string
   treinamentoData: string | null
+  treinamentoHora: string | null
   treinamentoMotivo: string | null
   treinamentoTopicos: string | null
   clienteNome: string | null
@@ -20,6 +23,7 @@ interface TreinamentoDetailsEditorProps {
 export function TreinamentoDetailsEditor({
   implId,
   treinamentoData,
+  treinamentoHora,
   treinamentoMotivo,
   treinamentoTopicos,
   clienteNome,
@@ -30,6 +34,7 @@ export function TreinamentoDetailsEditor({
   const [isSaving, setIsSaving] = useState(false)
   const [editData, setEditData] = useState({
     treinamento_data: treinamentoData || '',
+    treinamento_hora: treinamentoHora || '',
     treinamento_motivo: treinamentoMotivo || '',
     treinamento_topicos: treinamentoTopicos || '',
   })
@@ -38,14 +43,16 @@ export function TreinamentoDetailsEditor({
   useEffect(() => {
     setEditData({
       treinamento_data: treinamentoData || '',
+      treinamento_hora: treinamentoHora || '',
       treinamento_motivo: treinamentoMotivo || '',
       treinamento_topicos: treinamentoTopicos || '',
     })
-  }, [treinamentoData, treinamentoMotivo, treinamentoTopicos])
+  }, [treinamentoData, treinamentoHora, treinamentoMotivo, treinamentoTopicos])
 
   const handleEdit = () => {
     setEditData({
       treinamento_data: treinamentoData || '',
+      treinamento_hora: treinamentoHora || '',
       treinamento_motivo: treinamentoMotivo || '',
       treinamento_topicos: treinamentoTopicos || '',
     })
@@ -58,6 +65,7 @@ export function TreinamentoDetailsEditor({
     setErrors({})
     setEditData({
       treinamento_data: treinamentoData || '',
+      treinamento_hora: treinamentoHora || '',
       treinamento_motivo: treinamentoMotivo || '',
       treinamento_topicos: treinamentoTopicos || '',
     })
@@ -71,6 +79,9 @@ export function TreinamentoDetailsEditor({
         newErrors.treinamento_data = 'Data inválida'
       }
     }
+    if (editData.treinamento_hora && !TIME_REGEX.test(editData.treinamento_hora)) {
+      newErrors.treinamento_hora = 'Hora inválida (formato HH:MM)'
+    }
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -83,6 +94,7 @@ export function TreinamentoDetailsEditor({
         treinamento_data: editData.treinamento_data || null,
         treinamento_motivo: editData.treinamento_motivo || null,
         treinamento_topicos: editData.treinamento_topicos || null,
+        treinamento_hora: editData.treinamento_hora || null,
       })
       toast.success('Detalhes do treinamento atualizados!')
       setIsEditing(false)
@@ -122,20 +134,37 @@ export function TreinamentoDetailsEditor({
             rows={4}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="treinamento-data">Data Agendada</Label>
-          <Input
-            id="treinamento-data"
-            type="date"
-            value={editData.treinamento_data}
-            onChange={(e) => setEditData({ ...editData, treinamento_data: e.target.value })}
-          />
-          {errors.treinamento_data && (
-            <p className="text-xs text-red-600 flex items-center gap-1">
-              <AlertCircle className="h-3 w-3" />
-              {errors.treinamento_data}
-            </p>
-          )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="treinamento-data">Data Agendada</Label>
+            <Input
+              id="treinamento-data"
+              type="date"
+              value={editData.treinamento_data}
+              onChange={(e) => setEditData({ ...editData, treinamento_data: e.target.value })}
+            />
+            {errors.treinamento_data && (
+              <p className="text-xs text-red-600 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.treinamento_data}
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="treinamento-hora">Hora Agendada</Label>
+            <Input
+              id="treinamento-hora"
+              type="time"
+              value={editData.treinamento_hora}
+              onChange={(e) => setEditData({ ...editData, treinamento_hora: e.target.value })}
+            />
+            {errors.treinamento_hora && (
+              <p className="text-xs text-red-600 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.treinamento_hora}
+              </p>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2 pt-2">
           <Button
@@ -189,7 +218,7 @@ export function TreinamentoDetailsEditor({
           {treinamentoTopicos || 'Não informado'}
         </span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Calendar className="h-4 w-4 text-slate-400" />
         <span className="text-sm text-muted-foreground">Data agendada:</span>
         <span className="text-sm font-medium">
@@ -197,6 +226,13 @@ export function TreinamentoDetailsEditor({
             ? new Date(treinamentoData).toLocaleDateString('pt-BR')
             : 'Não informada'}
         </span>
+        {treinamentoHora && (
+          <>
+            <Clock className="h-4 w-4 text-slate-400 ml-2" />
+            <span className="text-sm text-muted-foreground">Hora:</span>
+            <span className="text-sm font-medium">{treinamentoHora}</span>
+          </>
+        )}
       </div>
       {analistaNome && (
         <div className="flex items-center gap-2">

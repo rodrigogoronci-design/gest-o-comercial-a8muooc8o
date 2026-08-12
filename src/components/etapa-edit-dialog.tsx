@@ -23,6 +23,7 @@ import { uploadRat, updateEtapa } from '@/services/implementacoes'
 import { toast } from 'sonner'
 
 const STATUS_OPTIONS = ['Não iniciada', 'Agendada', 'Em andamento', 'Concluída', 'Atrasada']
+const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d])$/
 
 function todayStr() {
   return new Date().toISOString().split('T')[0]
@@ -46,6 +47,7 @@ export function EtapaEditDialog({
   const [formData, setFormData] = useState<any>({})
   const [ratFile, setRatFile] = useState<File | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (etapa) {
@@ -53,11 +55,14 @@ export function EtapaEditDialog({
         status: etapa.status,
         data_prevista: etapa.data_prevista || '',
         data_realizada: etapa.data_realizada || '',
+        hora_prevista: etapa.hora_prevista || '',
+        hora_realizada: etapa.hora_realizada || '',
         responsavel_id: etapa.responsavel_id || '',
         observacoes: etapa.observacoes || '',
         documento_url: etapa.documento_url || '',
       })
       setRatFile(null)
+      setErrors({})
     }
   }, [etapa])
 
@@ -81,8 +86,24 @@ export function EtapaEditDialog({
     setFormData(updates)
   }
 
+  const validate = () => {
+    const newErrors: Record<string, string> = {}
+    if (formData.hora_prevista && !TIME_REGEX.test(formData.hora_prevista)) {
+      newErrors.hora_prevista = 'Hora inválida (HH:MM)'
+    }
+    if (formData.hora_realizada && !TIME_REGEX.test(formData.hora_realizada)) {
+      newErrors.hora_realizada = 'Hora inválida (HH:MM)'
+    }
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleSave = async () => {
     if (!etapa || !implId) return
+    if (!validate()) {
+      toast.error('Corrija os campos de hora antes de salvar.')
+      return
+    }
     if (
       isTreinamentoEtapa &&
       formData.status === 'Concluída' &&
@@ -104,6 +125,8 @@ export function EtapaEditDialog({
         status: formData.status,
         data_prevista: formData.data_prevista || null,
         data_realizada: formData.data_realizada || null,
+        hora_prevista: formData.hora_prevista || null,
+        hora_realizada: formData.hora_realizada || null,
         responsavel_id: formData.responsavel_id || null,
         observacoes: formData.observacoes || null,
         documento_url: docUrl,
@@ -151,7 +174,7 @@ export function EtapaEditDialog({
               </p>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Data Prevista</Label>
               <Input
@@ -161,12 +184,42 @@ export function EtapaEditDialog({
               />
             </div>
             <div className="space-y-2">
+              <Label>Hora Prevista</Label>
+              <Input
+                type="time"
+                value={formData.hora_prevista}
+                onChange={(e) => setFormData({ ...formData, hora_prevista: e.target.value })}
+              />
+              {errors.hora_prevista && (
+                <p className="text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {errors.hora_prevista}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label>Data Realizada</Label>
               <Input
                 type="date"
                 value={formData.data_realizada}
                 onChange={(e) => setFormData({ ...formData, data_realizada: e.target.value })}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Hora Realizada</Label>
+              <Input
+                type="time"
+                value={formData.hora_realizada}
+                onChange={(e) => setFormData({ ...formData, hora_realizada: e.target.value })}
+              />
+              {errors.hora_realizada && (
+                <p className="text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {errors.hora_realizada}
+                </p>
+              )}
             </div>
           </div>
           <div className="space-y-2">

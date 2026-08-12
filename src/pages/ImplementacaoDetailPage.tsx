@@ -387,6 +387,7 @@ export default function ImplementacaoDetailPage() {
             <TreinamentoDetailsEditor
               implId={impl.id}
               treinamentoData={impl.treinamento_data}
+              treinamentoHora={impl.treinamento_hora}
               treinamentoMotivo={impl.treinamento_motivo}
               treinamentoTopicos={impl.treinamento_topicos}
               clienteNome={impl.clientes?.nome || null}
@@ -438,6 +439,7 @@ export default function ImplementacaoDetailPage() {
                     <span className="text-slate-400">
                       — Previsto para{' '}
                       {new Date(proximaEtapa.data_prevista).toLocaleDateString('pt-BR')}
+                      {proximaEtapa.hora_prevista ? ` às ${proximaEtapa.hora_prevista}` : ''}
                     </span>
                   )}
                 </div>
@@ -530,6 +532,7 @@ export default function ImplementacaoDetailPage() {
                     <span className="text-sm text-muted-foreground">Data agendada:</span>
                     <span className="text-sm font-medium">
                       {new Date(impl.treinamento_data).toLocaleDateString('pt-BR')}
+                      {impl.treinamento_hora && ` às ${impl.treinamento_hora}`}
                     </span>
                   </div>
                 )}

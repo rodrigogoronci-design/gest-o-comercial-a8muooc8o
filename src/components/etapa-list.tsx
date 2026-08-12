@@ -1,4 +1,10 @@
 import { Clock, AlertCircle, CheckCircle, FileText, User } from 'lucide-react'
+
+function formatDateTime(dateStr: string | null | undefined, horaStr: string | null | undefined) {
+  if (!dateStr) return null
+  const date = new Date(dateStr).toLocaleDateString('pt-BR')
+  return horaStr ? `${date} às ${horaStr}` : date
+}
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -109,11 +115,13 @@ export function EtapaList({
                         {etapa.data_prevista && (
                           <span>
                             Prev: {new Date(etapa.data_prevista).toLocaleDateString('pt-BR')}
+                            {etapa.hora_prevista && ` às ${etapa.hora_prevista}`}
                           </span>
                         )}
                         {etapa.data_realizada && (
                           <span className="text-emerald-600">
                             Concluído: {new Date(etapa.data_realizada).toLocaleDateString('pt-BR')}
+                            {etapa.hora_realizada && ` às ${etapa.hora_realizada}`}
                           </span>
                         )}
                         {responsavelNome && (

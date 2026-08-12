@@ -117,6 +117,8 @@ export function ImplementacaoEditSheet({ open, onOpenChange, implementacaoId, on
           titulo: s.titulo,
           data_prevista: s.data_prevista || null,
           data_realizada: s.data_realizada || null,
+          hora_prevista: s.hora_prevista || null,
+          hora_realizada: s.hora_realizada || null,
           status: s.status,
           observacoes: s.observacoes || null,
         },
@@ -269,13 +271,22 @@ export function ImplementacaoEditSheet({ open, onOpenChange, implementacaoId, on
                         className="h-8 text-sm font-medium"
                       />
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       <div>
                         <Label className="text-xs text-slate-500">Prevista</Label>
                         <Input
                           type="date"
                           value={stage.data_prevista || ''}
                           onChange={(e) => updateStage(stage.id, 'data_prevista', e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-slate-500">Hora Prev.</Label>
+                        <Input
+                          type="time"
+                          value={stage.hora_prevista || ''}
+                          onChange={(e) => updateStage(stage.id, 'hora_prevista', e.target.value)}
                           className="h-8 text-sm"
                         />
                       </div>
@@ -288,6 +299,17 @@ export function ImplementacaoEditSheet({ open, onOpenChange, implementacaoId, on
                           className="h-8 text-sm"
                         />
                       </div>
+                      <div>
+                        <Label className="text-xs text-slate-500">Hora Real.</Label>
+                        <Input
+                          type="time"
+                          value={stage.hora_realizada || ''}
+                          onChange={(e) => updateStage(stage.id, 'hora_realizada', e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
                       <div>
                         <Label className="text-xs text-slate-500">Status</Label>
                         <Select
@@ -305,6 +327,26 @@ export function ImplementacaoEditSheet({ open, onOpenChange, implementacaoId, on
                             ))}
                           </SelectContent>
                         </Select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs text-slate-500">Hora Prev.</Label>
+                        <Input
+                          type="time"
+                          value={stage.hora_prevista || ''}
+                          onChange={(e) => updateStage(stage.id, 'hora_prevista', e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-slate-500">Hora Realiz.</Label>
+                        <Input
+                          type="time"
+                          value={stage.hora_realizada || ''}
+                          onChange={(e) => updateStage(stage.id, 'hora_realizada', e.target.value)}
+                          className="h-8 text-sm"
+                        />
                       </div>
                     </div>
                     <Textarea
