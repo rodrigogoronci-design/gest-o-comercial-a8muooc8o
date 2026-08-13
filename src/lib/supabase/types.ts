@@ -624,6 +624,53 @@ export type Database = {
           },
         ]
       }
+      avaliacoes_treinamento: {
+        Row: {
+          comentarios: string | null
+          created_at: string
+          data_avaliacao: string | null
+          data_envio: string | null
+          id: string
+          implementacao_id: string
+          nota: number | null
+          status: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          comentarios?: string | null
+          created_at?: string
+          data_avaliacao?: string | null
+          data_envio?: string | null
+          id?: string
+          implementacao_id: string
+          nota?: number | null
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          comentarios?: string | null
+          created_at?: string
+          data_avaliacao?: string | null
+          data_envio?: string | null
+          id?: string
+          implementacao_id?: string
+          nota?: number | null
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'avaliacoes_treinamento_implementacao_id_fkey'
+            columns: ['implementacao_id']
+            isOneToOne: false
+            referencedRelation: 'implementacoes'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       beneficiarios_plano_saude: {
         Row: {
           created_at: string
@@ -3499,6 +3546,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_avaliacao_treinamento: { Args: { p_token: string }; Returns: Json }
       get_consultoria_form: { Args: { p_token: string }; Returns: Json }
       get_current_colaborador_id: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
@@ -3517,6 +3565,10 @@ export type Database = {
       is_in_my_team: { Args: { target_colab_id: string }; Returns: boolean }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { '': string }; Returns: string[] }
+      submit_avaliacao_treinamento: {
+        Args: { p_comentarios: string; p_nota: number; p_token: string }
+        Returns: boolean
+      }
       submit_consultoria_form: {
         Args: { p_data: Json; p_token: string }
         Returns: boolean

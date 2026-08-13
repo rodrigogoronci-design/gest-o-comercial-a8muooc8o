@@ -11,6 +11,7 @@ import {
   Receipt,
   BarChart3,
   Calendar,
+  CalendarClock,
   Target,
 } from 'lucide-react'
 import {
@@ -36,6 +37,7 @@ const NAV_ITEMS = [
   { title: 'Captação', href: '/crm/captacao', icon: Target },
   { title: 'Clientes', href: '/clientes', icon: Building2 },
   { title: '🚀 Implantações', href: '/implementacoes', icon: Rocket },
+  { title: 'Agenda de Implantações', href: '/agenda-implantacoes', icon: CalendarClock },
   { title: 'Contratos', href: '/contratos', icon: FileText },
   { title: 'Recebimentos', href: '/recebimentos', icon: Receipt },
   { title: 'Planos', href: '/planos', icon: CreditCard },

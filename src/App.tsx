@@ -37,6 +37,7 @@ import AgendaPage from './pages/AgendaPage'
 import NotFound from './pages/NotFound'
 import ImplementacoesPage from './pages/ImplementacoesPage'
 import ImplementacaoDetailPage from './pages/ImplementacaoDetailPage'
+import AgendaImplantacoesPage from './pages/AgendaImplantacoesPage'
 import CaptacaoPage from './pages/CaptacaoPage'
 import OnboardingPage from './pages/OnboardingPage'
 import ConsultoriaFormPage from './pages/ConsultoriaFormPage'
@@ -77,6 +78,7 @@ const App = () => (
               <Route path="/agenda" element={<AgendaPage />} />
               <Route path="/implementacoes" element={<ImplementacoesPage />} />
               <Route path="/implementacoes/:id" element={<ImplementacaoDetailPage />} />
+              <Route path="/agenda-implantacoes" element={<AgendaImplantacoesPage />} />
               <Route path="/crm/captacao" element={<CaptacaoPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
