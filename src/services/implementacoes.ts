@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase/client'
 import { getEtapasForTipo, addWeeks } from '@/lib/implantacao-config'
 import { parseModulosToList } from '@/lib/modules-parser'
+import { resolvePlanoFromCliente, getContractedModulesWithBasic } from '@/lib/plan-modules'
 
 export const getImplementacoes = async () => {
   const { data, error } = await supabase
@@ -91,30 +92,46 @@ export const createImplementacao = async (params: {
     try {
       const { data: cliente } = await supabase
         .from('clientes')
-        .select('modulos, plano_id, quantidade_filiais')
+        .select(
+          'modulos, plano_id, quantidade_filiais, modo_implantacao, planos_saude(id, descricao, codigo, franquia_quantidade)',
+        )
         .eq('id', params.cliente_id)
         .single()
 
+      // Resolve o plano a partir do join, plano_id ou modulos.plano_base
+      const resolved = resolvePlanoFromCliente(cliente)
+
       let planoInfo: any = null
-      if (cliente?.plano_id) {
+      if (cliente?.plano_id && !resolved.plano_descricao) {
         const { data: plano } = await supabase
           .from('planos_saude')
-          .select('descricao, codigo, franquia_quantidade')
+          .select('id, descricao, codigo, franquia_quantidade')
           .eq('id', cliente.plano_id)
-          .single()
+          .maybeSingle()
         planoInfo = plano
+      } else if (resolved.plano_id) {
+        planoInfo = {
+          id: resolved.plano_id,
+          descricao: resolved.plano_descricao,
+          codigo: resolved.plano_codigo,
+        }
       }
 
-      const clientModules = parseModulosToList(cliente?.modulos)
-      if (modulosNovos.length === 0 && clientModules.length > 0) {
-        modulosNovos = clientModules
+      // Módulos contratados pelo cliente, SEMPRE incluindo o módulo básico do plano
+      const contractedModules = getContractedModulesWithBasic(cliente)
+      if (modulosNovos.length === 0 && contractedModules.length > 0) {
+        modulosNovos = contractedModules
       }
 
       dadosParametrizacao = {
-        plano_descricao: planoInfo?.descricao || null,
-        plano_codigo: planoInfo?.codigo || null,
+        plano_id: planoInfo?.id || resolved.plano_id || cliente?.plano_id || null,
+        plano_descricao: planoInfo?.descricao || resolved.plano_descricao || null,
+        plano_codigo: planoInfo?.codigo || resolved.plano_codigo || null,
+        plan_id: resolved.planId || null,
         franquia_quantidade: planoInfo?.franquia_quantidade || cliente?.quantidade_filiais || null,
-        modulos_copiados: modulosNovos,
+        modulos_copiados: contractedModules,
+        modulos_adicionais: parseModulosToList(cliente?.modulos),
+        modo_implantacao: cliente?.modo_implantacao || null,
         dados_replicados_em: new Date().toISOString(),
       }
     } catch {
@@ -359,6 +376,58 @@ export const createImplementacaoFromAtendimento = async (params: {
   consultoria_titulo?: string | null
   consultoria_texto?: string | null
 }) => {
+  let modulosNovos = params.modulos_novos || []
+  let dadosParametrizacao: Record<string, any> = {}
+
+  if (params.cliente_id) {
+    try {
+      const { data: cliente } = await supabase
+        .from('clientes')
+        .select(
+          'modulos, plano_id, quantidade_filiais, modo_implantacao, planos_saude(id, descricao, codigo, franquia_quantidade)',
+        )
+        .eq('id', params.cliente_id)
+        .single()
+
+      const resolved = resolvePlanoFromCliente(cliente)
+
+      let planoInfo: any = null
+      if (cliente?.plano_id && !resolved.plano_descricao) {
+        const { data: plano } = await supabase
+          .from('planos_saude')
+          .select('id, descricao, codigo, franquia_quantidade')
+          .eq('id', cliente.plano_id)
+          .maybeSingle()
+        planoInfo = plano
+      } else if (resolved.plano_id) {
+        planoInfo = {
+          id: resolved.plano_id,
+          descricao: resolved.plano_descricao,
+          codigo: resolved.plano_codigo,
+        }
+      }
+
+      const contractedModules = getContractedModulesWithBasic(cliente)
+      if (modulosNovos.length === 0 && contractedModules.length > 0) {
+        modulosNovos = contractedModules
+      }
+
+      dadosParametrizacao = {
+        plano_id: planoInfo?.id || resolved.plano_id || cliente?.plano_id || null,
+        plano_descricao: planoInfo?.descricao || resolved.plano_descricao || null,
+        plano_codigo: planoInfo?.codigo || resolved.plano_codigo || null,
+        plan_id: resolved.planId || null,
+        franquia_quantidade: planoInfo?.franquia_quantidade || cliente?.quantidade_filiais || null,
+        modulos_copiados: contractedModules,
+        modulos_adicionais: parseModulosToList(cliente?.modulos),
+        modo_implantacao: cliente?.modo_implantacao || null,
+        dados_replicados_em: new Date().toISOString(),
+      }
+    } catch {
+      // Continue without replicated data
+    }
+  }
+
   const { data, error } = await supabase
     .from('implementacoes' as any)
     .insert({
@@ -368,7 +437,8 @@ export const createImplementacaoFromAtendimento = async (params: {
       status: 'Em andamento',
       progresso: 0,
       tipo: params.tipo,
-      modulos_novos: params.modulos_novos || [],
+      modulos_novos: modulosNovos,
+      dados_parametrizacao: dadosParametrizacao,
       treinamento_motivo: params.treinamento_motivo || null,
       treinamento_topicos: params.treinamento_topicos || null,
       treinamento_data: params.treinamento_data || null,
