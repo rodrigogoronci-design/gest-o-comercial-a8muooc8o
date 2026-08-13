@@ -40,6 +40,7 @@ import ImplementacaoDetailPage from './pages/ImplementacaoDetailPage'
 import CaptacaoPage from './pages/CaptacaoPage'
 import OnboardingPage from './pages/OnboardingPage'
 import ConsultoriaFormPage from './pages/ConsultoriaFormPage'
+import AvaliacaoTreinamentoPage from './pages/AvaliacaoTreinamentoPage'
 import VCardPage from './pages/VCardPage'
 
 const App = () => (
@@ -53,6 +54,7 @@ const App = () => (
             <Route path="/login" element={<LoginPage />} />
             <Route path="/onboarding/:token" element={<OnboardingPage />} />
             <Route path="/consultoria/:token" element={<ConsultoriaFormPage />} />
+            <Route path="/avaliacao-treinamento/:token" element={<AvaliacaoTreinamentoPage />} />
             <Route path="/vcard/:slug" element={<VCardPage />} />
             <Route
               element={

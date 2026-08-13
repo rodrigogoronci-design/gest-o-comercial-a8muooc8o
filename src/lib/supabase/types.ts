@@ -2080,6 +2080,8 @@ export type Database = {
           data_prevista: string | null
           data_realizada: string | null
           documento_url: string | null
+          hora_prevista: string | null
+          hora_realizada: string | null
           id: string
           implementacao_id: string
           observacoes: string | null
@@ -2094,6 +2096,8 @@ export type Database = {
           data_prevista?: string | null
           data_realizada?: string | null
           documento_url?: string | null
+          hora_prevista?: string | null
+          hora_realizada?: string | null
           id?: string
           implementacao_id: string
           observacoes?: string | null
@@ -2108,6 +2112,8 @@ export type Database = {
           data_prevista?: string | null
           data_realizada?: string | null
           documento_url?: string | null
+          hora_prevista?: string | null
+          hora_realizada?: string | null
           id?: string
           implementacao_id?: string
           observacoes?: string | null
@@ -2187,6 +2193,7 @@ export type Database = {
           tipo: string
           token_onboarding: string | null
           treinamento_data: string | null
+          treinamento_hora: string | null
           treinamento_motivo: string | null
           treinamento_topicos: string | null
         }
@@ -2211,6 +2218,7 @@ export type Database = {
           tipo?: string
           token_onboarding?: string | null
           treinamento_data?: string | null
+          treinamento_hora?: string | null
           treinamento_motivo?: string | null
           treinamento_topicos?: string | null
         }
@@ -2235,6 +2243,7 @@ export type Database = {
           tipo?: string
           token_onboarding?: string | null
           treinamento_data?: string | null
+          treinamento_hora?: string | null
           treinamento_motivo?: string | null
           treinamento_topicos?: string | null
         }

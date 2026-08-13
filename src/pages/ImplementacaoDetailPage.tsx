@@ -17,6 +17,7 @@ import {
   Award,
   ListChecks,
   AlertCircle,
+  Star,
 } from 'lucide-react'
 import { useUserRole } from '@/hooks/use-user-role'
 import { getOrCreateOnboardingToken, generateOnboardingUrl } from '@/services/onboarding'
@@ -36,6 +37,7 @@ import { getImplementacao, getColaboradores, syncModulosToCliente } from '@/serv
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { TreinamentoDetailsEditor } from '@/components/TreinamentoDetailsEditor'
+import { TreinamentoEvaluationSection } from '@/components/TreinamentoEvaluationSection'
 import { ContractedPlanDetails } from '@/components/ContractedPlanDetails'
 import { DigitalCertificateField } from '@/components/DigitalCertificateField'
 import { ImplementationDocumentRepository } from '@/components/ImplementationDocumentRepository'
@@ -153,6 +155,11 @@ export default function ImplementacaoDetailPage() {
           id: 'execucao-treinamento',
           label: 'Execução',
           icon: <ListChecks className="h-3.5 w-3.5" />,
+        },
+        {
+          id: 'avaliacao-treinamento',
+          label: 'Avaliação',
+          icon: <Star className="h-3.5 w-3.5" />,
         },
       ]
     }
@@ -413,6 +420,21 @@ export default function ImplementacaoDetailPage() {
               colabMap={colabMap}
               contractedModules={contractedModules}
               onEditEtapa={setEditingEtapa}
+            />
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            id="avaliacao-treinamento"
+            title="Avaliação do Treinamento"
+            icon={<Star className="h-4 w-4 text-violet-600" />}
+          >
+            <TreinamentoEvaluationSection
+              implId={impl.id}
+              clienteNome={impl.clientes?.nome || impl.cliente_nome || null}
+              clienteEmail={impl.clientes?.email || null}
+              treinamentoMotivo={impl.treinamento_motivo}
+              modulosNovos={impl.modulos_novos as string[] | null}
+              analistaNome={impl.colaboradores?.nome || null}
             />
           </CollapsibleSection>
         </>
