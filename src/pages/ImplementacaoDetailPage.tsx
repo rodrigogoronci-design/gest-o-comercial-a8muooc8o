@@ -42,6 +42,7 @@ import { ContractedPlanDetails } from '@/components/ContractedPlanDetails'
 import { DigitalCertificateField } from '@/components/DigitalCertificateField'
 import { ImplementationDocumentRepository } from '@/components/ImplementationDocumentRepository'
 import { getContractedModules } from '@/lib/scope-mapping'
+import { getContractedModulesWithBasic } from '@/lib/plan-modules'
 import { generateExecutionTitle } from '@/lib/atendimento-utils'
 
 const TIPO_CONFIG: Record<string, { label: string; color: string }> = {
@@ -139,7 +140,9 @@ export default function ImplementacaoDetailPage() {
 
   const contractedModules = useMemo(() => {
     if (!impl) return []
-    return getContractedModules(impl.clientes, impl.crm_propostas)
+    // Garante que o módulo básico apareça em TODAS as implementações, mesmo quando
+    // o cliente/proposta não trazem módulos contratados explícitos.
+    return getContractedModulesWithBasic(impl.clientes)
   }, [impl])
 
   const navItems = useMemo((): SectionNavItem[] => {

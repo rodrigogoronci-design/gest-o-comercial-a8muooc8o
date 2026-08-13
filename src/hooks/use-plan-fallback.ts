@@ -1,6 +1,35 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { updateDadosParametrizacao } from '@/services/implementacoes'
+import { resolvePlanoFromCliente, resolvePlanIdFromText } from '@/lib/plan-modules'
+import { PLANS } from '@/constants/contracts'
+
+/**
+ * Tenta extrair a descrição/código do plano a partir de modulos.plano_base
+ * (formato legado: { plano_base: 'TMS-300', adicionais: [...] }).
+ */
+function resolveFromModulosPlanoBase(cliente: any | null | undefined): {
+  descricao: string | null
+  codigo: string | null
+  planId: string | null
+} {
+  if (!cliente) return { descricao: null, codigo: null, planId: null }
+  const modulosRaw = (cliente as any).modulos
+  if (!modulosRaw || typeof modulosRaw !== 'object' || Array.isArray(modulosRaw)) {
+    return { descricao: null, codigo: null, planId: null }
+  }
+  const planoBase = (modulosRaw as any).plano_base
+  if (!planoBase || typeof planoBase !== 'string' || !planoBase.trim()) {
+    return { descricao: null, codigo: null, planId: null }
+  }
+  const planId = resolvePlanIdFromText(planoBase)
+  const plan = PLANS.find((p) => p.id === planId)
+  return {
+    descricao: plan?.name ?? planoBase.trim(),
+    codigo: plan ? plan.id.toUpperCase() : planoBase.trim().toUpperCase(),
+    planId,
+  }
+}
 
 interface UsePlanFallbackResult {
   planDescription: string
@@ -147,6 +176,40 @@ export function usePlanFallback(
           }
         } catch {
           /* ignore */
+        }
+      }
+
+      // Step 3b: Fallback to modulos.plano_base (formato legado do cadastro do cliente)
+      if (!resolvedDesc) {
+        const fromPlanoBase = resolveFromModulosPlanoBase(cliente)
+        if (fromPlanoBase.descricao) {
+          resolvedDesc = fromPlanoBase.descricao
+          resolvedCode = fromPlanoBase.codigo
+          // Tenta casar com um plano real no banco pelo código ERP
+          if (fromPlanoBase.planId) {
+            try {
+              const { data: plano } = await supabase
+                .from('planos_saude')
+                .select('id, descricao, codigo')
+                .or(
+                  `codigo.eq.ERP-${fromPlanoBase.planId.toUpperCase()},codigo.eq.${fromPlanoBase.planId.toUpperCase()}`,
+                )
+                .limit(1)
+                .maybeSingle()
+              if (plano) {
+                resolvedDesc = plano.descricao || resolvedDesc
+                resolvedCode = plano.codigo || resolvedCode
+                matchedPlanoId = plano.id
+              }
+            } catch {
+              /* ignore */
+            }
+          }
+          // Caso ainda não tenha matchedPlanoId, re-busca via resolvePlanoFromCliente
+          if (!matchedPlanoId) {
+            const resolved = resolvePlanoFromCliente(cliente)
+            if (resolved.plano_id) matchedPlanoId = resolved.plano_id
+          }
         }
       }
 
