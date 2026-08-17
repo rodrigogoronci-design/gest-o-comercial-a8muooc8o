@@ -116,7 +116,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { ContractDocument } from '@/components/ContractDocument'
+import { ConsultoriaContractDocument } from '@/components/ConsultoriaContractDocument'
 import { AddendumDocument } from '@/components/AddendumDocument'
+
 import { TrainingProposalDocument } from '@/components/TrainingProposalDocument'
 import { Link, useNavigate } from 'react-router-dom'
 import { getImplementacaoByCliente, createImplementacao } from '@/services/implementacoes'
@@ -133,6 +135,9 @@ import { TableActionsMenu } from '@/components/TableActionsMenu'
 import { SectionNav, type SectionNavItem } from '@/components/section-nav'
 import { CollapsibleSection } from '@/components/collapsible-section'
 import { ClientReunioesTab } from '@/components/ClientReunioesTab'
+
+// Cliente com contrato específico de Consultoria de Estruturação Operacional e Regulatória
+const CONSULTORIA_CONTRACT_CLIENT_ID = '6f86db2c-4b22-4fcc-86c0-62817173a11c'
 
 export interface ClienteRecord {
   id: string
@@ -4844,83 +4849,92 @@ Obrigada.`)
                 className="mt-4 flex-1 bg-white border rounded-md shadow-sm"
               >
                 <DocumentacaoStatusBanner clienteId={viewingClient.id} />
-                <ScrollArea className="h-[calc(100vh-16rem)]">
-                  <div className="min-w-[600px] bg-white p-4">
-                    <ClientContractUpload
-                      clientId={viewingClient.id}
-                      clientName={viewingClient.name}
-                      currentUrl={viewingClient.contratoUrl || null}
-                      onUrlChange={(url) => {
-                        setViewingClient((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                contratoUrl: url,
-                                originalData: {
-                                  ...prev.originalData!,
-                                  contrato_url: url,
-                                },
-                              }
-                            : null,
-                        )
-                        loadClientes()
-                      }}
-                    />
-                    <ContractDocument
-                      name={viewingClient.name}
-                      cnpj={viewingClient.cnpj}
-                      address={viewingClient.endereco || viewingClient.originalData?.email || ''}
-                      repName={viewingClient.rep_nome || ''}
-                      repCpf={viewingClient.rep_cpf || ''}
-                      repRg={viewingClient.rep_rg || ''}
-                      selectedPlan={
-                        PLANS.find(
+                {viewingClient.id === CONSULTORIA_CONTRACT_CLIENT_ID ? (
+                  <ScrollArea className="h-[calc(100vh-16rem)]">
+                    <div className="bg-white p-4">
+                      <ConsultoriaContractDocument />
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <ScrollArea className="h-[calc(100vh-16rem)]">
+                    <div className="min-w-[600px] bg-white p-4">
+                      <ClientContractUpload
+                        clientId={viewingClient.id}
+                        clientName={viewingClient.name}
+                        currentUrl={viewingClient.contratoUrl || null}
+                        onUrlChange={(url) => {
+                          setViewingClient((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  contratoUrl: url,
+                                  originalData: {
+                                    ...prev.originalData!,
+                                    contrato_url: url,
+                                  },
+                                }
+                              : null,
+                          )
+                          loadClientes()
+                        }}
+                      />
+                      <ContractDocument
+                        name={viewingClient.name}
+                        cnpj={viewingClient.cnpj}
+                        address={viewingClient.endereco || viewingClient.originalData?.email || ''}
+                        repName={viewingClient.rep_nome || ''}
+                        repCpf={viewingClient.rep_cpf || ''}
+                        repRg={viewingClient.rep_rg || ''}
+                        selectedPlan={
+                          PLANS.find(
+                            (p) =>
+                              p.name === viewingClient.plano_base ||
+                              p.id === viewingClient.plano_base,
+                          )?.id || 'tms-50'
+                        }
+                        selectedModules={viewingClient.modules
+                          .map((m) => MODULES.find((mod) => mod.name === m.name)?.id || '')
+                          .filter(Boolean)}
+                        planData={PLANS.find(
                           (p) =>
                             p.name === viewingClient.plano_base ||
                             p.id === viewingClient.plano_base,
-                        )?.id || 'tms-50'
-                      }
-                      selectedModules={viewingClient.modules
-                        .map((m) => MODULES.find((mod) => mod.name === m.name)?.id || '')
-                        .filter(Boolean)}
-                      planData={PLANS.find(
-                        (p) =>
-                          p.name === viewingClient.plano_base || p.id === viewingClient.plano_base,
-                      )}
-                      planPrice={
-                        PLANS.find(
-                          (p) =>
-                            p.name === viewingClient.plano_base ||
-                            p.id === viewingClient.plano_base,
-                        )?.price || 0
-                      }
-                      modulesPrice={viewingClient.modules.reduce((acc, m) => acc + m.price, 0)}
-                      dfeData={null}
-                      dfePrice={0}
-                      totalValue={viewingClient.totalValue}
-                      implMode={
-                        (viewingClient.modo_implantacao as 'remoto' | 'presencial') || 'remoto'
-                      }
-                      implRate={
-                        viewingClient.modo_implantacao === 'presencial'
-                          ? IMPLEMENTATION_RATES.presencial
-                          : IMPLEMENTATION_RATES.remoto
-                      }
-                      totalImplHours={
-                        BASE_IMPLEMENTATION_HOURS +
-                        viewingClient.modules.reduce(
-                          (acc, m) =>
-                            acc + (MODULES.find((mod) => mod.name === m.name)?.implHours || 0),
-                          0,
-                        )
-                      }
-                      implValue={
-                        viewingClient.valor_implantacao ??
-                        BASE_IMPLEMENTATION_HOURS * IMPLEMENTATION_RATES.remoto
-                      }
-                    />{' '}
-                  </div>
-                </ScrollArea>
+                        )}
+                        planPrice={
+                          PLANS.find(
+                            (p) =>
+                              p.name === viewingClient.plano_base ||
+                              p.id === viewingClient.plano_base,
+                          )?.price || 0
+                        }
+                        modulesPrice={viewingClient.modules.reduce((acc, m) => acc + m.price, 0)}
+                        dfeData={null}
+                        dfePrice={0}
+                        totalValue={viewingClient.totalValue}
+                        implMode={
+                          (viewingClient.modo_implantacao as 'remoto' | 'presencial') || 'remoto'
+                        }
+                        implRate={
+                          viewingClient.modo_implantacao === 'presencial'
+                            ? IMPLEMENTATION_RATES.presencial
+                            : IMPLEMENTATION_RATES.remoto
+                        }
+                        totalImplHours={
+                          BASE_IMPLEMENTATION_HOURS +
+                          viewingClient.modules.reduce(
+                            (acc, m) =>
+                              acc + (MODULES.find((mod) => mod.name === m.name)?.implHours || 0),
+                            0,
+                          )
+                        }
+                        implValue={
+                          viewingClient.valor_implantacao ??
+                          BASE_IMPLEMENTATION_HOURS * IMPLEMENTATION_RATES.remoto
+                        }
+                      />{' '}
+                    </div>
+                  </ScrollArea>
+                )}
               </TabsContent>
             </Tabs>
           )}
