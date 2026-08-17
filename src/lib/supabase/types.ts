@@ -1450,6 +1450,7 @@ export type Database = {
           tipo_pessoa: string | null
           ultima_interacao: string | null
           user_id: string | null
+          segmento: string | null
         }
         Insert: {
           ata_primeiro_atendimento?: string | null
@@ -1489,6 +1490,7 @@ export type Database = {
           tipo_pessoa?: string | null
           ultima_interacao?: string | null
           user_id?: string | null
+          segmento?: string | null
         }
         Update: {
           ata_primeiro_atendimento?: string | null
@@ -1528,6 +1530,7 @@ export type Database = {
           tipo_pessoa?: string | null
           ultima_interacao?: string | null
           user_id?: string | null
+          segmento?: string | null
         }
         Relationships: [
           {

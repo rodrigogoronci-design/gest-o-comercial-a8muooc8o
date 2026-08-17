@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2, Save, AlertCircle } from 'lucide-react'
+import { Loader2, Save, AlertCircle, Copy, ExternalLink, RefreshCw } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,10 +12,13 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/hooks/use-toast'
 import { MODULES } from '@/constants/contracts'
 import {
+  WHATSAPP_PRESENTATION_LINK,
   WHATSAPP_PRESENTATION_MESSAGE,
   cleansePhoneNumber,
   isValidBrazilianPhone,
   buildWhatsAppUrl,
+  buildProspectOutreachMessage,
+  DEFAULT_PROSPECT_SEGMENTO,
 } from '@/lib/whatsapp-utils'
 
 const captacaoSchema = z.object({
@@ -23,8 +26,9 @@ const captacaoSchema = z.object({
   contato_nome: z.string().min(1, 'Nome do contato é obrigatório'),
   telefone: z.string().min(1, 'Telefone é obrigatório'),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
-  outro: z.string().optional().default(''),
-  observacoes: z.string().optional().default(''),
+  segmento: z.string().optional(),
+  outro: z.string().optional(),
+  observacoes: z.string().optional(),
 })
 
 type CaptacaoFormValues = z.infer<typeof captacaoSchema>
@@ -35,11 +39,20 @@ export function CaptacaoSimplifiedForm() {
   const [whatsappError, setWhatsappError] = useState<string | null>(null)
   const [selectedModules, setSelectedModules] = useState<string[]>([])
   const [moduleError, setModuleError] = useState<string | null>(null)
+  // Mensagem de aproximação editável. Acompanha o segmento digitado, mas pode
+  // ser livremente ajustada pela Aline antes do envio.
+  const [outreachMessage, setOutreachMessage] = useState<string>(() =>
+    buildProspectOutreachMessage(''),
+  )
+  // Marca quando a Aline editou a mensagem manualmente — para não sobrescrever
+  // enquanto ela digita, apenas ao clicar em "regerar".
+  const [outreachEdited, setOutreachEdited] = useState(false)
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<CaptacaoFormValues>({
     resolver: zodResolver(captacaoSchema),
@@ -48,16 +61,63 @@ export function CaptacaoSimplifiedForm() {
       contato_nome: '',
       telefone: '',
       email: '',
+      segmento: '',
       outro: '',
       observacoes: '',
     },
   })
+
+  const segmentoValue = watch('segmento') || ''
+
+  // Atualiza a mensagem automaticamente conforme o segmento é preenchido,
+  // respeitando edições manuais feitas pela Aline.
+  const syncOutreachFromSegmento = (seg: string) => {
+    if (outreachEdited) return
+    setOutreachMessage(buildProspectOutreachMessage(seg))
+  }
 
   const toggleModule = (moduleId: string) => {
     setSelectedModules((prev) =>
       prev.includes(moduleId) ? prev.filter((id) => id !== moduleId) : [...prev, moduleId],
     )
     setModuleError(null)
+  }
+
+  const handleCopyMessage = async () => {
+    try {
+      await navigator.clipboard.writeText(outreachMessage)
+      toast({
+        title: 'Mensagem copiada',
+        description: 'Cole no WhatsApp ou onde preferir.',
+      })
+    } catch {
+      toast({
+        title: 'Não foi possível copiar',
+        description: 'Selecione e copie manualmente o texto abaixo.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(WHATSAPP_PRESENTATION_LINK)
+      toast({ title: 'Link copiado' })
+    } catch {
+      toast({
+        title: 'Não foi possível copiar o link',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleRegenerateMessage = () => {
+    setOutreachMessage(buildProspectOutreachMessage(segmentoValue))
+    setOutreachEdited(false)
+    toast({
+      title: 'Mensagem atualizada',
+      description: `Segmento: ${segmentoValue.trim() || DEFAULT_PROSPECT_SEGMENTO}.`,
+    })
   }
 
   const onSubmit = async (values: CaptacaoFormValues) => {
@@ -88,6 +148,7 @@ export function CaptacaoSimplifiedForm() {
           : values.observacoes || null,
         classificacao: 'Frio',
         tipo_pessoa: 'PJ',
+        segmento: values.segmento?.trim() ? values.segmento.trim() : null,
       })
 
       if (error) throw error
@@ -103,16 +164,24 @@ export function CaptacaoSimplifiedForm() {
         setWhatsappError('Número de telefone inválido. O WhatsApp não será aberto.')
         toast({
           title: 'WhatsApp não aberto',
-          description: 'Número de telefone inválido. O WhatsApp não será aberto.',
+          description:
+            'Número de telefone inválido. O WhatsApp não será aberto. Você ainda pode copiar a mensagem e o link abaixo.',
           variant: 'destructive',
         })
         setSaving(false)
         reset()
         setSelectedModules([])
+        setOutreachMessage(buildProspectOutreachMessage(''))
+        setOutreachEdited(false)
         return
       }
 
-      const whatsappUrl = buildWhatsAppUrl(phoneDigits, WHATSAPP_PRESENTATION_MESSAGE)
+      // Envia a mensagem de aproximação editada + link da apresentação.
+      const fullMessage = `${outreachMessage}
+
+🔗 Apresentação Service Logic: ${WHATSAPP_PRESENTATION_LINK}`
+
+      const whatsappUrl = buildWhatsAppUrl(phoneDigits, fullMessage)
       if (whatsappUrl) {
         window.location.href = whatsappUrl
       }
@@ -120,6 +189,8 @@ export function CaptacaoSimplifiedForm() {
       setSaving(false)
       reset()
       setSelectedModules([])
+      setOutreachMessage(buildProspectOutreachMessage(''))
+      setOutreachEdited(false)
     } catch (err: any) {
       toast({
         title: 'Erro ao salvar contato',
@@ -163,6 +234,21 @@ export function CaptacaoSimplifiedForm() {
           <Label htmlFor="email">E-mail</Label>
           <Input id="email" type="email" placeholder="contato@empresa.com" {...register('email')} />
           {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+        </div>
+
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="segmento">Segmento</Label>
+          <Input
+            id="segmento"
+            placeholder={`Ex.: transporte e logística (padrão: "${DEFAULT_PROSPECT_SEGMENTO}")`}
+            {...register('segmento', {
+              onChange: (e) => syncOutreachFromSegmento(e.target.value),
+            })}
+          />
+          <p className="text-xs text-muted-foreground">
+            Usado para personalizar a mensagem de aproximação abaixo. Se vazio, será usado "
+            {DEFAULT_PROSPECT_SEGMENTO}".
+          </p>
         </div>
       </div>
 
@@ -222,6 +308,8 @@ export function CaptacaoSimplifiedForm() {
             setSelectedModules([])
             setWhatsappError(null)
             setModuleError(null)
+            setOutreachMessage(buildProspectOutreachMessage(''))
+            setOutreachEdited(false)
           }}
           disabled={saving}
         >
@@ -237,6 +325,78 @@ export function CaptacaoSimplifiedForm() {
         Ao salvar, o WhatsApp será aberto automaticamente com a mensagem de apresentação para envio
         ao contato.
       </p>
+
+      {/* Mensagem de aproximação + link da apresentação, prontos para copiar/editar */}
+      <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-800">Mensagem para o prospect</h3>
+            <p className="text-xs text-muted-foreground">
+              Pronta para copiar/editar antes do envio. O segmento é preenchido automaticamente.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1.5 text-slate-600"
+            onClick={handleRegenerateMessage}
+            title="Regerar a mensagem a partir do segmento atual"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Regenerar
+          </Button>
+        </div>
+
+        <Textarea
+          value={outreachMessage}
+          onChange={(e) => {
+            setOutreachMessage(e.target.value)
+            setOutreachEdited(true)
+          }}
+          rows={10}
+          className="bg-white text-sm leading-relaxed"
+        />
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={handleCopyMessage}
+          >
+            <Copy className="h-3.5 w-3.5" />
+            Copiar mensagem
+          </Button>
+        </div>
+
+        {/* Link da apresentação — continua funcionando como antes */}
+        <div className="space-y-2 border-t border-slate-200 pt-3">
+          <div className="flex items-center justify-between gap-2">
+            <Label className="text-sm font-semibold text-slate-700">Link da apresentação</Label>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-1.5 text-slate-600"
+              onClick={handleCopyLink}
+            >
+              <Copy className="h-3.5 w-3.5" />
+              Copiar link
+            </Button>
+          </div>
+          <a
+            href={WHATSAPP_PRESENTATION_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 hover:underline break-all"
+          >
+            {WHATSAPP_PRESENTATION_LINK}
+            <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
+          </a>
+        </div>
+      </div>
     </form>
   )
 }
