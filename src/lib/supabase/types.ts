@@ -1444,7 +1444,6 @@ export type Database = {
           quantidade_uso: number | null
           razao_social: string | null
           responsavel_comercial: string | null
-          segmento: string | null
           status: string
           tags: Json | null
           telefone: string | null
@@ -1484,7 +1483,6 @@ export type Database = {
           quantidade_uso?: number | null
           razao_social?: string | null
           responsavel_comercial?: string | null
-          segmento?: string | null
           status?: string
           tags?: Json | null
           telefone?: string | null
@@ -1524,7 +1522,6 @@ export type Database = {
           quantidade_uso?: number | null
           razao_social?: string | null
           responsavel_comercial?: string | null
-          segmento?: string | null
           status?: string
           tags?: Json | null
           telefone?: string | null

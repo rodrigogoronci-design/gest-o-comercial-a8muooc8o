@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -11,6 +11,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/hooks/use-toast'
 import { MODULES } from '@/constants/contracts'
+import { fetchCnpjData } from '@/services/cnpj'
+import { formatCNPJ } from '@/lib/cpf-utils'
 import {
   WHATSAPP_PRESENTATION_LINK,
   cleansePhoneNumber,
@@ -21,6 +23,7 @@ import {
 
 const captacaoSchema = z.object({
   empresa: z.string().min(1, 'Nome da empresa é obrigatório'),
+  cnpj: z.string().optional(),
   contato_nome: z.string().min(1, 'Nome do contato é obrigatório'),
   telefone: z.string().min(1, 'Telefone é obrigatório'),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
@@ -36,6 +39,7 @@ export function CaptacaoSimplifiedForm() {
   const [whatsappError, setWhatsappError] = useState<string | null>(null)
   const [selectedModules, setSelectedModules] = useState<string[]>([])
   const [moduleError, setModuleError] = useState<string | null>(null)
+  const [cnpjLoading, setCnpjLoading] = useState(false)
   // Mensagem de aproximação editável. Acompanha o nome da empresa preenchido,
   // mas pode ser livremente ajustada pela Aline antes do envio.
   const [outreachMessage, setOutreachMessage] = useState<string>(() =>
@@ -50,11 +54,14 @@ export function CaptacaoSimplifiedForm() {
     handleSubmit,
     reset,
     watch,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<CaptacaoFormValues>({
     resolver: zodResolver(captacaoSchema),
     defaultValues: {
       empresa: '',
+      cnpj: '',
       contato_nome: '',
       telefone: '',
       email: '',
@@ -70,6 +77,62 @@ export function CaptacaoSimplifiedForm() {
   const syncOutreachFromFields = (empresa: string) => {
     if (outreachEdited) return
     setOutreachMessage(buildProspectOutreachMessage(empresa))
+  }
+
+  // Evita disparar a consulta CNPJ mais de uma vez para o mesmo número
+  // (ex.: ao reformatar o campo enquanto o usuário digita).
+  const lastLookedUpCnpj = useRef<string>('')
+
+  // Consulta automática via BrasilAPI quando o CNPJ atinge 14 dígitos.
+  // Preenche "Nome da Empresa" (razão social) sem bloquear o preenchimento
+  // manual em caso de falha.
+  const handleCnpjChange = async (rawValue: string) => {
+    const formatted = formatCNPJ(rawValue)
+    setValue('cnpj', formatted, { shouldValidate: false })
+
+    const digits = formatted.replace(/\D/g, '')
+    if (digits.length !== 14) return
+    if (lastLookedUpCnpj.current === digits) return
+    lastLookedUpCnpj.current = digits
+
+    setCnpjLoading(true)
+    try {
+      const { data, error } = await fetchCnpjData(digits)
+      if (error || !data) {
+        toast({
+          title: 'Consulta CNPJ indisponível',
+          description: error || 'Preencha os dados manualmente.',
+          variant: 'destructive',
+        })
+        return
+      }
+
+      // Razão social → Nome da Empresa (preenche apenas se vazio, para não
+      // sobrescrever algo que a Aline já tenha digitado).
+      if (data.nome && !getValues('empresa')) {
+        setValue('empresa', data.nome, { shouldValidate: true })
+        syncOutreachFromFields(data.nome)
+        toast({
+          title: 'Dados preenchidos',
+          description: 'Razão social obtida via BrasilAPI.',
+        })
+      } else {
+        toast({
+          title: 'CNPJ consultado',
+          description: data.nome
+            ? `Razão social encontrada: ${data.nome}. O nome da empresa já estava preenchido.`
+            : 'CNPJ consultado, mas nenhum nome retornado.',
+        })
+      }
+    } catch {
+      toast({
+        title: 'Consulta CNPJ indisponível',
+        description: 'Preencha os dados manualmente.',
+        variant: 'destructive',
+      })
+    } finally {
+      setCnpjLoading(false)
+    }
   }
 
   const toggleModule = (moduleId: string) => {
@@ -134,6 +197,7 @@ export function CaptacaoSimplifiedForm() {
     try {
       const { error } = await supabase.from('crm_prospects').insert({
         empresa: values.empresa,
+        cnpj: values.cnpj?.replace(/\D/g, '') || null,
         contato_nome: values.contato_nome,
         telefone: values.telefone,
         email: values.email || null,
@@ -165,6 +229,7 @@ export function CaptacaoSimplifiedForm() {
         })
         setSaving(false)
         reset()
+        lastLookedUpCnpj.current = ''
         setSelectedModules([])
         setOutreachMessage(buildProspectOutreachMessage(''))
         setOutreachEdited(false)
@@ -183,6 +248,7 @@ export function CaptacaoSimplifiedForm() {
 
       setSaving(false)
       reset()
+      lastLookedUpCnpj.current = ''
       setSelectedModules([])
       setOutreachMessage(buildProspectOutreachMessage(''))
       setOutreachEdited(false)
@@ -211,6 +277,26 @@ export function CaptacaoSimplifiedForm() {
             })}
           />
           {errors.empresa && <p className="text-sm text-destructive">{errors.empresa.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="cnpj">CNPJ</Label>
+          <div className="relative">
+            <Input
+              id="cnpj"
+              inputMode="numeric"
+              placeholder="00.000.000/0000-00"
+              maxLength={18}
+              value={watch('cnpj') || ''}
+              onChange={(e) => handleCnpjChange(e.target.value)}
+            />
+            {cnpjLoading && (
+              <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Informe o CNPJ para preencher automaticamente os dados da empresa.
+          </p>
         </div>
 
         <div className="space-y-2">
@@ -291,6 +377,8 @@ export function CaptacaoSimplifiedForm() {
           variant="outline"
           onClick={() => {
             reset()
+            lastLookedUpCnpj.current = ''
+            setCnpjLoading(false)
             setSelectedModules([])
             setWhatsappError(null)
             setModuleError(null)
