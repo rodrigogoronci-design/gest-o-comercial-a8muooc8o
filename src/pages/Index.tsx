@@ -7,7 +7,6 @@ import {
   FileText,
   ArrowUpRight,
   Target,
-  Calendar,
   Activity,
   Briefcase,
   AlertCircle,
@@ -40,30 +39,24 @@ export default function Index() {
   const [dashboardData, setDashboardData] = useState({
     clientes: [] as any[],
     leads: [] as any[],
-    eventos: [] as any[],
     isLoading: true,
   })
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [{ data: clientes }, { data: leads }, { data: eventos }] = await Promise.all([
+        const [{ data: clientes }, { data: leads }] = await Promise.all([
           supabase
             .from('clientes')
             .select('id, nome, cnpj, filiais_detalhes, valor_total, created_at, status'),
           supabase
             .from('crm_prospects')
             .select('id, empresa, contato_nome, status, data_followup, ultima_interacao'),
-          supabase
-            .from('agenda_eventos')
-            .select('id, titulo, data_evento, tipo, status, clientes(nome)')
-            .order('data_evento', { ascending: true }),
         ])
 
         setDashboardData({
           clientes: clientes || [],
           leads: leads || [],
-          eventos: eventos || [],
           isLoading: false,
         })
       } catch (err) {
@@ -75,7 +68,7 @@ export default function Index() {
     fetchDashboardData()
   }, [])
 
-  const { clientes, leads, eventos, isLoading } = dashboardData
+  const { clientes, leads, isLoading } = dashboardData
 
   const totalMRR = clientes.reduce((acc, c) => acc + (Number(c.valor_total) || 0), 0)
   const activeClients = clientes.length
@@ -100,24 +93,6 @@ export default function Index() {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  const upcomingEventos = eventos
-    .filter((e) => e.data_evento)
-    .map((e) => ({
-      id: `evento-${e.id}`,
-      title: e.titulo,
-      subtitle: e.clientes?.nome || 'Sem cliente vinculado',
-      dateObj: new Date(e.data_evento),
-      type: e.tipo || 'Evento',
-      status: e.status,
-      isEvent: true,
-      originalDate: e.data_evento,
-    }))
-    .filter(
-      (e) =>
-        e.dateObj >= today ||
-        (e.dateObj < today && e.status !== 'Concluído' && e.status !== 'Cancelado'),
-    )
-
   const upcomingFollowups = leads
     .filter((l) => l.data_followup)
     .map((l) => ({
@@ -127,7 +102,6 @@ export default function Index() {
       dateObj: new Date(l.data_followup),
       type: 'Follow-up',
       status: l.status,
-      isEvent: false,
       originalDate: l.data_followup,
     }))
     .filter(
@@ -135,8 +109,6 @@ export default function Index() {
         l.dateObj >= today ||
         (l.dateObj < today && !['Fechado', 'Perdido', 'Cancelado'].includes(l.status)),
     )
-
-  const combinedUpcoming = [...upcomingEventos, ...upcomingFollowups]
     .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
     .slice(0, 6)
 
@@ -312,15 +284,15 @@ export default function Index() {
         <Card className="col-span-3 shadow-sm border-slate-200/60 flex flex-col">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-indigo-500" />
-              Compromissos e Follow-ups
+              <Target className="h-5 w-5 text-amber-500" />
+              Follow-ups
             </CardTitle>
-            <CardDescription>Agenda e ações mapeadas para breve</CardDescription>
+            <CardDescription>Ações de prospecção mapeadas para breve</CardDescription>
           </CardHeader>
           <CardContent className="flex-1">
-            {combinedUpcoming.length > 0 ? (
+            {upcomingFollowups.length > 0 ? (
               <div className="space-y-4">
-                {combinedUpcoming.map((item) => {
+                {upcomingFollowups.map((item) => {
                   const isOverdue = item.dateObj < today
                   return (
                     <div
@@ -330,17 +302,10 @@ export default function Index() {
                       <div className="flex gap-3 items-center">
                         <div
                           className={cn(
-                            'flex items-center justify-center h-8 w-8 rounded-full border shrink-0',
-                            item.isEvent
-                              ? 'bg-indigo-50 text-indigo-600 border-indigo-100'
-                              : 'bg-amber-50 text-amber-600 border-amber-100',
+                            'flex items-center justify-center h-8 w-8 rounded-full border shrink-0 bg-amber-50 text-amber-600 border-amber-100',
                           )}
                         >
-                          {item.isEvent ? (
-                            <Calendar className="h-4 w-4" />
-                          ) : (
-                            <Target className="h-4 w-4" />
-                          )}
+                          <Target className="h-4 w-4" />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-slate-800 line-clamp-1">
@@ -373,8 +338,8 @@ export default function Index() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground min-h-[200px]">
-                <Calendar className="h-10 w-10 text-slate-200 mb-3" />
-                <p>Nenhum compromisso ou follow-up programado.</p>
+                <Target className="h-10 w-10 text-slate-200 mb-3" />
+                <p>Nenhum follow-up programado.</p>
               </div>
             )}
           </CardContent>
