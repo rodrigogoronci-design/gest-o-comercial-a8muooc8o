@@ -13,12 +13,10 @@ import { useToast } from '@/hooks/use-toast'
 import { MODULES } from '@/constants/contracts'
 import {
   WHATSAPP_PRESENTATION_LINK,
-  WHATSAPP_PRESENTATION_MESSAGE,
   cleansePhoneNumber,
   isValidBrazilianPhone,
   buildWhatsAppUrl,
   buildProspectOutreachMessage,
-  DEFAULT_PROSPECT_SEGMENTO,
 } from '@/lib/whatsapp-utils'
 
 const captacaoSchema = z.object({
@@ -26,7 +24,6 @@ const captacaoSchema = z.object({
   contato_nome: z.string().min(1, 'Nome do contato é obrigatório'),
   telefone: z.string().min(1, 'Telefone é obrigatório'),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
-  segmento: z.string().optional(),
   outro: z.string().optional(),
   observacoes: z.string().optional(),
 })
@@ -39,8 +36,8 @@ export function CaptacaoSimplifiedForm() {
   const [whatsappError, setWhatsappError] = useState<string | null>(null)
   const [selectedModules, setSelectedModules] = useState<string[]>([])
   const [moduleError, setModuleError] = useState<string | null>(null)
-  // Mensagem de aproximação editável. Acompanha o segmento digitado, mas pode
-  // ser livremente ajustada pela Aline antes do envio.
+  // Mensagem de aproximação editável. Acompanha o nome da empresa preenchido,
+  // mas pode ser livremente ajustada pela Aline antes do envio.
   const [outreachMessage, setOutreachMessage] = useState<string>(() =>
     buildProspectOutreachMessage(''),
   )
@@ -61,19 +58,18 @@ export function CaptacaoSimplifiedForm() {
       contato_nome: '',
       telefone: '',
       email: '',
-      segmento: '',
       outro: '',
       observacoes: '',
     },
   })
 
-  const segmentoValue = watch('segmento') || ''
+  const empresaValue = watch('empresa') || ''
 
-  // Atualiza a mensagem automaticamente conforme o segmento é preenchido,
+  // Atualiza a mensagem automaticamente conforme a empresa é preenchida,
   // respeitando edições manuais feitas pela Aline.
-  const syncOutreachFromSegmento = (seg: string) => {
+  const syncOutreachFromFields = (empresa: string) => {
     if (outreachEdited) return
-    setOutreachMessage(buildProspectOutreachMessage(seg))
+    setOutreachMessage(buildProspectOutreachMessage(empresa))
   }
 
   const toggleModule = (moduleId: string) => {
@@ -112,11 +108,11 @@ export function CaptacaoSimplifiedForm() {
   }
 
   const handleRegenerateMessage = () => {
-    setOutreachMessage(buildProspectOutreachMessage(segmentoValue))
+    setOutreachMessage(buildProspectOutreachMessage(empresaValue))
     setOutreachEdited(false)
     toast({
       title: 'Mensagem atualizada',
-      description: `Segmento: ${segmentoValue.trim() || DEFAULT_PROSPECT_SEGMENTO}.`,
+      description: `Empresa: ${empresaValue.trim() || '(nome da empresa)'}.`,
     })
   }
 
@@ -148,7 +144,6 @@ export function CaptacaoSimplifiedForm() {
           : values.observacoes || null,
         classificacao: 'Frio',
         tipo_pessoa: 'PJ',
-        segmento: values.segmento?.trim() ? values.segmento.trim() : null,
       })
 
       if (error) throw error
@@ -208,7 +203,13 @@ export function CaptacaoSimplifiedForm() {
           <Label htmlFor="empresa">
             Empresa <span className="text-destructive">*</span>
           </Label>
-          <Input id="empresa" placeholder="Nome da empresa" {...register('empresa')} />
+          <Input
+            id="empresa"
+            placeholder="Nome da empresa"
+            {...register('empresa', {
+              onChange: (e) => syncOutreachFromFields(e.target.value),
+            })}
+          />
           {errors.empresa && <p className="text-sm text-destructive">{errors.empresa.message}</p>}
         </div>
 
@@ -234,21 +235,6 @@ export function CaptacaoSimplifiedForm() {
           <Label htmlFor="email">E-mail</Label>
           <Input id="email" type="email" placeholder="contato@empresa.com" {...register('email')} />
           {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-        </div>
-
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="segmento">Segmento</Label>
-          <Input
-            id="segmento"
-            placeholder={`Ex.: transporte e logística (padrão: "${DEFAULT_PROSPECT_SEGMENTO}")`}
-            {...register('segmento', {
-              onChange: (e) => syncOutreachFromSegmento(e.target.value),
-            })}
-          />
-          <p className="text-xs text-muted-foreground">
-            Usado para personalizar a mensagem de aproximação abaixo. Se vazio, será usado "
-            {DEFAULT_PROSPECT_SEGMENTO}".
-          </p>
         </div>
       </div>
 
@@ -332,7 +318,8 @@ export function CaptacaoSimplifiedForm() {
           <div>
             <h3 className="text-sm font-semibold text-slate-800">Mensagem para o prospect</h3>
             <p className="text-xs text-muted-foreground">
-              Pronta para copiar/editar antes do envio. O segmento é preenchido automaticamente.
+              Pronta para copiar/editar antes do envio. O nome da empresa é preenchido
+              automaticamente.
             </p>
           </div>
           <Button
@@ -341,7 +328,7 @@ export function CaptacaoSimplifiedForm() {
             size="sm"
             className="h-8 gap-1.5 text-slate-600"
             onClick={handleRegenerateMessage}
-            title="Regerar a mensagem a partir do segmento atual"
+            title="Regerar a mensagem a partir do nome da empresa atual"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             Regenerar

@@ -5,29 +5,25 @@ export const WHATSAPP_PRESENTATION_MESSAGE = `ola! Conheça a Service Logic | A 
 ${WHATSAPP_PRESENTATION_LINK}`
 
 /**
- * Segmento padrão usado quando o prospect não possui segmento cadastrado.
- */
-export const DEFAULT_PROSPECT_SEGMENTO = 'transporte e logística'
-
-/**
- * Monta a mensagem de aproximação personalizada para o prospect, substituindo
- * o placeholder [SEGMENTO] pelo segmento cadastrado (ou pelo padrão).
+ * Monta a mensagem de aproximação personalizada para o prospect.
  *
- * A mensagem é exibida pronta para copiar/editar antes do envio, por isso o
- * parâmetro `segmento` já deve estar normalizado pelo chamador quando quiser
- * usar o padrão — aqui apenas aplicamos o fallback caso venha vazio.
+ * - `empresa`: substitui o placeholder "(preencha com o nome da empresa)" pelo
+ *   nome da empresa preenchido no formulário de captação. Se vazio, mantém o
+ *   fallback "(nome da empresa)".
+ *
+ * A mensagem é exibida pronta para copiar/editar antes do envio.
  */
-export function buildProspectOutreachMessage(segmento?: string | null): string {
-  const segmentoFinal = segmento && segmento.trim() ? segmento.trim() : DEFAULT_PROSPECT_SEGMENTO
+export function buildProspectOutreachMessage(empresa?: string | null): string {
+  const empresaTrim = empresa && empresa.trim() ? empresa.trim() : ''
+  const empresaNome = empresaTrim || '(nome da empresa)'
+
   return `Olá, tudo bem? 😊
-
-Meu nome é Aline e faço parte do comercial da Service Logic.
-
-Entrei em contato porque estamos conversando com empresas do segmento de ${segmentoFinal} que buscam melhorar o controle da operação, financeiro e faturamento.
-
-Queria entender rapidamente como vocês fazem essa gestão hoje e apresentar nossa solução, caso faça sentido para a empresa.
-
-Posso falar com você sobre isso?`
+Sou Aline, do comercial da Service Logic.
+Estou entrando em contato com a ${empresaNome} porque ajudamos transportadoras a centralizar a operação e, principalmente, a ter mais segurança no dia a dia com emissões fiscais e cumprimento das obrigações relacionadas ao transporte.
+Nosso sistema reúne CT-e, MDF-e, documentos fiscais, faturamento, financeiro, controle de viagens, frota e demais processos da operação, evitando que a empresa precise trabalhar com várias ferramentas diferentes.
+Além da gestão, acompanhamos as necessidades fiscais e as mudanças na legislação para que o sistema esteja preparado para as exigências do setor.
+Queria entender como vocês trabalham hoje: as emissões e a gestão das obrigações fiscais já estão centralizadas em um sistema ou vocês utilizam ferramentas separadas?
+Se puder me contar como funciona atualmente, consigo te mostrar onde a Service Logic pode facilitar a rotina da ${empresaNome}`
 }
 
 export function cleansePhoneNumber(phone: string): string {

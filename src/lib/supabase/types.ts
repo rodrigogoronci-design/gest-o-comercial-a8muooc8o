@@ -1444,13 +1444,13 @@ export type Database = {
           quantidade_uso: number | null
           razao_social: string | null
           responsavel_comercial: string | null
+          segmento: string | null
           status: string
           tags: Json | null
           telefone: string | null
           tipo_pessoa: string | null
           ultima_interacao: string | null
           user_id: string | null
-          segmento: string | null
         }
         Insert: {
           ata_primeiro_atendimento?: string | null
@@ -1484,13 +1484,13 @@ export type Database = {
           quantidade_uso?: number | null
           razao_social?: string | null
           responsavel_comercial?: string | null
+          segmento?: string | null
           status?: string
           tags?: Json | null
           telefone?: string | null
           tipo_pessoa?: string | null
           ultima_interacao?: string | null
           user_id?: string | null
-          segmento?: string | null
         }
         Update: {
           ata_primeiro_atendimento?: string | null
@@ -1524,13 +1524,13 @@ export type Database = {
           quantidade_uso?: number | null
           razao_social?: string | null
           responsavel_comercial?: string | null
+          segmento?: string | null
           status?: string
           tags?: Json | null
           telefone?: string | null
           tipo_pessoa?: string | null
           ultima_interacao?: string | null
           user_id?: string | null
-          segmento?: string | null
         }
         Relationships: [
           {
