@@ -191,7 +191,7 @@ export const ensureTreinamentoEtapasForImpl = async (
   // Carrega a implementação com suas etapas
   const { data: impl, error: implError } = await supabase
     .from('implementacoes' as any)
-    .select('id, tipo, modulos_novos, dados_parametrizacao')
+    .select('id, tipo, cliente_id, modulos_novos, dados_parametrizacao')
     .eq('id', implementacaoId)
     .maybeSingle()
   if (implError) throw implError
@@ -205,9 +205,47 @@ export const ensureTreinamentoEtapasForImpl = async (
     ? dados.modulos_copiados
     : []
   const modulosNovos: string[] = Array.isArray(impl.modulos_novos) ? impl.modulos_novos : []
-  const modulosContratados = Array.from(
+  let modulosContratados = Array.from(
     new Set([...modulosCopiados, ...modulosNovos].map((m) => String(m).trim()).filter(Boolean)),
   )
+
+  // ---- FALLBACK: implementações antigas podem não ter `modulos_copiados` nem
+  // `modulos_novos` preenchidos (campo `dados_parametrizacao` criado antes da
+  // correção do ciclo de treinamentos). Quando ambos estão vazios, buscamos os
+  // módulos contratados diretamente do cadastro do cliente (tabela `clientes`),
+  // que conhece o plano (plano_id / modulos.plano_base) e os módulos
+  // adicionais. Isso garante que TODA implementação antiga — não só TSA e BSG —
+  // tenha seu Ciclo de Treinamentos regenerado a partir dos módulos reais.
+  if (modulosContratados.length === 0 && impl.cliente_id) {
+    const { data: cliente, error: clienteError } = await supabase
+      .from('clientes')
+      .select(
+        'modulos, plano_id, quantidade_filiais, modo_implantacao, planos_saude(id, descricao, codigo, franquia_quantidade)',
+      )
+      .eq('id', impl.cliente_id)
+      .maybeSingle()
+    if (clienteError) throw clienteError
+    if (cliente) {
+      modulosContratados = getContractedModulesWithBasic(cliente)
+
+      // Persiste os módulos resolvidos em `dados_parametrizacao.modulos_copiados`
+      // para que a correção fique gravada e próximas execuções sejam diretas
+      // (não dependem mais do fallback). Não sobrescreve outros campos.
+      if (modulosContratados.length > 0) {
+        const dadosAtualizados = {
+          ...dados,
+          modulos_copiados: modulosContratados,
+          modulos_adicionais: parseModulosToList(cliente.modulos),
+          dados_replicados_em: dados.dados_replicados_em || new Date().toISOString(),
+        }
+        const { error: updError } = await supabase
+          .from('implementacoes' as any)
+          .update({ dados_parametrizacao: dadosAtualizados })
+          .eq('id', implementacaoId)
+        if (updError) throw updError
+      }
+    }
+  }
 
   // Carrega as etapas atuais
   const { data: etapas, error: etapasError } = await supabase
