@@ -87,13 +87,33 @@ function Numeros({ items }: { items: React.ReactNode[] }) {
 export function ConsultoriaContractDocument() {
   const handlePrint = () => {
     const printContent = document.getElementById('consultoria-contract-print')
-    if (printContent) {
-      const originalContents = document.body.innerHTML
-      document.body.innerHTML = printContent.outerHTML
+    if (!printContent) return
+
+    const originalContents = document.body.innerHTML
+    document.body.innerHTML = printContent.outerHTML
+
+    // Ao substituir o body, as <img> (logomarca) são recriadas e precisam
+    // recarregar. Se chamarmos window.print() antes disso, a logomarca não
+    // aparece no PDF gerado. Aguardamos o carregamento antes de imprimir.
+    const images = Array.from(document.images).filter((img) => !img.complete)
+    const printNow = () => {
       window.print()
       document.body.innerHTML = originalContents
       window.location.reload()
     }
+    if (images.length === 0) {
+      printNow()
+      return
+    }
+    let remaining = images.length
+    const onDone = () => {
+      remaining -= 1
+      if (remaining <= 0) printNow()
+    }
+    images.forEach((img) => {
+      img.addEventListener('load', onDone, { once: true })
+      img.addEventListener('error', onDone, { once: true })
+    })
   }
 
   return (
