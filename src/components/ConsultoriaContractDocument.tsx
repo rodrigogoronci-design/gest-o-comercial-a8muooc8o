@@ -19,11 +19,11 @@ const Clause = ({
   title: string
   children: React.ReactNode
 }) => (
-  <div className="mb-5 break-inside-avoid">
-    <h3 className="font-bold uppercase mt-6 mb-3 text-sm text-[#1b4382] border-l-4 border-[#f37021] pl-3">
+  <div className="contract-clause mb-4 break-inside-avoid">
+    <h3 className="contract-clause-title font-bold uppercase mt-5 mb-2.5 text-[13px] text-[#1b4382] border-b border-[#1b4382]/30 pb-1">
       CLÁUSULA {n}ª – {title}
     </h3>
-    <div className="space-y-2.5 text-justify">{children}</div>
+    <div className="space-y-2 text-justify">{children}</div>
   </div>
 )
 
@@ -36,7 +36,7 @@ const Subsection = ({
   title?: string
   children: React.ReactNode
 }) => (
-  <div className="mb-3">
+  <div className="contract-subsection mb-2.5 break-inside-avoid">
     {title ? (
       <p>
         <strong>
@@ -51,7 +51,7 @@ const Subsection = ({
 )
 
 const LetterList = ({ items }: { items: React.ReactNode[] }) => (
-  <ul className="list-[lower-alpha] pl-6 space-y-1.5 marker:text-slate-500">
+  <ul className="contract-alineas list-[lower-alpha] pl-6 space-y-1 marker:text-slate-500">
     {items.map((it, i) => (
       <li key={i}>{it}</li>
     ))}
@@ -88,21 +88,19 @@ export function ConsultoriaContractDocument() {
 
       <div
         id="consultoria-contract-print"
-        className="bg-white p-8 sm:p-12 text-[12px] text-slate-800 font-serif leading-relaxed space-y-4 shadow-sm print:shadow-none print:p-0"
+        className="contract-doc bg-white mx-auto text-[12px] text-slate-800 font-serif leading-relaxed shadow-sm print:shadow-none"
       >
-        {/* Cabeçalho */}
-        <div className="flex flex-col items-center mb-8 border-b-2 border-[#f37021] pb-6">
-          <div className="flex w-full justify-between items-center mb-6">
-            <img src={logoUrl} alt="Service Logic" className="h-16 object-contain" />
-            <h1 className="text-sm font-bold uppercase w-2/3 text-right leading-tight text-[#1b4382]">
-              CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE CONSULTORIA DE ESTRUTURAÇÃO OPERACIONAL E
-              REGULATÓRIA
-            </h1>
-          </div>
+        {/* Cabeçalho / identificação do contrato (aparece no topo do documento) */}
+        <div className="contract-doc-header flex w-full justify-between items-center mb-6 border-b-2 border-[#f37021] pb-4">
+          <img src={logoUrl} alt="Service Logic" className="h-14 object-contain" />
+          <h1 className="text-sm font-bold uppercase w-2/3 text-right leading-tight text-[#1b4382]">
+            CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE CONSULTORIA DE ESTRUTURAÇÃO OPERACIONAL E
+            REGULATÓRIA
+          </h1>
         </div>
 
         {/* Qualificação */}
-        <div className="space-y-4 text-justify">
+        <div className="space-y-3 text-justify">
           <p>Pelo presente instrumento particular, de um lado:</p>
 
           <p>
@@ -189,8 +187,8 @@ export function ConsultoriaContractDocument() {
             e Regulatória, contemplando, entre outros trabalhos necessários ao objetivo contratado:
           </Subsection>
 
-          <div className="pl-2 space-y-4">
-            <div>
+          <div className="pl-2 space-y-3.5">
+            <div className="break-inside-avoid">
               <p className="font-semibold">3.1.1. Levantamento e entendimento da operação</p>
               <div className="mt-1.5">
                 <LetterList
@@ -209,7 +207,7 @@ export function ConsultoriaContractDocument() {
               </div>
             </div>
 
-            <div>
+            <div className="break-inside-avoid">
               <p className="font-semibold">3.1.2. Estruturação regulatória</p>
               <p className="mt-1">
                 A consultoria contemplará análise dos requisitos regulatórios relacionados à
@@ -235,7 +233,7 @@ export function ConsultoriaContractDocument() {
               </div>
             </div>
 
-            <div>
+            <div className="break-inside-avoid">
               <p className="font-semibold">3.1.3. Análise do modelo de emissão do CT-e</p>
               <p className="mt-1">
                 A consultoria contemplará a análise operacional e regulatória do modelo pretendido
@@ -255,7 +253,7 @@ export function ConsultoriaContractDocument() {
               </div>
             </div>
 
-            <div>
+            <div className="break-inside-avoid">
               <p className="font-semibold">3.1.4. Responsabilidades entre as partes</p>
               <p className="mt-1">
                 Será realizado o levantamento e direcionamento das responsabilidades relacionadas à
@@ -275,7 +273,7 @@ export function ConsultoriaContractDocument() {
               </p>
             </div>
 
-            <div>
+            <div className="break-inside-avoid">
               <p className="font-semibold">3.1.5. Fluxo operacional</p>
               <p className="mt-1">Será estruturado o fluxo macro da operação, contemplando:</p>
               <div className="mt-1.5 bg-slate-50 border border-slate-200 rounded p-3 text-center font-medium text-[#1b4382]">
@@ -714,55 +712,61 @@ export function ConsultoriaContractDocument() {
           </Subsection>
         </Clause>
 
-        {/* Encerramento */}
-        <p className="text-center mt-8 mb-10">
-          E, por estarem de acordo, as partes firmam o presente instrumento.
-        </p>
+        {/* Bloco final: encerramento + assinaturas + testemunhas (mantido junto) */}
+        <div className="contract-final-block break-before-page break-inside-avoid mt-8">
+          {/* Encerramento */}
+          <p className="text-center mb-4">
+            E, por estarem de acordo, as partes firmam o presente instrumento.
+          </p>
 
-        <p className="text-center mb-10">Serra/ES, 20 de agosto de 2026.</p>
+          <p className="text-center mb-10">Serra/ES, 20 de agosto de 2026.</p>
 
-        {/* Assinaturas */}
-        <div className="flex flex-col sm:flex-row sm:justify-between gap-10 sm:gap-16 print:flex-row print:gap-16 print:items-end">
-          <div className="flex-1 flex flex-col items-center text-center min-w-0">
-            <div className="h-16 print:h-16 flex items-end" />
-            <div className="w-full border-t-2 border-[#1b4382] pt-3">
-              <p className="font-bold text-[#1b4382] text-sm">CONTRATANTE</p>
-              <p className="text-[11px] text-slate-700 mt-1">
-                PRYSMIAN CABOS E SISTEMAS DO BRASIL S.A.
-              </p>
-              <p className="text-[11px] text-slate-500 mt-1">Representante: Gabriel Cavallaro</p>
-              <p className="text-[11px] text-slate-500">Cargo: Supervisor de Logística</p>
-              <p className="text-[11px] text-slate-500">CPF: 359.459.628-13</p>
+          {/* Assinaturas — Prysmian (Contratante) e Contacto (Contratada) */}
+          <div className="flex flex-col sm:flex-row sm:justify-between gap-10 sm:gap-16 print:flex-row print:gap-16 print:items-end">
+            <div className="flex-1 flex flex-col items-center text-center min-w-0">
+              <div className="h-20 print:h-20 flex items-end" />
+              <div className="w-full border-t-2 border-[#1b4382] pt-2">
+                <p className="font-bold text-[#1b4382] text-sm">CONTRATANTE</p>
+                <p className="text-[11px] text-slate-700 mt-1">
+                  PRYSMIAN CABOS E SISTEMAS DO BRASIL S.A.
+                </p>
+                <p className="text-[11px] text-slate-500 mt-1">Representante: Gabriel Cavallaro</p>
+                <p className="text-[11px] text-slate-500">Cargo: Supervisor de Logística</p>
+                <p className="text-[11px] text-slate-500">CPF: 359.459.628-13</p>
+              </div>
+            </div>
+
+            <div className="flex-1 flex flex-col items-center text-center min-w-0">
+              <div className="h-20 print:h-20 flex items-end" />
+              <div className="w-full border-t-2 border-[#1b4382] pt-2">
+                <p className="font-bold text-[#1b4382] text-sm">CONTRATADA</p>
+                <p className="text-[11px] text-slate-700 mt-1">
+                  CONTACTO SOLUÇÕES EM TECNOLOGIA – LTDA
+                </p>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Representante: Rodrigo Goronci Sant'Ana
+                </p>
+                <p className="text-[11px] text-slate-500">Cargo: Sócio-Administrador</p>
+                <p className="text-[11px] text-slate-500">CPF: [A PREENCHER]</p>
+              </div>
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col items-center text-center min-w-0">
-            <div className="h-16 print:h-16 flex items-end" />
-            <div className="w-full border-t-2 border-[#1b4382] pt-3">
-              <p className="font-bold text-[#1b4382] text-sm">CONTRATADA</p>
-              <p className="text-[11px] text-slate-700 mt-1">
-                CONTACTO SOLUÇÕES EM TECNOLOGIA – LTDA
-              </p>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Representante: Rodrigo Goronci Sant'Ana
-              </p>
-              <p className="text-[11px] text-slate-500">Cargo: Sócio-Administrador</p>
-              <p className="text-[11px] text-slate-500">CPF: [A PREENCHER]</p>
-            </div>
+          {/* Testemunhas */}
+          <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-8 print:grid-cols-2 print:gap-8">
+            {[1, 2].map((n) => (
+              <div key={n} className="text-[11px] text-slate-600">
+                <p className="font-semibold mb-2">TESTEMUNHA {n}</p>
+                <p>Nome: ____________________________________</p>
+                <p className="mt-1">CPF: ___________________________________________</p>
+                <p className="mt-1">Assinatura: _____________________________________</p>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Testemunhas */}
-        <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-8 print:grid-cols-2 print:gap-8">
-          {[1, 2].map((n) => (
-            <div key={n} className="text-[11px] text-slate-600">
-              <p className="font-semibold mb-2">TESTEMUNHA {n}</p>
-              <p>Nome: ____________________________________</p>
-              <p className="mt-1">CPF: ___________________________________________</p>
-              <p className="mt-1">Assinatura: _____________________________________</p>
-            </div>
-          ))}
-        </div>
+        {/* Rodapé na tela (simula o rodapé de impressão; oculto no PDF) */}
+        <div className="contract-screen-footer">Contrato de Consultoria — Prysmian × Contacto</div>
       </div>
     </div>
   )

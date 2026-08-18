@@ -91,7 +91,10 @@
 @media print {
   @page {
     size: A4;
-    margin: 10mm;
+    /* Margens profissionais para documento jurídico:
+       ~2,5cm superior, 2cm inferior, 3cm esquerda, 2cm direita.
+       Espaço reservado para cabeçalho/rodapé no top/bottom. */
+    margin: 25mm 20mm 22mm 30mm;
   }
 
   * {
@@ -391,6 +394,133 @@
 
   #quote-proposal-print .text-sm {
     font-size: 8pt !important;
+  }
+}
+
+/* ============================================================
+   Contrato de Consultoria (Prysmian) — diagramação profissional
+   ============================================================ */
+
+/* --- Estilização na tela (espelha o PDF final) --- */
+#consultoria-contract-print.contract-doc {
+  font-family: 'Times New Roman', 'Liberation Serif', 'Nimbus Roman', Georgia, serif;
+  font-size: 12pt;
+  line-height: 1.5;
+  color: #1e293b;
+  padding: 25mm 20mm 22mm 30mm; /* 2,5cm sup / 2cm inf / 3cm esq / 2cm dir */
+  max-width: 210mm; /* largura A4 */
+  min-height: 297mm;
+}
+
+/* Cabeçalho do documento */
+#consultoria-contract-print .contract-doc-header img {
+  height: 40px;
+}
+
+#consultoria-contract-print .contract-doc-header h1 {
+  font-size: 12pt;
+  letter-spacing: 0.2px;
+}
+
+/* Títulos de cláusulas */
+#consultoria-contract-print .contract-clause-title {
+  font-size: 12pt;
+  letter-spacing: 0.4px;
+  break-after: avoid;
+}
+
+#consultoria-contract-print .contract-clause {
+  break-inside: avoid-page;
+}
+
+/* Subseções e alíneas com recuos progressivos */
+#consultoria-contract-print .contract-subsection {
+  break-inside: avoid;
+}
+
+#consultoria-contract-print .contract-alineas {
+  margin-left: 6mm;
+}
+
+/* --- Cabeçalho/rodapé de impressão (numeração de páginas) --- */
+@media print {
+  #consultoria-contract-print.contract-doc {
+    padding: 0;
+    margin: 0;
+    max-width: none;
+    min-height: 0;
+    font-size: 11pt;
+    line-height: 1.45;
+  }
+
+  /* Define elementos de cabeçalho/rodapé fixos em cada página via running elements */
+  .contract-doc-header {
+    position: running(contract-header);
+  }
+
+  /* Numeração "Página X de Y" no rodapé de cada página */
+  @page {
+    @top-center {
+      content: element(contract-header);
+    }
+    @bottom-right {
+      content: 'Página ' counter(page) ' de ' counter(pages);
+      font-family: 'Times New Roman', Georgia, serif;
+      font-size: 9pt;
+      color: #64748b;
+    }
+    @bottom-left {
+      content: 'Contrato de Consultoria — Prysmian × Contacto';
+      font-family: 'Times New Roman', Georgia, serif;
+      font-size: 9pt;
+      color: #94a3b8;
+    }
+  }
+
+  /* Evita quebras dentro de cláusulas curtas e subseções */
+  #consultoria-contract-print .contract-clause,
+  #consultoria-contract-print .contract-subsection {
+    break-inside: avoid-page;
+  }
+
+  /* O bloco final (encerramento + assinaturas + testemunhas) fica sempre junto */
+  #consultoria-contract-print .contract-final-block {
+    break-inside: avoid-page;
+  }
+
+  /* Recuo das alíneas na impressão */
+  #consultoria-contract-print .contract-alineas {
+    margin-left: 5mm;
+  }
+
+  /* Espaçamento uniforme entre parágrafos no PDF */
+  #consultoria-contract-print p {
+    margin-top: 0;
+    margin-bottom: 6pt;
+    orphans: 3;
+    widows: 3;
+  }
+
+  #consultoria-contract-print .contract-clause-title {
+    margin-top: 14pt;
+    margin-bottom: 6pt;
+  }
+}
+
+/* --- Versão na tela: número de páginas simulado (não exibido no print) --- */
+#consultoria-contract-print .contract-screen-footer {
+  display: block;
+  margin-top: 18mm;
+  padding-top: 6mm;
+  border-top: 1px solid #e2e8f0;
+  text-align: right;
+  font-size: 9pt;
+  color: #94a3b8;
+}
+
+@media print {
+  #consultoria-contract-print .contract-screen-footer {
+    display: none !important;
   }
 }
 
