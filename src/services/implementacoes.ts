@@ -63,73 +63,77 @@ async function buildDadosParametrizacaoForCliente(
 }
 
 /**
- * Gera etapas de "Treinamento: [Módulo]" para módulos contratados que ainda
- * não possuem uma etapa de treinamento correspondente no template base.
+ * Gera dinamicamente a lista de etapas de "Treinamento: [Módulo]" a partir dos
+ * módulos contratados do plano. Cada módulo contratado vira UMA etapa, sem
+ * depender de template fixo — assim o Ciclo de Treinamentos reflete
+ * EXATAMENTE os módulos do plano (TMS-30 gera 4 etapas, outros planos geram
+ * 6, e planos com adicionais geram mais).
  *
- * As novas etapas são inseridas logo após as etapas de treinamento já existentes
- * (categoria "Ciclo de Treinamentos"), com ordem sequencial correta e status
- * "Não iniciada". A semana utilizada é a da última etapa de treinamento do
- * template, para que fiquem agrupadas no mesmo período.
+ * As etapas são criadas com ordem 0 (a ordem definitiva é recalculada depois,
+ * ao serem inseridas no template na posição correta) e semana 1.
+ *
+ * Retorna apenas as etapas de treinamento — o restante do template
+ * (Parametrização, Operação Assistida, Encerramento, etc.) permanece inalterado.
  */
-function appendMissingTreinamentoEtapas(
-  template: EtapaTemplate[],
-  modulosContratados: string[],
-): EtapaTemplate[] {
-  if (!modulosContratados || modulosContratados.length === 0) return template
+export function generateTreinamentoEtapas(modulosContratados: string[]): EtapaTemplate[] {
+  if (!modulosContratados || modulosContratados.length === 0) return []
 
-  // Conjunto de títulos já presentes no template (comparação case-insensitive)
-  const existingTitles = new Set(template.map((e) => e.titulo.trim().toLowerCase()))
-
-  // Identifica as etapas de treinamento atuais para calcular ordem/semana base
-  const treinamentoEtapas = template.filter((e) => e.categoria === 'Ciclo de Treinamentos')
-  const lastTreinamento = treinamentoEtapas[treinamentoEtapas.length - 1] || null
-  const baseOrdem = lastTreinamento ? lastTreinamento.ordem : 0
-  const baseSemana = lastTreinamento ? lastTreinamento.semana : 1
-
-  // Maior ordem do template inteiro (para continuar a numeração caso não haja
-  // etapas de treinamento após as demais)
-  const maxOrdem = template.reduce((max, e) => (e.ordem > max ? e.ordem : max), 0)
-
-  const novas: EtapaTemplate[] = []
-  modulosContratados.forEach((modulo) => {
-    const titulo = `Treinamento: ${modulo}`
-    if (existingTitles.has(titulo.toLowerCase())) return
-    novas.push({
-      titulo,
-      categoria: 'Ciclo de Treinamentos',
-      ordem: 0, // redefinido abaixo
-      semana: baseSemana,
-    })
-  })
-
-  if (novas.length === 0) return template
-
-  // Reordena: insere as novas etapas logo após as etapas de treinamento existentes
-  // e renumera TODAS as etapas em sequência para manter a consistência.
-  const result: EtapaTemplate[] = []
-  let inserted = false
-  let ordem = 1
-  for (const etapa of template) {
-    result.push({ ...etapa, ordem: ordem++ })
-    // Após a última etapa de treinamento existente, insere as novas
-    if (!inserted && etapa.categoria === 'Ciclo de Treinamentos') {
-      // Verifica se é a última de treinamento
-      const isLastTreinamento = etapa === lastTreinamento
-      if (isLastTreinamento) {
-        for (const nova of novas) {
-          result.push({ ...nova, ordem: ordem++ })
-        }
-        inserted = true
-      }
-    }
+  // Remove duplicadas (case-insensitive) e valores vazios, preservando a ordem.
+  const seen = new Set<string>()
+  const unicos: string[] = []
+  for (const modulo of modulosContratados) {
+    const trimmed = String(modulo).trim()
+    if (!trimmed) continue
+    const key = trimmed.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    unicos.push(trimmed)
   }
 
-  // Se não havia nenhuma etapa de treinamento no template, anexa ao final
+  return unicos.map((modulo) => ({
+    titulo: `Treinamento: ${modulo}`,
+    categoria: 'Ciclo de Treinamentos',
+    ordem: 0, // recalculada ao montar o template final
+    semana: 1,
+  }))
+}
+
+/**
+ * Monta o template final de um "Novo Cliente" inserindo as etapas de
+ * treinamento geradas dinamicamente APÓS a etapa "Parametrização do Sistema"
+ * e ANTES da primeira "Operação Assistida". Depois renumera todas as ordens
+ * de forma sequencial (1, 2, 3, ...).
+ *
+ * Garante que o Ciclo de Treinamentos reflita exatamente os módulos
+ * contratados — nada de template fixo, nada de sobras.
+ */
+function buildNovoClienteTemplate(modulosContratados: string[]): EtapaTemplate[] {
+  const baseTemplate = getEtapasForTipo('novo_cliente')
+  const treinamentoEtapas = generateTreinamentoEtapas(modulosContratados)
+
+  const result: EtapaTemplate[] = []
+  let ordem = 1
+  let inserted = false
+  for (const etapa of baseTemplate) {
+    // Insere as etapas de treinamento logo após "Parametrização do Sistema"
+    // e antes da primeira "Operação Assistida".
+    if (
+      !inserted &&
+      etapa.categoria === 'Implantação Operacional' &&
+      etapa.titulo.toLowerCase().startsWith('operação assistida')
+    ) {
+      for (const t of treinamentoEtapas) {
+        result.push({ ...t, ordem: ordem++ })
+      }
+      inserted = true
+    }
+    result.push({ ...etapa, ordem: ordem++ })
+  }
+
+  // Fallback: se o template não tiver "Operação Assistida", insere no final
   if (!inserted) {
-    void baseOrdem
-    void maxOrdem
-    for (const nova of novas) {
-      result.push({ ...nova, ordem: ordem++ })
+    for (const t of treinamentoEtapas) {
+      result.push({ ...t, ordem: ordem++ })
     }
   }
 
@@ -163,13 +167,23 @@ export const getImplementacao = async (id: string) => {
 }
 
 /**
- * Correção para implementações JÁ EXISTENTES: verifica se todos os módulos
- * contratados (em `dados_parametrizacao.modulos_copiados` ou `modulos_novos`)
- * possuem uma etapa de "Treinamento: [Módulo]". Caso falte alguma, insere-a
- * automaticamente (categoria "Ciclo de Treinamentos", status "Não iniciada")
- * com ordem sequencial correta. Usa upsert para evitar duplicação.
+ * Correção para implementações JÁ EXISTENTES: sincroniza o Ciclo de
+ * Treinamentos com os módulos contratados do plano.
  *
- * Retorna a lista de títulos das etapas que foram adicionadas (vazio se nenhuma).
+ *  1. REMOVE etapas de "Treinamento: [Módulo]" cujo módulo NÃO consta mais
+ *     nos módulos contratados (ex.: "Treinamento: Financeiro" em um plano
+ *     TMS-30 que não tem Financeiro).
+ *  2. ADICIONA etapas de "Treinamento: [Módulo]" para módulos contratados
+ *     que ainda não possuem etapa correspondente.
+ *  3. Renumerar TODAS as ordens sequencialmente (1, 2, 3, ...) ao final,
+ *     mantendo a posição do Ciclo de Treinamentos (após "Parametrização do
+ *     Sistema" e antes da primeira "Operação Assistida").
+ *
+ * Retorna a lista de títulos das etapas que foram adicionadas (vazio se
+ * nenhuma) — útil para exibir toast ao usuário. Remoções ocorrem
+ * silenciosamente.
+ *
+ * Apenas implementações `novo_cliente` possuem Ciclo de Treinamentos.
  */
 export const ensureTreinamentoEtapasForImpl = async (
   implementacaoId: string,
@@ -194,16 +208,51 @@ export const ensureTreinamentoEtapasForImpl = async (
   const modulosContratados = Array.from(
     new Set([...modulosCopiados, ...modulosNovos].map((m) => String(m).trim()).filter(Boolean)),
   )
-  if (modulosContratados.length === 0) return []
 
   // Carrega as etapas atuais
   const { data: etapas, error: etapasError } = await supabase
     .from('implementacao_etapas' as any)
-    .select('id, titulo, ordem, categoria, status')
+    .select('id, titulo, ordem, categoria, status, data_prevista, responsavel_id')
     .eq('implementacao_id', implementacaoId)
+    .order('ordem', { ascending: true })
   if (etapasError) throw etapasError
-  if (!etapas) return []
+  if (!etapas || etapas.length === 0) return []
 
+  // ---- 1. Remoção de etapas de treinamento que não correspondem a módulos ----
+  const contratadosLower = new Set(
+    modulosContratados.map((m) => `Treinamento: ${m}`.trim().toLowerCase()),
+  )
+  const toRemove = etapas.filter((e: any) => {
+    if (e.categoria !== 'Ciclo de Treinamentos') return false
+    return !contratadosLower.has(
+      String(e.titulo || '')
+        .trim()
+        .toLowerCase(),
+    )
+  }) as any[]
+
+  if (toRemove.length > 0) {
+    const removeIds = toRemove.map((e) => e.id)
+    const { error: delError } = await supabase
+      .from('implementacao_etapas' as any)
+      .delete()
+      .in('id', removeIds)
+    if (delError) throw delError
+    // Atualiza a lista local de etapas removendo as deletadas
+    const removedIds = new Set(removeIds)
+    for (let i = etapas.length - 1; i >= 0; i--) {
+      if (removedIds.has((etapas[i] as any).id)) etapas.splice(i, 1)
+    }
+  }
+
+  // Se não há módulos contratados (plano vazio), não há o que adicionar —
+  // apenas renumera o que restou.
+  if (modulosContratados.length === 0) {
+    await renumberEtapas(implementacaoId, etapas)
+    return []
+  }
+
+  // ---- 2. Adição de etapas de treinamento faltantes ----
   const existingTitles = new Set(
     etapas.map((e: any) =>
       String(e.titulo || '')
@@ -211,54 +260,82 @@ export const ensureTreinamentoEtapasForImpl = async (
         .toLowerCase(),
     ),
   )
-
-  // Determina módulos sem etapa de treinamento correspondente
   const missing = modulosContratados.filter((modulo) => {
     const titulo = `Treinamento: ${modulo}`.toLowerCase()
     return !existingTitles.has(titulo)
   })
-  if (missing.length === 0) return []
 
-  // Calcula ordem/semana base a partir das etapas de treinamento existentes
-  const treinamentoEtapas = etapas.filter(
-    (e: any) => e.categoria === 'Ciclo de Treinamentos',
-  ) as any[]
-  const lastTreinamento = treinamentoEtapas[treinamentoEtapas.length - 1] || null
-  const baseSemana = lastTreinamento ? 2 : 1 // semana padrão do ciclo
-  const maxOrdem = etapas.reduce((max: number, e: any) => (e.ordem > max ? e.ordem : max), 0)
+  if (missing.length === 0) {
+    // Nada a adicionar — só garante renumeração se houve remoções
+    if (toRemove.length > 0) await renumberEtapas(implementacaoId, etapas)
+    return []
+  }
 
-  // Etapas posteriores às de treinamento precisam ter a ordem deslocada para
-  // abrir espaço para as novas (mantém ordem sequencial correta).
-  const insertAfterOrdem = lastTreinamento ? lastTreinamento.ordem : maxOrdem
-  const novasEtapas = missing.map((modulo, idx) => ({
+  // Encontra a posição de inserção: após a última etapa antes da primeira
+  // "Operação Assistida" (idealmente após "Parametrização do Sistema"). Usa
+  // a ordem da primeira etapa de "Implantação Operacional" como referência.
+  const firstOperacionalIdx = etapas.findIndex(
+    (e: any) =>
+      e.categoria === 'Implantação Operacional' &&
+      String(e.titulo || '')
+        .toLowerCase()
+        .startsWith('operação assistida'),
+  )
+  //Índice onde inserir as novas etapas (antes da Operação Assistida)
+  const insertIdx = firstOperacionalIdx === -1 ? etapas.length : firstOperacionalIdx
+
+  const novasEtapasPayload = missing.map((modulo) => ({
     implementacao_id: implementacaoId,
     titulo: `Treinamento: ${modulo}`,
     categoria: 'Ciclo de Treinamentos',
-    ordem: insertAfterOrdem + 1 + idx,
+    ordem: 0, // renumerado abaixo
     status: 'Não iniciada',
-    data_prevista: addWeeks(baseSemana),
+    data_prevista: addWeeks(1),
     responsavel_id: null,
   }))
 
-  // Desloca etapas com ordem > insertAfterOrdem para manter a sequência
-  const toShift = etapas.filter((e: any) => e.ordem > insertAfterOrdem) as any[]
-  if (toShift.length > 0) {
-    for (const e of toShift) {
-      const { error: shiftError } = await supabase
-        .from('implementacao_etapas' as any)
-        .update({ ordem: e.ordem + missing.length })
-        .eq('id', e.id)
-      if (shiftError) throw shiftError
-    }
-  }
-
-  // Insere as novas etapas
-  const { error: insertError } = await supabase
+  const { data: insertedRows, error: insertError } = await supabase
     .from('implementacao_etapas' as any)
-    .insert(novasEtapas)
+    .insert(novasEtapasPayload)
+    .select()
   if (insertError) throw insertError
 
+  const novasEtapas = (insertedRows || []).map((row: any) => ({
+    ...row,
+    // Garante campos esperados pela renumeração
+    id: row.id,
+    ordem: 0,
+  }))
+
+  // Insere localmente (com ids reais) para renumeração
+  etapas.splice(insertIdx, 0, ...novasEtapas)
+
+  // ---- 3. Renumerar TODAS as ordens sequencialmente ----
+  await renumberEtapas(implementacaoId, etapas)
+
   return novasEtapas.map((e) => e.titulo)
+}
+
+/**
+ * Renumerar todas as etapas de uma implementação de forma sequencial (1, 2,
+ * 3, ...), respeitando a ordem atual do array recebido.
+ */
+async function renumberEtapas(implementacaoId: string, etapas: any[]): Promise<void> {
+  let ordem = 1
+  for (const e of etapas) {
+    if (e.ordem === ordem) {
+      ordem++
+      continue
+    }
+    const { error } = await supabase
+      .from('implementacao_etapas' as any)
+      .update({ ordem })
+      .eq('id', e.id)
+    if (error) throw error
+    e.ordem = ordem
+    ordem++
+  }
+  void implementacaoId
 }
 
 export const updateObservacoesGerais = async (implementacaoId: string, observacoes: string) => {
@@ -359,11 +436,8 @@ export const createImplementacao = async (params: {
     .single()
   if (error) throw error
 
-  const baseTemplate = getEtapasForTipo(tipo)
   const etapasTemplate =
-    tipo === 'novo_cliente'
-      ? appendMissingTreinamentoEtapas(baseTemplate, modulosNovos)
-      : baseTemplate
+    tipo === 'novo_cliente' ? buildNovoClienteTemplate(modulosNovos) : getEtapasForTipo(tipo)
   const etapas = etapasTemplate.map((e) => ({
     implementacao_id: data.id,
     titulo: e.titulo,
@@ -688,11 +762,10 @@ export const createImplementacaoFromAtendimento = async (params: {
     .single()
   if (error) throw error
 
-  const baseTemplate = getEtapasForTipo(params.tipo)
   const etapasTemplate =
     params.tipo === 'novo_cliente'
-      ? appendMissingTreinamentoEtapas(baseTemplate, modulosNovos)
-      : baseTemplate
+      ? buildNovoClienteTemplate(modulosNovos)
+      : getEtapasForTipo(params.tipo)
   const etapas = etapasTemplate.map((e) => ({
     implementacao_id: data.id,
     titulo: e.titulo,

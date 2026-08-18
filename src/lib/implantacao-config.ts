@@ -9,37 +9,35 @@ export const ETAPAS_NOVO_CLIENTE: EtapaTemplate[] = [
   { titulo: 'Handover Comercial', categoria: 'Pré-Implantação', ordem: 1, semana: 0 },
   { titulo: 'Kick-off', categoria: 'Pré-Implantação', ordem: 2, semana: 0 },
   { titulo: 'Parametrização do Sistema', categoria: 'Implantação Inicial', ordem: 3, semana: 0 },
-  { titulo: 'Treinamento: Administração', categoria: 'Ciclo de Treinamentos', ordem: 4, semana: 1 },
-  { titulo: 'Treinamento: Comercial', categoria: 'Ciclo de Treinamentos', ordem: 5, semana: 1 },
-  { titulo: 'Treinamento: Faturamento', categoria: 'Ciclo de Treinamentos', ordem: 6, semana: 2 },
-  { titulo: 'Treinamento: Financeiro', categoria: 'Ciclo de Treinamentos', ordem: 7, semana: 2 },
-  { titulo: 'Treinamento: Carga', categoria: 'Ciclo de Treinamentos', ordem: 8, semana: 2 },
+  // As etapas de "Ciclo de Treinamentos" NÃO fazem parte do template fixo:
+  // são geradas dinamicamente a partir dos módulos contratados do plano
+  // (ver `generateTreinamentoEtapas` em src/services/implementacoes.ts).
   {
     titulo: 'Operação Assistida: Semana 1',
     categoria: 'Implantação Operacional',
-    ordem: 9,
+    ordem: 4,
     semana: 3,
   },
   {
     titulo: 'Operação Assistida: Semana 2',
     categoria: 'Implantação Operacional',
-    ordem: 10,
+    ordem: 5,
     semana: 4,
   },
   {
     titulo: 'Operação Assistida: Semana 3',
     categoria: 'Implantação Operacional',
-    ordem: 11,
+    ordem: 6,
     semana: 5,
   },
   {
     titulo: 'Operação Assistida: Semana 4',
     categoria: 'Implantação Operacional',
-    ordem: 12,
+    ordem: 7,
     semana: 6,
   },
-  { titulo: 'Termo de Encerramento', categoria: 'Encerramento', ordem: 13, semana: 7 },
-  { titulo: 'Transição para Suporte', categoria: 'Encerramento', ordem: 14, semana: 7 },
+  { titulo: 'Termo de Encerramento', categoria: 'Encerramento', ordem: 8, semana: 7 },
+  { titulo: 'Transição para Suporte', categoria: 'Encerramento', ordem: 9, semana: 7 },
 ]
 
 export const ETAPAS_INCLUSAO_MODULO: EtapaTemplate[] = [
