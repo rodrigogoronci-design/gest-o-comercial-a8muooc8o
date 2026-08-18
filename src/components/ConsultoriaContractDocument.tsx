@@ -133,10 +133,11 @@ export function ConsultoriaContractDocument() {
           <p>e, de outro lado,</p>
 
           <p>
-            <strong>CONTACTO SOLUÇÕES EM TECNOLOGIA – LTDA</strong>, pessoa jurídica de direito
-            privado, inscrita no CNPJ sob nº 27.751.577/0001-91, com sede na Av. Central, nº 1439,
-            Sala 201, Ed. Comercial Santa Clara, Laranjeiras, Serra/ES, neste ato representada na
-            forma de seus atos constitutivos, doravante denominada <strong>CONTRATADA</strong>;
+            <strong>SERVICELOGIC.COM SOLUÇÕES EM TECNOLOGIA LTDA</strong>, pessoa jurídica de
+            direito privado, inscrita no CNPJ sob nº 10.929.600/0001-92, com sede na Av. Central, nº
+            1439, Sala 201, Parque Residencial Laranjeiras, Serra/ES, CEP 29.165-130, neste ato
+            representada na forma de seus atos constitutivos, doravante denominada{' '}
+            <strong>CONTRATADA</strong>;
           </p>
 
           <p>
@@ -779,7 +780,7 @@ export function ConsultoriaContractDocument() {
             <div className="cc-sign-block">
               <div className="cc-sign-line" />
               <p className="cc-sign-role">CONTRATADA</p>
-              <p className="cc-sign-name">CONTACTO SOLUÇÕES EM TECNOLOGIA – LTDA</p>
+              <p className="cc-sign-name">SERVICELOGIC.COM SOLUÇÕES EM TECNOLOGIA LTDA</p>
               <p className="cc-sign-field">
                 Representante: <strong>Rodrigo Goronci Sant&apos;Ana</strong>
               </p>
@@ -791,7 +792,7 @@ export function ConsultoriaContractDocument() {
         </section>
 
         {/* Rodapé visível apenas na tela (o rodapé do PDF vem de @page) */}
-        <div className="cc-screen-footer">Contrato de Consultoria — Prysmian × Contacto</div>
+        <div className="cc-screen-footer">Contrato de Consultoria — Prysmian × ServiceLogic</div>
       </div>
     </div>
   )
