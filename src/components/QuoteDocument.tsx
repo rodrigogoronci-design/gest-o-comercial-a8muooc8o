@@ -78,8 +78,7 @@ export function QuoteDocument(props: QuoteDocumentProps) {
     prazosConcedidos = '',
   } = props
 
-  const isTms30 =
-    planName?.toLowerCase().includes('tms-30') || planName?.toLowerCase().includes('tms 30')
+  const isTms30 = /^tms[\s-]?30$/i.test(planName || '')
   const includedBaseModules = isCustomPlan
     ? customPlanModuleNames
     : isTms30
