@@ -91,10 +91,24 @@
 @media print {
   @page {
     size: A4;
-    /* Margens profissionais para documento jurídico:
-       ~2,5cm superior, 2cm inferior, 3cm esquerda, 2cm direita.
-       Espaço reservado para cabeçalho/rodapé no top/bottom. */
-    margin: 25mm 20mm 22mm 30mm;
+    /* Margens: 2,5cm superior, 2cm inferior, 3cm esquerda, 2cm direita */
+    margin: 25mm 20mm 20mm 30mm;
+
+    /* Canto inferior direito: "Página X de Y" */
+    @bottom-right {
+      content: 'Página ' counter(page) ' de ' counter(pages);
+      font-family: 'Times New Roman', 'Liberation Serif', Georgia, serif;
+      font-size: 9pt;
+      color: #64748b;
+    }
+
+    /* Canto inferior esquerdo: identificação do contrato */
+    @bottom-left {
+      content: 'Contrato de Consultoria — Prysmian × Contacto';
+      font-family: 'Times New Roman', 'Liberation Serif', Georgia, serif;
+      font-size: 9pt;
+      color: #94a3b8;
+    }
   }
 
   * {
@@ -399,119 +413,364 @@
 
 /* ============================================================
    Contrato de Consultoria (Prysmian) — diagramação profissional
+   Layout totalmente reconstruído. Conteúdo jurídico intocado.
+   Estilos válidos para tela e para impressão/PDF (Chrome/Edge).
    ============================================================ */
 
-/* --- Estilização na tela (espelha o PDF final) --- */
-#consultoria-contract-print.contract-doc {
+/* Cor da marca usada em títulos e detalhes */
+:root {
+  --cc-blue: #1b4382;
+  --cc-orange: #f37021;
+  --cc-text: #1e293b;
+  --cc-muted: #64748b;
+  --cc-line: #cbd5e1;
+}
+
+/* ----------------------------------------------------------
+   Container do documento (na tela espelha o PDF)
+   ---------------------------------------------------------- */
+#consultoria-contract-print.cc-doc {
   font-family: 'Times New Roman', 'Liberation Serif', 'Nimbus Roman', Georgia, serif;
-  font-size: 12pt;
+  font-size: 12pt; /* 12pt na tela */
   line-height: 1.5;
-  color: #1e293b;
-  padding: 25mm 20mm 22mm 30mm; /* 2,5cm sup / 2cm inf / 3cm esq / 2cm dir */
+  color: var(--cc-text);
+  background: #fff;
+  padding: 25mm 20mm 20mm 30mm; /* 2,5cm sup / 2cm inf / 3cm esq / 2cm dir */
   max-width: 210mm; /* largura A4 */
   min-height: 297mm;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
-/* Cabeçalho do documento */
-#consultoria-contract-print .contract-doc-header img {
+/* No PDF, as margens vêm do @page — remover padding do container */
+@media print {
+  #consultoria-contract-print.cc-doc {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    box-shadow: none !important;
+    font-size: 11pt; /* 11pt no PDF */
+    line-height: 1.45;
+    color: #000 !important;
+  }
+}
+
+/* Parágrafos base — espaçamento uniforme */
+#consultoria-contract-print p {
+  margin: 0 0 6pt 0;
+  text-align: justify;
+  text-indent: 0;
+  orphans: 3;
+  widows: 3;
+}
+
+/* ----------------------------------------------------------
+   Cabeçalho: logomarca + título do contrato
+   ---------------------------------------------------------- */
+#consultoria-contract-print .cc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 8px;
+  margin-bottom: 14pt;
+  border-bottom: 2px solid var(--cc-orange);
+}
+
+#consultoria-contract-print .cc-logo {
   height: 40px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
-#consultoria-contract-print .contract-doc-header h1 {
-  font-size: 12pt;
+#consultoria-contract-print .cc-doc-title {
+  font-size: 11.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--cc-blue);
+  text-align: right;
+  line-height: 1.25;
+  margin: 0;
+  flex: 1;
   letter-spacing: 0.2px;
 }
 
-/* Títulos de cláusulas */
-#consultoria-contract-print .contract-clause-title {
-  font-size: 12pt;
-  letter-spacing: 0.4px;
-  break-after: avoid;
-}
-
-#consultoria-contract-print .contract-clause {
-  break-inside: avoid-page;
-}
-
-/* Subseções e alíneas com recuos progressivos */
-#consultoria-contract-print .contract-subsection {
-  break-inside: avoid;
-}
-
-#consultoria-contract-print .contract-alineas {
-  margin-left: 6mm;
-}
-
-/* --- Cabeçalho/rodapé de impressão (numeração de páginas) --- */
 @media print {
-  #consultoria-contract-print.contract-doc {
-    padding: 0;
-    margin: 0;
-    max-width: none;
-    min-height: 0;
-    font-size: 11pt;
-    line-height: 1.45;
+  #consultoria-contract-print .cc-header {
+    break-after: avoid;
+    page-break-after: avoid;
   }
-
-  /* Define elementos de cabeçalho/rodapé fixos em cada página via running elements */
-  .contract-doc-header {
-    position: running(contract-header);
-  }
-
-  /* Numeração "Página X de Y" no rodapé de cada página */
-  @page {
-    @top-center {
-      content: element(contract-header);
-    }
-    @bottom-right {
-      content: 'Página ' counter(page) ' de ' counter(pages);
-      font-family: 'Times New Roman', Georgia, serif;
-      font-size: 9pt;
-      color: #64748b;
-    }
-    @bottom-left {
-      content: 'Contrato de Consultoria — Prysmian × Contacto';
-      font-family: 'Times New Roman', Georgia, serif;
-      font-size: 9pt;
-      color: #94a3b8;
-    }
-  }
-
-  /* Evita quebras dentro de cláusulas curtas e subseções */
-  #consultoria-contract-print .contract-clause,
-  #consultoria-contract-print .contract-subsection {
-    break-inside: avoid-page;
-  }
-
-  /* O bloco final (encerramento + assinaturas + testemunhas) fica sempre junto */
-  #consultoria-contract-print .contract-final-block {
-    break-inside: avoid-page;
-  }
-
-  /* Recuo das alíneas na impressão */
-  #consultoria-contract-print .contract-alineas {
-    margin-left: 5mm;
-  }
-
-  /* Espaçamento uniforme entre parágrafos no PDF */
-  #consultoria-contract-print p {
-    margin-top: 0;
-    margin-bottom: 6pt;
-    orphans: 3;
-    widows: 3;
-  }
-
-  #consultoria-contract-print .contract-clause-title {
-    margin-top: 14pt;
-    margin-bottom: 6pt;
+  #consultoria-contract-print .cc-doc-title {
+    color: var(--cc-blue) !important;
   }
 }
 
-/* --- Versão na tela: número de páginas simulado (não exibido no print) --- */
-#consultoria-contract-print .contract-screen-footer {
+/* ----------------------------------------------------------
+   Qualificação das partes
+   ---------------------------------------------------------- */
+#consultoria-contract-print .cc-qualif {
+  margin-bottom: 6pt;
+}
+
+/* ----------------------------------------------------------
+   Cláusulas — título + corpo
+   ---------------------------------------------------------- */
+#consultoria-contract-print .cc-clause {
+  margin-top: 10pt;
+  margin-bottom: 6pt;
+}
+
+#consultoria-contract-print .cc-clause-title {
+  font-size: 11.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--cc-blue);
+  letter-spacing: 0.3px;
+  margin: 0 0 4pt 0;
+  padding-bottom: 2pt;
+  border-bottom: 0.5pt solid rgba(27, 67, 130, 0.35);
+  /* Nunca separar o título do corpo */
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+#consultoria-contract-print .cc-clause-body {
+  /* Cláusulas não quebram no meio (quando couberem) */
+  break-inside: avoid-page;
+  page-break-inside: avoid;
+}
+
+/* ----------------------------------------------------------
+   Subseções numeradas (ex.: 1.1, 2.3)
+   ---------------------------------------------------------- */
+#consultoria-contract-print .cc-sub {
+  margin-bottom: 6pt;
+  break-inside: avoid-page;
+  page-break-inside: avoid;
+}
+
+#consultoria-contract-print .cc-sub-head {
+  margin-bottom: 2pt;
+}
+
+/* Subitens (3.1.1, 3.1.2, ...) com recuo progressivo */
+#consultoria-contract-print .cc-subitems {
+  margin-left: 6mm;
+  margin-top: 4pt;
+}
+
+#consultoria-contract-print .cc-subitems .cc-sub {
+  margin-bottom: 8pt;
+}
+
+/* ----------------------------------------------------------
+   Listas — recuos progressivos
+   ---------------------------------------------------------- */
+
+/* Alíneas (a, b, c) — recuo de 1º nível */
+#consultoria-contract-print .cc-alineas {
+  list-style-type: lower-alpha;
+  margin: 4pt 0 4pt 8mm;
+  padding-left: 5mm;
+}
+
+#consultoria-contract-print .cc-alineas li {
+  margin-bottom: 2pt;
+  text-align: justify;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Subitens com marcador (bullets) — recuo de 1º nível */
+#consultoria-contract-print .cc-bullets {
+  list-style-type: disc;
+  margin: 4pt 0 4pt 8mm;
+  padding-left: 5mm;
+}
+
+#consultoria-contract-print .cc-bullets li {
+  margin-bottom: 2pt;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Lista numerada (Anexos) — recuo de 1º nível */
+#consultoria-contract-print .cc-numeros {
+  list-style-type: decimal;
+  margin: 4pt 0 4pt 8mm;
+  padding-left: 5mm;
+}
+
+#consultoria-contract-print .cc-numeros li {
+  margin-bottom: 2pt;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* ----------------------------------------------------------
+   Destaques visuais (callouts, valor, fluxo)
+   ---------------------------------------------------------- */
+
+/* Bloco de destaque do ponto focal */
+#consultoria-contract-print .cc-callout {
+  margin: 4pt 0 4pt 8mm;
+  padding: 6pt 9pt;
+  background: #f8fafc;
+  border: 0.5pt solid var(--cc-line);
+  border-left: 2.5pt solid var(--cc-blue);
+  border-radius: 2px;
+}
+
+#consultoria-contract-print .cc-callout p {
+  margin-bottom: 1pt;
+  text-align: left;
+}
+
+/* Lista de responsáveis por área */
+#consultoria-contract-print .cc-area-list {
+  margin: 4pt 0 4pt 6mm;
+}
+
+#consultoria-contract-print .cc-area-list p {
+  margin-bottom: 2pt;
+}
+
+/* Caixa de destaque do valor do contrato */
+#consultoria-contract-print .cc-value-box {
+  margin: 6pt 0;
+  padding: 8pt 10pt;
+  background: rgba(27, 67, 130, 0.05);
+  border: 0.5pt solid rgba(27, 67, 130, 0.25);
+  border-radius: 2px;
+  text-align: center;
+}
+
+#consultoria-contract-print .cc-value-amount {
   display: block;
-  margin-top: 18mm;
-  padding-top: 6mm;
+  font-size: 13pt;
+  font-weight: 700;
+  color: var(--cc-blue);
+  margin-bottom: 2pt;
+}
+
+#consultoria-contract-print .cc-value-ext {
+  display: block;
+  font-size: 9.5pt;
+  color: var(--cc-muted);
+  font-style: italic;
+}
+
+/* Lista de parcelas de pagamento */
+#consultoria-contract-print .cc-pay-list {
+  margin: 4pt 0 4pt 8mm;
+}
+
+#consultoria-contract-print .cc-pay-list p {
+  margin-bottom: 3pt;
+}
+
+/* Fluxo operacional (caixa centralizada) */
+#consultoria-contract-print .cc-flow {
+  margin: 6pt 0;
+  padding: 8pt 10pt;
+  background: #f8fafc;
+  border: 0.5pt solid var(--cc-line);
+  border-radius: 2px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--cc-blue);
+  font-size: 10.5pt;
+  line-height: 1.4;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* ----------------------------------------------------------
+   Bloco final — encerramento + assinaturas + testemunhas
+   (mantido junto, sem ficar isolado em página separada)
+   ---------------------------------------------------------- */
+#consultoria-contract-print .cc-final {
+  margin-top: 14pt;
+  break-inside: avoid-page;
+  page-break-inside: avoid;
+}
+
+#consultoria-contract-print .cc-final-intro {
+  text-align: center;
+  margin-bottom: 4pt;
+}
+
+#consultoria-contract-print .cc-final-local {
+  text-align: center;
+  margin-bottom: 14pt;
+}
+
+/* Assinaturas — Contratante e Contratada lado a lado (2 colunas) */
+#consultoria-contract-print .cc-signatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24mm;
+  margin-bottom: 14pt;
+}
+
+/* Testemunhas — grid de 2 colunas */
+#consultoria-contract-print .cc-witnesses {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24mm;
+  margin-top: 10pt;
+}
+
+/* Bloco de assinatura individual */
+#consultoria-contract-print .cc-sign-block {
+  text-align: center;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Linha para assinatura (espaço + traço superior) */
+#consultoria-contract-print .cc-sign-line {
+  height: 26pt;
+  margin-bottom: 2pt;
+  border-top: 0.75pt solid var(--cc-blue);
+}
+
+#consultoria-contract-print .cc-sign-role {
+  font-weight: 700;
+  color: var(--cc-blue);
+  font-size: 10pt;
+  margin-bottom: 3pt;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+
+#consultoria-contract-print .cc-sign-name {
+  font-size: 9.5pt;
+  font-weight: 600;
+  margin-bottom: 2pt;
+  text-align: center;
+}
+
+#consultoria-contract-print .cc-sign-field {
+  font-size: 9pt;
+  color: var(--cc-muted);
+  margin-bottom: 1pt;
+  text-align: center;
+}
+
+#consultoria-contract-print .cc-witness .cc-sign-field {
+  text-align: left;
+}
+
+/* ----------------------------------------------------------
+   Rodapé visível apenas na tela (o do PDF vem de @page)
+   ---------------------------------------------------------- */
+#consultoria-contract-print .cc-screen-footer {
+  display: block;
+  margin-top: 16mm;
+  padding-top: 5mm;
   border-top: 1px solid #e2e8f0;
   text-align: right;
   font-size: 9pt;
@@ -519,7 +778,12 @@
 }
 
 @media print {
-  #consultoria-contract-print .contract-screen-footer {
+  #consultoria-contract-print .cc-screen-footer {
+    display: none !important;
+  }
+
+  /* Botão de impressão oculto no PDF */
+  .cc-no-print {
     display: none !important;
   }
 }
