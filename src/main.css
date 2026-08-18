@@ -499,11 +499,24 @@
 
 @media print {
   #consultoria-contract-print .cc-header {
+    display: flex !important;
     break-after: avoid;
     page-break-after: avoid;
+    padding-bottom: 8px !important;
+    margin-bottom: 14pt !important;
+    border-bottom: 2px solid var(--cc-orange) !important;
+  }
+  #consultoria-contract-print .cc-logo {
+    height: 40px !important;
+    max-height: 40px !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
   #consultoria-contract-print .cc-doc-title {
     color: var(--cc-blue) !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 }
 

@@ -107,15 +107,15 @@ export function ConsultoriaContractDocument() {
       <div id="consultoria-contract-print" className="cc-doc">
         {/* =========================================================
             CABEÇALHO: logomarca Service Logic + título do contrato
-            (repete no topo de cada página impressa via @page margin)
+            (visível em tela e no PDF; a borda laranja vem do CSS .cc-header)
            ========================================================= */}
-        <header className="cc-header">
+        <div className="cc-header">
           <img src={logoUrl} alt="Service Logic" className="cc-logo" />
           <h1 className="cc-doc-title">
             CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE CONSULTORIA DE ESTRUTURAÇÃO OPERACIONAL E
             REGULATÓRIA
           </h1>
-        </header>
+        </div>
 
         {/* =========================================================
             QUALIFICAÇÃO DAS PARTES
@@ -754,7 +754,7 @@ export function ConsultoriaContractDocument() {
         </Clause>
 
         {/* =========================================================
-            BLOCO FINAL — encerramento + assinaturas + testemunhas
+            BLOCO FINAL — encerramento + assinaturas
             (mantido sempre junto, nunca isolado em página separada)
            ========================================================= */}
         <section className="cc-final">
@@ -784,23 +784,8 @@ export function ConsultoriaContractDocument() {
                 Representante: <strong>Rodrigo Goronci Sant&apos;Ana</strong>
               </p>
               <p className="cc-sign-field">Cargo: Sócio-Administrador</p>
-              <p className="cc-sign-field">CPF: [A PREENCHER]</p>
-            </div>
-          </div>
-
-          {/* Testemunhas — grid de 2 colunas */}
-          <div className="cc-witnesses">
-            <div className="cc-sign-block cc-witness">
-              <div className="cc-sign-line" />
-              <p className="cc-sign-role">TESTEMUNHA 1</p>
-              <p className="cc-sign-field">Nome: ____________________________________</p>
-              <p className="cc-sign-field">CPF: ___________________________________________</p>
-            </div>
-            <div className="cc-sign-block cc-witness">
-              <div className="cc-sign-line" />
-              <p className="cc-sign-role">TESTEMUNHA 2</p>
-              <p className="cc-sign-field">Nome: ____________________________________</p>
-              <p className="cc-sign-field">CPF: ___________________________________________</p>
+              <p className="cc-sign-field">CPF: 022.885.287-02</p>
+              <p className="cc-sign-field">RG: 1.165.84 SSP-ES</p>
             </div>
           </div>
         </section>
