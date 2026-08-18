@@ -33,7 +33,12 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
-import { getImplementacao, getColaboradores, syncModulosToCliente } from '@/services/implementacoes'
+import {
+  getImplementacao,
+  getColaboradores,
+  syncModulosToCliente,
+  ensureTreinamentoEtapasForImpl,
+} from '@/services/implementacoes'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { TreinamentoDetailsEditor } from '@/components/TreinamentoDetailsEditor'
@@ -89,6 +94,17 @@ export default function ImplementacaoDetailPage() {
     setIsLoading(true)
     setLoadError(false)
     try {
+      // Auto-correção: garante que todos os módulos contratados tenham etapa de
+      // treinamento correspondente (para implementações já existentes).
+      try {
+        const added = await ensureTreinamentoEtapasForImpl(implId)
+        if (added.length > 0) {
+          toast.success(`${added.length} etapa(s) de treinamento adicionada(s) automaticamente.`)
+        }
+      } catch {
+        // Falha na auto-correção não deve bloquear o carregamento da página.
+      }
+
       const data = await getImplementacao(implId)
       setImpl(data)
     } catch {

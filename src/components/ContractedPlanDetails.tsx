@@ -565,7 +565,6 @@ export function ContractedPlanDetails({
                   <div className="space-y-2">
                     {allModules.map((mod) => {
                       const related = getRelatedStagesForModule(mod, etapas)
-                      if (related.length === 0) return null
                       return (
                         <div key={mod} className="rounded-lg border border-slate-100 p-2.5">
                           <div className="flex items-center gap-2 mb-1.5">
@@ -576,16 +575,24 @@ export function ContractedPlanDetails({
                               {mod}
                             </Badge>
                             <span className="text-xs text-slate-400">
-                              {related.length} etapa(s)
+                              {related.length > 0
+                                ? `${related.length} etapa(s)`
+                                : 'Nenhuma etapa vinculada'}
                             </span>
                           </div>
                           <div className="space-y-1 pl-1">
-                            {related.map((e) => (
-                              <div key={e.id} className="flex items-center justify-between gap-2">
-                                <span className="text-xs text-slate-600">{e.titulo}</span>
-                                <StageStatusBadge status={e.status} />
-                              </div>
-                            ))}
+                            {related.length > 0 ? (
+                              related.map((e) => (
+                                <div key={e.id} className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-slate-600">{e.titulo}</span>
+                                  <StageStatusBadge status={e.status} />
+                                </div>
+                              ))
+                            ) : (
+                              <span className="text-xs italic text-slate-400">
+                                Nenhuma etapa vinculada
+                              </span>
+                            )}
                           </div>
                         </div>
                       )
