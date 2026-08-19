@@ -2230,6 +2230,9 @@ export type Database = {
           contrato_id: string | null
           created_at: string
           dados_parametrizacao: Json | null
+          handover_comercial: string | null
+          handover_atualizado_em: string | null
+          handover_atualizado_por: string | null
           id: string
           modulos_novos: Json | null
           observacoes_gerais: string | null
@@ -2255,6 +2258,9 @@ export type Database = {
           contrato_id?: string | null
           created_at?: string
           dados_parametrizacao?: Json | null
+          handover_comercial?: string | null
+          handover_atualizado_em?: string | null
+          handover_atualizado_por?: string | null
           id?: string
           modulos_novos?: Json | null
           observacoes_gerais?: string | null
@@ -2280,6 +2286,9 @@ export type Database = {
           contrato_id?: string | null
           created_at?: string
           dados_parametrizacao?: Json | null
+          handover_comercial?: string | null
+          handover_atualizado_em?: string | null
+          handover_atualizado_por?: string | null
           id?: string
           modulos_novos?: Json | null
           observacoes_gerais?: string | null

@@ -11,10 +11,14 @@ export interface ConsultoriaProject {
   status: string
   created_at: string
   clientes?: { nome: string; cnpj: string | null } | null
+  // Handover Comercial
+  handover_comercial: string | null
+  handover_atualizado_em: string | null
+  handover_atualizado_por: string | null
 }
 
 const SELECT_FIELDS =
-  'id, cliente_id, consultoria_titulo, consultoria_texto, consultoria_form_data, consultoria_token, status, created_at, clientes(nome, cnpj)'
+  'id, cliente_id, consultoria_titulo, consultoria_texto, consultoria_form_data, consultoria_token, status, created_at, clientes(nome, cnpj), handover_comercial, handover_atualizado_em, handover_atualizado_por'
 
 export async function getConsultorias(): Promise<ConsultoriaProject[]> {
   const { data, error } = await supabase
@@ -56,9 +60,18 @@ export async function createConsultoria(clienteId: string): Promise<ConsultoriaP
   return data as ConsultoriaProject
 }
 
+export interface ConsultoriaUpdateInput {
+  consultoria_titulo?: string | null
+  consultoria_texto?: string | null
+  status?: string | null
+  handover_comercial?: string | null
+  handover_atualizado_em?: string | null
+  handover_atualizado_por?: string | null
+}
+
 export async function updateConsultoria(
   id: string,
-  updates: Partial<Pick<ConsultoriaProject, 'consultoria_titulo' | 'consultoria_texto' | 'status'>>,
+  updates: ConsultoriaUpdateInput,
 ): Promise<void> {
   const { error } = await supabase
     .from('implementacoes' as any)

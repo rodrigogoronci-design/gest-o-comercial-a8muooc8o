@@ -24,10 +24,12 @@ import {
 } from '@/services/consultoria-crm'
 import { getOrCreateConsultoriaToken, generateConsultoriaUrl } from '@/services/consultoria'
 import { ConsultoriaResponses } from '@/components/ConsultoriaResponses'
+import { ConsultoriaHandoverSection } from '@/components/ConsultoriaHandoverSection'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { SectionNav, type SectionNavItem } from '@/components/section-nav'
 import { CollapsibleSection } from '@/components/collapsible-section'
+import { useAuth } from '@/hooks/use-auth'
 
 const STATUS_COLORS: Record<string, string> = {
   'Em andamento': 'bg-blue-50 text-blue-700 border-blue-200',
@@ -38,6 +40,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function CrmConsultoriaDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const { user } = useAuth()
   const [project, setProject] = useState<ConsultoriaProject | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
@@ -174,6 +177,7 @@ export default function CrmConsultoriaDetailPage() {
       <SectionNav
         items={[
           { id: 'formulario', label: 'Formulário', icon: <FileText className="h-3.5 w-3.5" /> },
+          { id: 'handover', label: 'Handover', icon: <FileCheck className="h-3.5 w-3.5" /> },
           { id: 'status', label: 'Status', icon: <Clock className="h-3.5 w-3.5" /> },
           ...(hasResponses
             ? [{ id: 'respostas', label: 'Respostas', icon: <FileCheck className="h-3.5 w-3.5" /> }]
@@ -219,6 +223,19 @@ export default function CrmConsultoriaDetailPage() {
             exibidos no formulário enviado ao cliente.
           </p>
         </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        id="handover"
+        title="Handover Comercial → Execução"
+        icon={<FileCheck className="h-4 w-4 text-amber-600" />}
+        defaultOpen
+      >
+        <ConsultoriaHandoverSection
+          project={project}
+          currentUserEmail={user?.email}
+          onSaved={(patch) => setProject((prev) => (prev ? { ...prev, ...patch } : prev))}
+        />
       </CollapsibleSection>
 
       <CollapsibleSection
