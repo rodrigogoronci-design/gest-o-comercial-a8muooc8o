@@ -23,7 +23,7 @@ import { uploadRat, updateEtapa } from '@/services/implementacoes'
 import { toast } from 'sonner'
 
 const STATUS_OPTIONS = ['Não iniciada', 'Agendada', 'Em andamento', 'Concluída', 'Atrasada']
-const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d])$/
+const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/
 
 function todayStr() {
   return new Date().toISOString().split('T')[0]
