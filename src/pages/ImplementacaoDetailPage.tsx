@@ -49,6 +49,7 @@ import { ImplementationDocumentRepository } from '@/components/ImplementationDoc
 import { getContractedModules } from '@/lib/scope-mapping'
 import { getContractedModulesWithBasic } from '@/lib/plan-modules'
 import { generateExecutionTitle } from '@/lib/atendimento-utils'
+import { formatDateOnly } from '@/lib/formatters'
 
 const TIPO_CONFIG: Record<string, { label: string; color: string }> = {
   novo_cliente: { label: 'Novo Cliente', color: 'bg-blue-50 text-blue-700 border-blue-200' },
@@ -478,8 +479,7 @@ export default function ImplementacaoDetailPage() {
                   <span className="font-medium text-slate-800">{proximaEtapa.titulo}</span>
                   {proximaEtapa.data_prevista && (
                     <span className="text-slate-400">
-                      — Previsto para{' '}
-                      {new Date(proximaEtapa.data_prevista).toLocaleDateString('pt-BR')}
+                      — Previsto para {formatDateOnly(proximaEtapa.data_prevista)}
                       {proximaEtapa.hora_prevista ? ` às ${proximaEtapa.hora_prevista}` : ''}
                     </span>
                   )}
@@ -572,7 +572,7 @@ export default function ImplementacaoDetailPage() {
                     <Calendar className="h-4 w-4 text-slate-400" />
                     <span className="text-sm text-muted-foreground">Data agendada:</span>
                     <span className="text-sm font-medium">
-                      {new Date(impl.treinamento_data).toLocaleDateString('pt-BR')}
+                      {formatDateOnly(impl.treinamento_data)}
                       {impl.treinamento_hora && ` às ${impl.treinamento_hora}`}
                     </span>
                   </div>

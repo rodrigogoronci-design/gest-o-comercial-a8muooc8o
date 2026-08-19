@@ -108,10 +108,20 @@ export default function AgendaImplantacoesPage() {
     })
   }, [items, filterTipo, filterStatus])
 
+  const parseItemDate = (dataStr: string) => {
+    const clean = dataStr.includes('T') ? dataStr.split('T')[0] : dataStr
+    if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
+      const [year, month, day] = clean.split('-').map(Number)
+      return new Date(year, month - 1, day)
+    }
+    return new Date(dataStr)
+  }
+
   const itemsByDay = useMemo(() => {
     const map: Record<string, AgendaImplantacaoItem[]> = {}
     for (const item of filteredItems) {
-      const dateKey = format(new Date(item.data), 'yyyy-MM-dd')
+      const d = parseItemDate(item.data)
+      const dateKey = format(d, 'yyyy-MM-dd')
       if (!map[dateKey]) map[dateKey] = []
       map[dateKey].push(item)
     }
@@ -120,7 +130,7 @@ export default function AgendaImplantacoesPage() {
 
   const monthSummary = useMemo(() => {
     const count = filteredItems.filter((item) =>
-      isSameMonth(new Date(item.data), currentDate),
+      isSameMonth(parseItemDate(item.data), currentDate),
     ).length
     return count
   }, [filteredItems, currentDate])

@@ -45,6 +45,7 @@ import { useUserRole } from '@/hooks/use-user-role'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { formatDateOnly } from '@/lib/formatters'
 
 const TIPO_ICONS: Record<string, any> = {
   novo_cliente: Rocket,
@@ -366,7 +367,7 @@ export default function ImplementacoesPage() {
                       </TableCell>
                       <TableCell className="text-sm text-slate-600">
                         {getPrevisaoConclusao(impl)
-                          ? new Date(getPrevisaoConclusao(impl)).toLocaleDateString('pt-BR')
+                          ? formatDateOnly(getPrevisaoConclusao(impl))
                           : '—'}
                       </TableCell>
                       <TableCell>

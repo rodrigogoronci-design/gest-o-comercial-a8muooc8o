@@ -31,3 +31,13 @@ export const formatDate = (dateString: string) => {
     year: 'numeric',
   }).format(new Date(dateString))
 }
+
+export const formatDateOnly = (dateString: string | null | undefined): string => {
+  if (!dateString) return ''
+  const datePart = dateString.includes('T') ? dateString.split('T')[0] : dateString
+  if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+    const [year, month, day] = datePart.split('-').map(Number)
+    return new Date(year, month - 1, day).toLocaleDateString('pt-BR')
+  }
+  return new Date(dateString).toLocaleDateString('pt-BR')
+}
