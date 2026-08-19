@@ -18,8 +18,10 @@ import {
   ListChecks,
   AlertCircle,
   Star,
+  FileCheck,
 } from 'lucide-react'
 import { useUserRole } from '@/hooks/use-user-role'
+import { useAuth } from '@/hooks/use-auth'
 import { getOrCreateOnboardingToken, generateOnboardingUrl } from '@/services/onboarding'
 import { getOrCreateConsultoriaToken, generateConsultoriaUrl } from '@/services/consultoria'
 import { ConsultoriaResponses } from '@/components/ConsultoriaResponses'
@@ -50,6 +52,8 @@ import { getContractedModules } from '@/lib/scope-mapping'
 import { getContractedModulesWithBasic } from '@/lib/plan-modules'
 import { generateExecutionTitle } from '@/lib/atendimento-utils'
 import { formatDateOnly } from '@/lib/formatters'
+import { ConsultoriaHandoverSection } from '@/components/ConsultoriaHandoverSection'
+import { updateImplementacao } from '@/services/implementacoes'
 
 const TIPO_CONFIG: Record<string, { label: string; color: string }> = {
   novo_cliente: { label: 'Novo Cliente', color: 'bg-blue-50 text-blue-700 border-blue-200' },
@@ -72,6 +76,7 @@ export default function ImplementacaoDetailPage() {
   const [sharingOnboarding, setSharingOnboarding] = useState(false)
   const [sharingConsultoria, setSharingConsultoria] = useState(false)
   const { isFinancialRestricted } = useUserRole()
+  const { user } = useAuth()
 
   const isTrainingOnly = impl?.tipo === 'treinamento'
 
@@ -230,6 +235,13 @@ export default function ImplementacaoDetailPage() {
         id: 'consultoria-respostas',
         label: 'Respostas',
         icon: <ClipboardList className="h-3.5 w-3.5" />,
+      })
+    }
+    if (impl.tipo === 'consultoria') {
+      items.push({
+        id: 'handover',
+        label: 'Handover',
+        icon: <FileCheck className="h-3.5 w-3.5" />,
       })
     }
     items.push({ id: 'etapas', label: 'Etapas', icon: <ListChecks className="h-3.5 w-3.5" /> })
@@ -667,6 +679,34 @@ export default function ImplementacaoDetailPage() {
               icon={<ClipboardList className="h-4 w-4 text-amber-600" />}
             >
               <ConsultoriaResponses data={impl.consultoria_form_data} />
+            </CollapsibleSection>
+          )}
+
+          {impl.tipo === 'consultoria' && (
+            <CollapsibleSection
+              id="handover"
+              title="Handover Comercial → Execução"
+              icon={<FileCheck className="h-4 w-4 text-amber-600" />}
+            >
+              <ConsultoriaHandoverSection
+                projectId={impl.id}
+                contexto="implementacao"
+                handoverComercial={impl.handover_comercial}
+                handoverAtualizadoEm={impl.handover_atualizado_em}
+                handoverAtualizadoPor={impl.handover_atualizado_por}
+                clienteNome={impl.clientes?.nome || impl.cliente_nome}
+                clienteCnpj={impl.clientes?.cnpj}
+                projetoNome={
+                  impl.consultoria_titulo ||
+                  `Service Logic | ${impl.clientes?.nome || impl.cliente_nome || 'N/A'}`
+                }
+                status={impl.status}
+                currentUserEmail={user?.email}
+                onSave={async (patch) => {
+                  await updateImplementacao(impl.id, patch)
+                }}
+                onSaved={(patch) => setImpl((prev: any) => (prev ? { ...prev, ...patch } : prev))}
+              />
             </CollapsibleSection>
           )}
 

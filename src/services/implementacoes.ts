@@ -623,7 +623,13 @@ export const updatePlanoImplementacao = async (
 
 export const updateImplementacao = async (
   id: string,
-  data: { status?: string; responsavel_id?: string | null },
+  data: {
+    status?: string
+    responsavel_id?: string | null
+    handover_comercial?: string | null
+    handover_atualizado_em?: string | null
+    handover_atualizado_por?: string | null
+  },
 ) => {
   const { data: result, error } = await supabase
     .from('implementacoes' as any)

@@ -232,8 +232,21 @@ export default function CrmConsultoriaDetailPage() {
         defaultOpen
       >
         <ConsultoriaHandoverSection
-          project={project}
+          projectId={project.id}
+          contexto="consultoria"
+          handoverComercial={project.handover_comercial}
+          handoverAtualizadoEm={project.handover_atualizado_em}
+          handoverAtualizadoPor={project.handover_atualizado_por}
+          clienteNome={project.clientes?.nome}
+          clienteCnpj={project.clientes?.cnpj}
+          projetoNome={
+            project.consultoria_titulo || `Service Logic | ${project.clientes?.nome || 'N/A'}`
+          }
+          status={project.status}
           currentUserEmail={user?.email}
+          onSave={async (patch) => {
+            await updateConsultoria(project.id, patch)
+          }}
           onSaved={(patch) => setProject((prev) => (prev ? { ...prev, ...patch } : prev))}
         />
       </CollapsibleSection>
