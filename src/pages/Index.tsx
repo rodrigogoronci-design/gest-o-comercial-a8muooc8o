@@ -51,7 +51,9 @@ export default function Index() {
             .select('id, nome, cnpj, filiais_detalhes, valor_total, created_at, status'),
           supabase
             .from('crm_prospects')
-            .select('id, empresa, contato_nome, status, data_followup, ultima_interacao'),
+            .select(
+              'id, empresa, contato_nome, status, data_followup, ultima_interacao, responsavel_comercial',
+            ),
         ])
 
         setDashboardData({
@@ -75,6 +77,14 @@ export default function Index() {
 
   const openLeads = leads.filter(
     (l) => !['Fechado', 'Perdido', 'Cancelado'].includes(l.status),
+  ).length
+
+  const leadsSemResponsavel = leads.filter(
+    (l) => !l.responsavel_comercial && !['Perdido', 'Cliente Efetivado'].includes(l.status),
+  ).length
+
+  const leadsSemFollowup = leads.filter(
+    (l) => !l.data_followup && !['Perdido', 'Cliente Efetivado'].includes(l.status),
   ).length
 
   const implantacoes = clientes.filter(
@@ -243,6 +253,64 @@ export default function Index() {
           </CardContent>
         </Card>
       </div>
+
+      {(leadsSemResponsavel > 0 || leadsSemFollowup > 0) && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Card className="border-amber-200 bg-amber-50/50 shadow-sm">
+            <CardContent className="p-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 shrink-0">
+                  <AlertCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-amber-950">
+                    {leadsSemResponsavel}{' '}
+                    {leadsSemResponsavel === 1 ? 'lead sem responsável' : 'leads sem responsável'}
+                  </h4>
+                  <p className="text-xs text-amber-800 mt-0.5">
+                    Oportunidades ativas aguardando atribuição de vendedor
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                asChild
+                className="border-amber-300 bg-white hover:bg-amber-100 text-amber-900 shrink-0"
+              >
+                <Link to="/crm">Ver no CRM</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-orange-200 bg-orange-50/50 shadow-sm">
+            <CardContent className="p-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-orange-100 border border-orange-200 flex items-center justify-center text-orange-700 shrink-0">
+                  <AlertCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-orange-950">
+                    {leadsSemFollowup}{' '}
+                    {leadsSemFollowup === 1 ? 'lead sem follow-up' : 'leads sem follow-up'}
+                  </h4>
+                  <p className="text-xs text-orange-800 mt-0.5">
+                    Oportunidades ativas sem data prevista de retorno
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                asChild
+                className="border-orange-300 bg-white hover:bg-orange-100 text-orange-900 shrink-0"
+              >
+                <Link to="/crm">Ver no CRM</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4 shadow-sm border-slate-200/60">

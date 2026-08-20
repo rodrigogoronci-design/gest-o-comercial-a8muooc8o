@@ -47,7 +47,7 @@ import VCardPage from './pages/VCardPage'
 const App = () => (
   <AuthProvider>
     <AppStoreProvider>
-      <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
+      <BrowserRouter>
         <TooltipProvider>
           <Toaster />
           <Sonner />

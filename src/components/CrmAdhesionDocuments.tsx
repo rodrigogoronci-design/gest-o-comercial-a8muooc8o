@@ -36,7 +36,7 @@ export function CrmAdhesionDocuments({
     const cleanDocs = Array.isArray(docs) ? docs : []
     const { error } = await supabase
       .from('crm_prospects')
-      .update({ documentos_adesao: cleanDocs })
+      .update({ documentos_adesao: cleanDocs as any })
       .eq('id', prospectId)
     if (error) {
       console.error('persistToDb error:', error)

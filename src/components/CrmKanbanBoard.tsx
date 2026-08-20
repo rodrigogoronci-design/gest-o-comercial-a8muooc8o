@@ -12,6 +12,7 @@ import {
   MessageSquarePlus,
   Mail,
   Building2,
+  AlertTriangle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -39,7 +40,7 @@ const KANBAN_COLUMNS = [
   'Novo Lead',
   'Contato inicial',
   'Em negociação',
-  'Proposta enviada',
+  'Proposta Enviada',
   'Enviado para Implantação',
   'Cliente Efetivado',
   'Perdido',
@@ -49,6 +50,7 @@ export function CrmKanbanBoard({
   prospects,
   onUpdateStatus,
   onEdit,
+  onDelete,
   onEfetivar,
   onSendProposal,
 }: CrmKanbanBoardProps) {
@@ -161,6 +163,19 @@ export function CrmKanbanBoard({
                       draggedId === p.id && 'opacity-50',
                     )}
                   >
+                    {['Novo Lead', 'Contato inicial', 'Em negociação'].includes(p.status) &&
+                      (!p.responsavel_comercial || !p.data_followup) && (
+                        <div className="mb-2 flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium">
+                          <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                          <span>
+                            {!p.responsavel_comercial && !p.data_followup
+                              ? 'Sem responsável e sem follow-up'
+                              : !p.responsavel_comercial
+                                ? 'Sem responsável comercial'
+                                : 'Sem data de follow-up'}
+                          </span>
+                        </div>
+                      )}
                     <div className="flex justify-between items-start mb-1">
                       <div className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 pr-2 flex flex-col gap-1 w-full">
                         <div className="flex items-center gap-2 flex-wrap">

@@ -325,14 +325,13 @@ export default function CRMPage() {
           tags: p.tags,
           status: 'Ativo',
           contrato_url: p.contrato_assinado_url,
-          documentos_urls: p.proposta_url ? [p.proposta_url] : [],
+          documentos_urls: p.documentos_adesao && p.documentos_adesao.length > 0 ? [...p.documentos_adesao] : (p.proposta_url ? [p.proposta_url] : []),
           valor_implantacao: diag.valor_implantacao || 0,
           valor_total: diag.valor_total || diag.valor_total_mensal || 0,
           desconto_mensalidade: diag.desconto_mensalidade || 0,
           tipo_desconto: diag.tipo_desconto || 'valor',
           modulos: modulosFromDiag,
           plano_id: p.plano_id || null,
-          documentos_urls: [...(p.documentos_adesao || [])],
         },
       ])
       .select()
@@ -426,7 +425,7 @@ export default function CRMPage() {
         status: values.status,
         classificacao: values.classificacao || 'Frio',
         data_followup: values.data_followup || null,
-        observacoes: values.observacoes || null,
+        observacoes: (values as any).observacoes || null,
         data_assinatura: values.data_assinatura || null,
         nome_mae: values.nome_mae || null,
         nome_pai: values.nome_pai || null,
@@ -483,7 +482,7 @@ export default function CRMPage() {
         status: values.status,
         classificacao: values.classificacao || 'Frio',
         data_followup: values.data_followup || null,
-        observacoes: values.observacoes || null,
+        observacoes: (values as any).observacoes || null,
         data_assinatura: values.data_assinatura || null,
         nome_mae: values.nome_mae || null,
         nome_pai: values.nome_pai || null,
@@ -644,7 +643,7 @@ export default function CRMPage() {
       return 'bg-purple-100 text-purple-800 hover:bg-purple-200 border-purple-200'
     if (s === 'Em negociação' || s === 'Em Negociação')
       return 'bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-200'
-    if (s === 'Proposta enviada')
+    if (s === 'Proposta Enviada' || s === 'Proposta enviada')
       return 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200 border-indigo-200'
     if (s === 'Enviado para Implantação')
       return 'bg-teal-100 text-teal-800 hover:bg-teal-200 border-teal-200'
@@ -693,7 +692,7 @@ export default function CRMPage() {
       data_nascimento: editingProspect.data_nascimento || '',
       plano_apresentado: editingProspect.plano_apresentado || '',
       plano_contratado: editingProspect.plano_contratado || '',
-      modulos_contratados: editingProspect.modulos_contratados || [],
+      modulos_contratados: Array.isArray(editingProspect.modulos_contratados) ? editingProspect.modulos_contratados.join(', ') : (editingProspect.modulos_contratados || ''),
       quantidade_uso: editingProspect.quantidade_uso ?? undefined,
       observacoes_comerciais: editingProspect.observacoes_comerciais || '',
       responsavel_comercial: editingProspect.responsavel_comercial || '',
@@ -966,7 +965,7 @@ export default function CRMPage() {
                                   'Novo Lead',
                                   'Contato inicial',
                                   'Em negociação',
-                                  'Proposta enviada',
+                                  'Proposta Enviada',
                                   'Enviado para Implantação',
                                   'Cliente Efetivado',
                                   'Perdido',
@@ -978,7 +977,7 @@ export default function CRMPage() {
                                 <SelectItem value="Novo Lead">Novo Lead</SelectItem>
                                 <SelectItem value="Contato inicial">Contato inicial</SelectItem>
                                 <SelectItem value="Em negociação">Em negociação</SelectItem>
-                                <SelectItem value="Proposta enviada">Proposta enviada</SelectItem>
+                                <SelectItem value="Proposta Enviada">Proposta Enviada</SelectItem>
                                 <SelectItem value="Enviado para Implantação">
                                   Enviado para Implantação
                                 </SelectItem>

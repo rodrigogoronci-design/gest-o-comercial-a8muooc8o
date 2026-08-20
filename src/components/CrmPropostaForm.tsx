@@ -55,7 +55,7 @@ export function CrmPropostaForm({
   const [selectedModuleIds, setSelectedModuleIds] = useState<string[]>([])
 
   const form = useForm<PropostaFormValues>({
-    resolver: zodResolver(propostaFormSchema),
+    resolver: zodResolver(propostaFormSchema) as any,
     defaultValues: {
       valor_implantacao: initialData?.valor_implantacao || 0,
       valor_mensalidade: initialData?.valor_mensalidade || currentMonthlyFee || 0,

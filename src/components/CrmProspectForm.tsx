@@ -72,7 +72,6 @@ const PROSPECT_STATUSES = [
   'Novo Lead',
   'Contato inicial',
   'Em negociação',
-  'Proposta enviada',
   'Enviado para Implantação',
   'Cliente Efetivado',
   'Perdido',
@@ -118,7 +117,7 @@ export function CrmProspectForm({
   const { toast } = useToast()
 
   const form = useForm<ProspectFormValues>({
-    resolver: zodResolver(prospectFormSchema),
+    resolver: zodResolver(prospectFormSchema) as any,
     defaultValues: initialData || {
       tipo_pessoa: defaultTipoPessoa,
       cnpj: '',
@@ -330,7 +329,7 @@ export function CrmProspectForm({
                   : [],
                 proposta_url: values.proposta_url || null,
               }
-              onSubmit(transformed as ProspectFormValues)
+              onSubmit(transformed as any)
             })}
             className="space-y-3 py-2"
           >

@@ -304,7 +304,7 @@ export function CrmDiagnosticoForm({
       const { error } = await supabase
         .from('crm_prospects')
         .update({
-          diagnostico,
+          diagnostico: diagnostico as any,
           plano_id: planoId,
           proposta_url: propostaUrl,
           contrato_assinado_url: contratoUrl,

@@ -157,12 +157,12 @@ function parseModulosData(clienteData: ClienteRelatorioDetalhado | null) {
     return null
   }
 
-  let parsed = modulos
+  let parsed: any = modulos
   if (typeof modulos === 'string') {
     try {
       parsed = JSON.parse(modulos)
     } catch {
-      adicionais = modulos
+      adicionais = (modulos as string)
         .split(',')
         .map((s: string) => s.trim())
         .filter(Boolean)
@@ -173,20 +173,23 @@ function parseModulosData(clienteData: ClienteRelatorioDetalhado | null) {
   if (Array.isArray(parsed)) {
     adicionais = parsed.map(extractName).filter((s): s is string => Boolean(s))
   } else if (typeof parsed === 'object' && parsed !== null) {
-    const objKeys = Object.keys(parsed)
+    const parsedObj = parsed as Record<string, any>
+    const objKeys = Object.keys(parsedObj)
     if (
-      objKeys.some((k) => typeof (parsed as any)[k] === 'boolean') &&
-      !parsed.plano_base &&
-      !Array.isArray(parsed.adicionais)
+      objKeys.some((k) => typeof parsedObj[k] === 'boolean') &&
+      !parsedObj.plano_base &&
+      !Array.isArray(parsedObj.adicionais)
     ) {
       adicionais = objKeys
-        .filter((k) => (parsed as any)[k] === true)
+        .filter((k) => parsedObj[k] === true)
         .map((k) => k.trim())
         .filter(Boolean)
     } else {
-      plano_base = parsed.plano_base || null
-      if (Array.isArray(parsed.adicionais)) {
-        adicionais = parsed.adicionais.map(extractName).filter((s): s is string => Boolean(s))
+      plano_base = parsedObj.plano_base || null
+      if (Array.isArray(parsedObj.adicionais)) {
+        adicionais = parsedObj.adicionais
+          .map(extractName)
+          .filter((s: any): s is string => Boolean(s))
       }
     }
   }
