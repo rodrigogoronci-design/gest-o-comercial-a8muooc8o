@@ -30,6 +30,28 @@ import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase/client'
 import { fetchCnpjData } from '@/services/cnpj'
 
+export const ORIGEM_OPTIONS = [
+  'Indicação',
+  'Site',
+  'LinkedIn',
+  'Instagram',
+  'Feira / Evento',
+  'Parceiro',
+  'Prospecção Ativa',
+  'Outros',
+] as const
+
+export const MOTIVO_PERDA_OPTIONS = [
+  'Preço',
+  'Sem retorno',
+  'Escolheu concorrente',
+  'Adiou a contratação',
+  'Não possui perfil',
+  'Permaneceu no sistema atual',
+  'Desistiu do projeto',
+  'Outros',
+] as const
+
 export const prospectFormSchema = z.object({
   tipo_pessoa: z.string().default('PJ'),
   cnpj: z.string().optional(),
@@ -40,6 +62,8 @@ export const prospectFormSchema = z.object({
   contato_nome: z.string().min(2, 'Obrigatório'),
   telefone: z.string().optional(),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
+  origem: z.string().optional(),
+  origem_outros: z.string().optional(),
   status: z.string().min(1, 'Obrigatório'),
   classificacao: z.string().optional(),
   data_followup: z.string().optional(),
@@ -57,6 +81,8 @@ export const prospectFormSchema = z.object({
   proposta_url: z.string().optional(),
   documentos_adesao: z.any().optional(),
   ata_primeiro_atendimento: z.string().optional(),
+  motivo_perda: z.string().optional(),
+  motivo_perda_outros: z.string().optional(),
 })
 
 export type ProspectFormValues = z.infer<typeof prospectFormSchema>
@@ -99,6 +125,10 @@ export function CrmProspectForm({
   initialData?: Partial<ProspectFormValues> & {
     id?: string
     plano_id?: string | null
+    origem?: string | null
+    origem_outros?: string | null
+    motivo_perda?: string | null
+    motivo_perda_outros?: string | null
     proposta_url?: string | null
     contrato_assinado_url?: string | null
     modulos_contratados?: any
@@ -116,35 +146,54 @@ export function CrmProspectForm({
   )
   const { toast } = useToast()
 
+  const parseOrigemInitial = (origemRaw?: string | null) => {
+    if (!origemRaw) return { origem: '', origem_outros: '' }
+    const match = ORIGEM_OPTIONS.find((opt) => opt === origemRaw)
+    if (match) return { origem: match, origem_outros: '' }
+    if (origemRaw.startsWith('Outros: ')) {
+      return { origem: 'Outros', origem_outros: origemRaw.replace('Outros: ', '') }
+    }
+    if (origemRaw.startsWith('Outros - ')) {
+      return { origem: 'Outros', origem_outros: origemRaw.replace('Outros - ', '') }
+    }
+    return { origem: 'Outros', origem_outros: origemRaw }
+  }
+
+  const initialOrigemParsed = parseOrigemInitial(initialData?.origem)
+
   const form = useForm<ProspectFormValues>({
     resolver: zodResolver(prospectFormSchema) as any,
-    defaultValues: initialData || {
-      tipo_pessoa: defaultTipoPessoa,
-      cnpj: '',
-      cpf: '',
-      empresa: '',
-      razao_social: '',
-      endereco: '',
-      contato_nome: '',
-      telefone: '',
-      email: '',
-      status: 'Lead',
-      classificacao: 'Frio',
-      data_followup: '',
-      data_assinatura: '',
-      nome_mae: '',
-      nome_pai: '',
-      data_nascimento: '',
-      plano_apresentado: '',
-      plano_contratado: '',
-      modulos_contratados: '',
-      quantidade_uso: undefined,
-      observacoes_comerciais: '',
-      responsavel_comercial: '',
-      contrato_assinado: false,
-      proposta_url: '',
-      documentos_adesao: [],
-      ata_primeiro_atendimento: '',
+    defaultValues: {
+      tipo_pessoa: initialData?.tipo_pessoa || defaultTipoPessoa,
+      cnpj: initialData?.cnpj || '',
+      cpf: initialData?.cpf || '',
+      empresa: initialData?.empresa || '',
+      razao_social: initialData?.razao_social || '',
+      endereco: initialData?.endereco || '',
+      contato_nome: initialData?.contato_nome || '',
+      telefone: initialData?.telefone || '',
+      email: initialData?.email || '',
+      origem: initialOrigemParsed.origem,
+      origem_outros: initialOrigemParsed.origem_outros,
+      status: initialData?.status || 'Lead',
+      classificacao: initialData?.classificacao || 'Frio',
+      data_followup: initialData?.data_followup || '',
+      data_assinatura: initialData?.data_assinatura || '',
+      nome_mae: initialData?.nome_mae || '',
+      nome_pai: initialData?.nome_pai || '',
+      data_nascimento: initialData?.data_nascimento || '',
+      plano_apresentado: initialData?.plano_apresentado || '',
+      plano_contratado: initialData?.plano_contratado || '',
+      modulos_contratados: initialData?.modulos_contratados || '',
+      quantidade_uso: initialData?.quantidade_uso ?? undefined,
+      observacoes_comerciais: initialData?.observacoes_comerciais || '',
+      responsavel_comercial: initialData?.responsavel_comercial || '',
+      contrato_assinado: initialData?.contrato_assinado || false,
+      proposta_url: initialData?.proposta_url || '',
+      documentos_adesao: initialData?.documentos_adesao || [],
+      ata_primeiro_atendimento: initialData?.ata_primeiro_atendimento || '',
+      motivo_perda: initialData?.motivo_perda || '',
+      motivo_perda_outros: initialData?.motivo_perda_outros || '',
     },
   })
 
@@ -153,6 +202,7 @@ export function CrmProspectForm({
 
   useEffect(() => {
     if (initialData) {
+      const parsed = parseOrigemInitial(initialData.origem)
       form.reset({
         tipo_pessoa: initialData.tipo_pessoa || defaultTipoPessoa,
         cnpj: initialData.cnpj || '',
@@ -163,6 +213,8 @@ export function CrmProspectForm({
         contato_nome: initialData.contato_nome || '',
         telefone: initialData.telefone || '',
         email: initialData.email || '',
+        origem: parsed.origem,
+        origem_outros: parsed.origem_outros,
         status: initialData.status || 'Lead',
         classificacao: initialData.classificacao || 'Frio',
         data_followup: initialData.data_followup || '',
@@ -184,6 +236,8 @@ export function CrmProspectForm({
           ? initialData.documentos_adesao
           : [],
         ata_primeiro_atendimento: initialData.ata_primeiro_atendimento || '',
+        motivo_perda: initialData.motivo_perda || '',
+        motivo_perda_outros: initialData.motivo_perda_outros || '',
       })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -315,8 +369,16 @@ export function CrmProspectForm({
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit((values) => {
+              let finalOrigem: string | null = values.origem || null
+              if (values.origem === 'Outros') {
+                finalOrigem = values.origem_outros
+                  ? `Outros: ${values.origem_outros.trim()}`
+                  : 'Outros'
+              }
+
               const transformed = {
                 ...values,
+                origem: finalOrigem,
                 modulos_contratados:
                   typeof values.modulos_contratados === 'string'
                     ? values.modulos_contratados
@@ -502,19 +564,65 @@ export function CrmProspectForm({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>E-mail</FormLabel>
-                  <FormControl>
-                    <Input placeholder="email@empresa.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>E-mail</FormLabel>
+                    <FormControl>
+                      <Input placeholder="email@empresa.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="origem"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Origem do Lead</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a origem" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {ORIGEM_OPTIONS.map((opt) => (
+                          <SelectItem key={opt} value={opt}>
+                            {opt}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {form.watch('origem') === 'Outros' && (
+              <FormField
+                control={form.control}
+                name="origem_outros"
+                render={({ field }) => (
+                  <FormItem className="bg-slate-50 p-3 rounded-lg border border-slate-200/80">
+                    <FormLabel>Descrição da Origem</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Descreva a origem do lead (ex: Indicação de Fulano, Podcast, etc.)"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <FormField
@@ -592,7 +700,7 @@ export function CrmProspectForm({
                   <FormLabel>Ata do Primeiro Atendimento</FormLabel>
                   <FormControl>
                     <Textarea
-                      className="resize-none min-h-[160px]"
+                      className="resize-none min-h-[120px]"
                       placeholder="Cole aqui a ata do primeiro atendimento: detalhes da conversa, pontos de negociação, necessidades do cliente, etc."
                       {...field}
                     />
@@ -601,6 +709,22 @@ export function CrmProspectForm({
                 </FormItem>
               )}
             />
+
+            {(form.watch('status') === 'Perdido' || initialData?.motivo_perda) && (
+              <div className="p-3.5 rounded-lg bg-red-50/70 border border-red-200 space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-red-900">
+                  <span>Motivo da Perda (Informativo)</span>
+                </div>
+                <div className="text-sm font-medium text-red-800">
+                  {initialData?.motivo_perda || form.watch('motivo_perda') || 'Não informado'}
+                </div>
+                {(initialData?.motivo_perda_outros || form.watch('motivo_perda_outros')) && (
+                  <p className="text-xs text-red-700 bg-white/80 p-2 rounded border border-red-100 whitespace-pre-wrap">
+                    {initialData?.motivo_perda_outros || form.watch('motivo_perda_outros')}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="pt-4 mt-2 border-t border-slate-200/80 flex justify-end">
               <Button type="submit" disabled={isSubmitting || isLoading}>

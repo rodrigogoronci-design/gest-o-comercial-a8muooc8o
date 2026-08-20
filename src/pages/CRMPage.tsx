@@ -52,7 +52,13 @@ import { useAuth } from '@/hooks/use-auth'
 import { formatDate } from '@/lib/formatters'
 import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-import { CrmProspectForm, ProspectFormValues } from '@/components/CrmProspectForm'
+import {
+  CrmProspectForm,
+  ProspectFormValues,
+  MOTIVO_PERDA_OPTIONS,
+} from '@/components/CrmProspectForm'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import { CrmDiagnosticoForm } from '@/components/CrmDiagnosticoForm'
 import { CrmHistorico } from '@/components/CrmHistorico'
 import { CrmKanbanBoard } from '@/components/CrmKanbanBoard'
@@ -69,6 +75,7 @@ export type CrmProspect = {
   contato_nome: string
   telefone: string | null
   email: string | null
+  origem?: string | null
   status: string
   classificacao: string | null
   data_followup: string | null
@@ -96,6 +103,8 @@ export type CrmProspect = {
   documentos_adesao?: any[] | null
   razao_social?: string | null
   ata_primeiro_atendimento?: string | null
+  motivo_perda?: string | null
+  motivo_perda_outros?: string | null
 }
 
 export default function CRMPage() {
@@ -109,6 +118,13 @@ export default function CRMPage() {
   const [editingTab, setEditingTab] = useState<string>('dados')
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [perdidoDialogData, setPerdidoDialogData] = useState<{
+    prospectId: string
+    oldStatus: string
+    prospectName: string
+  } | null>(null)
+  const [selectedMotivoPerda, setSelectedMotivoPerda] = useState<string>('')
+  const [motivoPerdaOutrosText, setMotivoPerdaOutrosText] = useState<string>('')
   const [sendingEmailData, setSendingEmailData] = useState<{
     prospect: CrmProspect
     proposal: any | null
@@ -325,7 +341,12 @@ export default function CRMPage() {
           tags: p.tags,
           status: 'Ativo',
           contrato_url: p.contrato_assinado_url,
-          documentos_urls: p.documentos_adesao && p.documentos_adesao.length > 0 ? [...p.documentos_adesao] : (p.proposta_url ? [p.proposta_url] : []),
+          documentos_urls:
+            p.documentos_adesao && p.documentos_adesao.length > 0
+              ? [...p.documentos_adesao]
+              : p.proposta_url
+                ? [p.proposta_url]
+                : [],
           valor_implantacao: diag.valor_implantacao || 0,
           valor_total: diag.valor_total || diag.valor_total_mensal || 0,
           desconto_mensalidade: diag.desconto_mensalidade || 0,
@@ -422,6 +443,7 @@ export default function CRMPage() {
         contato_nome: values.contato_nome,
         telefone: values.telefone || null,
         email: values.email || null,
+        origem: values.origem || null,
         status: values.status,
         classificacao: values.classificacao || 'Frio',
         data_followup: values.data_followup || null,
@@ -441,6 +463,8 @@ export default function CRMPage() {
         documentos_adesao: values.documentos_adesao || [],
         razao_social: values.razao_social || null,
         ata_primeiro_atendimento: values.ata_primeiro_atendimento || null,
+        motivo_perda: values.motivo_perda || null,
+        motivo_perda_outros: values.motivo_perda_outros || null,
       },
     ])
     setIsSubmitting(false)
@@ -479,6 +503,7 @@ export default function CRMPage() {
         contato_nome: values.contato_nome,
         telefone: values.telefone || null,
         email: values.email || null,
+        origem: values.origem || null,
         status: values.status,
         classificacao: values.classificacao || 'Frio',
         data_followup: values.data_followup || null,
@@ -498,6 +523,8 @@ export default function CRMPage() {
         documentos_adesao: values.documentos_adesao || [],
         razao_social: values.razao_social || null,
         ata_primeiro_atendimento: values.ata_primeiro_atendimento || null,
+        motivo_perda: values.motivo_perda || null,
+        motivo_perda_outros: values.motivo_perda_outros || null,
         ultima_interacao:
           statusChanged || classifChanged
             ? new Date().toISOString()
@@ -562,22 +589,58 @@ export default function CRMPage() {
     fetchProspects()
   }
 
-  const updateStatus = async (id: string, newStatus: string, oldStatus: string) => {
+  const handleStatusChangeRequest = (id: string, newStatus: string, oldStatus: string) => {
     if (newStatus === oldStatus) return
+
+    if (newStatus === 'Perdido') {
+      const prospect = prospects.find((p) => p.id === id)
+      setPerdidoDialogData({
+        prospectId: id,
+        oldStatus,
+        prospectName: prospect?.empresa || 'Prospect',
+      })
+      setSelectedMotivoPerda('')
+      setMotivoPerdaOutrosText('')
+      return
+    }
+
+    executeStatusUpdate(id, newStatus, oldStatus)
+  }
+
+  const executeStatusUpdate = async (
+    id: string,
+    newStatus: string,
+    oldStatus: string,
+    extraFields?: { motivo_perda?: string; motivo_perda_outros?: string | null },
+  ) => {
+    const updatePayload: any = {
+      status: newStatus,
+      ultima_interacao: new Date().toISOString(),
+      ...(extraFields || {}),
+    }
+
     const { data, error } = await supabase
       .from('crm_prospects')
-      .update({ status: newStatus, ultima_interacao: new Date().toISOString() })
+      .update(updatePayload)
       .eq('id', id)
       .select()
       .single()
+
     if (error) return toast({ title: 'Erro', description: error.message, variant: 'destructive' })
+
+    const detalhesInteracao =
+      newStatus === 'Perdido' && extraFields?.motivo_perda
+        ? `Lead marcado como Perdido. Motivo: ${extraFields.motivo_perda}${
+            extraFields.motivo_perda_outros ? ` (${extraFields.motivo_perda_outros})` : ''
+          }`
+        : `Lead movido da fase "${oldStatus}" para "${newStatus}".`
 
     await supabase.from('crm_historico_interacoes').insert([
       {
         prospect_id: id,
         tipo_contato: 'Sistema',
         resumo: `Mudança de Fase: ${newStatus}`,
-        detalhes: `Lead movido da fase "${oldStatus}" para "${newStatus}".`,
+        detalhes: detalhesInteracao,
       },
     ])
 
@@ -600,9 +663,50 @@ export default function CRMPage() {
           description: 'Cadastre o CNPJ do prospect para ativar o cliente automaticamente.',
         })
       }
+    } else if (newStatus === 'Perdido') {
+      toast({
+        title: 'Lead marcado como Perdido',
+        description: `Motivo registrado: ${extraFields?.motivo_perda}`,
+      })
     }
 
     fetchProspects()
+  }
+
+  const handleConfirmPerdido = async () => {
+    if (!perdidoDialogData) return
+    if (!selectedMotivoPerda) {
+      toast({
+        title: 'Motivo obrigatório',
+        description: 'Por favor, selecione um motivo para a perda do lead.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    if (selectedMotivoPerda === 'Outros' && !motivoPerdaOutrosText.trim()) {
+      toast({
+        title: 'Descrição obrigatória',
+        description: 'Por favor, descreva o motivo da perda.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    const extraFields = {
+      motivo_perda: selectedMotivoPerda,
+      motivo_perda_outros:
+        selectedMotivoPerda === 'Outros' ? motivoPerdaOutrosText.slice(0, 500).trim() : null,
+    }
+
+    await executeStatusUpdate(
+      perdidoDialogData.prospectId,
+      'Perdido',
+      perdidoDialogData.oldStatus,
+      extraFields,
+    )
+
+    setPerdidoDialogData(null)
   }
 
   const updateClassificacao = async (
@@ -682,7 +786,10 @@ export default function CRMPage() {
       contato_nome: editingProspect.contato_nome,
       telefone: editingProspect.telefone || '',
       email: editingProspect.email || '',
+      origem: editingProspect.origem || '',
       status: editingProspect.status,
+      motivo_perda: editingProspect.motivo_perda || '',
+      motivo_perda_outros: editingProspect.motivo_perda_outros || '',
       classificacao: editingProspect.classificacao || 'Frio',
       data_followup: editingProspect.data_followup || '',
       observacoes: editingProspect.observacoes || '',
@@ -692,7 +799,9 @@ export default function CRMPage() {
       data_nascimento: editingProspect.data_nascimento || '',
       plano_apresentado: editingProspect.plano_apresentado || '',
       plano_contratado: editingProspect.plano_contratado || '',
-      modulos_contratados: Array.isArray(editingProspect.modulos_contratados) ? editingProspect.modulos_contratados.join(', ') : (editingProspect.modulos_contratados || ''),
+      modulos_contratados: Array.isArray(editingProspect.modulos_contratados)
+        ? editingProspect.modulos_contratados.join(', ')
+        : editingProspect.modulos_contratados || '',
       quantidade_uso: editingProspect.quantidade_uso ?? undefined,
       observacoes_comerciais: editingProspect.observacoes_comerciais || '',
       responsavel_comercial: editingProspect.responsavel_comercial || '',
@@ -778,7 +887,7 @@ export default function CRMPage() {
       {viewMode === 'kanban' ? (
         <CrmKanbanBoard
           prospects={filtered}
-          onUpdateStatus={updateStatus}
+          onUpdateStatus={handleStatusChangeRequest}
           onEdit={(p, tab = 'dados') => {
             setEditingProspect(p)
             setEditingTab(tab)
@@ -786,6 +895,15 @@ export default function CRMPage() {
           onDelete={handleDelete}
           onEfetivar={handleEfetivarCliente}
           onSendProposal={handleSendProposalClick}
+          onRequestPerdido={(p) => {
+            setPerdidoDialogData({
+              prospectId: p.id,
+              oldStatus: p.status,
+              prospectName: p.empresa,
+            })
+            setSelectedMotivoPerda(p.motivo_perda || '')
+            setMotivoPerdaOutrosText(p.motivo_perda_outros || '')
+          }}
         />
       ) : (
         <Card className="border-slate-200/60 shadow-sm">
@@ -949,8 +1067,10 @@ export default function CRMPage() {
                           </TableCell>
                           <TableCell>
                             <Select
-                              defaultValue={p.status}
-                              onValueChange={(val) => updateStatus(p.id, val, p.status)}
+                              value={p.status}
+                              onValueChange={(val) =>
+                                handleStatusChangeRequest(p.id, val, p.status)
+                              }
                             >
                               <SelectTrigger
                                 className={cn(
@@ -1333,6 +1453,99 @@ export default function CRMPage() {
             <Button onClick={handleConfirmSendProposal} disabled={sendingEmail} className="gap-2">
               <Send className="h-4 w-4" />
               {sendingEmail ? 'Enviando...' : 'Enviar E-mail'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog obrigatório para motivo de perda */}
+      <Dialog
+        open={!!perdidoDialogData}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPerdidoDialogData(null)
+            setSelectedMotivoPerda('')
+            setMotivoPerdaOutrosText('')
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="text-red-700 flex items-center gap-2">
+              Motivo da Perda do Lead
+            </DialogTitle>
+            <DialogDescription>
+              Informe o motivo pelo qual a negociação com{' '}
+              <strong>{perdidoDialogData?.prospectName}</strong> foi perdida.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="motivo-select" className="text-sm font-medium text-slate-800">
+                Motivo *
+              </Label>
+              <Select
+                value={selectedMotivoPerda}
+                onValueChange={(val) => setSelectedMotivoPerda(val)}
+              >
+                <SelectTrigger id="motivo-select">
+                  <SelectValue placeholder="Selecione o motivo da perda" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MOTIVO_PERDA_OPTIONS.map((opt) => (
+                    <SelectItem key={opt} value={opt}>
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedMotivoPerda === 'Outros' && (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="motivo-outros" className="text-sm font-medium text-slate-800">
+                    Descrição do Motivo *
+                  </Label>
+                  <span className="text-[11px] text-muted-foreground">
+                    {motivoPerdaOutrosText.length}/500
+                  </span>
+                </div>
+                <Textarea
+                  id="motivo-outros"
+                  placeholder="Descreva detalhadamente o motivo da perda..."
+                  maxLength={500}
+                  value={motivoPerdaOutrosText}
+                  onChange={(e) => setMotivoPerdaOutrosText(e.target.value)}
+                  className="min-h-[100px] resize-none text-sm"
+                />
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => {
+                setPerdidoDialogData(null)
+                setSelectedMotivoPerda('')
+                setMotivoPerdaOutrosText('')
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              type="button"
+              onClick={handleConfirmPerdido}
+              disabled={
+                !selectedMotivoPerda ||
+                (selectedMotivoPerda === 'Outros' && !motivoPerdaOutrosText.trim())
+              }
+            >
+              Confirmar Perda
             </Button>
           </DialogFooter>
         </DialogContent>

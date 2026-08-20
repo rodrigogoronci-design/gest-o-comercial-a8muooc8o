@@ -13,6 +13,8 @@ import {
   Mail,
   Building2,
   AlertTriangle,
+  Compass,
+  XCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -34,6 +36,7 @@ interface CrmKanbanBoardProps {
   onDelete: (id: string) => void
   onEfetivar: (prospect: CrmProspect) => void
   onSendProposal?: (prospect: CrmProspect) => void
+  onRequestPerdido?: (prospect: CrmProspect) => void
 }
 
 const KANBAN_COLUMNS = [
@@ -53,6 +56,7 @@ export function CrmKanbanBoard({
   onDelete,
   onEfetivar,
   onSendProposal,
+  onRequestPerdido,
 }: CrmKanbanBoardProps) {
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [proposalsByProspect, setProposalsByProspect] = useState<Record<string, number>>({})
@@ -199,6 +203,14 @@ export function CrmKanbanBoard({
                             </span>
                           )}
                         </div>
+                        {p.origem && (
+                          <div className="flex items-center gap-1 text-[11px] text-slate-500 font-normal">
+                            <Compass className="h-3 w-3 text-slate-400 shrink-0" />
+                            <span className="truncate" title={`Origem: ${p.origem}`}>
+                              {p.origem}
+                            </span>
+                          </div>
+                        )}
                         {p.tags && p.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-0.5">
                             {p.tags.map((tag) => (
@@ -236,6 +248,14 @@ export function CrmKanbanBoard({
                               className="text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50"
                             >
                               <UserCheck className="mr-2 h-4 w-4" /> Efetivar Cliente
+                            </DropdownMenuItem>
+                          )}
+                          {p.status !== 'Perdido' && onRequestPerdido && (
+                            <DropdownMenuItem
+                              onClick={() => onRequestPerdido(p)}
+                              className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                            >
+                              <XCircle className="mr-2 h-4 w-4" /> Marcar como Perdido
                             </DropdownMenuItem>
                           )}
                           {p.cliente_id && (
@@ -286,6 +306,17 @@ export function CrmKanbanBoard({
                     </div>
 
                     <div className="text-sm text-slate-600 mb-3">{p.contato_nome}</div>
+
+                    {p.status === 'Perdido' && p.motivo_perda && (
+                      <div className="mb-2.5 px-2 py-1.5 rounded-md bg-red-50/80 border border-red-200 text-red-800 text-[11px] flex flex-col gap-0.5">
+                        <span className="font-semibold text-red-900">Motivo: {p.motivo_perda}</span>
+                        {p.motivo_perda_outros && (
+                          <span className="text-[10px] text-red-700 italic line-clamp-2">
+                            "{p.motivo_perda_outros}"
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     <div className="flex flex-col gap-2 mt-auto">
                       <div className="flex items-center justify-between gap-2">
