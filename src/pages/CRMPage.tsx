@@ -105,6 +105,7 @@ export type CrmProspect = {
   ata_primeiro_atendimento?: string | null
   motivo_perda?: string | null
   motivo_perda_outros?: string | null
+  registro_teste?: boolean | null
 }
 
 export default function CRMPage() {
@@ -465,7 +466,8 @@ export default function CRMPage() {
         ata_primeiro_atendimento: values.ata_primeiro_atendimento || null,
         motivo_perda: values.motivo_perda || null,
         motivo_perda_outros: values.motivo_perda_outros || null,
-      },
+        registro_teste: values.registro_teste ?? false,
+      } as any,
     ])
     setIsSubmitting(false)
     if (error)
@@ -525,11 +527,12 @@ export default function CRMPage() {
         ata_primeiro_atendimento: values.ata_primeiro_atendimento || null,
         motivo_perda: values.motivo_perda || null,
         motivo_perda_outros: values.motivo_perda_outros || null,
+        registro_teste: values.registro_teste ?? false,
         ultima_interacao:
           statusChanged || classifChanged
             ? new Date().toISOString()
             : editingProspect.ultima_interacao,
-      })
+      } as any)
       .eq('id', editingProspect.id)
 
     if (!error) {
@@ -812,6 +815,7 @@ export default function CRMPage() {
       documentos_adesao: editingProspect.documentos_adesao || [],
       razao_social: editingProspect.razao_social || '',
       ata_primeiro_atendimento: editingProspect.ata_primeiro_atendimento || '',
+      registro_teste: editingProspect.registro_teste ?? false,
     }
   }, [editingProspect])
 

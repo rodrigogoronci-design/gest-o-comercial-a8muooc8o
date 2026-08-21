@@ -6,11 +6,13 @@ import { CrmDiagnosticoForm } from './CrmDiagnosticoForm'
 import { CrmHistorico } from './CrmHistorico'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2, UploadCloud, User, Building2 } from 'lucide-react'
+import { Loader2, UploadCloud, User, Building2, FlaskConical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { useUserRole } from '@/hooks/use-user-role'
 import {
   Select,
   SelectContent,
@@ -83,6 +85,7 @@ export const prospectFormSchema = z.object({
   ata_primeiro_atendimento: z.string().optional(),
   motivo_perda: z.string().optional(),
   motivo_perda_outros: z.string().optional(),
+  registro_teste: z.boolean().optional(),
 })
 
 export type ProspectFormValues = z.infer<typeof prospectFormSchema>
@@ -135,6 +138,7 @@ export function CrmProspectForm({
     documentos_adesao?: any[]
     razao_social?: string | null
     ata_primeiro_atendimento?: string | null
+    registro_teste?: boolean | null
   }
   defaultTipoPessoa?: 'PJ' | 'PF'
   onPropostaChange?: () => void
@@ -145,6 +149,9 @@ export function CrmProspectForm({
     'dados',
   )
   const { toast } = useToast()
+  const { role } = useUserRole()
+  const isAdmin = role === 'Admin'
+  const isEditing = !!initialData?.id
 
   const parseOrigemInitial = (origemRaw?: string | null) => {
     if (!origemRaw) return { origem: '', origem_outros: '' }
@@ -194,6 +201,7 @@ export function CrmProspectForm({
       ata_primeiro_atendimento: initialData?.ata_primeiro_atendimento || '',
       motivo_perda: initialData?.motivo_perda || '',
       motivo_perda_outros: initialData?.motivo_perda_outros || '',
+      registro_teste: initialData?.registro_teste ?? false,
     },
   })
 
@@ -238,6 +246,7 @@ export function CrmProspectForm({
         ata_primeiro_atendimento: initialData.ata_primeiro_atendimento || '',
         motivo_perda: initialData.motivo_perda || '',
         motivo_perda_outros: initialData.motivo_perda_outros || '',
+        registro_teste: initialData.registro_teste ?? false,
       })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -723,6 +732,38 @@ export function CrmProspectForm({
                     {initialData?.motivo_perda_outros || form.watch('motivo_perda_outros')}
                   </p>
                 )}
+              </div>
+            )}
+
+            {isEditing && isAdmin && (
+              <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label
+                    htmlFor="registro_teste_toggle"
+                    className="text-sm font-medium text-slate-800 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <FlaskConical className="h-4 w-4 text-slate-500" />
+                    Registro de teste
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Exclui este lead de métricas, gráficos e indicadores comerciais.
+                  </p>
+                </div>
+                <FormField
+                  control={form.control}
+                  name="registro_teste"
+                  render={({ field }) => (
+                    <FormItem className="space-y-0">
+                      <FormControl>
+                        <Switch
+                          id="registro_teste_toggle"
+                          checked={field.value || false}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
               </div>
             )}
 

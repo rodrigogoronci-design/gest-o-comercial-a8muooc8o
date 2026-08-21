@@ -53,7 +53,8 @@ export default function Index() {
             .from('crm_prospects')
             .select(
               'id, empresa, contato_nome, status, data_followup, ultima_interacao, responsavel_comercial',
-            ),
+            )
+            .neq('registro_teste', true),
         ])
 
         setDashboardData({
