@@ -22,12 +22,11 @@ export type Atividade = {
 }
 
 export const getAtividades = async () => {
-  const { data, error } = await supabase
-    .from('atividades_comerciais' as any)
+  const { data, error } = await (supabase.from('atividades_comerciais') as any)
     .select('*, clientes(nome)')
     .order('data_atividade', { ascending: false })
   if (error) throw error
-  return data as Atividade[]
+  return data as unknown as Atividade[]
 }
 
 export const getClientesParaAtividades = async () => {

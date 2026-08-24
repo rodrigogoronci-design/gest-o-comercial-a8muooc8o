@@ -329,8 +329,7 @@ export async function fetchClientsForLookup(): Promise<
 export async function fetchExistingUtilizationForCompetencia(
   competencia: string,
 ): Promise<Map<string, SLUtilizacaoMensal>> {
-  const { data, error } = await supabase
-    .from('sl_utilizacao_mensal')
+  const { data, error } = await (supabase.from('sl_utilizacao_mensal') as any)
     .select('*')
     .eq('competencia', competencia)
     .eq('vigente', true)
@@ -354,8 +353,7 @@ export async function fetchExistingUtilizationForCompetencia(
  * Verifica se o hash do arquivo já foi importado anteriormente.
  */
 export async function checkFileHashExists(hash: string): Promise<SLImportacao | null> {
-  const { data, error } = await supabase
-    .from('sl_importacoes')
+  const { data, error } = await (supabase.from('sl_importacoes') as any)
     .select('*')
     .eq('hash_arquivo', hash)
     .order('created_at', { ascending: false })
@@ -370,8 +368,7 @@ export async function checkFileHashExists(hash: string): Promise<SLImportacao | 
  * Verifica se já existe importação concluída para a competência informada.
  */
 export async function checkCompetenciaExists(competencia: string): Promise<SLImportacao | null> {
-  const { data, error } = await supabase
-    .from('sl_importacoes')
+  const { data, error } = await (supabase.from('sl_importacoes') as any)
     .select('*')
     .eq('competencia', competencia)
     .eq('status', 'concluida')
@@ -663,8 +660,7 @@ export async function commitUtilizationImport({
   }
 
   // 1. Criar registro da nova importação em sl_importacoes
-  const { data: novaImportacao, error: errImp } = await supabase
-    .from('sl_importacoes')
+  const { data: novaImportacao, error: errImp } = await (supabase.from('sl_importacoes') as any)
     .insert({
       arquivo_nome: analysis.fileName,
       hash_arquivo: analysis.fileHash,
@@ -691,8 +687,9 @@ export async function commitUtilizationImport({
   const novaImportacaoId = novaImportacao.id
 
   // 2. Se houver importação anterior vigente da mesma competência, buscar registros vigentes anteriores
-  const { data: registrosAntigos, error: errAntigos } = await supabase
-    .from('sl_utilizacao_mensal')
+  const { data: registrosAntigos, error: errAntigos } = await (
+    supabase.from('sl_utilizacao_mensal') as any
+  )
     .select('*')
     .eq('competencia', competencia)
     .eq('vigente', true)
@@ -708,8 +705,7 @@ export async function commitUtilizationImport({
 
   // Se havia registros vigentes, marcá-los como vigente = false
   if (registrosAntigos && registrosAntigos.length > 0) {
-    const { error: errUpdateVigente } = await supabase
-      .from('sl_utilizacao_mensal')
+    const { error: errUpdateVigente } = await (supabase.from('sl_utilizacao_mensal') as any)
       .update({ vigente: false, updated_at: new Date().toISOString() })
       .eq('competencia', competencia)
       .eq('vigente', true)
@@ -722,8 +718,7 @@ export async function commitUtilizationImport({
 
     // Se havia importação concluída anterior, atualiza status para 'substituida'
     if (analysis.importacaoExistentePorCompetencia?.id) {
-      await supabase
-        .from('sl_importacoes')
+      await (supabase.from('sl_importacoes') as any)
         .update({ status: 'substituida' })
         .eq('id', analysis.importacaoExistentePorCompetencia.id)
     }
@@ -759,8 +754,9 @@ export async function commitUtilizationImport({
 
   for (let i = 0; i < utilizacaoToInsert.length; i += batchSize) {
     const batch = utilizacaoToInsert.slice(i, i + batchSize)
-    const { data: batchResult, error: errBatch } = await supabase
-      .from('sl_utilizacao_mensal')
+    const { data: batchResult, error: errBatch } = await (
+      supabase.from('sl_utilizacao_mensal') as any
+    )
       .insert(batch)
       .select('id, cnpj')
 
@@ -832,7 +828,9 @@ export async function commitUtilizationImport({
     if (historicosToInsert.length > 0) {
       for (let i = 0; i < historicosToInsert.length; i += batchSize) {
         const batchHist = historicosToInsert.slice(i, i + batchSize)
-        const { error: errHist } = await supabase.from('sl_historico_revisoes').insert(batchHist)
+        const { error: errHist } = await (supabase.from('sl_historico_revisoes') as any).insert(
+          batchHist,
+        )
 
         if (errHist) {
           console.error('Erro ao gravar histórico de revisões (auditoria):', errHist)
@@ -848,8 +846,7 @@ export async function commitUtilizationImport({
  * Busca histórico de importações realizadas
  */
 export async function fetchImportacoesList(): Promise<SLImportacao[]> {
-  const { data, error } = await supabase
-    .from('sl_importacoes')
+  const { data, error } = await (supabase.from('sl_importacoes') as any)
     .select('*')
     .order('created_at', { ascending: false })
 
@@ -861,8 +858,7 @@ export async function fetchImportacoesList(): Promise<SLImportacao[]> {
  * Busca histórico de revisões / auditoria
  */
 export async function fetchHistoricoRevisoes(competencia?: string): Promise<any[]> {
-  let query = supabase
-    .from('sl_historico_revisoes')
+  let query = (supabase.from('sl_historico_revisoes') as any)
     .select('*')
     .order('created_at', { ascending: false })
     .limit(100)

@@ -1,23 +1,21 @@
 import { supabase } from '@/lib/supabase/client'
 
 export async function getOrCreateOnboardingToken(implId: string): Promise<string> {
-  const { data } = await supabase
-    .from('implementacoes' as any)
+  const { data } = await (supabase.from('implementacoes') as any)
     .select('token_onboarding')
     .eq('id', implId)
     .single()
 
-  if (data?.token_onboarding) return data.token_onboarding
+  if ((data as any)?.token_onboarding) return (data as any).token_onboarding
 
   const newToken = crypto.randomUUID()
-  const { data: updated, error } = await supabase
-    .from('implementacoes' as any)
+  const { data: updated, error } = await (supabase.from('implementacoes') as any)
     .update({ token_onboarding: newToken })
     .eq('id', implId)
     .select('token_onboarding')
     .single()
   if (error) throw error
-  return updated.token_onboarding
+  return (updated as any).token_onboarding
 }
 
 export function generateOnboardingUrl(token: string): string {

@@ -21,18 +21,16 @@ const SELECT_FIELDS =
   'id, cliente_id, consultoria_titulo, consultoria_texto, consultoria_form_data, consultoria_token, status, created_at, clientes(nome, cnpj), handover_comercial, handover_atualizado_em, handover_atualizado_por'
 
 export async function getConsultorias(): Promise<ConsultoriaProject[]> {
-  const { data, error } = await supabase
-    .from('implementacoes' as any)
+  const { data, error } = await (supabase.from('implementacoes') as any)
     .select(SELECT_FIELDS)
     .eq('tipo', 'consultoria')
     .order('created_at', { ascending: false })
   if (error) throw error
-  return (data || []) as ConsultoriaProject[]
+  return (data || []) as unknown as ConsultoriaProject[]
 }
 
 export async function getConsultoria(id: string): Promise<ConsultoriaProject | null> {
-  const { data, error } = await supabase
-    .from('implementacoes' as any)
+  const { data, error } = await (supabase.from('implementacoes') as any)
     .select(SELECT_FIELDS)
     .eq('id', id)
     .single()
@@ -40,12 +38,11 @@ export async function getConsultoria(id: string): Promise<ConsultoriaProject | n
     if (error.code === 'PGRST116') return null
     throw error
   }
-  return data as ConsultoriaProject
+  return data as unknown as ConsultoriaProject
 }
 
 export async function createConsultoria(clienteId: string): Promise<ConsultoriaProject> {
-  const { data, error } = await supabase
-    .from('implementacoes' as any)
+  const { data, error } = await (supabase.from('implementacoes') as any)
     .insert({
       cliente_id: clienteId,
       tipo: 'consultoria',
@@ -57,7 +54,7 @@ export async function createConsultoria(clienteId: string): Promise<ConsultoriaP
     .select(SELECT_FIELDS)
     .single()
   if (error) throw error
-  return data as ConsultoriaProject
+  return data as unknown as ConsultoriaProject
 }
 
 export interface ConsultoriaUpdateInput {

@@ -65,10 +65,11 @@ export default function OnboardingPage() {
       if (error || !data) {
         setInvalid(true)
       } else {
-        setImplData(data)
-        const existingParam = data.dados_parametrizacao || {}
+        const rawData = data as any
+        setImplData(rawData)
+        const existingParam = rawData?.dados_parametrizacao || {}
         const existingOnboarding = existingParam.onboarding
-        const rawModulos = existingParam.modulos_adicionais || data.modulos_novos || []
+        const rawModulos = existingParam.modulos_adicionais || rawData?.modulos_novos || []
         setForm({
           contato_nome: existingOnboarding?.contato_nome || '',
           contato_telefone: existingOnboarding?.contato_telefone || '',

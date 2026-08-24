@@ -125,13 +125,13 @@ export const getClienteRelatorioDetalhado = async (
     vencimento_mensal: data.vencimento_mensal,
     data_assinatura: data.data_assinatura,
     status: data.status,
-    modulos: data.modulos,
+    modulos: data.modulos as any,
     plano_id: data.plano_id,
     plano_descricao: (data.planos_saude as any)?.descricao ?? null,
     plano_codigo: (data.planos_saude as any)?.codigo ?? null,
     com_coparticipacao: (data.planos_saude as any)?.com_coparticipacao ?? null,
     quantidade_filiais: data.quantidade_filiais,
     modo_implantacao: data.modo_implantacao,
-    filiais_detalhes: data.filiais_detalhes,
+    filiais_detalhes: data.filiais_detalhes as any,
   }
 }

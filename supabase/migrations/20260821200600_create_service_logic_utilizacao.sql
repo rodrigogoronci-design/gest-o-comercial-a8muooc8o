@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS public.sl_utilizacao_mensal (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Unique index for vigente = true records (Regra de unicidade corrigida)
+-- Unique index for vigente = true records
 CREATE UNIQUE INDEX IF NOT EXISTS uq_sl_utilizacao_vigente
 ON public.sl_utilizacao_mensal (cnpj, competencia)
 WHERE vigente = true;
@@ -64,7 +64,7 @@ CREATE INDEX IF NOT EXISTS idx_sl_utilizacao_mensal_cnpj ON public.sl_utilizacao
 CREATE INDEX IF NOT EXISTS idx_sl_utilizacao_mensal_cliente ON public.sl_utilizacao_mensal(cliente_id);
 CREATE INDEX IF NOT EXISTS idx_sl_utilizacao_mensal_importacao ON public.sl_utilizacao_mensal(importacao_id);
 
--- 3. Table sl_historico_revisoes
+-- 3. Table sl_historico_revisoes (IMUTÁVEL: sem UPDATE, sem DELETE)
 CREATE TABLE IF NOT EXISTS public.sl_historico_revisoes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   importacao_id_antiga uuid NOT NULL REFERENCES public.sl_importacoes(id) ON DELETE RESTRICT,
@@ -100,7 +100,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 
--- Helper function to check if current user is authorized (authenticated and NOT restricted/implantação)
+-- Helper function to check if current user is authorized (Admin, Gestor, Colaborador)
 CREATE OR REPLACE FUNCTION public.sl_is_authorized_read()
 RETURNS boolean AS $$
 BEGIN
@@ -112,41 +112,59 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 
--- RLS Policies for sl_importacoes:
--- Admin: full access (SELECT, INSERT, UPDATE, DELETE)
--- Authorized users (Gestor, Colaborador): SELECT only
--- Implantação / Anonymous: NO access
+-- 5. RLS Policies for sl_importacoes:
+-- Admin: SELECT, INSERT, UPDATE apenas. Sem DELETE.
+-- Gestor e Colaborador: somente SELECT.
+-- Implantação e anônimo: sem acesso.
 DROP POLICY IF EXISTS "sl_importacoes_admin_all" ON public.sl_importacoes;
-CREATE POLICY "sl_importacoes_admin_all" ON public.sl_importacoes
-  FOR ALL TO authenticated
-  USING (public.sl_is_admin())
-  WITH CHECK (public.sl_is_admin());
+DROP POLICY IF EXISTS "sl_importacoes_admin_select" ON public.sl_importacoes;
+CREATE POLICY "sl_importacoes_admin_select" ON public.sl_importacoes
+  FOR SELECT TO authenticated USING (public.sl_is_admin());
+
+DROP POLICY IF EXISTS "sl_importacoes_admin_insert" ON public.sl_importacoes;
+CREATE POLICY "sl_importacoes_admin_insert" ON public.sl_importacoes
+  FOR INSERT TO authenticated WITH CHECK (public.sl_is_admin());
+
+DROP POLICY IF EXISTS "sl_importacoes_admin_update" ON public.sl_importacoes;
+CREATE POLICY "sl_importacoes_admin_update" ON public.sl_importacoes
+  FOR UPDATE TO authenticated USING (public.sl_is_admin()) WITH CHECK (public.sl_is_admin());
 
 DROP POLICY IF EXISTS "sl_importacoes_authorized_read" ON public.sl_importacoes;
 CREATE POLICY "sl_importacoes_authorized_read" ON public.sl_importacoes
-  FOR SELECT TO authenticated
-  USING (public.sl_is_authorized_read());
+  FOR SELECT TO authenticated USING (public.sl_is_authorized_read());
 
--- RLS Policies for sl_utilizacao_mensal:
+-- 6. RLS Policies for sl_utilizacao_mensal:
+-- Admin: SELECT, INSERT, UPDATE apenas. Sem DELETE.
+-- Gestor e Colaborador: somente SELECT.
 DROP POLICY IF EXISTS "sl_utilizacao_mensal_admin_all" ON public.sl_utilizacao_mensal;
-CREATE POLICY "sl_utilizacao_mensal_admin_all" ON public.sl_utilizacao_mensal
-  FOR ALL TO authenticated
-  USING (public.sl_is_admin())
-  WITH CHECK (public.sl_is_admin());
+DROP POLICY IF EXISTS "sl_utilizacao_mensal_admin_select" ON public.sl_utilizacao_mensal;
+CREATE POLICY "sl_utilizacao_mensal_admin_select" ON public.sl_utilizacao_mensal
+  FOR SELECT TO authenticated USING (public.sl_is_admin());
+
+DROP POLICY IF EXISTS "sl_utilizacao_mensal_admin_insert" ON public.sl_utilizacao_mensal;
+CREATE POLICY "sl_utilizacao_mensal_admin_insert" ON public.sl_utilizacao_mensal
+  FOR INSERT TO authenticated WITH CHECK (public.sl_is_admin());
+
+DROP POLICY IF EXISTS "sl_utilizacao_mensal_admin_update" ON public.sl_utilizacao_mensal;
+CREATE POLICY "sl_utilizacao_mensal_admin_update" ON public.sl_utilizacao_mensal
+  FOR UPDATE TO authenticated USING (public.sl_is_admin()) WITH CHECK (public.sl_is_admin());
 
 DROP POLICY IF EXISTS "sl_utilizacao_mensal_authorized_read" ON public.sl_utilizacao_mensal;
 CREATE POLICY "sl_utilizacao_mensal_authorized_read" ON public.sl_utilizacao_mensal
-  FOR SELECT TO authenticated
-  USING (public.sl_is_authorized_read());
+  FOR SELECT TO authenticated USING (public.sl_is_authorized_read());
 
--- RLS Policies for sl_historico_revisoes:
+-- 7. RLS Policies for sl_historico_revisoes (IMUTÁVEL):
+-- Admin: somente SELECT e INSERT. Sem UPDATE, sem DELETE.
+-- Gestor e Colaborador: somente SELECT.
 DROP POLICY IF EXISTS "sl_historico_revisoes_admin_all" ON public.sl_historico_revisoes;
-CREATE POLICY "sl_historico_revisoes_admin_all" ON public.sl_historico_revisoes
-  FOR ALL TO authenticated
-  USING (public.sl_is_admin())
-  WITH CHECK (public.sl_is_admin());
+DROP POLICY IF EXISTS "sl_historico_revisoes_admin_select" ON public.sl_historico_revisoes;
+CREATE POLICY "sl_historico_revisoes_admin_select" ON public.sl_historico_revisoes
+  FOR SELECT TO authenticated USING (public.sl_is_admin());
+
+DROP POLICY IF EXISTS "sl_historico_revisoes_admin_insert" ON public.sl_historico_revisoes;
+CREATE POLICY "sl_historico_revisoes_admin_insert" ON public.sl_historico_revisoes
+  FOR INSERT TO authenticated WITH CHECK (public.sl_is_admin());
 
 DROP POLICY IF EXISTS "sl_historico_revisoes_authorized_read" ON public.sl_historico_revisoes;
 CREATE POLICY "sl_historico_revisoes_authorized_read" ON public.sl_historico_revisoes
-  FOR SELECT TO authenticated
-  USING (public.sl_is_authorized_read());
+  FOR SELECT TO authenticated USING (public.sl_is_authorized_read());

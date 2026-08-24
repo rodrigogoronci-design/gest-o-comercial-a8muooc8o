@@ -14,13 +14,12 @@ export interface ImplementacaoArquivo {
 }
 
 export async function getArquivos(implementacaoId: string): Promise<ImplementacaoArquivo[]> {
-  const { data, error } = await supabase
-    .from('implementacao_arquivos' as any)
+  const { data, error } = await (supabase.from('implementacao_arquivos') as any)
     .select('*')
     .eq('implementacao_id', implementacaoId)
     .order('created_at', { ascending: false })
   if (error) throw error
-  return (data || []) as ImplementacaoArquivo[]
+  return (data || []) as unknown as ImplementacaoArquivo[]
 }
 
 export async function uploadArquivo(
@@ -36,8 +35,7 @@ export async function uploadArquivo(
     .from(BUCKET)
     .upload(filePath, file, { upsert: false })
   if (uploadError) throw uploadError
-  const { data, error } = await supabase
-    .from('implementacao_arquivos' as any)
+  const { data, error } = await (supabase.from('implementacao_arquivos') as any)
     .insert({
       implementacao_id: implementacaoId,
       file_path: filePath,
@@ -48,7 +46,7 @@ export async function uploadArquivo(
     .select()
     .single()
   if (error) throw error
-  return data as ImplementacaoArquivo
+  return data as unknown as ImplementacaoArquivo
 }
 
 export async function deleteArquivo(id: string, filePath: string): Promise<void> {

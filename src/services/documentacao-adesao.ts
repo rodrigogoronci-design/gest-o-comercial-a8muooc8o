@@ -130,7 +130,9 @@ export async function updateItemStatus(
 ): Promise<void> {
   const update: Record<string, any> = { status, updated_at: new Date().toISOString() }
   if (observacoes !== undefined) update.observacoes = observacoes
-  const { error } = await supabase.from('documentacao_adesao').update(update).eq('id', itemId)
+  const { error } = await (supabase.from('documentacao_adesao') as any)
+    .update(update)
+    .eq('id', itemId)
   if (error) throw error
 }
 

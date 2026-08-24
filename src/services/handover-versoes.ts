@@ -44,15 +44,14 @@ export async function createHandoverVersao(params: {
     payload.implementacao_id = null
   }
 
-  const { data, error } = await supabase
-    .from('handover_versoes' as any)
+  const { data, error } = await (supabase.from('handover_versoes') as any)
     .insert(payload)
     .select(
       'id, implementacao_id, consultoria_id, conteudo, responsavel_comercial, responsavel_execucao, criado_em, criado_por',
     )
     .single()
   if (error) throw error
-  return data as HandoverVersao
+  return (data as unknown as HandoverVersao) || null
 }
 
 /**
@@ -64,8 +63,7 @@ export async function listHandoverVersoes(
   limit = 5,
 ): Promise<HandoverVersao[]> {
   const col = contexto === 'implementacao' ? 'implementacao_id' : 'consultoria_id'
-  const { data, error } = await supabase
-    .from('handover_versoes' as any)
+  const { data, error } = await (supabase.from('handover_versoes') as any)
     .select(
       'id, implementacao_id, consultoria_id, conteudo, responsavel_comercial, responsavel_execucao, criado_em, criado_por',
     )
@@ -73,5 +71,5 @@ export async function listHandoverVersoes(
     .order('criado_em', { ascending: false })
     .limit(limit)
   if (error) throw error
-  return (data || []) as HandoverVersao[]
+  return (data || []) as unknown as HandoverVersao[]
 }

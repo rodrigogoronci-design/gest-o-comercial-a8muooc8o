@@ -1672,7 +1672,8 @@ export default function ContractGeneratorPage() {
         })
       }
 
-      const existingAdicionais = existingClient?.modulos?.adicionais || []
+      const existingModules = (existingClient?.modulos as any) || {}
+      const existingAdicionais = existingModules.adicionais || []
       const newAdicionais = [...existingAdicionais]
       adicionais.forEach((a) => {
         if (!newAdicionais.find((ea: any) => ea.name === a.name)) {
@@ -1686,11 +1687,11 @@ export default function ContractGeneratorPage() {
             ? customPlanName || 'Plano Personalizado'
             : planData?.name !== 'Nenhum'
               ? planData?.name
-              : existingClient?.modulos?.plano_base || selectedPlan,
+              : existingModules.plano_base || selectedPlan,
         ...(selectedPlan === 'custom'
           ? { is_custom_plan: true, modulos_inclusos: customPlanModules }
           : {}),
-        filiais: (existingClient?.modulos?.filiais || 0) + additionalBranches,
+        filiais: (existingModules.filiais || 0) + additionalBranches,
         adicionais: newAdicionais.map((a: any) => {
           const m = MODULES.find((mod) => mod.name === a.name)
           if (m && moduleGracePeriods[m.id]) {

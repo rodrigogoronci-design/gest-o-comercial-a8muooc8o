@@ -189,13 +189,14 @@ export const ensureTreinamentoEtapasForImpl = async (
   implementacaoId: string,
 ): Promise<string[]> => {
   // Carrega a implementação com suas etapas
-  const { data: impl, error: implError } = await supabase
-    .from('implementacoes' as any)
+  const { data: rawImpl, error: implError } = await (supabase.from('implementacoes') as any)
     .select('id, tipo, cliente_id, modulos_novos, dados_parametrizacao')
     .eq('id', implementacaoId)
     .maybeSingle()
   if (implError) throw implError
-  if (!impl) return []
+  if (!rawImpl) return []
+
+  const impl = rawImpl as any
 
   // Apenas implementações do tipo "novo_cliente" possuem o ciclo de treinamentos
   if (impl.tipo && impl.tipo !== 'novo_cliente') return []
@@ -238,8 +239,7 @@ export const ensureTreinamentoEtapasForImpl = async (
           modulos_adicionais: parseModulosToList(cliente.modulos),
           dados_replicados_em: dados.dados_replicados_em || new Date().toISOString(),
         }
-        const { error: updError } = await supabase
-          .from('implementacoes' as any)
+        const { error: updError } = await (supabase.from('implementacoes') as any)
           .update({ dados_parametrizacao: dadosAtualizados })
           .eq('id', implementacaoId)
         if (updError) throw updError
@@ -377,14 +377,13 @@ async function renumberEtapas(implementacaoId: string, etapas: any[]): Promise<v
 }
 
 export const updateObservacoesGerais = async (implementacaoId: string, observacoes: string) => {
-  const { data: current, error: fetchError } = await supabase
-    .from('implementacoes' as any)
+  const { data: current, error: fetchError } = await (supabase.from('implementacoes') as any)
     .select('observacoes_gerais')
     .eq('id', implementacaoId)
     .single()
   if (fetchError) throw fetchError
 
-  const existing = (current?.observacoes_gerais || '').trim()
+  const existing = ((current as any)?.observacoes_gerais || '').trim()
   const now = new Date().toLocaleString('pt-BR')
 
   let combined: string
@@ -394,8 +393,7 @@ export const updateObservacoesGerais = async (implementacaoId: string, observaco
     combined = `--- ${now} ---\n${observacoes.trim()}`
   }
 
-  const { data, error } = await supabase
-    .from('implementacoes' as any)
+  const { data, error } = await (supabase.from('implementacoes') as any)
     .update({ observacoes_gerais: combined })
     .eq('id', implementacaoId)
     .select()
@@ -477,7 +475,7 @@ export const createImplementacao = async (params: {
   const etapasTemplate =
     tipo === 'novo_cliente' ? buildNovoClienteTemplate(modulosNovos) : getEtapasForTipo(tipo)
   const etapas = etapasTemplate.map((e) => ({
-    implementacao_id: data.id,
+    implementacao_id: (data as any).id,
     titulo: e.titulo,
     categoria: e.categoria,
     ordem: e.ordem,
@@ -502,36 +500,33 @@ async function recalcProgress(implementacaoId: string) {
   const concluded = etapas.filter((e: any) => e.status === 'Concluída').length
   const progresso = total > 0 ? Math.round((concluded / total) * 100) : 0
 
-  const { data: impl } = await supabase
-    .from('implementacoes' as any)
+  const { data: impl } = await (supabase.from('implementacoes') as any)
     .select('status')
     .eq('id', implementacaoId)
     .single()
 
-  if (impl?.status === 'Encerrado') return
+  if ((impl as any)?.status === 'Encerrado') return
 
   const preserveStatuses = ['consultoria_recebido', 'onboarding_recebido', 'onboarding_completed']
   const newStatus =
     progresso === 100
       ? 'Finalizada'
-      : preserveStatuses.includes(impl?.status)
-        ? impl.status
+      : preserveStatuses.includes((impl as any)?.status)
+        ? (impl as any).status
         : 'Em andamento'
-  await supabase
-    .from('implementacoes' as any)
+  await (supabase.from('implementacoes') as any)
     .update({ progresso, status: newStatus })
     .eq('id', implementacaoId)
 }
 
 export const updateEtapa = async (id: string, etapa: any) => {
-  const { data, error } = await supabase
-    .from('implementacao_etapas' as any)
+  const { data, error } = await (supabase.from('implementacao_etapas') as any)
     .update(etapa)
     .eq('id', id)
     .select()
     .single()
   if (error) throw error
-  if (data?.implementacao_id) await recalcProgress(data.implementacao_id)
+  if ((data as any)?.implementacao_id) await recalcProgress((data as any).implementacao_id)
   return data
 }
 
@@ -569,13 +564,12 @@ export const updatePlanoImplementacao = async (
   implementacaoId: string,
   input: PlanoImplementacaoInput,
 ) => {
-  const { data: impl } = await supabase
-    .from('implementacoes' as any)
+  const { data: impl } = await (supabase.from('implementacoes') as any)
     .select('dados_parametrizacao')
     .eq('id', implementacaoId)
     .maybeSingle()
 
-  const current = (impl?.dados_parametrizacao as Record<string, any>) || {}
+  const current = ((impl as any)?.dados_parametrizacao as Record<string, any>) || {}
 
   // Garante que o módulo básico esteja sempre presente em modulos_copiados
   let modulosCopiados =
@@ -653,25 +647,25 @@ export const updateClienteModulos = async (clienteId: string, modulos: string[])
 }
 
 export const syncModulosToCliente = async (implementacaoId: string) => {
-  const { data: impl, error: implError } = await supabase
-    .from('implementacoes' as any)
+  const { data: impl, error: implError } = await (supabase.from('implementacoes') as any)
     .select('modulos_novos, cliente_id')
     .eq('id', implementacaoId)
     .single()
   if (implError) throw implError
-  if (!impl.cliente_id) throw new Error('Implementação sem cliente vinculado')
+  const implTyped = impl as any
+  if (!implTyped.cliente_id) throw new Error('Implementação sem cliente vinculado')
 
   const { data: cliente, error: clienteError } = await supabase
     .from('clientes')
     .select('modulos')
-    .eq('id', impl.cliente_id)
+    .eq('id', implTyped.cliente_id)
     .single()
   if (clienteError) throw clienteError
 
   const currentModulos = parseModulosToList(cliente.modulos)
-  const novosModulos = (impl.modulos_novos || []) as string[]
+  const novosModulos = (implTyped.modulos_novos || []) as string[]
   const merged = Array.from(new Set([...currentModulos, ...novosModulos]))
-  await updateClienteModulos(impl.cliente_id, merged)
+  await updateClienteModulos(implTyped.cliente_id, merged)
   return merged
 }
 
@@ -811,7 +805,7 @@ export const createImplementacaoFromAtendimento = async (params: {
       ? buildNovoClienteTemplate(modulosNovos)
       : getEtapasForTipo(params.tipo)
   const etapas = etapasTemplate.map((e) => ({
-    implementacao_id: data.id,
+    implementacao_id: (data as any).id,
     titulo: e.titulo,
     categoria: e.categoria,
     ordem: e.ordem,

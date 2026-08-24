@@ -22,7 +22,7 @@ export async function getOrCreateAvaliacaoTreinamento(
     .eq('implementacao_id', implementacaoId)
     .maybeSingle()
 
-  if (existing) return existing as AvaliacaoTreinamento
+  if (existing) return existing as unknown as AvaliacaoTreinamento
 
   const { data, error } = await supabase
     .from('avaliacoes_treinamento' as any)
@@ -31,7 +31,7 @@ export async function getOrCreateAvaliacaoTreinamento(
     .single()
 
   if (error) throw error
-  return data as AvaliacaoTreinamento
+  return data as unknown as AvaliacaoTreinamento
 }
 
 export async function getAvaliacaoByImplementacao(
@@ -44,7 +44,7 @@ export async function getAvaliacaoByImplementacao(
     .maybeSingle()
 
   if (error) throw error
-  return data as AvaliacaoTreinamento | null
+  return (data as unknown as AvaliacaoTreinamento) || null
 }
 
 export async function markAvaliacaoEnviada(avaliacaoId: string): Promise<void> {

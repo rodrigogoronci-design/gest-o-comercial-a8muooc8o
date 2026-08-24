@@ -18,5 +18,12 @@ export function RoleGuard({ children }: { children: React.ReactNode }) {
     return <Navigate to="/implementacoes" replace />
   }
 
+  if (
+    (location.pathname === '/utilizacao' || location.pathname.startsWith('/utilizacao/')) &&
+    !['Admin', 'Gestor', 'Colaborador'].includes(role || '')
+  ) {
+    return <Navigate to="/" replace />
+  }
+
   return <>{children}</>
 }

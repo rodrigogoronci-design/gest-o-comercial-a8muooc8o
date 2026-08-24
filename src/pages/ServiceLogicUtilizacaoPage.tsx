@@ -20,9 +20,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 
+import { isUtilizacaoAllowed } from '@/lib/roles'
+
 export default function ServiceLogicUtilizacaoPage() {
   const { user } = useAuth()
-  const { role, isFinancialRestricted } = useUserRole()
+  const { role, loading: roleLoading, isFinancialRestricted } = useUserRole()
   const { toast } = useToast()
 
   const [activeTab, setActiveTab] = useState<'importar' | 'historico'>('importar')
@@ -30,6 +32,30 @@ export default function ServiceLogicUtilizacaoPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const isAdmin = role === 'Admin'
+  const isAuthorized = isUtilizacaoAllowed(role)
+
+  if (roleLoading) {
+    return (
+      <div className="container mx-auto py-12 flex justify-center items-center">
+        <p className="text-sm text-slate-500">Verificando permissões de acesso...</p>
+      </div>
+    )
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div className="container mx-auto py-12 max-w-lg space-y-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Acesso Restrito</AlertTitle>
+          <AlertDescription>
+            Você não possui permissão para acessar o Módulo de Utilização Service Logic. Apenas
+            perfis Administrador, Gestor e Colaborador têm acesso autorizado.
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
 
   const handleAnalysisReady = (analysis: SLPreImportAnalysis) => {
     setCurrentAnalysis(analysis)

@@ -25,12 +25,23 @@ export function isImplantacaoRole(role: string | null | undefined): boolean {
   return role === ROLE_IMPLANTACAO
 }
 
+export function isUtilizacaoAllowed(role: string | null | undefined): boolean {
+  if (!role) return false
+  return [ROLE_ADMIN, ROLE_GESTOR, ROLE_COLABORADOR].includes(role)
+}
+
 export function shouldShowNavItem(href: string, role: string | null | undefined): boolean {
+  if (href === '/utilizacao') {
+    return isUtilizacaoAllowed(role)
+  }
   if (!isImplantacaoRole(role)) return true
   return ALLOWED_NAV_ITEMS_FOR_IMPLANTACAO.includes(href)
 }
 
 export function isRouteAllowedForRole(pathname: string, role: string | null | undefined): boolean {
+  if (pathname === '/utilizacao' || pathname.startsWith('/utilizacao/')) {
+    return isUtilizacaoAllowed(role)
+  }
   if (!isImplantacaoRole(role)) return true
   return ALLOWED_ROUTES_FOR_IMPLANTACAO.some(
     (route) => pathname === route || pathname.startsWith(route + '/'),
