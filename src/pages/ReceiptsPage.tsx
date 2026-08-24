@@ -820,7 +820,7 @@ export default function ReceiptsPage() {
                         tickLine={false}
                         dx={-10}
                       />
-                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <ChartTooltip content={(<ChartTooltipContent />) as any} />
                       <Bar
                         dataKey="previsto"
                         fill="var(--color-previsto)"

@@ -25,7 +25,11 @@ export const getAgendaImplantacoes = async (): Promise<AgendaImplantacaoItem[]> 
   const items: AgendaImplantacaoItem[] = []
 
   for (const impl of data || []) {
-    const clienteNome = impl.clientes?.nome || impl.cliente_nome || 'N/A'
+    const clienteNome =
+      (impl.clientes as any)?.nome ||
+      (Array.isArray(impl.clientes) ? (impl.clientes[0] as any)?.nome : null) ||
+      impl.cliente_nome ||
+      'N/A'
     const tipo = impl.tipo || 'novo_cliente'
 
     for (const etapa of impl.implementacao_etapas || []) {

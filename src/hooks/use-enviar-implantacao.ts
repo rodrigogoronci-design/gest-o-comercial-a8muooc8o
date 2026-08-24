@@ -14,7 +14,7 @@ export function useEnviarImplantacao() {
   }) => {
     setIsLoading(true)
     try {
-      const data = await createImplementacao(params)
+      const data: any = await createImplementacao(params)
       toast.success('Implantação criada com sucesso!')
       navigate(`/implementacoes/${data.id}`)
       return data

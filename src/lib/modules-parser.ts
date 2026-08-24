@@ -1,4 +1,4 @@
-type ModuloData = any[] | null | undefined
+type ModuloData = any
 
 export function parseModulosToList(modulos: ModuloData): string[] {
   if (!modulos) return []

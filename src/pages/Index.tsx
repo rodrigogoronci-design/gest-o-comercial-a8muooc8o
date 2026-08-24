@@ -337,7 +337,7 @@ export default function Index() {
                         <Cell key={`cell-${index}`} fill={entry.fill} />
                       ))}
                     </Pie>
-                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartTooltip content={(<ChartTooltipContent />) as any} />
                   </PieChart>
                 </ResponsiveContainer>
               </ChartContainer>
@@ -513,7 +513,7 @@ export default function Index() {
                         </div>
                         <p className="text-sm font-medium text-slate-800">{status}</p>
                       </div>
-                      <span className="text-lg font-bold text-slate-900">{count}</span>
+                      <span className="text-lg font-bold text-slate-900">{String(count)}</span>
                     </div>
                   ))}
                 </div>

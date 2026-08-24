@@ -73,13 +73,14 @@ export function ImplementacaoEditSheet({ open, onOpenChange, implementacaoId, on
         getImplementacao(implementacaoId),
         getColaboradores(),
       ])
-      setImpl(data)
+      const implData = data as any
+      setImpl(implData)
       setColaboradores(colabs)
-      setImplStatus(data?.status || 'Em andamento')
-      setResponsavelId(data?.responsavel_id || '')
-      setModules(parseModulosToList(data?.clientes?.modulos))
+      setImplStatus(implData?.status || 'Em andamento')
+      setResponsavelId(implData?.responsavel_id || '')
+      setModules(parseModulosToList(implData?.clientes?.modulos))
       setStages(
-        [...(data?.implementacao_etapas || [])]
+        [...(implData?.implementacao_etapas || [])]
           .sort((a: any, b: any) => a.ordem - b.ordem)
           .map((e: any) => ({ ...e })),
       )

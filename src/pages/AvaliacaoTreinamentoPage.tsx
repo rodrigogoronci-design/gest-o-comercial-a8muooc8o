@@ -39,11 +39,12 @@ export default function AvaliacaoTreinamentoPage() {
       if (error || !data) {
         setInvalid(true)
       } else {
-        setAvalData(data)
-        if (data.status === 'avaliada') {
+        const d = data as any
+        setAvalData(d)
+        if (d.status === 'avaliada') {
           setAlreadyEvaluated(true)
-          setRating(data.nota || 0)
-          setComments(data.comentarios || '')
+          setRating(d.nota || 0)
+          setComments(d.comentarios || '')
         }
       }
       setLoading(false)

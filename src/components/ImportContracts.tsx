@@ -403,7 +403,9 @@ export function ImportContracts() {
                       <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                     )}
                     {f.status === 'error' && (
-                      <AlertCircle className="h-4 w-4 text-red-500" title={f.error} />
+                      <span title={f.error}>
+                        <AlertCircle className="h-4 w-4 text-red-500" />
+                      </span>
                     )}
                   </div>
                 </div>

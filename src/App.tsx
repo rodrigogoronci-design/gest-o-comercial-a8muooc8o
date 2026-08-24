@@ -43,6 +43,7 @@ import OnboardingPage from './pages/OnboardingPage'
 import ConsultoriaFormPage from './pages/ConsultoriaFormPage'
 import AvaliacaoTreinamentoPage from './pages/AvaliacaoTreinamentoPage'
 import VCardPage from './pages/VCardPage'
+import ServiceLogicUtilizacaoPage from './pages/ServiceLogicUtilizacaoPage'
 
 const App = () => (
   <AuthProvider>
@@ -70,6 +71,7 @@ const App = () => (
               <Route path="/colaboradores" element={<ColaboradoresPage />} />
               <Route path="/crm" element={<CRMPage />} />
               <Route path="/clientes" element={<ClientsPage />} />
+              <Route path="/utilizacao" element={<ServiceLogicUtilizacaoPage />} />
 
               <Route path="/planos" element={<PlansPage />} />
               <Route path="/contratos" element={<ContractGeneratorPage />} />

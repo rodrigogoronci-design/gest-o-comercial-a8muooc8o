@@ -76,7 +76,7 @@ export function DigitalCertificateField({
     try {
       const encrypted = await encryptPassword(password.trim())
       const parsed = parseDados(dadosParametrizacao) || {}
-      const updatedDados = {
+      const updatedDados: Record<string, any> = {
         ...parsed,
         senha_certificado_digital: encrypted,
       }

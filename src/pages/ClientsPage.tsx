@@ -484,8 +484,8 @@ export default function ClientsPage() {
         .update({
           tipo: 'Upsell',
           modulos: mods,
-        })
-        .eq('solicitacao_id', solicitacao.id)
+        } as any)
+        .eq('solicitacao_id', (solicitacao as any).id)
 
       toast.success('Proposta de Upsell gerada com sucesso!')
       setIsUpsellModalOpen(false)
@@ -559,8 +559,11 @@ export default function ClientsPage() {
         }
 
         const updatedAdicionais = [
-          ...(currentModulosRaw.adicionais || []),
-          ...novosModulos.map((m: any) => ({ name: m.name, price: m.price })),
+          ...(Array.isArray(currentModulosRaw.adicionais) ? currentModulosRaw.adicionais : []),
+          ...(Array.isArray(novosModulos) ? novosModulos : []).map((m: any) => ({
+            name: m.name,
+            price: m.price,
+          })),
         ]
         novoValorTotal = viewingClient.totalValue + (hist?.valor_adicional || sol.valor || 0)
 
@@ -898,7 +901,7 @@ export default function ClientsPage() {
   }
 
   const form = useForm<ClientFormValues>({
-    resolver: zodResolver(clientSchema),
+    resolver: zodResolver(clientSchema) as any,
     defaultValues: {
       nome: '',
       cnpj: '',
@@ -1000,7 +1003,7 @@ export default function ClientsPage() {
           .limit(10000),
         supabase.from('planos_saude').select('id, codigo'),
       ])
-      setClientes(data)
+      setClientes((data || []) as any)
       setReceipts(receiptsData || [])
       setDbPlanos(planosData || [])
     } catch (error) {
@@ -1608,11 +1611,11 @@ Obrigada,`
 
       // First, check if it already exists or create it
       let targetImplId: string | null = null
-      const existing = await getImplementacaoByCliente(client.id)
+      const existing: any = await getImplementacaoByCliente(client.id)
       if (existing) {
         targetImplId = existing.id
       } else {
-        const implData = await createImplementacao({
+        const implData: any = await createImplementacao({
           cliente_id: client.id,
           responsavel_id: colabId,
         })

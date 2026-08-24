@@ -36,6 +36,7 @@ const NAV_ITEMS = [
   { title: 'CRM', href: '/crm', icon: Briefcase },
   { title: 'Captação', href: '/crm/captacao', icon: Target },
   { title: 'Clientes', href: '/clientes', icon: Building2 },
+  { title: 'Utilização SL', href: '/utilizacao', icon: FileText },
   { title: '🚀 Implantações', href: '/implementacoes', icon: Rocket },
   { title: 'Agenda de Implantações', href: '/agenda-implantacoes', icon: CalendarClock },
   { title: 'Contratos', href: '/contratos', icon: FileText },

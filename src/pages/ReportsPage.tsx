@@ -160,7 +160,7 @@ export default function ReportsPage() {
                           axisLine={false}
                           tickFormatter={(value) => `R$ ${value}`}
                         />
-                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <ChartTooltip content={(<ChartTooltipContent />) as any} />
                         <Bar
                           dataKey="fixo"
                           fill="var(--color-fixo)"
@@ -222,7 +222,7 @@ export default function ReportsPage() {
                           tickLine={false}
                           axisLine={false}
                         />
-                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <ChartTooltip content={(<ChartTooltipContent />) as any} />
                         <Line
                           type="monotone"
                           dataKey="tempoMedio"
