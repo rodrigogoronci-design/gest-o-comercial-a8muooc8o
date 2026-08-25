@@ -416,6 +416,8 @@ export async function analyzeSpreadsheet(
   let cnpjsNaoLocalizados = 0
   let cnpjsMultiplos = 0
   let linhasComDivergenciaFormula = 0
+  let linhasComDivergenciaCobranca = 0
+  let linhasComContratadoZerado = 0
   let linhasNovas = 0
   let linhasIdenticas = 0
   let linhasDiferentes = 0
@@ -434,6 +436,25 @@ export async function analyzeSpreadsheet(
       mapping.valor_por_doc !== undefined ? parseCellNumeric(row[mapping.valor_por_doc]) : 0
     const valorCobranca =
       mapping.valor_cobranca !== undefined ? parseCellNumeric(row[mapping.valor_cobranca]) : 0
+
+    // Nova validação de cobrança (regra do excedente)
+    const valorCobrancaEsperado =
+      valorPorDoc > 0 ? Math.max(totalEmitido - contratado, 0) * valorPorDoc : 0
+
+    // Divergência de cobrança só é calculada se houver ValorPorDoc > 0 e Contratado > 0
+    // Se Contratado = 0, não é erro de cobrança — é "limite não informado"
+    const contratadoZerado = contratado === 0 && valorPorDoc > 0
+    const divergenciaCobranca =
+      !contratadoZerado && valorPorDoc > 0
+        ? Math.abs(valorCobranca - valorCobrancaEsperado) > 0.005
+        : false
+
+    if (divergenciaCobranca) {
+      linhasComDivergenciaCobranca++
+    }
+    if (contratadoZerado) {
+      linhasComContratadoZerado++
+    }
 
     const cte = mapping.cte !== undefined ? parseCellNumeric(row[mapping.cte]) : 0
     const cteCancelado =
@@ -540,6 +561,9 @@ export async function analyzeSpreadsheet(
       saldo,
       valorPorDoc,
       valorCobranca,
+      valorCobrancaEsperado,
+      divergenciaCobranca,
+      contratadoZerado,
       cte,
       cteCancelado,
       nfe,
@@ -623,6 +647,8 @@ export async function analyzeSpreadsheet(
     cnpjsNaoLocalizados,
     cnpjsMultiplos,
     linhasComDivergenciaFormula,
+    linhasComDivergenciaCobranca,
+    linhasComContratadoZerado,
     hashJaExiste: !!importacaoByHash,
     importacaoExistentePorHash: importacaoByHash,
     competenciaJaExiste: !!importacaoByCompetencia,

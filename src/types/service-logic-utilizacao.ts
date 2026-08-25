@@ -69,6 +69,9 @@ export interface SLParsedRow {
   saldo: number
   valorPorDoc: number
   valorCobranca: number
+  valorCobrancaEsperado: number
+  divergenciaCobranca: boolean
+  contratadoZerado: boolean
   cte: number
   cteCancelado: number
   nfe: number
@@ -118,6 +121,8 @@ export interface SLPreImportAnalysis {
   cnpjsNaoLocalizados: number
   cnpjsMultiplos: number
   linhasComDivergenciaFormula: number
+  linhasComDivergenciaCobranca: number
+  linhasComContratadoZerado: number
   hashJaExiste: boolean
   importacaoExistentePorHash?: SLImportacao | null
   competenciaJaExiste: boolean

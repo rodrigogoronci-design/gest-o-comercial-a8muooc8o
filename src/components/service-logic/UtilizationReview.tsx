@@ -39,6 +39,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { formatCurrency, formatCNPJ } from '@/lib/formatters'
 import { SLPreImportAnalysis, SLParsedRow } from '@/types/service-logic-utilizacao'
@@ -58,7 +59,14 @@ export const UtilizationReview: React.FC<UtilizationReviewProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<
-    'all' | 'novas' | 'identicas' | 'diferentes' | 'divergencia' | 'nao_vinculados' | 'multiplos'
+    | 'all'
+    | 'novas'
+    | 'identicas'
+    | 'diferentes'
+    | 'divergencia'
+    | 'cobranca_divergente'
+    | 'nao_vinculados'
+    | 'multiplos'
   >('all')
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [motivoReimportacao, setMotivoReimportacao] = useState('')
@@ -80,6 +88,7 @@ export const UtilizationReview: React.FC<UtilizationReviewProps> = ({
     if (statusFilter === 'novas') return row.statusComparacao === 'novo'
     if (statusFilter === 'identicas') return row.statusComparacao === 'identico'
     if (statusFilter === 'diferentes') return row.statusComparacao === 'diferente'
+    if (statusFilter === 'cobranca_divergente') return row.divergenciaCobranca
     if (statusFilter === 'divergencia') return row.divergenciaFormula
     if (statusFilter === 'nao_vinculados') return !row.clienteId
     if (statusFilter === 'multiplos') return row.isMultiplo
@@ -291,6 +300,16 @@ export const UtilizationReview: React.FC<UtilizationReviewProps> = ({
               >
                 Não Vinculados ({analysis.cnpjsNaoLocalizados})
               </Button>
+              {analysis.linhasComDivergenciaCobranca > 0 && (
+                <Button
+                  variant={statusFilter === 'cobranca_divergente' ? 'destructive' : 'outline'}
+                  size="sm"
+                  className="text-xs h-8 text-amber-700 border-amber-300"
+                  onClick={() => setStatusFilter('cobranca_divergente')}
+                >
+                  Cobrança Divergente ({analysis.linhasComDivergenciaCobranca})
+                </Button>
+              )}
               {analysis.linhasComDivergenciaFormula > 0 && (
                 <Button
                   variant={statusFilter === 'divergencia' ? 'destructive' : 'outline'}
@@ -424,7 +443,33 @@ export const UtilizationReview: React.FC<UtilizationReviewProps> = ({
                           </TableCell>
 
                           <TableCell className="text-right font-semibold text-slate-900">
-                            {formatCurrency(row.valorCobranca)}
+                            {row.contratadoZerado ? (
+                              <Badge
+                                variant="outline"
+                                className="bg-slate-100 text-slate-600 border-slate-200 text-[10px] font-medium"
+                              >
+                                Limite não informado
+                              </Badge>
+                            ) : row.divergenciaCobranca ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="inline-flex items-center justify-end gap-1 text-amber-600 font-bold cursor-help">
+                                      <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                                      <span>{formatCurrency(row.valorCobranca)}</span>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">
+                                      Esperado: {formatCurrency(row.valorCobrancaEsperado)} (fórmula
+                                      do excedente)
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              formatCurrency(row.valorCobranca)
+                            )}
                           </TableCell>
 
                           {/* Status de comparação com o banco */}
