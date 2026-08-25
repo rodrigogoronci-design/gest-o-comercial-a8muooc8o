@@ -8,8 +8,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -17,8 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Loader2, Save, Upload, FileText, X } from 'lucide-react'
+import { Loader2, Save, Upload, FileText, X, Building2 } from 'lucide-react'
 import { AdvancedDatePicker } from '@/components/ui/advanced-date-picker'
+import { formatCNPJ } from '@/lib/formatters'
 import {
   createAtendimento,
   uploadAtendimentoDocumento,
@@ -48,6 +51,11 @@ export function AtendimentoFormDialog({
   const [dataAtendimento, setDataAtendimento] = useState('')
   const [tipoSolicitacao, setTipoSolicitacao] = useState<SolicitacaoTipo | ''>('')
   const [moduloSelecionado, setModuloSelecionado] = useState('')
+  const [filialNome, setFilialNome] = useState('')
+  const [filialCnpj, setFilialCnpj] = useState('')
+  const [filialDfeIncluso, setFilialDfeIncluso] = useState(false)
+  const [filialValorMensalidade, setFilialValorMensalidade] = useState('')
+  const [filialValorDfe, setFilialValorDfe] = useState('')
   const [relatorio, setRelatorio] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -57,6 +65,11 @@ export function AtendimentoFormDialog({
     setDataAtendimento('')
     setTipoSolicitacao('')
     setModuloSelecionado('')
+    setFilialNome('')
+    setFilialCnpj('')
+    setFilialDfeIncluso(false)
+    setFilialValorMensalidade('')
+    setFilialValorDfe('')
     setRelatorio('')
     setSelectedFile(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
@@ -79,6 +92,7 @@ export function AtendimentoFormDialog({
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  const isFilial = tipoSolicitacao === 'Inclusão de Filial'
   const needsModule = tipoSolicitacao === 'Treinamento' || tipoSolicitacao === 'Inclusão de Modulo'
 
   const handleSubmit = async () => {
@@ -94,6 +108,24 @@ export function AtendimentoFormDialog({
       toast.error('Selecione um módulo para este tipo de solicitação')
       return
     }
+    if (isFilial) {
+      if (!filialNome.trim()) {
+        toast.error('O nome da filial é obrigatório')
+        return
+      }
+      if (!filialCnpj.trim()) {
+        toast.error('O CNPJ da filial é obrigatório')
+        return
+      }
+      if (
+        filialValorMensalidade === '' ||
+        filialValorMensalidade === null ||
+        filialValorMensalidade === undefined
+      ) {
+        toast.error('O valor da mensalidade é obrigatório')
+        return
+      }
+    }
     if (!relatorio.trim()) {
       toast.error('O relatório do atendimento é obrigatório')
       return
@@ -107,9 +139,20 @@ export function AtendimentoFormDialog({
         documentoUrl = await uploadAtendimentoDocumento(clienteId, selectedFile)
       }
 
+      const filialData = isFilial
+        ? {
+            nome: filialNome.trim(),
+            cnpj: filialCnpj.trim(),
+            dfe_incluso: filialDfeIncluso,
+            valor_mensalidade: filialValorMensalidade,
+            valor_dfe: filialDfeIncluso ? filialValorDfe : '',
+          }
+        : null
+
       const solicitacaoFormatada = formatSolicitacao(
         tipoSolicitacao as SolicitacaoTipo,
         moduloSelecionado || null,
+        filialData,
       )
 
       const payload: AtendimentoInput = {
@@ -161,7 +204,16 @@ export function AtendimentoFormDialog({
               value={tipoSolicitacao}
               onValueChange={(v) => {
                 setTipoSolicitacao(v as SolicitacaoTipo)
-                if (v === 'Suporte') setModuloSelecionado('')
+                if (v !== 'Treinamento' && v !== 'Inclusão de Modulo') {
+                  setModuloSelecionado('')
+                }
+                if (v !== 'Inclusão de Filial') {
+                  setFilialNome('')
+                  setFilialCnpj('')
+                  setFilialDfeIncluso(false)
+                  setFilialValorMensalidade('')
+                  setFilialValorDfe('')
+                }
               }}
             >
               <SelectTrigger>
@@ -176,6 +228,7 @@ export function AtendimentoFormDialog({
               </SelectContent>
             </Select>
           </div>
+
           {needsModule && (
             <div className="space-y-2">
               <Label>Módulo</Label>
@@ -191,6 +244,87 @@ export function AtendimentoFormDialog({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {isFilial && (
+            <div className="space-y-3 rounded-lg border border-indigo-100 bg-indigo-50/40 p-3.5">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-900">
+                <Building2 className="h-4 w-4 text-indigo-600" />
+                Dados da Filial
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="filial-nome">
+                  Nome da Filial <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="filial-nome"
+                  placeholder="Ex: Filial Centro ou Razão Social"
+                  value={filialNome}
+                  onChange={(e) => setFilialNome(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="filial-cnpj">
+                  CNPJ da Filial <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="filial-cnpj"
+                  placeholder="00.000.000/0000-00"
+                  value={filialCnpj}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\D/g, '')
+                    setFilialCnpj(raw.length <= 14 ? formatCNPJ(raw) : e.target.value)
+                  }}
+                  maxLength={18}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="filial-valor-mensalidade">
+                  Valor Mensalidade (R$) <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="filial-valor-mensalidade"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0,00"
+                  value={filialValorMensalidade}
+                  onChange={(e) => setFilialValorMensalidade(e.target.value)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between rounded-md border border-indigo-100 bg-white p-2.5">
+                <div className="space-y-0.5">
+                  <Label htmlFor="filial-dfe" className="text-sm font-medium cursor-pointer">
+                    DF-e Incluso
+                  </Label>
+                  <p className="text-xs text-slate-500">A filial utilizará emissão DF-e?</p>
+                </div>
+                <Switch
+                  id="filial-dfe"
+                  checked={filialDfeIncluso}
+                  onCheckedChange={setFilialDfeIncluso}
+                />
+              </div>
+
+              {filialDfeIncluso && (
+                <div className="space-y-2">
+                  <Label htmlFor="filial-valor-dfe">Valor DF-e (R$)</Label>
+                  <Input
+                    id="filial-valor-dfe"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0,00"
+                    value={filialValorDfe}
+                    onChange={(e) => setFilialValorDfe(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
           )}
           <div className="space-y-2">
