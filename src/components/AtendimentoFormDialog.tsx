@@ -33,6 +33,12 @@ import {
   formatSolicitacao,
   type SolicitacaoTipo,
 } from '@/lib/atendimento-utils'
+import {
+  buildWhatsAppUrl,
+  buildAtendimentoWhatsAppMessage,
+  cleansePhoneNumber,
+} from '@/lib/whatsapp-utils'
+import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 
 interface AtendimentoFormDialogProps {
@@ -164,6 +170,46 @@ export function AtendimentoFormDialog({
       }
       await createAtendimento(payload)
       toast.success('Atendimento registrado com sucesso!')
+
+      // Envio de WhatsApp para tipos com valor (Treinamento, Inclusão de Modulo, Inclusão de Filial)
+      const shouldSendWhatsApp =
+        tipoSolicitacao === 'Treinamento' ||
+        tipoSolicitacao === 'Inclusão de Modulo' ||
+        tipoSolicitacao === 'Inclusão de Filial'
+
+      if (shouldSendWhatsApp) {
+        try {
+          const { data: cliente, error: clienteError } = await supabase
+            .from('clientes')
+            .select('nome, telefone')
+            .eq('id', clienteId)
+            .single()
+
+          if (clienteError || !cliente) {
+            toast.error('Erro ao buscar dados do cliente para WhatsApp')
+          } else if (!cliente.telefone || !cleansePhoneNumber(cliente.telefone)) {
+            toast.error('Cliente não possui telefone cadastrado para envio de WhatsApp')
+          } else if (cleansePhoneNumber(cliente.telefone).length < 10) {
+            toast.error('Telefone do cliente inválido para WhatsApp')
+          } else {
+            const message = buildAtendimentoWhatsAppMessage({
+              clienteNome: cliente.nome || '',
+              tipoSolicitacao,
+              modulo: moduloSelecionado || null,
+              filialData,
+            })
+            const url = buildWhatsAppUrl(cliente.telefone, message)
+            if (url) {
+              window.open(url, '_blank')
+            } else {
+              toast.error('Telefone do cliente inválido para WhatsApp')
+            }
+          }
+        } catch {
+          toast.error('Erro ao preparar envio do WhatsApp')
+        }
+      }
+
       resetForm()
       onOpenChange(false)
       onSaved()
