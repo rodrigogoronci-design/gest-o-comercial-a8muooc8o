@@ -29,6 +29,7 @@ import { CollapsibleSection } from '@/components/collapsible-section'
 import { SectionNav, type SectionNavItem } from '@/components/section-nav'
 import { EtapaList, STATUS_CONFIG } from '@/components/etapa-list'
 import { EtapaEditDialog } from '@/components/etapa-edit-dialog'
+import { RatUnificadoCard } from '@/components/RatUnificadoCard'
 import { ImplementacaoObservacoes } from '@/components/ImplementacaoObservacoes'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -443,10 +444,18 @@ export default function ImplementacaoDetailPage() {
           >
             <div className="mb-3 p-3 rounded-lg bg-violet-50 border border-violet-200">
               <p className="text-xs text-violet-700 flex items-center gap-1.5">
-                <AlertCircle className="h-3.5 w-3.5" />O RAT (Relatório de Atendimento Técnico) é
-                obrigatório para concluir a etapa de execução do treinamento.
+                <AlertCircle className="h-3.5 w-3.5" />O RAT (Relatório de Atendimento Técnico)
+                unificado documenta a realização de todos os treinamentos desta solicitação.
               </p>
             </div>
+            <RatUnificadoCard
+              implementacaoId={impl.id}
+              ratUrl={impl.rat_unificado_url}
+              label="RAT Unificado — documenta todos os treinamentos desta solicitação"
+              onUpdated={(url) =>
+                setImpl((prev: any) => (prev ? { ...prev, rat_unificado_url: url } : prev))
+              }
+            />
             <EtapaList
               etapasByCategoria={etapasByCategoria}
               colabMap={colabMap}
@@ -716,6 +725,14 @@ export default function ImplementacaoDetailPage() {
             icon={<ListChecks className="h-4 w-4 text-indigo-600" />}
             defaultOpen
           >
+            <RatUnificadoCard
+              implementacaoId={impl.id}
+              ratUrl={impl.rat_unificado_url}
+              label="RAT Unificado — documenta todos os treinamentos do Ciclo de Treinamentos"
+              onUpdated={(url) =>
+                setImpl((prev: any) => (prev ? { ...prev, rat_unificado_url: url } : prev))
+              }
+            />
             <EtapaList
               etapasByCategoria={etapasByCategoria}
               colabMap={colabMap}

@@ -1,11 +1,5 @@
-import { Clock, AlertCircle, CheckCircle, FileText, User } from 'lucide-react'
+import { Clock, AlertCircle, CheckCircle, User } from 'lucide-react'
 import { formatDateOnly } from '@/lib/formatters'
-
-function formatDateTime(dateStr: string | null | undefined, horaStr: string | null | undefined) {
-  if (!dateStr) return null
-  const date = formatDateOnly(dateStr)
-  return horaStr ? `${date} às ${horaStr}` : date
-}
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -95,14 +89,6 @@ export function EtapaList({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm text-slate-800">{etapa.titulo}</span>
-                        {etapa.titulo.toLowerCase().includes('treinamento') && (
-                          <Badge
-                            variant="secondary"
-                            className="text-[9px] bg-violet-50 text-violet-700"
-                          >
-                            RAT
-                          </Badge>
-                        )}
                         {isScopeRelated && (
                           <Badge
                             variant="secondary"
@@ -130,17 +116,6 @@ export function EtapaList({
                             <User className="h-3 w-3" />
                             {responsavelNome}
                           </span>
-                        )}
-                        {etapa.documento_url && (
-                          <a
-                            href={etapa.documento_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline flex items-center gap-1"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <FileText className="h-3 w-3" /> RAT
-                          </a>
                         )}
                       </div>
                     </div>

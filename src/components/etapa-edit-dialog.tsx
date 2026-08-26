@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react'
-import { AlertCircle, FileText, Loader2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { AlertCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,7 +19,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { uploadRat, updateEtapa } from '@/services/implementacoes'
+import { updateEtapa } from '@/services/implementacoes'
 import { toast } from 'sonner'
 
 const STATUS_OPTIONS = ['Não iniciada', 'Agendada', 'Em andamento', 'Concluída', 'Atrasada']
@@ -45,7 +45,6 @@ export function EtapaEditDialog({
   onSaved,
 }: EtapaEditDialogProps) {
   const [formData, setFormData] = useState<any>({})
-  const [ratFile, setRatFile] = useState<File | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -61,22 +60,9 @@ export function EtapaEditDialog({
         observacoes: etapa.observacoes || '',
         documento_url: etapa.documento_url || '',
       })
-      setRatFile(null)
       setErrors({})
     }
   }, [etapa])
-
-  const isTreinamentoEtapa = useMemo(
-    () =>
-      etapa?.categoria === 'Ciclo de Treinamentos' ||
-      (etapa?.titulo || '').toLowerCase().includes('treinamento'),
-    [etapa],
-  )
-
-  const canConcluir = useMemo(() => {
-    if (!isTreinamentoEtapa) return true
-    return !!formData.documento_url || !!ratFile
-  }, [isTreinamentoEtapa, formData.documento_url, ratFile])
 
   const handleStatusChange = (v: string) => {
     const updates: any = { ...formData, status: v }
@@ -104,23 +90,8 @@ export function EtapaEditDialog({
       toast.error('Corrija os campos de hora antes de salvar.')
       return
     }
-    if (
-      isTreinamentoEtapa &&
-      formData.status === 'Concluída' &&
-      !formData.documento_url &&
-      !ratFile
-    ) {
-      toast.error(
-        'A etapa somente poderá ser marcada como Concluída após existir um documento anexado.',
-      )
-      return
-    }
     setIsSaving(true)
     try {
-      let docUrl = formData.documento_url || null
-      if (ratFile) {
-        docUrl = await uploadRat(ratFile, implId, etapa.id)
-      }
       await updateEtapa(etapa.id, {
         status: formData.status,
         data_prevista: formData.data_prevista || null,
@@ -129,7 +100,7 @@ export function EtapaEditDialog({
         hora_realizada: formData.hora_realizada || null,
         responsavel_id: formData.responsavel_id || null,
         observacoes: formData.observacoes || null,
-        documento_url: docUrl,
+        documento_url: formData.documento_url || null,
       })
       toast.success('Etapa atualizada com sucesso!')
       onSaved()
@@ -156,23 +127,13 @@ export function EtapaEditDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {STATUS_OPTIONS.map((status) => {
-                  const isDisabled = status === 'Concluída' && !canConcluir
-                  return (
-                    <SelectItem key={status} value={status} disabled={isDisabled}>
-                      {status}
-                      {isDisabled && ' (requer RAT)'}
-                    </SelectItem>
-                  )
-                })}
+                {STATUS_OPTIONS.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            {isTreinamentoEtapa && !canConcluir && (
-              <p className="text-xs text-amber-600 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />A etapa somente poderá ser marcada como Concluída
-                após existir um documento anexado.
-              </p>
-            )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -248,25 +209,6 @@ export function EtapaEditDialog({
               placeholder="Notas sobre esta etapa..."
             />
           </div>
-          {isTreinamentoEtapa && (
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1">
-                <FileText className="h-3 w-3" /> RAT - Relatório de Atendimento Técnico
-              </Label>
-              <Input type="file" onChange={(e) => setRatFile(e.target.files?.[0] || null)} />
-              {formData.documento_url && !ratFile && (
-                <a
-                  href={formData.documento_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-blue-600 hover:underline"
-                >
-                  Ver documento atual
-                </a>
-              )}
-              <p className="text-xs text-amber-600">Obrigatório para concluir treinamentos.</p>
-            </div>
-          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>

@@ -694,6 +694,28 @@ export const uploadRat = async (file: File, implementacaoId: string, etapaId: st
   return publicUrlData.publicUrl
 }
 
+export const uploadRatUnificado = async (file: File, implementacaoId: string) => {
+  const ext = file.name.split('.').pop()
+  const fileName = `${implementacaoId}/rat_unificado/${Date.now()}.${ext}`
+  const { error } = await supabase.storage
+    .from('implementacao-docs')
+    .upload(fileName, file, { upsert: true })
+  if (error) throw error
+  const { data: publicUrlData } = supabase.storage.from('implementacao-docs').getPublicUrl(fileName)
+  return publicUrlData.publicUrl
+}
+
+export const updateRatUnificado = async (implementacaoId: string, url: string | null) => {
+  const { data, error } = await supabase
+    .from('implementacoes' as any)
+    .update({ rat_unificado_url: url })
+    .eq('id', implementacaoId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
 export const deleteImplementacao = async (id: string) => {
   const { data: arquivos } = await supabase
     .from('implementacao_arquivos' as any)
