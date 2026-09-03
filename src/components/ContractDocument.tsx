@@ -40,6 +40,7 @@ export function ContractDocument({
   repName,
   repCpf,
   repRg,
+  additionalPartners = [],
   selectedPlan,
   selectedModules,
   planData,
@@ -118,11 +119,30 @@ export function ContractDocument({
           <p>
             <Highlight value={name} fallback="[NOME DA EMPRESA]" />, pessoa jurídica de direito
             privado, inscrita no CNPJ sob o nº <Highlight value={cnpj} fallback="[CNPJ]" />, com
-            sede na <Highlight value={address} fallback="[ENDEREÇO DA SEDE]" />, neste ato
-            representado pelos seus representantes legais Sr{' '}
-            <Highlight value={repName} fallback="[NOME DO REPRESENTANTE]" />, inscrito no CPF sob o
-            nº <Highlight value={repCpf} fallback="[CPF]" /> e RG sob o nº{' '}
-            <Highlight value={repRg} fallback="[RG]" />.
+            sede na <Highlight value={address} fallback="[ENDEREÇO DA SEDE]" />, neste ato{' '}
+            {additionalPartners && additionalPartners.length > 0 ? (
+              <>
+                representada pelos seus representantes legais: Sr{' '}
+                <Highlight value={repName} fallback="[NOME DO REPRESENTANTE]" />, inscrito no CPF
+                sob o nº <Highlight value={repCpf} fallback="[CPF]" /> e RG sob o nº{' '}
+                <Highlight value={repRg} fallback="[RG]" />
+                {additionalPartners.map((socio: any, idx: number) => (
+                  <span key={socio.id || idx}>
+                    ; Sr <Highlight value={socio.nome} fallback="[NOME DO SÓCIO]" />, inscrito no
+                    CPF sob o nº <Highlight value={socio.cpf} fallback="[CPF]" /> e RG sob o nº{' '}
+                    <Highlight value={socio.rg} fallback="[RG]" />
+                  </span>
+                ))}
+                .
+              </>
+            ) : (
+              <>
+                representado pelos seus representantes legais Sr{' '}
+                <Highlight value={repName} fallback="[NOME DO REPRESENTANTE]" />, inscrito no CPF
+                sob o nº <Highlight value={repCpf} fallback="[CPF]" /> e RG sob o nº{' '}
+                <Highlight value={repRg} fallback="[RG]" />.
+              </>
+            )}
           </p>
         </div>
 
@@ -862,17 +882,37 @@ export function ContractDocument({
             <div className="hidden sm:block sm:w-8 print:block print:w-8" />
             <div className="flex-1 flex flex-col items-center text-center min-w-0">
               <div className="h-12 sm:h-16 print:h-16 flex items-end" />
-              <div className="w-full border-t-2 border-[#1b4382] pt-3">
+              <div className="w-full border-t-2 border-[#1b4382] pt-3 space-y-1">
                 <p className="font-bold uppercase text-[#1b4382] text-sm leading-snug break-words">
                   <Highlight value={name} fallback="[NOME DA EMPRESA]" />
                 </p>
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-[11px] text-slate-500">
                   CNPJ: <Highlight value={cnpj} fallback="[CNPJ]" />
                 </p>
-                <p className="text-[11px] text-slate-600 font-medium mt-0.5">
-                  <Highlight value={repName} fallback="[NOME DO REPRESENTANTE]" />
-                </p>
-                <p className="text-[10px] text-slate-400 uppercase tracking-wide mt-0.5">
+                <div className="pt-1">
+                  <p className="text-[11px] text-slate-700 font-medium leading-tight">
+                    <Highlight value={repName} fallback="[NOME DO REPRESENTANTE]" />
+                  </p>
+                  {repCpf && (
+                    <p className="text-[10px] text-slate-500 leading-tight">
+                      CPF: <Highlight value={repCpf} fallback="[CPF]" />
+                    </p>
+                  )}
+                </div>
+                {additionalPartners &&
+                  additionalPartners.map((socio: any, idx: number) => (
+                    <div key={socio.id || idx} className="pt-1">
+                      <p className="text-[11px] text-slate-700 font-medium leading-tight">
+                        <Highlight value={socio.nome} fallback="[NOME DO SÓCIO]" />
+                      </p>
+                      {socio.cpf && (
+                        <p className="text-[10px] text-slate-500 leading-tight">
+                          CPF: <Highlight value={socio.cpf} fallback="[CPF]" />
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                <p className="text-[10px] text-slate-400 uppercase tracking-wide pt-1">
                   Contratante
                 </p>
               </div>

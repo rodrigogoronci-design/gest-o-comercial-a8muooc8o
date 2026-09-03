@@ -45,6 +45,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/hooks/use-toast'
 import { formatCurrency, formatCNPJ } from '@/lib/formatters'
+import { formatCPF } from '@/lib/cpf-utils'
 import { parsePdfContract } from '@/services/parse-pdf'
 import { fetchCnpjData as fetchCnpjFromService } from '@/services/cnpj'
 import {
@@ -86,6 +87,9 @@ export default function ContractGeneratorPage() {
   const [repName, setRepName] = useState('')
   const [repCpf, setRepCpf] = useState('')
   const [repRg, setRepRg] = useState('')
+  const [additionalPartners, setAdditionalPartners] = useState<
+    { id: string; nome: string; cpf: string; rg: string }[]
+  >([])
 
   const [selectedPlan, setSelectedPlan] = useState<string>('tms-50')
   const [selectedModules, setSelectedModules] = useState<string[]>([])
@@ -767,6 +771,7 @@ export default function ContractGeneratorPage() {
     repName,
     repCpf,
     repRg,
+    additionalPartners,
     selectedPlan,
     selectedModules,
     planData,
@@ -2315,6 +2320,116 @@ export default function ContractGeneratorPage() {
                         className={inputHighlightClass}
                       />
                     </div>
+                  </div>
+
+                  {/* SÓCIOS / REPRESENTANTES ADICIONAIS */}
+                  <div className="pt-2 border-t border-slate-100 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-xs font-semibold text-slate-700">
+                          Outros Sócios / Representantes Legais
+                        </Label>
+                        <p className="text-[11px] text-slate-500">
+                          Informe quando o contrato social exigir a assinatura de mais de um sócio.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setAdditionalPartners((prev) => [
+                            ...prev,
+                            { id: Math.random().toString(), nome: '', cpf: '', rg: '' },
+                          ])
+                        }
+                        className="h-8 text-xs text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                      >
+                        + Adicionar sócio
+                      </Button>
+                    </div>
+
+                    {additionalPartners.length > 0 && (
+                      <div className="space-y-3">
+                        {additionalPartners.map((socio, idx) => (
+                          <div
+                            key={socio.id}
+                            className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-3 relative group"
+                          >
+                            <div className="flex items-center justify-between pb-1 border-b border-slate-200/60">
+                              <span className="text-xs font-semibold text-slate-600">
+                                Sócio / Representante Adicional {idx + 1}
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  setAdditionalPartners((prev) =>
+                                    prev.filter((item) => item.id !== socio.id),
+                                  )
+                                }
+                                className="h-6 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
+                              >
+                                Remover
+                              </Button>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs">Nome do Sócio</Label>
+                              <Input
+                                placeholder="Nome completo"
+                                value={socio.nome}
+                                onChange={(e) => {
+                                  const val = e.target.value
+                                  setAdditionalPartners((prev) =>
+                                    prev.map((item) =>
+                                      item.id === socio.id ? { ...item, nome: val } : item,
+                                    ),
+                                  )
+                                }}
+                                className="h-8 text-xs bg-white"
+                              />
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <Label className="text-xs">CPF</Label>
+                                <Input
+                                  placeholder="000.000.000-00"
+                                  value={socio.cpf}
+                                  onChange={(e) => {
+                                    const raw = e.target.value.replace(/\D/g, '')
+                                    const formatted =
+                                      raw.length <= 11 ? formatCPF(raw) : e.target.value
+                                    setAdditionalPartners((prev) =>
+                                      prev.map((item) =>
+                                        item.id === socio.id ? { ...item, cpf: formatted } : item,
+                                      ),
+                                    )
+                                  }}
+                                  className="h-8 text-xs bg-white"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">RG</Label>
+                                <Input
+                                  placeholder="Número do RG"
+                                  value={socio.rg}
+                                  onChange={(e) => {
+                                    const val = e.target.value
+                                    setAdditionalPartners((prev) =>
+                                      prev.map((item) =>
+                                        item.id === socio.id ? { ...item, rg: val } : item,
+                                      ),
+                                    )
+                                  }}
+                                  className="h-8 text-xs bg-white"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
