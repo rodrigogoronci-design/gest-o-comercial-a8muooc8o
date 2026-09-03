@@ -730,18 +730,7 @@ export function ContractDocument({
                     </tr>
                   </>
                 )}
-                {totalValue !== Math.max(0, totalValueStandard - calculatedDiscount) && (
-                  <tr>
-                    <td className="border border-slate-300 p-2 font-bold text-orange-600 text-right">
-                      Ajuste Comercial Mensal
-                    </td>
-                    <td className="border border-slate-300 p-2 text-right text-orange-600 font-medium">
-                      {formatCurrency(
-                        totalValue - Math.max(0, totalValueStandard - calculatedDiscount),
-                      )}
-                    </td>
-                  </tr>
-                )}
+
                 <tr className="bg-[#1b4382]/5 text-[#1b4382]">
                   <td className="border border-slate-300 p-2 font-bold text-right">
                     Total Mensal Inicial
