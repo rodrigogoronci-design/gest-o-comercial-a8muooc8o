@@ -365,6 +365,8 @@ export default function ClientsPage() {
 
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [editingClient, setEditingClient] = useState<MergedClient | null>(null)
+  const [isManualValorTotal, setIsManualValorTotal] = useState(false)
+  const prevModulosRef = useRef<any[]>([])
 
   const [isViewSheetOpen, setIsViewSheetOpen] = useState(false)
   const [viewingClient, setViewingClient] = useState<MergedClient | null>(null)
@@ -939,6 +941,16 @@ export default function ClientsPage() {
 
   useEffect(() => {
     if (!isSheetOpen) return
+
+    // Comparar módulos atuais com os módulos anteriores para detectar inclusão/remoção/alteração de módulos
+    const modulosChanged =
+      JSON.stringify(watchModulos || []) !== JSON.stringify(prevModulosRef.current || [])
+
+    // Se o valor foi definido manualmente e os módulos não mudaram, preservar o valor manual sem recalcular
+    if (isManualValorTotal && !modulosChanged) {
+      return
+    }
+
     const isDirty =
       form.formState.dirtyFields.plano_base ||
       form.formState.dirtyFields.filiais ||
@@ -946,7 +958,8 @@ export default function ClientsPage() {
       form.formState.dirtyFields.desconto_mensalidade ||
       form.formState.dirtyFields.tipo_desconto
 
-    if (isDirty || editingClient) {
+    // Recalcular apenas se os módulos mudaram, ou (se não for manual) quando o formulário for dirty ou estiver em edição
+    if (modulosChanged || (!isManualValorTotal && (isDirty || editingClient))) {
       let total = 0
       if (watchPlanoBase) {
         const plan = PLANS.find((p) => p.id === watchPlanoBase || p.name === watchPlanoBase)
@@ -974,6 +987,7 @@ export default function ClientsPage() {
           : watchDesconto || 0
 
       form.setValue('valor_total', Math.max(0, total - calcDiscount), { shouldValidate: true })
+      prevModulosRef.current = watchModulos || []
     }
   }, [
     watchPlanoBase,
@@ -984,6 +998,7 @@ export default function ClientsPage() {
     isSheetOpen,
     form,
     editingClient,
+    isManualValorTotal,
   ])
 
   useEffect(() => {
@@ -1122,6 +1137,12 @@ export default function ClientsPage() {
 
   const handleOpenAdd = () => {
     setEditingClient(null)
+    setIsManualValorTotal(false)
+    const initialModulos = MODULES.filter((m: any) => m.isBasic).map((m: any) => ({
+      name: m.name,
+      price: m.price,
+    }))
+    prevModulosRef.current = initialModulos
     form.reset({
       nome: '',
       cnpj: '',
@@ -1133,10 +1154,7 @@ export default function ClientsPage() {
       rep_rg: '',
       valor_implantacao: 0,
       modo_implantacao: 'remoto',
-      modulos: MODULES.filter((m: any) => m.isBasic).map((m: any) => ({
-        name: m.name,
-        price: m.price,
-      })),
+      modulos: initialModulos,
       plano_base: '',
       filiais: 0,
       valor_total: 0,
@@ -1154,6 +1172,9 @@ export default function ClientsPage() {
 
   const handleOpenEdit = (client: MergedClient) => {
     setEditingClient(client)
+    setIsManualValorTotal(true)
+    const clientModulos = client.modules || []
+    prevModulosRef.current = clientModulos
     form.reset({
       nome: client.name,
       cnpj: client.cnpj,
@@ -1165,7 +1186,7 @@ export default function ClientsPage() {
       rep_rg: client.rep_rg || '',
       valor_implantacao: client.valor_implantacao || 0,
       modo_implantacao: client.modo_implantacao || 'remoto',
-      modulos: client.modules || [],
+      modulos: clientModulos,
       plano_base: client.plano_base || '',
       filiais: client.filiais || 0,
       valor_total: client.totalValue || 0,
@@ -4620,7 +4641,10 @@ Obrigada.`)
                                 type="number"
                                 step="0.01"
                                 value={field.value || ''}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                onChange={(e) => {
+                                  setIsManualValorTotal(true)
+                                  field.onChange(parseFloat(e.target.value) || 0)
+                                }}
                                 className="font-bold bg-white text-lg h-12 text-emerald-700 border-emerald-200"
                               />
                             </FormControl>
