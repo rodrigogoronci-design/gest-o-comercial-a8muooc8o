@@ -96,8 +96,7 @@ Deno.serve(async (req: Request) => {
       const cleanEmail = String(resolvedEmail).trim().toLowerCase()
       const effectiveType = linkType === 'invite' ? 'invite' : 'recovery'
       const effectiveRedirect =
-        redirectTo ||
-        'https://projeto-via-cargas-30f44--preview.goskip.app/redefinir-senha'
+        redirectTo || 'https://projeto-via-cargas-30f44--preview.goskip.app/redefinir-senha'
 
       // Gerar link seguro via Supabase Admin API
       const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
@@ -146,7 +145,9 @@ Deno.serve(async (req: Request) => {
       )
       if (conflict) {
         return jsonResponse(
-          { error: `Conflito: o e-mail ${cleanNewEmail} já pertence a outro usuário (ID: ${conflict.id}).` },
+          {
+            error: `Conflito: o e-mail ${cleanNewEmail} já pertence a outro usuário (ID: ${conflict.id}).`,
+          },
           409,
         )
       }

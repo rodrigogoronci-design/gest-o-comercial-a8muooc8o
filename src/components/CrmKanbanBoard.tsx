@@ -16,6 +16,7 @@ import {
   Compass,
   XCircle,
   UserCheck2,
+  Clock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -294,6 +295,14 @@ export function CrmKanbanBoard({
                               <FileSignature className="mr-2 h-4 w-4 text-indigo-600" />{' '}
                               <span className="text-indigo-600">Gerar Contrato</span>
                             </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              // Ação placeholder: a lógica de envio de follow-up será definida posteriormente
+                            }}
+                          >
+                            <Clock className="mr-2 h-4 w-4 text-slate-600" />{' '}
+                            <span className="text-slate-600">Enviar Follow-up</span>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem

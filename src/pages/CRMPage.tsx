@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Stethoscope,
   History,
+  Clock,
 } from 'lucide-react'
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -1175,6 +1176,13 @@ export default function CRMPage() {
                                     icon: Mail,
                                     label: 'Enviar Proposta',
                                     onClick: () => handleSendProposalClick(p),
+                                  },
+                                  {
+                                    icon: Clock,
+                                    label: 'Enviar Follow-up',
+                                    onClick: () => {
+                                      // Ação placeholder: a lógica de envio de follow-up será definida posteriormente
+                                    },
                                   },
                                   {
                                     icon: Trash2,
