@@ -6,7 +6,7 @@ import { CrmDiagnosticoForm } from './CrmDiagnosticoForm'
 import { CrmHistorico } from './CrmHistorico'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2, UploadCloud, User, Building2, FlaskConical } from 'lucide-react'
+import { Loader2, UploadCloud, User, Building2, FlaskConical, UserCheck2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -31,6 +31,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase/client'
 import { fetchCnpjData } from '@/services/cnpj'
+import { getColaboradores } from '@/services/implementacoes'
 
 export const ORIGEM_OPTIONS = [
   'Indicação',
@@ -148,10 +149,17 @@ export function CrmProspectForm({
   const [activeTab, setActiveTab] = useState<'dados' | 'diagnostico' | 'historico' | 'propostas'>(
     'dados',
   )
+  const [colaboradores, setColaboradores] = useState<{ id: string; nome: string }[]>([])
   const { toast } = useToast()
   const { role } = useUserRole()
   const isAdmin = role === 'Admin'
   const isEditing = !!initialData?.id
+
+  useEffect(() => {
+    getColaboradores()
+      .then((data) => setColaboradores(data || []))
+      .catch(() => {})
+  }, [])
 
   const parseOrigemInitial = (origemRaw?: string | null) => {
     if (!origemRaw) return { origem: '', origem_outros: '' }
@@ -549,10 +557,12 @@ export function CrmProspectForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {tipoPessoa === 'PF' ? 'Nome para Contato *' : 'Responsável *'}
+                      {tipoPessoa === 'PF'
+                        ? 'Nome para Contato *'
+                        : 'Pessoa de Contato na Empresa *'}
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Nome" {...field} />
+                      <Input placeholder="Nome do contato" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -567,6 +577,49 @@ export function CrmProspectForm({
                     <FormControl>
                       <Input placeholder="(00) 00000-0000" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="p-3 bg-indigo-50/40 rounded-lg border border-indigo-100">
+              <FormField
+                control={form.control}
+                name="responsavel_comercial"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-slate-800 font-semibold flex items-center gap-1.5">
+                      <UserCheck2 className="h-4 w-4 text-indigo-600" />
+                      Responsável Comercial (Vendedor / Atendente)
+                    </FormLabel>
+                    <Select
+                      onValueChange={(val) => field.onChange(val === '__NONE__' ? '' : val)}
+                      value={field.value || '__NONE__'}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="bg-white border-slate-200">
+                          <SelectValue placeholder="Selecione um responsável comercial..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="__NONE__" className="text-slate-500 italic">
+                          Sem responsável atribuído
+                        </SelectItem>
+                        {colaboradores.map((colab) => (
+                          <SelectItem key={colab.id} value={colab.nome}>
+                            {colab.nome}
+                          </SelectItem>
+                        ))}
+                        {/* Se o lead já tinha um valor que não consta na lista ativa, preserva */}
+                        {field.value && !colaboradores.some((c) => c.nome === field.value) && (
+                          <SelectItem value={field.value}>{field.value}</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Membro da equipe responsável pelo atendimento e acompanhamento deste lead.
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}

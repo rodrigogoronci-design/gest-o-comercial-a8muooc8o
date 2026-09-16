@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   Compass,
   XCircle,
+  UserCheck2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -305,7 +306,40 @@ export function CrmKanbanBoard({
                       </DropdownMenu>
                     </div>
 
-                    <div className="text-sm text-slate-600 mb-3">{p.contato_nome}</div>
+                    <div className="text-sm text-slate-600 mb-2">{p.contato_nome}</div>
+
+                    {/* Exibição clara do Responsável */}
+                    <div className="mb-2 flex items-center justify-between gap-1 text-xs">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <UserCheck2
+                          className={cn(
+                            'h-3.5 w-3.5 shrink-0',
+                            p.responsavel_comercial ? 'text-indigo-600' : 'text-slate-400',
+                          )}
+                        />
+                        <span className="text-[11px] text-muted-foreground shrink-0">Resp:</span>
+                        {p.responsavel_comercial ? (
+                          <span
+                            className="font-medium text-slate-800 truncate"
+                            title={`Responsável: ${p.responsavel_comercial}`}
+                          >
+                            {p.responsavel_comercial}
+                          </span>
+                        ) : (
+                          <span className="italic text-slate-400 text-[11px]">Sem responsável</span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onEdit(p, 'dados')
+                        }}
+                        className="text-[10px] text-indigo-600 hover:text-indigo-800 hover:underline shrink-0 font-medium"
+                      >
+                        {p.responsavel_comercial ? 'Alterar' : '+ Atribuir'}
+                      </button>
+                    </div>
 
                     {p.status === 'Perdido' && p.motivo_perda && (
                       <div className="mb-2.5 px-2 py-1.5 rounded-md bg-red-50/80 border border-red-200 text-red-800 text-[11px] flex flex-col gap-0.5">

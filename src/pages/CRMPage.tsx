@@ -739,7 +739,9 @@ export default function CRMPage() {
   const filtered = prospects.filter(
     (p) =>
       p.empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.contato_nome.toLowerCase().includes(searchTerm.toLowerCase()),
+      p.contato_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.responsavel_comercial &&
+        p.responsavel_comercial.toLowerCase().includes(searchTerm.toLowerCase())),
   )
 
   const getStatusColor = (s: string) => {
@@ -923,6 +925,7 @@ export default function CRMPage() {
                 <TableRow>
                   <TableHead className="w-[280px]">Empresa</TableHead>
                   <TableHead>Contato</TableHead>
+                  <TableHead>Responsável</TableHead>
                   <TableHead>Follow-up</TableHead>
                   <TableHead>Classificação</TableHead>
                   <TableHead>Status</TableHead>
@@ -934,13 +937,13 @@ export default function CRMPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                       Carregando contatos...
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                       Nenhum contato encontrado.
                     </TableCell>
                   </TableRow>
@@ -1000,6 +1003,28 @@ export default function CRMPage() {
                                 </span>
                               )}
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            {p.responsavel_comercial ? (
+                              <span
+                                className="inline-flex items-center gap-1 text-xs font-medium text-slate-800 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded"
+                                title={`Responsável Comercial: ${p.responsavel_comercial}`}
+                              >
+                                {p.responsavel_comercial}
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingProspect(p)
+                                  setEditingTab('dados')
+                                }}
+                                className="text-xs italic text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded transition-colors"
+                                title="Clique para atribuir um responsável"
+                              >
+                                + Sem responsável
+                              </button>
+                            )}
                           </TableCell>
                           <TableCell>
                             {p.data_followup ? (
@@ -1164,7 +1189,7 @@ export default function CRMPage() {
                         </TableRow>
                         {isExpanded && (
                           <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
-                            <TableCell colSpan={6} className="p-0">
+                            <TableCell colSpan={7} className="p-0">
                               <div className="py-3 px-10 border-b border-slate-100 bg-indigo-50/30">
                                 <h4 className="text-xs font-semibold text-slate-600 uppercase mb-3 tracking-wider flex items-center gap-1.5">
                                   <FileText className="w-3.5 h-3.5" /> Propostas Geradas
