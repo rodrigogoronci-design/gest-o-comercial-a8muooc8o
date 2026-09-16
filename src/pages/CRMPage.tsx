@@ -50,9 +50,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/use-auth'
+import { useColaboradorProfile } from '@/hooks/use-colaborador-profile'
 import { formatDate } from '@/lib/formatters'
 import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { buildWhatsAppUrl, buildFollowUpWhatsAppMessage } from '@/lib/whatsapp-utils'
 import {
   CrmProspectForm,
   ProspectFormValues,
@@ -134,6 +136,54 @@ export default function CRMPage() {
   const [sendingEmail, setSendingEmail] = useState(false)
   const { toast } = useToast()
   const { user } = useAuth()
+  const { profile: colaboradorProfile } = useColaboradorProfile()
+
+  const handleSendFollowUp = (p: CrmProspect) => {
+    if (!p.telefone || !p.telefone.trim()) {
+      toast({
+        title: 'Telefone não cadastrado',
+        description:
+          'Este prospecto não possui número de telefone cadastrado para envio via WhatsApp.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    const leadProposals = allProposals.filter((prop) => prop.prospect_id === p.id)
+    const hasSentProposal =
+      p.status === 'Proposta Enviada' ||
+      Boolean(p.proposta_url) ||
+      leadProposals.some(
+        (prop) =>
+          prop.status_negociacao === 'Enviada' ||
+          Boolean(prop.data_envio) ||
+          Boolean(prop.documento_url),
+      )
+
+    const analistaNome =
+      colaboradorProfile?.nome ||
+      user?.user_metadata?.name ||
+      p.responsavel_comercial ||
+      'Comercial'
+
+    const message = buildFollowUpWhatsAppMessage({
+      clienteNome: p.empresa || p.contato_nome || 'cliente',
+      analistaNome,
+      temProposta: hasSentProposal,
+    })
+
+    const whatsappUrl = buildWhatsAppUrl(p.telefone, message)
+    if (!whatsappUrl) {
+      toast({
+        title: 'Telefone inválido',
+        description: 'O número de telefone cadastrado é inválido para envio via WhatsApp.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    window.open(whatsappUrl, '_blank')
+  }
 
   const toggleExpand = (id: string) => {
     setExpandedRows((prev) => ({ ...prev, [id]: !prev[id] }))
@@ -902,6 +952,7 @@ export default function CRMPage() {
           onDelete={handleDelete}
           onEfetivar={handleEfetivarCliente}
           onSendProposal={handleSendProposalClick}
+          onSendFollowUp={handleSendFollowUp}
           onRequestPerdido={(p) => {
             setPerdidoDialogData({
               prospectId: p.id,
@@ -1180,9 +1231,7 @@ export default function CRMPage() {
                                   {
                                     icon: Clock,
                                     label: 'Enviar Follow-up',
-                                    onClick: () => {
-                                      // Ação placeholder: a lógica de envio de follow-up será definida posteriormente
-                                    },
+                                    onClick: () => handleSendFollowUp(p),
                                   },
                                   {
                                     icon: Trash2,

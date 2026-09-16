@@ -38,6 +38,7 @@ interface CrmKanbanBoardProps {
   onDelete: (id: string) => void
   onEfetivar: (prospect: CrmProspect) => void
   onSendProposal?: (prospect: CrmProspect) => void
+  onSendFollowUp?: (prospect: CrmProspect) => void
   onRequestPerdido?: (prospect: CrmProspect) => void
 }
 
@@ -58,6 +59,7 @@ export function CrmKanbanBoard({
   onDelete,
   onEfetivar,
   onSendProposal,
+  onSendFollowUp,
   onRequestPerdido,
 }: CrmKanbanBoardProps) {
   const [draggedId, setDraggedId] = useState<string | null>(null)
@@ -296,11 +298,7 @@ export function CrmKanbanBoard({
                               <span className="text-indigo-600">Gerar Contrato</span>
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              // Ação placeholder: a lógica de envio de follow-up será definida posteriormente
-                            }}
-                          >
+                          <DropdownMenuItem onClick={() => onSendFollowUp?.(p)}>
                             <Clock className="mr-2 h-4 w-4 text-slate-600" />{' '}
                             <span className="text-slate-600">Enviar Follow-up</span>
                           </DropdownMenuItem>

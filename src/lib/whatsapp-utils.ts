@@ -46,6 +46,60 @@ export function buildWhatsAppUrl(phone: string, message: string): string | null 
   return `https://wa.me/${withCountryCode}?text=${encodedMessage}`
 }
 
+export interface FollowUpWhatsAppParams {
+  clienteNome: string
+  analistaNome?: string | null
+  temProposta: boolean
+}
+
+export function buildFollowUpWhatsAppMessage({
+  clienteNome,
+  analistaNome,
+  temProposta,
+}: FollowUpWhatsAppParams): string {
+  const analista = (analistaNome || '').trim() || 'Comercial'
+  const cliente = (clienteNome || '').trim() || 'cliente'
+
+  if (temProposta) {
+    return `Olá, ${cliente}! Tudo bem?
+
+Meu nome é ${analista} e faço parte da equipe Comercial da Service Logic.
+
+Estou entrando em contato para acompanhar a proposta comercial que a nossa consultora Aline Costa encaminhou para você referente à contratação do sistema TMS Service Logic.
+
+Gostaria de confirmar se você conseguiu analisar a proposta e se ficou alguma dúvida sobre os módulos, valores, implantação ou funcionamento do sistema.
+
+Estamos à disposição para esclarecer qualquer ponto e, se necessário, podemos ajustar uma conversa com a Aline para dar continuidade à negociação.
+
+Você já conseguiu avaliar a proposta? Podemos avançar com a contratação?`
+  }
+
+  return `Olá, tudo bem?
+
+Meu nome é ${analista} sou do time Comercial da Service Logic
+A Service Logic trabalha com uma plataforma completa de gestão para empresas de transporte e operações logísticas, integrando em um único ambiente áreas como comercial, operacional, carga, faturamento, financeiro, fiscal, controle de viagens e frota.
+
+O sistema foi desenvolvido para dar controle, visibilidade e segurança nas informações, evitando retrabalho, planilhas paralelas e falhas de comunicação entre setores. Na prática, ajudamos a empresa a ter números mais confiáveis, processos mais organizados e decisões mais assertivas no dia a dia.
+
+Para você conhecer melhor a solução, seguem alguns materiais rápidos:
+
+🌐 Site institucional
+www.servicelogic.com.br
+
+🎥 Vídeo Institucional
+https://youtu.be/28LXzDDFSy8
+
+🎥 SL TMS Web
+https://youtu.be/vMOx7KMO2_U
+
+🎥 DF-e (Documentos Fiscais Eletrônicos)
+https://youtu.be/MsQkylDoUzs
+
+Se quiser saber mais, podemos agendar uma apresentação online para ver o sistema funcionando na prática e alinhado à sua operação.
+
+Fico à disposição.`
+}
+
 export interface AtendimentoWhatsAppParams {
   clienteNome: string
   tipoSolicitacao: 'Treinamento' | 'Inclusão de Modulo' | 'Inclusão de Filial' | string
