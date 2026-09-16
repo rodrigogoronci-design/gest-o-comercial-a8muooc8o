@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "pdf-parse": "npm:pdf-parse@1.1.1",
+    "xlsx": "npm:xlsx@0.18.5"
+  }
+}

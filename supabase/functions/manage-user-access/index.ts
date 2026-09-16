@@ -78,6 +78,99 @@ Deno.serve(async (req: Request) => {
     const { action } = body
 
     // =========================================================================
+    // ACTION: generate-password-link - Gerar link administrativo de definição de senha
+    // =========================================================================
+    if (action === 'generate-password-link') {
+      const { targetUserId, targetEmail, linkType, redirectTo } = body
+
+      let resolvedEmail = targetEmail
+      if (!resolvedEmail && targetUserId) {
+        const { data: usr } = await adminClient.auth.admin.getUserById(targetUserId)
+        resolvedEmail = usr?.user?.email
+      }
+
+      if (!resolvedEmail) {
+        return jsonResponse({ error: 'E-mail do usuário não identificado.' }, 400)
+      }
+
+      const cleanEmail = String(resolvedEmail).trim().toLowerCase()
+      const effectiveType = linkType === 'invite' ? 'invite' : 'recovery'
+      const effectiveRedirect =
+        redirectTo ||
+        'https://projeto-via-cargas-30f44--preview.goskip.app/redefinir-senha'
+
+      // Gerar link seguro via Supabase Admin API
+      const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
+        type: effectiveType,
+        email: cleanEmail,
+        options: {
+          redirectTo: effectiveRedirect,
+        },
+      })
+
+      if (linkErr || !linkData) {
+        return jsonResponse(
+          { error: `Erro ao gerar link de senha: ${linkErr?.message || 'Falha desconhecida'}` },
+          500,
+        )
+      }
+
+      return jsonResponse({
+        success: true,
+        actionLink: linkData.properties?.action_link,
+        hashedToken: linkData.properties?.hashed_token,
+        emailOtp: linkData.properties?.email_otp,
+        verificationType: linkData.properties?.verification_type,
+        redirectUrl: linkData.properties?.redirect_to,
+        user: linkData.user,
+        generatedAt: new Date().toISOString(),
+      })
+    }
+
+    // =========================================================================
+    // ACTION: update-user-email - Atualizar e-mail via auth.admin.updateUserById
+    // =========================================================================
+    if (action === 'update-user-email') {
+      const { targetUserId, newEmail } = body
+
+      if (!targetUserId || !newEmail) {
+        return jsonResponse({ error: 'targetUserId e newEmail são obrigatórios.' }, 400)
+      }
+
+      const cleanNewEmail = String(newEmail).trim().toLowerCase()
+
+      // Verificar se outro usuário já possui este e-mail
+      const { data: userList } = await adminClient.auth.admin.listUsers()
+      const conflict = userList?.users?.find(
+        (u: any) => u.email?.toLowerCase() === cleanNewEmail && u.id !== targetUserId,
+      )
+      if (conflict) {
+        return jsonResponse(
+          { error: `Conflito: o e-mail ${cleanNewEmail} já pertence a outro usuário (ID: ${conflict.id}).` },
+          409,
+        )
+      }
+
+      // Atualizar no auth.admin com email e confirmação
+      const { data: updatedUser, error: updateErr } = await adminClient.auth.admin.updateUserById(
+        targetUserId,
+        {
+          email: cleanNewEmail,
+          email_confirm: true,
+        },
+      )
+
+      if (updateErr) {
+        return jsonResponse({ error: `Erro ao atualizar usuário: ${updateErr.message}` }, 500)
+      }
+
+      return jsonResponse({
+        success: true,
+        user: updatedUser.user,
+      })
+    }
+
+    // =========================================================================
     // ACTION: list - Lista de acessos completa com dados de auth.users e vc_perfis
     // =========================================================================
     if (action === 'list') {
