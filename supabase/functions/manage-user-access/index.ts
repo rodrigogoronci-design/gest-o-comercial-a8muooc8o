@@ -122,7 +122,12 @@ Deno.serve(async (req: Request) => {
         const lastSignIn = authUser?.last_sign_in_at || null
         const isConfirmed = Boolean(authUser?.email_confirmed_at || authUser?.confirmed_at)
         const invitedAt = authUser?.invited_at || null
-        const statusConvite = !isConfirmed && invitedAt ? 'Convite pendente' : isConfirmed ? 'Acesso confirmado' : 'Pendente de ativação'
+        const statusConvite =
+          !isConfirmed && invitedAt
+            ? 'Convite pendente'
+            : isConfirmed
+              ? 'Acesso confirmado'
+              : 'Pendente de ativação'
 
         return {
           id: p.id,
@@ -131,7 +136,8 @@ Deno.serve(async (req: Request) => {
           email: p.email || authUser?.email || '',
           perfil: p.papel,
           projetoId: p.projeto_id,
-          projetoNome: p.vc_projetos?.nome || (p.projeto_id ? 'Projeto Vinculado' : 'Não vinculado'),
+          projetoNome:
+            p.vc_projetos?.nome || (p.projeto_id ? 'Projeto Vinculado' : 'Não vinculado'),
           projetoCodigo: p.vc_projetos?.codigo || null,
           situacao: p.ativo ? 'Ativo' : 'Inativo',
           ativo: p.ativo,
@@ -160,7 +166,9 @@ Deno.serve(async (req: Request) => {
 
       if (!nome || !email || !perfil || !projetoId) {
         return jsonResponse(
-          { error: 'Campos obrigatórios ausentes: Nome, E-mail, Perfil e Projeto são necessários.' },
+          {
+            error: 'Campos obrigatórios ausentes: Nome, E-mail, Perfil e Projeto são necessários.',
+          },
           400,
         )
       }
@@ -171,10 +179,18 @@ Deno.serve(async (req: Request) => {
       const isAtivo = situacao === 'Ativo' || situacao === true || situacao === undefined
 
       // Validar perfil
-      const allowedRoles = ['GESTOR', 'ANALISTA', 'CONSULTOR', 'ADMINISTRADOR', 'FINANCEIRO SERVICE LOGIC']
+      const allowedRoles = [
+        'GESTOR',
+        'ANALISTA',
+        'CONSULTOR',
+        'ADMINISTRADOR',
+        'FINANCEIRO SERVICE LOGIC',
+      ]
       if (!allowedRoles.includes(cleanPerfil)) {
         return jsonResponse(
-          { error: `Perfil inválido: "${cleanPerfil}". Opções válidas: Gestor, Analista, Consultor.` },
+          {
+            error: `Perfil inválido: "${cleanPerfil}". Opções válidas: Gestor, Analista, Consultor.`,
+          },
           400,
         )
       }
@@ -208,7 +224,8 @@ Deno.serve(async (req: Request) => {
       if ((existingPerfis || existingAuthUser) && !allowUpdateIfExists) {
         return jsonResponse({
           exists: true,
-          message: 'ESTE USUÁRIO JÁ EXISTE. DESEJA ATUALIZAR O PERFIL OU VINCULÁ-LO A ESTE PROJETO?',
+          message:
+            'ESTE USUÁRIO JÁ EXISTE. DESEJA ATUALIZAR O PERFIL OU VINCULÁ-LO A ESTE PROJETO?',
           existingUser: {
             id: existingPerfis?.id || null,
             userId: existingPerfis?.user_id || existingAuthUser?.id,
@@ -259,16 +276,17 @@ Deno.serve(async (req: Request) => {
         }
 
         // Upsert no vc_perfis
-        const { error: upErr } = await adminClient
-          .from('vc_perfis')
-          .upsert({
-            user_id: targetUserId,
-            email: cleanEmail,
-            ...updatePayload,
-          })
+        const { error: upErr } = await adminClient.from('vc_perfis').upsert({
+          user_id: targetUserId,
+          email: cleanEmail,
+          ...updatePayload,
+        })
 
         if (upErr) {
-          return jsonResponse({ error: `Erro ao atualizar perfil do usuário: ${upErr.message}` }, 500)
+          return jsonResponse(
+            { error: `Erro ao atualizar perfil do usuário: ${upErr.message}` },
+            500,
+          )
         }
 
         // Atualizar user_metadata no Auth
@@ -305,7 +323,8 @@ Deno.serve(async (req: Request) => {
 
       // NOVO USUÁRIO: Criar via inviteUserByEmail (Supabase Auth Admin)
       // NUNCA pedir ou exibir senha no painel; NÃO criar senha padrão; NÃO salvar senha em código, banco ou localStorage.
-      const redirectOrigin = req.headers.get('origin') || 'https://projeto-via-cargas-30f44--preview.goskip.app'
+      const redirectOrigin =
+        req.headers.get('origin') || 'https://projeto-via-cargas-30f44--preview.goskip.app'
       const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(
         cleanEmail,
         {
@@ -321,7 +340,9 @@ Deno.serve(async (req: Request) => {
 
       if (inviteErr || !inviteData?.user) {
         return jsonResponse(
-          { error: `Falha ao enviar convite via Supabase Auth: ${inviteErr?.message || 'Erro desconhecido'}` },
+          {
+            error: `Falha ao enviar convite via Supabase Auth: ${inviteErr?.message || 'Erro desconhecido'}`,
+          },
           500,
         )
       }
@@ -370,13 +391,16 @@ Deno.serve(async (req: Request) => {
     // =========================================================================
     if (action === 'resend-invite') {
       const { userId, email, projetoId } = body
-      const cleanEmail = String(email || '').trim().toLowerCase()
+      const cleanEmail = String(email || '')
+        .trim()
+        .toLowerCase()
 
       if (!cleanEmail) {
         return jsonResponse({ error: 'E-mail é obrigatório para reenviar o convite.' }, 400)
       }
 
-      const redirectOrigin = req.headers.get('origin') || 'https://projeto-via-cargas-30f44--preview.goskip.app'
+      const redirectOrigin =
+        req.headers.get('origin') || 'https://projeto-via-cargas-30f44--preview.goskip.app'
       const { error: resendErr } = await adminClient.auth.admin.inviteUserByEmail(cleanEmail, {
         redirectTo: `${redirectOrigin}/reset-password`,
       })
@@ -487,7 +511,8 @@ Deno.serve(async (req: Request) => {
         .eq('id', novoProjetoId)
         .maybeSingle()
 
-      const projetoAntigo = targetPerfil.vc_projetos?.nome || targetPerfil.projeto_id || 'Não vinculado'
+      const projetoAntigo =
+        targetPerfil.vc_projetos?.nome || targetPerfil.projeto_id || 'Não vinculado'
 
       const { error: updErr } = await adminClient
         .from('vc_perfis')
@@ -571,7 +596,9 @@ Deno.serve(async (req: Request) => {
         valor_novo: valorNovo,
         motivo: `Situação do usuário alterada para ${valorNovo} pelo Administrador ${callerNome}. Usuário inativo perde imediatamente o acesso a todas as rotinas e tabelas Via Cargas via RLS. Origem: Painel do Administrador.`,
         documento_relacionado: `Usuário ID: ${targetPerfil.user_id} (${targetPerfil.email})`,
-        resultado_afetado: ativo ? 'Acesso ao sistema restabelecido' : 'Acesso ao sistema revogado imediatamente',
+        resultado_afetado: ativo
+          ? 'Acesso ao sistema restabelecido'
+          : 'Acesso ao sistema revogado imediatamente',
       })
 
       return jsonResponse({
