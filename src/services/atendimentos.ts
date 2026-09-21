@@ -9,6 +9,25 @@ export interface Atendimento {
   created_at: string
   documento_url: string | null
   enviado_implantacao?: boolean
+  origem?: string | null
+  responsavel?: string | null
+  cnpj?: string | null
+  contato?: string | null
+  assunto?: string | null
+  resumo?: string | null
+  tipo_atendimento?: string | null
+  area_responsavel?: string | null
+  fluxo?: string | null
+  situacao?: string | null
+  data_ultimo_movimento?: string | null
+  qtd_mensagens_recebidas?: number | null
+  qtd_mensagens_enviadas?: number | null
+  remetentes_destinatarios?: any
+  uid_emails?: any
+  conversa_id?: string | null
+  anexos?: any
+  importacao_status?: string | null
+  observacoes_revisao?: string | null
 }
 
 export interface AtendimentoInput {

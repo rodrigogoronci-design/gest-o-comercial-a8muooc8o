@@ -4862,6 +4862,17 @@ Obrigada.`)
               </TabsContent>
 
               <TabsContent
+                value="documentacao"
+                className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4"
+              >
+                <DocumentacaoAdesaoTab
+                  clienteId={viewingClient.id}
+                  clientName={viewingClient.name}
+                  telefone={viewingClient.originalData?.telefone || ''}
+                />
+              </TabsContent>
+
+              <TabsContent
                 value="atendimentos"
                 className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4"
               >
