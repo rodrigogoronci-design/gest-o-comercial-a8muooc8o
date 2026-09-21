@@ -76,6 +76,7 @@ import { Separator } from '@/components/ui/separator'
 import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
 import { fetchClientes, createCliente, updateCliente, deleteCliente } from '@/services/clientes'
 import { getHistoricoByCliente, createHistorico } from '@/services/historico_contratos'
+import { HistoricoAditivos } from '@/components/HistoricoAditivos'
 import {
   getSolicitacoesByCliente,
   createSolicitacao,
@@ -2700,92 +2701,97 @@ Obrigada.`)
     const plan = PLANS.find((p) => p.id === client.plano_base || p.name === client.plano_base)
 
     const navItems: SectionNavItem[] = [
-      { id: 'implantacao', label: 'Implantação', icon: <Rocket className="h-3.5 w-3.5" /> },
-      { id: 'cnpjs', label: 'CNPJs', icon: <Building2 className="h-3.5 w-3.5" /> },
-      { id: 'assinatura', label: 'Assinatura', icon: <PenLine className="h-3.5 w-3.5" /> },
+      { id: 'visao-geral-sec', label: 'Visão Geral', icon: <Building2 className="h-3.5 w-3.5" /> },
       { id: 'reunioes', label: 'Reuniões', icon: <Video className="h-3.5 w-3.5" /> },
-      { id: 'pacote', label: 'Pacote', icon: <CheckCircle className="h-3.5 w-3.5" /> },
     ]
 
     return (
       <div className="mt-2 space-y-3">
         <SectionNav items={navItems} />
-        {/* Implantação */}
+
+        {/* Resumo do Cliente e Contato */}
         <CollapsibleSection
-          id="implantacao"
-          title="Implantação"
-          icon={<Rocket className="h-4 w-4 text-indigo-600" />}
+          id="visao-geral-sec"
+          title="Resumo & Contato do Cliente"
+          icon={<Building2 className="h-4 w-4 text-indigo-600" />}
           defaultOpen
         >
-          {clientImplementacao ? (
-            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
-              <div className="flex items-center justify-between mb-3">
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    'text-xs',
-                    clientImplementacao.status === 'Finalizada'
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      : clientImplementacao.status === 'Atrasada'
-                        ? 'bg-red-50 text-red-700 border-red-200'
-                        : 'bg-blue-50 text-blue-700 border-blue-200',
-                  )}
-                >
-                  {clientImplementacao.status}
+          <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <div>
+                <span className="text-xs text-slate-500 block">Razão Social / Nome</span>
+                <span className="font-semibold text-slate-900">{client.name}</span>
+              </div>
+              <div>
+                <span className="text-xs text-slate-500 block">CNPJ Principal</span>
+                <span className="font-mono text-slate-800">{formatCNPJ(client.cnpj)}</span>
+              </div>
+              {client.originalData?.email && (
+                <div>
+                  <span className="text-xs text-slate-500 block">E-mail</span>
+                  <span className="text-slate-800">{client.originalData.email}</span>
+                </div>
+              )}
+              {client.originalData?.telefone && (
+                <div>
+                  <span className="text-xs text-slate-500 block">Telefone</span>
+                  <span className="text-slate-800">{client.originalData.telefone}</span>
+                </div>
+              )}
+              {client.endereco && (
+                <div className="sm:col-span-2">
+                  <span className="text-xs text-slate-500 block">Endereço</span>
+                  <span className="text-slate-800">{client.endereco}</span>
+                </div>
+              )}
+              {client.rep_nome && (
+                <div>
+                  <span className="text-xs text-slate-500 block">Representante Legal</span>
+                  <span className="text-slate-800">{client.rep_nome}</span>
+                </div>
+              )}
+              {client.rep_cpf && (
+                <div>
+                  <span className="text-xs text-slate-500 block">CPF do Representante</span>
+                  <span className="font-mono text-slate-800">{client.rep_cpf}</span>
+                </div>
+              )}
+            </div>
+            {client.stats && client.stats.relevantTitulos > 0 && (
+              <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+                <span className="text-xs text-slate-500">Score Financeiro:</span>
+                <Badge variant="outline" className={`${client.stats.color}`}>
+                  {client.stats.classification} (Score: {client.stats.score})
                 </Badge>
-                <span className="text-sm font-bold text-indigo-600">
-                  {clientImplementacao.progresso}%
-                </span>
               </div>
-              <Progress value={clientImplementacao.progresso || 0} className="h-2 mb-3" />
-
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-500">Responsável:</span>
-                  <span className="font-medium text-slate-800">
-                    {clientImplementacao.colaboradores?.nome || 'Não atribuído'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-500">Próxima etapa:</span>
-                  <span className="font-medium text-slate-800 text-right max-w-[180px] truncate">
-                    {(() => {
-                      const etapas = (clientImplementacao.implementacao_etapas || []).sort(
-                        (a: any, b: any) => a.ordem - b.ordem,
-                      )
-                      const proxima = etapas.find((e: any) => e.status !== 'Concluída')
-                      return proxima ? proxima.titulo : 'Todas concluídas'
-                    })()}
-                  </span>
-                </div>
-              </div>
-
-              <Button size="sm" className="w-full bg-indigo-600 hover:bg-indigo-700" asChild>
-                <Link to={`/implementacoes/${clientImplementacao.id}`}>
-                  <Rocket className="h-3.5 w-3.5 mr-1.5" /> Abrir Implantação
-                </Link>
-              </Button>
-            </div>
-          ) : (
-            <div className="bg-slate-50 rounded-lg border border-dashed border-slate-300 p-4 text-center">
-              <p className="text-xs text-slate-400 mb-2">Nenhuma implantação iniciada.</p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => client && handleActionSendImplementation(client)}
-                className="hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200"
-              >
-                <Rocket className="h-3.5 w-3.5 mr-1.5" /> Iniciar Implantação
-              </Button>
-            </div>
-          )}
+            )}
+          </div>
         </CollapsibleSection>
 
+        {/* Reuniões */}
+        <CollapsibleSection
+          id="reunioes"
+          title="Reuniões & Movimentações"
+          icon={<Video className="h-4 w-4 text-indigo-600" />}
+          defaultOpen
+        >
+          <ClientReunioesTab clienteId={client.id} />
+        </CollapsibleSection>
+      </div>
+    )
+  }
+
+  const renderComercialPlanoTab = (client: MergedClient) => {
+    const plan = PLANS.find((p) => p.id === client.plano_base || p.name === client.plano_base)
+
+    return (
+      <div className="space-y-4">
         {/* CNPJs Vinculados */}
         <CollapsibleSection
           id="cnpjs"
           title="CNPJs Vinculados"
           icon={<Building2 className="h-4 w-4 text-indigo-600" />}
+          defaultOpen
         >
           <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
             <div className="p-3 bg-slate-50 border-b border-slate-100">
@@ -2830,6 +2836,7 @@ Obrigada.`)
           id="assinatura"
           title="Assinatura Eletrônica"
           icon={<PenLine className="h-4 w-4 text-violet-600" />}
+          defaultOpen
         >
           <div className="bg-white rounded-lg border border-slate-200 p-3 shadow-sm">
             {client.link_assinatura ? (
@@ -2880,44 +2887,7 @@ Obrigada.`)
           </div>
         </CollapsibleSection>
 
-        {/* Reuniões */}
-        <CollapsibleSection
-          id="reunioes"
-          title="Reuniões"
-          icon={<Video className="h-4 w-4 text-indigo-600" />}
-        >
-          <ClientReunioesTab clienteId={client.id} />
-        </CollapsibleSection>
-
-        {/* Cancelamento */}
-        {client.originalData?.status?.toLowerCase() === 'inativo' && (
-          <CollapsibleSection
-            id="cancelamento"
-            title="Contrato Cancelado"
-            icon={<Ban className="h-4 w-4 text-red-600" />}
-          >
-            <div className="space-y-2 text-sm">
-              <div className="flex gap-2">
-                <span className="text-red-600 font-medium min-w-[140px]">
-                  Data do Cancelamento:
-                </span>
-                <span className="text-slate-700">
-                  {client.data_cancelamento
-                    ? formatDate(client.data_cancelamento)
-                    : 'Não informada'}
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-red-600 font-medium min-w-[140px]">Motivo:</span>
-                <span className="text-slate-700">
-                  {client.motivo_cancelamento || 'Não informado'}
-                </span>
-              </div>
-            </div>
-          </CollapsibleSection>
-        )}
-
-        {/* Resumo Atual */}
+        {/* Pacote Contratado Vigente */}
         <CollapsibleSection
           id="pacote"
           title="Pacote Contratado Vigente"
@@ -3064,48 +3034,409 @@ Obrigada.`)
                     Nenhum plano ou módulo selecionado para este cliente.
                   </div>
                 )}
-
-              {Array.isArray(client.cobrancas) && client.cobrancas.length > 0 && (
-                <div className="mt-4">
-                  <span className="text-xs font-bold text-slate-400 uppercase mb-2 block">
-                    Mensalidades / Cobranças Programadas
-                  </span>
-                  <div className="space-y-2">
-                    {client.cobrancas.map((cob, idx) => (
-                      <div
-                        key={idx}
-                        className="flex justify-between items-center bg-white border border-slate-200 p-2.5 rounded-md shadow-sm"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
-                          <span className="font-medium text-xs text-slate-700">
-                            Vencimento:{' '}
-                            {(cob.data_vencimento || '').includes('-')
-                              ? formatDate(cob.data_vencimento)
-                              : cob.data_vencimento}
-                          </span>
-                        </div>
-                        <span className="text-xs font-bold text-slate-700">
-                          {formatCurrency(cob.valor)}
-                        </span>
-                      </div>
-                    ))}
-                    {client.cobrancas.length > 1 && (
-                      <div className="flex justify-between items-center bg-emerald-50 border border-emerald-100 p-2.5 rounded-md mt-2">
-                        <span className="font-bold text-xs text-emerald-800">Total Somado</span>
-                        <span className="text-sm font-bold text-emerald-700">
-                          {formatCurrency(
-                            client.cobrancas.reduce((acc, c) => acc + (c.valor || 0), 0),
-                          )}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </CollapsibleSection>
+
+        {/* Proposta de Treinamento e Upsell */}
+        <CollapsibleSection
+          id="propostas-upsell"
+          title="Propostas de Treinamento / Upsell"
+          icon={<Plus className="h-4 w-4 text-indigo-600" />}
+          defaultOpen
+        >
+          <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div>
+              <div className="font-semibold text-sm text-slate-800">
+                Proposta de Treinamento Comercial
+              </div>
+              <div className="text-xs text-slate-500">
+                Configure e gere documento em PDF para envio ao cliente.
+              </div>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => setIsSetupTrainingProposalOpen(true)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white shrink-0"
+            >
+              <FileText className="h-4 w-4 mr-1.5" /> Nova Proposta de Treinamento
+            </Button>
+          </div>
+        </CollapsibleSection>
+      </div>
+    )
+  }
+
+  const renderImplantacaoExecucaoTab = (client: MergedClient) => {
+    const implantacaoSolicitacoes = solicitacoes.filter(
+      (s) =>
+        ['Treinamento', 'Visita Técnica', 'Inclusão de Módulo'].includes(s.tipo) ||
+        (s.status || '').toLowerCase().includes('implantação'),
+    )
+
+    return (
+      <div className="space-y-4">
+        {/* Card de Implantação */}
+        <CollapsibleSection
+          id="status-implantacao"
+          title="Status da Implantação"
+          icon={<Rocket className="h-4 w-4 text-indigo-600" />}
+          defaultOpen
+        >
+          {clientImplementacao ? (
+            <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'text-xs',
+                    clientImplementacao.status === 'Finalizada'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : clientImplementacao.status === 'Atrasada'
+                        ? 'bg-red-50 text-red-700 border-red-200'
+                        : 'bg-blue-50 text-blue-700 border-blue-200',
+                  )}
+                >
+                  {clientImplementacao.status}
+                </Badge>
+                <span className="text-sm font-bold text-indigo-600">
+                  {clientImplementacao.progresso}%
+                </span>
+              </div>
+              <Progress value={clientImplementacao.progresso || 0} className="h-2 mb-3" />
+
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-500">Responsável:</span>
+                  <span className="font-medium text-slate-800">
+                    {clientImplementacao.colaboradores?.nome || 'Não atribuído'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-500">Próxima etapa:</span>
+                  <span className="font-medium text-slate-800 text-right max-w-[180px] truncate">
+                    {(() => {
+                      const etapas = (clientImplementacao.implementacao_etapas || []).sort(
+                        (a: any, b: any) => a.ordem - b.ordem,
+                      )
+                      const proxima = etapas.find((e: any) => e.status !== 'Concluída')
+                      return proxima ? proxima.titulo : 'Todas concluídas'
+                    })()}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button size="sm" className="flex-1 bg-indigo-600 hover:bg-indigo-700" asChild>
+                  <Link to={`/implementacoes/${clientImplementacao.id}`}>
+                    <Rocket className="h-3.5 w-3.5 mr-1.5" /> Abrir Implantação
+                  </Link>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => client && handleActionSendImplementation(client)}
+                  className="hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200"
+                >
+                  <Mail className="h-3.5 w-3.5 mr-1.5" /> E-mail Implantação
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-slate-50 rounded-lg border border-dashed border-slate-300 p-4 text-center">
+              <p className="text-xs text-slate-400 mb-2">Nenhuma implantação iniciada.</p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => client && handleActionSendImplementation(client)}
+                className="hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200"
+              >
+                <Rocket className="h-3.5 w-3.5 mr-1.5" /> Iniciar Implantação
+              </Button>
+            </div>
+          )}
+        </CollapsibleSection>
+
+        {/* Solicitações de Implantação */}
+        <CollapsibleSection
+          id="solicitacoes-implantacao"
+          title="Solicitações Voltadas à Implantação"
+          icon={<ClipboardList className="h-4 w-4 text-indigo-600" />}
+          defaultOpen
+        >
+          <div className="space-y-3">
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  resetSolicitacaoForm()
+                  setSolicitacaoTipo('Treinamento')
+                  setIsAddSolicitacaoOpen(true)
+                }}
+              >
+                <Plus className="h-3.5 w-3.5 mr-1.5" /> Nova Solicitação de Implantação
+              </Button>
+            </div>
+
+            {implantacaoSolicitacoes.length === 0 ? (
+              <div className="bg-white rounded-lg border border-dashed border-slate-200 p-4 text-center text-xs text-slate-400">
+                Nenhuma solicitação de implantação registrada.
+              </div>
+            ) : (
+              implantacaoSolicitacoes.map((sol) => (
+                <div
+                  key={sol.id}
+                  className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm space-y-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <Badge
+                      variant="outline"
+                      className="text-xs bg-indigo-50 text-indigo-700 border-indigo-200"
+                    >
+                      {sol.tipo}
+                    </Badge>
+                    <span className="text-xs text-slate-500">
+                      {sol.data_solicitacao ? formatDate(sol.data_solicitacao) : ''}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-700 whitespace-pre-line">{sol.descricao}</p>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                    <Badge variant="outline" className="text-[10px]">
+                      {sol.status || 'Pendente'}
+                    </Badge>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs text-indigo-600"
+                        onClick={() => handleEmailImplantacao(sol)}
+                      >
+                        <Mail className="h-3 w-3 mr-1" /> E-mail
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs"
+                        onClick={() => handleOpenEditSolicitacao(sol)}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs text-red-500 hover:text-red-700"
+                        onClick={() => handleDeleteSolicitacao(sol.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CollapsibleSection>
+      </div>
+    )
+  }
+
+  const renderFinanceiroHistoricoTab = (client: MergedClient) => {
+    return (
+      <div className="space-y-4">
+        {/* Cobranças Programadas */}
+        {Array.isArray(client.cobrancas) && client.cobrancas.length > 0 && (
+          <CollapsibleSection
+            id="cobrancas-programadas"
+            title="Mensalidades / Cobranças Programadas"
+            icon={<DollarSign className="h-4 w-4 text-emerald-600" />}
+            defaultOpen
+          >
+            <div className="space-y-2">
+              {client.cobrancas.map((cob, idx) => (
+                <div
+                  key={idx}
+                  className="flex justify-between items-center bg-white border border-slate-200 p-2.5 rounded-md shadow-sm"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                    <span className="font-medium text-xs text-slate-700">
+                      Vencimento:{' '}
+                      {(cob.data_vencimento || '').includes('-')
+                        ? formatDate(cob.data_vencimento)
+                        : cob.data_vencimento}
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold text-slate-700">
+                    {formatCurrency(cob.valor)}
+                  </span>
+                </div>
+              ))}
+              {client.cobrancas.length > 1 && (
+                <div className="flex justify-between items-center bg-emerald-50 border border-emerald-100 p-2.5 rounded-md mt-2">
+                  <span className="font-bold text-xs text-emerald-800">Total Somado</span>
+                  <span className="text-sm font-bold text-emerald-700">
+                    {formatCurrency(client.cobrancas.reduce((acc, c) => acc + (c.valor || 0), 0))}
+                  </span>
+                </div>
+              )}
+            </div>
+          </CollapsibleSection>
+        )}
+
+        {/* Envio ao Financeiro e Ações */}
+        <CollapsibleSection
+          id="envio-financeiro"
+          title="Faturamento & Envio ao Financeiro"
+          icon={<DollarSign className="h-4 w-4 text-emerald-600" />}
+          defaultOpen
+        >
+          <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs text-slate-500 block">Mensalidade Total Vigente</span>
+                <span className="text-xl font-bold text-emerald-700">
+                  {formatCurrency(client.totalValue)}
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                disabled={isSendingFinanceiro}
+                onClick={() => handleActionSendFinanceiro(client)}
+                className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+              >
+                {isSendingFinanceiro ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <DollarSign className="h-4 w-4 mr-2" />
+                )}
+                Enviar ao Financeiro
+              </Button>
+            </div>
+          </div>
+        </CollapsibleSection>
+
+        {/* Solicitações de Cobrança com Valor */}
+        <CollapsibleSection
+          id="solicitacoes-financeiras"
+          title="Solicitações Financeiras / Cobranças"
+          icon={<ClipboardList className="h-4 w-4 text-emerald-600" />}
+          defaultOpen
+        >
+          <div className="space-y-3">
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  resetSolicitacaoForm()
+                  setSolicitacaoTipo('Outro')
+                  setIsAddSolicitacaoOpen(true)
+                }}
+              >
+                <Plus className="h-3.5 w-3.5 mr-1.5" /> Nova Solicitação Financeira
+              </Button>
+            </div>
+
+            {solicitacoes.filter((s) => s.valor && s.valor > 0).length === 0 ? (
+              <div className="bg-white rounded-lg border border-dashed border-slate-200 p-4 text-center text-xs text-slate-400">
+                Nenhuma solicitação com cobrança financeira cadastrada.
+              </div>
+            ) : (
+              solicitacoes
+                .filter((s) => s.valor && s.valor > 0)
+                .map((sol) => (
+                  <div
+                    key={sol.id}
+                    className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200"
+                      >
+                        {sol.tipo}
+                      </Badge>
+                      <span className="text-sm font-bold text-emerald-700">
+                        {formatCurrency(sol.valor)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-700 whitespace-pre-line">{sol.descricao}</p>
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                      <span className="text-[10px] text-slate-400">
+                        Vencimento: {sol.data_vencimento ? formatDate(sol.data_vencimento) : '--'}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs text-emerald-600"
+                          onClick={() => handleEmailFinanceiro(sol)}
+                        >
+                          <Mail className="h-3 w-3 mr-1" /> Cobrança
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs"
+                          onClick={() => handleOpenEditSolicitacao(sol)}
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs text-red-500 hover:text-red-700"
+                          onClick={() => handleDeleteSolicitacao(sol.id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+            )}
+          </div>
+        </CollapsibleSection>
+
+        {/* Histórico de Contratos / Aditivos */}
+        <CollapsibleSection
+          id="historico-contratos-sec"
+          title="Histórico de Contratos & Aditivos"
+          icon={<ClipboardList className="h-4 w-4 text-indigo-600" />}
+          defaultOpen
+        >
+          <HistoricoAditivos clienteId={client.id} />
+        </CollapsibleSection>
+
+        {/* Card de Contrato Cancelado */}
+        {client.originalData?.status?.toLowerCase() === 'inativo' && (
+          <CollapsibleSection
+            id="cancelamento-sec"
+            title="Contrato Cancelado"
+            icon={<Ban className="h-4 w-4 text-red-600" />}
+            defaultOpen
+          >
+            <div className="space-y-2 text-sm bg-red-50/50 border border-red-200 rounded-lg p-4">
+              <div className="flex gap-2">
+                <span className="text-red-600 font-medium min-w-[140px]">
+                  Data do Cancelamento:
+                </span>
+                <span className="text-slate-700">
+                  {client.data_cancelamento
+                    ? formatDate(client.data_cancelamento)
+                    : 'Não informada'}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-red-600 font-medium min-w-[140px]">Motivo:</span>
+                <span className="text-slate-700">
+                  {client.motivo_cancelamento || 'Não informado'}
+                </span>
+              </div>
+            </div>
+          </CollapsibleSection>
+        )}
       </div>
     )
   }
@@ -4847,17 +5178,37 @@ Obrigada.`)
           </SheetHeader>
 
           {viewingClient && (
-            <Tabs defaultValue="resumo" className="mt-6 w-full h-full flex flex-col">
-              <TabsList className="grid w-full max-w-3xl grid-cols-4 bg-white border border-slate-200">
-                <TabsTrigger value="resumo">Resumo & Gestão</TabsTrigger>
-                <TabsTrigger value="documentacao">Documentação</TabsTrigger>
-                <TabsTrigger value="atendimentos">Atendimentos</TabsTrigger>
-                <TabsTrigger value="contrato">Contrato Inicial</TabsTrigger>
+            <Tabs defaultValue="visao-geral" className="mt-6 w-full h-full flex flex-col">
+              <TabsList className="grid w-full grid-cols-6 bg-white border border-slate-200 text-xs">
+                <TabsTrigger value="visao-geral" className="text-xs px-2 truncate">
+                  Visão Geral
+                </TabsTrigger>
+                <TabsTrigger value="comercial-plano" className="text-xs px-2 truncate">
+                  Comercial & Plano
+                </TabsTrigger>
+                <TabsTrigger value="documentacao" className="text-xs px-2 truncate">
+                  Documentação
+                </TabsTrigger>
+                <TabsTrigger value="atendimentos" className="text-xs px-2 truncate">
+                  Atendimentos
+                </TabsTrigger>
+                <TabsTrigger value="implantacao-execucao" className="text-xs px-2 truncate">
+                  Implantação & Execução
+                </TabsTrigger>
+                <TabsTrigger value="financeiro-historico" className="text-xs px-2 truncate">
+                  Financeiro & Histórico
+                </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="resumo" className="mt-4 flex-1">
+              <TabsContent value="visao-geral" className="mt-4 flex-1">
                 <div className="h-[calc(100vh-14rem)] overflow-y-auto overflow-x-hidden pr-2">
                   <ClientDetailsPanel client={viewingClient} />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="comercial-plano" className="mt-4 flex-1">
+                <div className="h-[calc(100vh-14rem)] overflow-y-auto overflow-x-hidden pr-2">
+                  {renderComercialPlanoTab(viewingClient)}
                 </div>
               </TabsContent>
 
@@ -4865,17 +5216,6 @@ Obrigada.`)
                 value="documentacao"
                 className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4 overflow-y-auto"
               >
-                <DocumentacaoAdesaoTab
-                  clienteId={viewingClient.id}
-                  clientName={viewingClient.name}
-                />
-              </TabsContent>
-
-              <TabsContent
-                value="atendimentos"
-                className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4"
-              >
-                {' '}
                 <DocumentacaoAdesaoTab
                   clienteId={viewingClient.id}
                   clientName={viewingClient.name}
@@ -4891,6 +5231,18 @@ Obrigada.`)
                   clienteId={viewingClient.id}
                   clientName={viewingClient.name}
                 />
+              </TabsContent>
+
+              <TabsContent value="implantacao-execucao" className="mt-4 flex-1">
+                <div className="h-[calc(100vh-14rem)] overflow-y-auto overflow-x-hidden pr-2">
+                  {renderImplantacaoExecucaoTab(viewingClient)}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="financeiro-historico" className="mt-4 flex-1">
+                <div className="h-[calc(100vh-14rem)] overflow-y-auto overflow-x-hidden pr-2">
+                  {renderFinanceiroHistoricoTab(viewingClient)}
+                </div>
               </TabsContent>
 
               <TabsContent
