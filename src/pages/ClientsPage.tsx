@@ -2924,6 +2924,7 @@ Obrigada.`)
           icon={<CheckCircle className="h-4 w-4 text-emerald-600" />}
           defaultOpen
         >
+          {' '}
           <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
             <div className="flex items-center gap-2">
               {client.stats && client.stats.relevantTitulos > 0 && (
@@ -2948,7 +2949,6 @@ Obrigada.`)
               </Button>
             </div>
           </div>
-
           <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
             <div className="p-4 bg-slate-50 border-b border-slate-100 flex flex-wrap gap-4 justify-between items-center">
               <div>
@@ -4863,8 +4863,19 @@ Obrigada.`)
 
               <TabsContent
                 value="documentacao"
+                className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4 overflow-y-auto"
+              >
+                <DocumentacaoAdesaoTab
+                  clienteId={viewingClient.id}
+                  clientName={viewingClient.name}
+                />
+              </TabsContent>
+
+              <TabsContent
+                value="atendimentos"
                 className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4"
               >
+                {' '}
                 <DocumentacaoAdesaoTab
                   clienteId={viewingClient.id}
                   clientName={viewingClient.name}
