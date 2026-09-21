@@ -5178,13 +5178,13 @@ Obrigada.`)
           </SheetHeader>
 
           {viewingClient && (
-            <Tabs defaultValue="visao-geral" className="mt-6 w-full h-full flex flex-col">
-              <TabsList className="grid w-full grid-cols-6 bg-white border border-slate-200 text-xs">
-                <TabsTrigger value="visao-geral" className="text-xs px-2 truncate">
+            <Tabs defaultValue="resumo" className="mt-6 w-full h-full flex flex-col">
+              <TabsList className="grid w-full grid-cols-5 bg-white border border-slate-200 text-xs">
+                <TabsTrigger value="resumo" className="text-xs px-2 truncate">
                   Visão Geral
                 </TabsTrigger>
-                <TabsTrigger value="comercial-plano" className="text-xs px-2 truncate">
-                  Comercial & Plano
+                <TabsTrigger value="comercial" className="text-xs px-2 truncate">
+                  Comercial e Plano
                 </TabsTrigger>
                 <TabsTrigger value="documentacao" className="text-xs px-2 truncate">
                   Documentação
@@ -5192,61 +5192,19 @@ Obrigada.`)
                 <TabsTrigger value="atendimentos" className="text-xs px-2 truncate">
                   Atendimentos
                 </TabsTrigger>
-                <TabsTrigger value="implantacao-execucao" className="text-xs px-2 truncate">
-                  Implantação & Execução
-                </TabsTrigger>
-                <TabsTrigger value="financeiro-historico" className="text-xs px-2 truncate">
-                  Financeiro & Histórico
+                <TabsTrigger value="financeiro" className="text-xs px-2 truncate">
+                  Financeiro e Histórico
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="visao-geral" className="mt-4 flex-1">
+              <TabsContent value="resumo" className="mt-4 flex-1">
                 <div className="h-[calc(100vh-14rem)] overflow-y-auto overflow-x-hidden pr-2">
                   <ClientDetailsPanel client={viewingClient} />
                 </div>
               </TabsContent>
 
-              <TabsContent value="comercial-plano" className="mt-4 flex-1">
-                <div className="h-[calc(100vh-14rem)] overflow-y-auto overflow-x-hidden pr-2">
-                  {renderComercialPlanoTab(viewingClient)}
-                </div>
-              </TabsContent>
-
               <TabsContent
-                value="documentacao"
-                className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4 overflow-y-auto"
-              >
-                <DocumentacaoAdesaoTab
-                  clienteId={viewingClient.id}
-                  clientName={viewingClient.name}
-                  telefone={viewingClient.originalData?.telefone || ''}
-                />
-              </TabsContent>
-
-              <TabsContent
-                value="atendimentos"
-                className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4"
-              >
-                <ClientAtendimentosTab
-                  clienteId={viewingClient.id}
-                  clientName={viewingClient.name}
-                />
-              </TabsContent>
-
-              <TabsContent value="implantacao-execucao" className="mt-4 flex-1">
-                <div className="h-[calc(100vh-14rem)] overflow-y-auto overflow-x-hidden pr-2">
-                  {renderImplantacaoExecucaoTab(viewingClient)}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="financeiro-historico" className="mt-4 flex-1">
-                <div className="h-[calc(100vh-14rem)] overflow-y-auto overflow-x-hidden pr-2">
-                  {renderFinanceiroHistoricoTab(viewingClient)}
-                </div>
-              </TabsContent>
-
-              <TabsContent
-                value="contrato"
+                value="comercial"
                 className="mt-4 flex-1 bg-white border rounded-md shadow-sm"
               >
                 <DocumentacaoStatusBanner clienteId={viewingClient.id} />
@@ -5336,6 +5294,81 @@ Obrigada.`)
                     </div>
                   </ScrollArea>
                 )}
+              </TabsContent>
+
+              <TabsContent
+                value="documentacao"
+                className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4 overflow-y-auto"
+              >
+                <DocumentacaoAdesaoTab
+                  clienteId={viewingClient.id}
+                  clientName={viewingClient.name}
+                  telefone={viewingClient.originalData?.telefone || ''}
+                />
+              </TabsContent>
+
+              <TabsContent
+                value="atendimentos"
+                className="mt-4 flex-1 bg-white border rounded-md shadow-sm p-4"
+              >
+                <ClientAtendimentosTab
+                  clienteId={viewingClient.id}
+                  clientName={viewingClient.name}
+                />
+              </TabsContent>
+
+              <TabsContent value="financeiro" className="mt-4 flex-1">
+                <div className="h-[calc(100vh-14rem)] overflow-y-auto overflow-x-hidden pr-2 space-y-4">
+                  <Card className="border-slate-200 shadow-sm">
+                    <CardHeader className="pb-3 border-b border-slate-100">
+                      <CardTitle className="text-base font-semibold text-slate-900">
+                        Financeiro e Histórico
+                      </CardTitle>
+                      <CardDescription className="text-xs text-slate-500">
+                        Histórico de contratos, aditivos e status financeiro do cliente.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-4 space-y-4">
+                      {/* Histórico de contratos e aditivos */}
+                      <div>
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                          Histórico de Contratos & Aditivos
+                        </h4>
+                        <HistoricoAditivos clienteId={viewingClient.id} />
+                      </div>
+
+                      {/* Bloco informativo de contrato cancelado, quando existir */}
+                      {(viewingClient.data_cancelamento ||
+                        viewingClient.motivo_cancelamento ||
+                        viewingClient.originalData?.status?.toLowerCase() === 'inativo') && (
+                        <div className="bg-red-50/70 border border-red-200 rounded-lg p-4 space-y-2 mt-4">
+                          <div className="flex items-center gap-2 font-semibold text-sm text-red-700">
+                            <Ban className="h-4 w-4" />
+                            <span>Contrato Cancelado</span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-700 pt-1">
+                            <div>
+                              <span className="font-medium text-red-600 block">
+                                Data do Cancelamento:
+                              </span>
+                              <span>
+                                {viewingClient.data_cancelamento
+                                  ? formatDate(viewingClient.data_cancelamento)
+                                  : 'Não informada'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium text-red-600 block">
+                                Motivo do Cancelamento:
+                              </span>
+                              <span>{viewingClient.motivo_cancelamento || 'Não informado'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
             </Tabs>
           )}
