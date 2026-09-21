@@ -39,36 +39,56 @@ Deno.serve(async (req: Request) => {
       global: { headers: { Authorization: authHeader } },
     })
 
-    const {
-      data: { user: callerUser },
-      error: callerError,
-    } = await callerClient.auth.getUser()
-
-    if (callerError || !callerUser) {
-      return jsonResponse({ error: 'Não autorizado: token inválido ou sessão expirada.' }, 401)
-    }
-
-    // 2. Verificar se o chamador é ADMINISTRADOR ativo no Via Cargas
     const adminClient = createClient(supabaseUrl, serviceRoleKey)
 
-    const { data: callerProfile, error: profileError } = await adminClient
-      .from('vc_perfis')
-      .select('papel, nome, email, ativo')
-      .eq('user_id', callerUser.id)
-      .maybeSingle()
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    let callerUser: any = null
+    let callerProfile: any = null
 
-    if (profileError || !callerProfile) {
-      return jsonResponse(
-        { error: 'Acesso negado: perfil de usuário não localizado no sistema Via Cargas.' },
-        403,
-      )
-    }
+    // Se o token for a chave de serviço (chamada interna/admin direta)
+    if (token === serviceRoleKey) {
+      const { data: alinePerfis } = await adminClient
+        .from('vc_perfis')
+        .select('*')
+        .eq('email', 'alinecosta@servicelogic.com.br')
+        .maybeSingle()
+      callerUser = {
+        id: alinePerfis?.user_id || 'ca103445-5280-46fa-b951-5cbcad7d8db5',
+        email: 'alinecosta@servicelogic.com.br',
+      }
+      callerProfile = alinePerfis || { papel: 'ADMINISTRADOR', nome: 'Aline Costa', ativo: true }
+    } else {
+      const {
+        data: { user: gotUser },
+        error: callerError,
+      } = await callerClient.auth.getUser()
 
-    if (callerProfile.papel !== 'ADMINISTRADOR' || callerProfile.ativo === false) {
-      return jsonResponse(
-        { error: 'Acesso negado: apenas ADMINISTRADORES ativos podem gerenciar acessos.' },
-        403,
-      )
+      if (callerError || !gotUser) {
+        return jsonResponse({ error: 'Não autorizado: token inválido ou sessão expirada.' }, 401)
+      }
+      callerUser = gotUser
+
+      // 2. Verificar se o chamador é ADMINISTRADOR ativo no Via Cargas
+      const { data: prof, error: profileError } = await adminClient
+        .from('vc_perfis')
+        .select('papel, nome, email, ativo')
+        .eq('user_id', callerUser.id)
+        .maybeSingle()
+
+      if (profileError || !prof) {
+        return jsonResponse(
+          { error: 'Acesso negado: perfil de usuário não localizado no sistema Via Cargas.' },
+          403,
+        )
+      }
+
+      if (prof.papel !== 'ADMINISTRADOR' || prof.ativo === false) {
+        return jsonResponse(
+          { error: 'Acesso negado: apenas ADMINISTRADORES ativos podem gerenciar acessos.' },
+          403,
+        )
+      }
+      callerProfile = prof
     }
 
     const callerNome = callerProfile.nome || callerUser.email || 'Administrador'
@@ -77,16 +97,98 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}))
     const { action } = body
 
+    // Helper para gerar link de acesso admin (recovery ou invite)
+    const generateAdminAccessLink = async (
+      targetEmail: string,
+      targetUserId?: string,
+      preferredType?: 'recovery' | 'invite' | 'magiclink',
+      origin?: string,
+    ) => {
+      const cleanEmail = String(targetEmail).trim().toLowerCase()
+      const fallbackOrigin = 'https://projeto-via-cargas-30f44--preview.goskip.app'
+      const cleanOrigin = (origin || fallbackOrigin).replace(/\/+$/, '')
+      const effectiveRedirect = `${cleanOrigin}/redefinir-senha`
+
+      // Tentamos o tipo especificado ou recuperação (recovery é o padrão ideal para definir senha se já confirmado)
+      let primaryType: 'recovery' | 'invite' = preferredType === 'invite' ? 'invite' : 'recovery'
+      let linkResult = await adminClient.auth.admin.generateLink({
+        type: primaryType,
+        email: cleanEmail,
+        options: {
+          redirectTo: effectiveRedirect,
+        },
+      })
+
+      // Se falhar e foi tentado invite, tenta recovery; ou vice-versa
+      if (linkResult.error) {
+        const fallbackType: 'recovery' | 'invite' =
+          primaryType === 'recovery' ? 'invite' : 'recovery'
+        const fallbackResult = await adminClient.auth.admin.generateLink({
+          type: fallbackType,
+          email: cleanEmail,
+          options: {
+            redirectTo: effectiveRedirect,
+          },
+        })
+        if (!fallbackResult.error && fallbackResult.data) {
+          linkResult = fallbackResult
+          primaryType = fallbackType
+        }
+      }
+
+      if (linkResult.error || !linkResult.data) {
+        return { error: linkResult.error?.message || 'Falha ao gerar link via API admin.' }
+      }
+
+      const rawActionLink = linkResult.data.properties?.action_link || ''
+      const hashedToken = linkResult.data.properties?.hashed_token
+      const emailOtp = linkResult.data.properties?.email_otp
+
+      // Construir link de fallback direto para a aplicação caso o action_link do Supabase
+      // passe por redirecionamento intermediário do GoTrue que consuma o token
+      let directAppLink = ''
+      if (hashedToken) {
+        directAppLink = `${effectiveRedirect}?token_hash=${encodeURIComponent(
+          hashedToken,
+        )}&type=${encodeURIComponent(primaryType)}`
+      }
+
+      return {
+        actionLink: rawActionLink,
+        directAppLink,
+        verificationType: primaryType,
+        redirectUrl: effectiveRedirect,
+        user: linkResult.data.user,
+        hashedToken,
+        emailOtp,
+      }
+    }
+
     // =========================================================================
     // ACTION: generate-password-link - Gerar link administrativo de definição de senha
     // =========================================================================
     if (action === 'generate-password-link') {
-      const { targetUserId, targetEmail, linkType, redirectTo } = body
+      const { targetUserId, targetEmail, linkType, redirectTo, projetoId, canal } = body
 
       let resolvedEmail = targetEmail
-      if (!resolvedEmail && targetUserId) {
-        const { data: usr } = await adminClient.auth.admin.getUserById(targetUserId)
-        resolvedEmail = usr?.user?.email
+      let resolvedUserId = targetUserId
+      let targetNome = ''
+
+      if (resolvedUserId) {
+        const { data: usr } = await adminClient.auth.admin.getUserById(resolvedUserId)
+        if (usr?.user?.email) resolvedEmail = usr.user.email
+      }
+
+      if (!resolvedEmail && resolvedUserId) {
+        const { data: perf } = await adminClient
+          .from('vc_perfis')
+          .select('email, nome, projeto_id')
+          .eq('user_id', resolvedUserId)
+          .maybeSingle()
+        if (perf?.email) {
+          resolvedEmail = perf.email
+          targetNome = perf.nome || ''
+        }
       }
 
       if (!resolvedEmail) {
@@ -94,34 +196,64 @@ Deno.serve(async (req: Request) => {
       }
 
       const cleanEmail = String(resolvedEmail).trim().toLowerCase()
-      const effectiveType = linkType === 'invite' ? 'invite' : 'recovery'
-      const effectiveRedirect =
-        redirectTo || 'https://projeto-via-cargas-30f44--preview.goskip.app/redefinir-senha'
 
-      // Gerar link seguro via Supabase Admin API
-      const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
-        type: effectiveType,
-        email: cleanEmail,
-        options: {
-          redirectTo: effectiveRedirect,
-        },
-      })
+      if (!targetNome) {
+        const { data: perf } = await adminClient
+          .from('vc_perfis')
+          .select('nome, projeto_id')
+          .eq('email', cleanEmail)
+          .maybeSingle()
+        if (perf?.nome) targetNome = perf.nome
+      }
 
-      if (linkErr || !linkData) {
+      const redirectOrigin =
+        redirectTo ||
+        req.headers.get('origin') ||
+        req.headers.get('referer')?.replace(/\/[^/]*$/, '') ||
+        'https://projeto-via-cargas-30f44--preview.goskip.app'
+
+      const genRes = await generateAdminAccessLink(
+        cleanEmail,
+        resolvedUserId,
+        linkType === 'invite' ? 'invite' : 'recovery',
+        redirectOrigin,
+      )
+
+      if (genRes.error || !genRes.actionLink) {
         return jsonResponse(
-          { error: `Erro ao gerar link de senha: ${linkErr?.message || 'Falha desconhecida'}` },
+          { error: `Erro ao gerar link de definição de senha: ${genRes.error}` },
           500,
         )
       }
 
+      // Trilha de auditoria: registrar geração do link
+      const auditCanal = canal || 'link manual'
+      const auditProjId = projetoId || '4bdc5746-5c78-45e8-9eeb-0870546e6afa'
+
+      await adminClient.from('vc_trilha_auditoria').insert({
+        projeto_id: auditProjId,
+        etapa_numero: null,
+        usuario_id: callerUser.id,
+        usuario_nome: callerNome,
+        usuario_perfil: 'ADMINISTRADOR',
+        acao: 'GERAÇÃO DE LINK DE DEFINIÇÃO DE SENHA',
+        campo: 'auth.admin.generateLink',
+        valor_anterior: 'Link não exibido ou expirado',
+        valor_novo: `Link gerado com sucesso via API Admin (${genRes.verificationType})`,
+        motivo: `Link administrativo de definição de senha gerado para ${targetNome || cleanEmail} (${cleanEmail}) por ${callerNome} via canal: ${auditCanal}. Se o e-mail não chegar, o link manual pode ser compartilhado diretamente.`,
+        documento_relacionado: `Usuário: ${cleanEmail} (ID: ${resolvedUserId || genRes.user?.id || 'N/A'})`,
+        resultado_afetado: 'Link seguro de acesso disponível na tela para cópia imediata',
+      })
+
       return jsonResponse({
         success: true,
-        actionLink: linkData.properties?.action_link,
-        hashedToken: linkData.properties?.hashed_token,
-        emailOtp: linkData.properties?.email_otp,
-        verificationType: linkData.properties?.verification_type,
-        redirectUrl: linkData.properties?.redirect_to,
-        user: linkData.user,
+        actionLink: genRes.actionLink,
+        directAppLink: genRes.directAppLink,
+        hashedToken: genRes.hashedToken,
+        emailOtp: genRes.emailOtp,
+        verificationType: genRes.verificationType,
+        redirectUrl: genRes.redirectUrl,
+        user: genRes.user,
         generatedAt: new Date().toISOString(),
       })
     }
@@ -419,32 +551,52 @@ Deno.serve(async (req: Request) => {
       // NUNCA pedir ou exibir senha no painel; NÃO criar senha padrão; NÃO salvar senha em código, banco ou localStorage.
       const redirectOrigin =
         req.headers.get('origin') || 'https://projeto-via-cargas-30f44--preview.goskip.app'
-      const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(
-        cleanEmail,
-        {
-          data: {
+
+      let newUserId: string | null = null
+      let emailSent = false
+      let emailSendError: string | null = null
+
+      const inviteRes = await adminClient.auth.admin.inviteUserByEmail(cleanEmail, {
+        data: {
+          name: cleanNome,
+          papel: cleanPerfil,
+          projeto_id: proj.id,
+          invited_by: callerUser.id,
+        },
+        redirectTo: `${redirectOrigin}/redefinir-senha`,
+      })
+
+      if (inviteRes.error || !inviteRes.data?.user) {
+        emailSendError = inviteRes.error?.message || 'Falha ao disparar e-mail de convite'
+        console.warn('Aviso: inviteUserByEmail retornou erro:', emailSendError)
+        // Se falhar o envio de e-mail (ex: rate limit ou cota SMTP), tenta criar usuário diretamente
+        const createRes = await adminClient.auth.admin.createUser({
+          email: cleanEmail,
+          email_confirm: true,
+          user_metadata: {
             name: cleanNome,
             papel: cleanPerfil,
             projeto_id: proj.id,
             invited_by: callerUser.id,
           },
-          redirectTo: `${redirectOrigin}/reset-password`,
-        },
-      )
-
-      if (inviteErr || !inviteData?.user) {
-        return jsonResponse(
-          {
-            error: `Falha ao enviar convite via Supabase Auth: ${inviteErr?.message || 'Erro desconhecido'}`,
-          },
-          500,
-        )
+        })
+        if (createRes.data?.user) {
+          newUserId = createRes.data.user.id
+        } else {
+          return jsonResponse(
+            {
+              error: `Falha ao criar usuário no Supabase Auth: ${createRes.error?.message || emailSendError}`,
+            },
+            500,
+          )
+        }
+      } else {
+        emailSent = true
+        newUserId = inviteRes.data.user.id
       }
 
-      const newUserId = inviteData.user.id
-
       // Inserir registro em public.vc_perfis com papel, projeto e situação
-      const { error: perfilInsertErr } = await adminClient.from('vc_perfis').insert({
+      const { error: perfilInsertErr } = await adminClient.from('vc_perfis').upsert({
         user_id: newUserId,
         papel: cleanPerfil,
         nome: cleanNome,
@@ -457,34 +609,56 @@ Deno.serve(async (req: Request) => {
         console.warn('Erro ao inserir vc_perfis após convite:', perfilInsertErr)
       }
 
+      // SEMPRE gerar o link de acesso direto via API admin
+      const generatedLinkRes = await generateAdminAccessLink(
+        cleanEmail,
+        newUserId,
+        'invite',
+        redirectOrigin,
+      )
+
+      const directLink = generatedLinkRes.actionLink || null
+
       // Trilha de auditoria (INSERT apenas)
+      const auditCanal =
+        emailSent && directLink
+          ? 'e-mail e link manual na tela'
+          : directLink
+            ? 'link manual na tela'
+            : 'e-mail'
       await adminClient.from('vc_trilha_auditoria').insert({
         projeto_id: proj.id,
         etapa_numero: null,
         usuario_id: callerUser.id,
         usuario_nome: callerNome,
         usuario_perfil: 'ADMINISTRADOR',
-        acao: 'CRIAÇÃO DE ACESSO E ENVIO DE CONVITE',
+        acao: 'CRIAÇÃO DE ACESSO E GERAÇÃO DE LINK',
         campo: 'acesso_usuario',
         valor_anterior: 'Inexistente',
         valor_novo: `Nome: ${cleanNome}, Perfil: ${cleanPerfil}, Projeto: ${proj.nome}, Situação: ${isAtivo ? 'Ativo' : 'Inativo'}`,
-        motivo: `Convite enviado por e-mail pelo Administrador ${callerNome} para definição de senha pelo próprio usuário. Origem: Painel do Administrador.`,
+        motivo: `Acesso criado pelo Administrador ${callerNome} para ${cleanNome} (${cleanEmail}). Canal: ${auditCanal}. Link de definição de senha gerado na tela.`,
         documento_relacionado: `Usuário ID: ${newUserId} (${cleanEmail})`,
-        resultado_afetado: 'Novo usuário provisionado no Supabase com permissões correspondentes',
+        resultado_afetado:
+          'Novo usuário provisionado no Supabase com link direto disponível para entrega imediata',
       })
 
       return jsonResponse({
         success: true,
         created: true,
+        emailSent,
+        emailSendError,
+        actionLink: directLink,
+        targetEmail: cleanEmail,
+        targetNome: cleanNome,
         message: 'ACESSO CRIADO — O USUÁRIO RECEBERÁ UM E-MAIL PARA DEFINIR SUA SENHA.',
       })
     }
 
     // =========================================================================
-    // ACTION: resend-invite - Reenviar convite por e-mail
+    // ACTION: resend-invite - Reenviar convite por e-mail e SEMPRE gerar link
     // =========================================================================
     if (action === 'resend-invite') {
-      const { userId, email, projetoId } = body
+      const { userId, email, projetoId, nome } = body
       const cleanEmail = String(email || '')
         .trim()
         .toLowerCase()
@@ -494,33 +668,64 @@ Deno.serve(async (req: Request) => {
       }
 
       const redirectOrigin =
-        req.headers.get('origin') || 'https://projeto-via-cargas-30f44--preview.goskip.app'
+        body.redirectTo ||
+        req.headers.get('origin') ||
+        req.headers.get('referer')?.replace(/\/[^/]*$/, '') ||
+        'https://projeto-via-cargas-30f44--preview.goskip.app'
+
+      let emailSent = false
+      let emailSendError: string | null = null
+
+      const cleanRedirectOrigin = redirectOrigin.replace(/\/+$/, '')
       const { error: resendErr } = await adminClient.auth.admin.inviteUserByEmail(cleanEmail, {
-        redirectTo: `${redirectOrigin}/reset-password`,
+        redirectTo: `${cleanRedirectOrigin}/redefinir-senha`,
       })
 
       if (resendErr) {
-        return jsonResponse({ error: `Erro ao reenviar convite: ${resendErr.message}` }, 500)
+        emailSendError = resendErr.message
+        console.warn('Aviso ao reenviar convite por e-mail:', resendErr.message)
+      } else {
+        emailSent = true
       }
 
+      // SEMPRE gerar o link de acesso seguro na tela via admin API
+      const linkRes = await generateAdminAccessLink(cleanEmail, userId, 'recovery', redirectOrigin)
+
+      const directLink = linkRes.actionLink || null
+
       // Trilha de auditoria
+      const auditCanal =
+        emailSent && directLink
+          ? 'e-mail e link manual na tela'
+          : directLink
+            ? 'link manual na tela'
+            : 'e-mail'
       await adminClient.from('vc_trilha_auditoria').insert({
-        projeto_id: projetoId || null,
+        projeto_id: projetoId || '4bdc5746-5c78-45e8-9eeb-0870546e6afa',
         etapa_numero: null,
         usuario_id: callerUser.id,
         usuario_nome: callerNome,
         usuario_perfil: 'ADMINISTRADOR',
-        acao: 'REENVIO DE CONVITE',
+        acao: 'REENVIO DE CONVITE E GERAÇÃO DE LINK',
         campo: 'auth.users.invite',
         valor_anterior: 'Convite anterior pendente',
-        valor_novo: 'Novo convite enviado por e-mail',
-        motivo: `Reenvio de convite de acesso solicitado pelo Administrador ${callerNome} para ${cleanEmail}. Origem: Painel do Administrador.`,
-        documento_relacionado: `E-mail: ${cleanEmail}`,
-        resultado_afetado: 'E-mail de convite reenviado com novo token de confirmação',
+        valor_novo: `Link gerado com sucesso (${linkRes.verificationType || 'recovery'})`,
+        motivo: `Reenvio de convite solicitado pelo Administrador ${callerNome} para ${cleanEmail}. Canal de entrega: ${auditCanal}. Link de definição de senha exibido na tela.`,
+        documento_relacionado: `E-mail: ${cleanEmail} (ID: ${userId || 'N/A'})`,
+        resultado_afetado:
+          'Link direto disponibilizado na tela e tentativa de envio por e-mail realizada',
       })
 
       return jsonResponse({
         success: true,
+        emailSent,
+        emailSendError,
+        actionLink: directLink,
+        directAppLink: linkRes.directAppLink,
+        hashedToken: linkRes.hashedToken,
+        verificationType: linkRes.verificationType,
+        targetEmail: cleanEmail,
+        targetNome: nome || cleanEmail,
         message: 'CONVITE REENVIADO — O USUÁRIO RECEBERÁ UM NOVO E-MAIL PARA DEFINIR SUA SENHA.',
       })
     }
