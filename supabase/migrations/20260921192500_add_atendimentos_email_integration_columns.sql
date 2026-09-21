@@ -1,9 +1,16 @@
 -- Migration: add additive columns to atendimentos_clientes for email integration
--- Non-destructive, all nullable, no backfill, no touch to existing records.
+-- Non-destructive, all columns nullable, no backfill, no touch to existing records.
+--
+-- Requisitos atendidos:
+-- 1. conversa_id determinístico e reproduzível: gerado preferencialmente a partir dos
+--    Message-ID originais da conversa (ex.: hash ordenado dos Message-IDs). UID isolado NÃO serve.
+-- 2. Índice único parcial: UNIQUE (conversa_id) WHERE origem = 'E-mail corporativo' AND conversa_id IS NOT NULL.
+-- 3. anexos em jsonb comportam nome, tipo, tamanho e URL válida do storage:
+--    [{"nome": "arquivo.pdf", "tipo": "application/pdf", "tamanho": 1024, "url": "https://..."}]
+-- 4. data original do atendimento fica em data_atendimento (já existente) separada de created_at.
+-- 5. Down-migration documentada abaixo.
 
 ALTER TABLE public.atendimentos_clientes
-  ADD COLUMN IF NOT EXISTS origem text,
-  ADD COLUMN IF NOT EXISTS responsavel text,
   ADD COLUMN IF NOT EXISTS cnpj text,
   ADD COLUMN IF NOT EXISTS contato text,
   ADD COLUMN IF NOT EXISTS assunto text,
@@ -12,6 +19,8 @@ ALTER TABLE public.atendimentos_clientes
   ADD COLUMN IF NOT EXISTS area_responsavel text,
   ADD COLUMN IF NOT EXISTS fluxo text,
   ADD COLUMN IF NOT EXISTS situacao text,
+  ADD COLUMN IF NOT EXISTS origem text,
+  ADD COLUMN IF NOT EXISTS responsavel text,
   ADD COLUMN IF NOT EXISTS data_ultimo_movimento timestamptz,
   ADD COLUMN IF NOT EXISTS qtd_mensagens_recebidas integer,
   ADD COLUMN IF NOT EXISTS qtd_mensagens_enviadas integer,
@@ -22,18 +31,19 @@ ALTER TABLE public.atendimentos_clientes
   ADD COLUMN IF NOT EXISTS importacao_status text,
   ADD COLUMN IF NOT EXISTS observacoes_revisao text;
 
--- Índice único parcial
+-- Índice único parcial de deduplicação
 CREATE UNIQUE INDEX IF NOT EXISTS idx_atendimentos_clientes_conversa_id_email
   ON public.atendimentos_clientes (conversa_id)
   WHERE origem = 'E-mail corporativo' AND conversa_id IS NOT NULL;
 
 /*
--- DOWN MIGRATION (para reversão se necessário):
+-- DOWN MIGRATION (Procedimento de reversão se necessário):
+-- ATENÇÃO: Válida apenas enquanto não houver dados importados ou após remoção dos registros importados.
+-- Em produção com dados importados, remover as colunas causará perda irreversível dos dados novos.
+
 DROP INDEX IF EXISTS public.idx_atendimentos_clientes_conversa_id_email;
 
 ALTER TABLE public.atendimentos_clientes
-  DROP COLUMN IF EXISTS origem,
-  DROP COLUMN IF EXISTS responsavel,
   DROP COLUMN IF EXISTS cnpj,
   DROP COLUMN IF EXISTS contato,
   DROP COLUMN IF EXISTS assunto,
@@ -42,6 +52,8 @@ ALTER TABLE public.atendimentos_clientes
   DROP COLUMN IF EXISTS area_responsavel,
   DROP COLUMN IF EXISTS fluxo,
   DROP COLUMN IF EXISTS situacao,
+  DROP COLUMN IF EXISTS origem,
+  DROP COLUMN IF EXISTS responsavel,
   DROP COLUMN IF EXISTS data_ultimo_movimento,
   DROP COLUMN IF EXISTS qtd_mensagens_recebidas,
   DROP COLUMN IF EXISTS qtd_mensagens_enviadas,

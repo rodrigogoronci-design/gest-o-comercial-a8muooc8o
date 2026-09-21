@@ -1,5 +1,12 @@
 import { supabase } from '@/lib/supabase/client'
 
+export interface AtendimentoAnexo {
+  nome: string
+  url: string
+  tipo?: string
+  tamanho?: number
+}
+
 export interface Atendimento {
   id: string
   cliente_id: string
@@ -25,7 +32,7 @@ export interface Atendimento {
   remetentes_destinatarios?: any
   uid_emails?: any
   conversa_id?: string | null
-  anexos?: any
+  anexos?: AtendimentoAnexo[] | any
   importacao_status?: string | null
   observacoes_revisao?: string | null
 }

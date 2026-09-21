@@ -17,6 +17,8 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Layers,
+  ExternalLink,
+  FileText,
 } from 'lucide-react'
 import { AtendimentoFormDialog } from '@/components/AtendimentoFormDialog'
 import { AtendimentoDetailDialog } from '@/components/AtendimentoDetailDialog'
@@ -25,6 +27,7 @@ import {
   getAtendimentosByCliente,
   deleteAtendimento,
   type Atendimento,
+  type AtendimentoAnexo,
 } from '@/services/atendimentos'
 import { formatDate } from '@/lib/formatters'
 import { toast } from 'sonner'
@@ -349,9 +352,9 @@ export function ClientAtendimentosTab({ clienteId, clientName }: ClientAtendimen
                   </div>
                 </div>
 
-                {/* Bloco expandido: UIDs, remetentes/destinatários, observações de revisão */}
+                {/* Bloco expandido: remetentes/destinatários, UIDs e Message-IDs, anexos com link, situação da importação, observações da revisão */}
                 {isExpanded && (
-                  <div className="bg-slate-50/80 px-4 py-3 border-t border-slate-100 text-xs space-y-2">
+                  <div className="bg-slate-50/80 px-4 py-3 border-t border-slate-100 text-xs space-y-3">
                     {atendimento.resumo && (
                       <div>
                         <span className="font-semibold text-slate-700">Resumo: </span>
@@ -360,10 +363,54 @@ export function ClientAtendimentosTab({ clienteId, clientName }: ClientAtendimen
                     )}
                     {atendimento.conversa_id && (
                       <div>
-                        <span className="font-semibold text-slate-700">Conversa ID: </span>
-                        <span className="font-mono text-slate-600">{atendimento.conversa_id}</span>
+                        <span className="font-semibold text-slate-700">
+                          Conversa ID / Message-ID:{' '}
+                        </span>
+                        <span className="font-mono text-slate-600 bg-white px-1.5 py-0.5 rounded border border-slate-200 text-[11px]">
+                          {atendimento.conversa_id}
+                        </span>
                       </div>
                     )}
+
+                    {/* Anexos com link */}
+                    {Array.isArray(atendimento.anexos) && atendimento.anexos.length > 0 && (
+                      <div>
+                        <span className="font-semibold text-slate-700 mb-1.5 block">
+                          Anexos ({atendimento.anexos.length}):
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {(atendimento.anexos as AtendimentoAnexo[]).map((anexo, aIdx) => (
+                            <a
+                              key={aIdx}
+                              href={anexo.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-between p-2 rounded bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors group/link"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <FileText className="h-4 w-4 text-indigo-500 shrink-0" />
+                                <div className="truncate">
+                                  <div className="font-medium text-slate-800 text-xs truncate group-hover/link:text-indigo-600">
+                                    {anexo.nome || `Anexo ${aIdx + 1}`}
+                                  </div>
+                                  {(anexo.tamanho || anexo.tipo) && (
+                                    <div className="text-[10px] text-slate-400">
+                                      {anexo.tamanho
+                                        ? `${(anexo.tamanho / 1024).toFixed(1)} KB`
+                                        : ''}
+                                      {anexo.tamanho && anexo.tipo ? ' • ' : ''}
+                                      {anexo.tipo || ''}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <ExternalLink className="h-3.5 w-3.5 text-slate-400 group-hover/link:text-indigo-600 shrink-0 ml-2" />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {atendimento.remetentes_destinatarios && (
                       <div>
                         <span className="font-semibold text-slate-700">
@@ -378,7 +425,9 @@ export function ClientAtendimentosTab({ clienteId, clientName }: ClientAtendimen
                     )}
                     {atendimento.uid_emails && (
                       <div>
-                        <span className="font-semibold text-slate-700">UIDs dos E-mails: </span>
+                        <span className="font-semibold text-slate-700">
+                          UIDs e Message-IDs dos E-mails:{' '}
+                        </span>
                         <pre className="mt-1 p-2 bg-white rounded border border-slate-200 overflow-x-auto text-[11px] text-slate-600 font-mono">
                           {typeof atendimento.uid_emails === 'string'
                             ? atendimento.uid_emails
@@ -389,15 +438,17 @@ export function ClientAtendimentosTab({ clienteId, clientName }: ClientAtendimen
                     {atendimento.observacoes_revisao && (
                       <div>
                         <span className="font-semibold text-slate-700">
-                          Observações de Revisão:{' '}
+                          Observações da Revisão:{' '}
                         </span>
                         <span className="text-slate-600">{atendimento.observacoes_revisao}</span>
                       </div>
                     )}
                     {atendimento.importacao_status && (
-                      <div>
-                        <span className="font-semibold text-slate-700">Status da Importação: </span>
-                        <Badge variant="outline" className="text-[11px]">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-700">
+                          Situação da Importação:{' '}
+                        </span>
+                        <Badge variant="outline" className="text-[11px] bg-white">
                           {atendimento.importacao_status}
                         </Badge>
                       </div>
