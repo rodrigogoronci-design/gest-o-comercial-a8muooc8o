@@ -33,12 +33,14 @@ interface DocumentacaoAdesaoTabProps {
   clienteId: string
   clientName: string
   telefone: string
+  readOnly?: boolean
 }
 
 export function DocumentacaoAdesaoTab({
   clienteId,
   clientName,
   telefone,
+  readOnly = false,
 }: DocumentacaoAdesaoTabProps) {
   const [items, setItems] = useState<DocumentacaoAdesaoItem[]>([])
   const [statusGeral, setStatusGeral] = useState('Aguardando documentação')
@@ -165,10 +167,12 @@ export function DocumentacaoAdesaoTab({
         </div>
       </div>
 
-      <Button onClick={handleWhatsApp} className="w-full bg-green-600 hover:bg-green-700 gap-2">
-        <MessageCircle className="h-4 w-4" />
-        Enviar Ficha de Adesão via WhatsApp
-      </Button>
+      {!readOnly && (
+        <Button onClick={handleWhatsApp} className="w-full bg-green-600 hover:bg-green-700 gap-2">
+          <MessageCircle className="h-4 w-4" />
+          Enviar Ficha de Adesão via WhatsApp
+        </Button>
+      )}
 
       <Accordion
         type="multiple"
@@ -206,54 +210,73 @@ export function DocumentacaoAdesaoTab({
                           : ''}
                       </a>
                     )}
-                    <input
-                      ref={(el) => {
-                        fileRefs.current[item.id] = el
-                      }}
-                      type="file"
-                      accept=".pdf,.png,.jpg,.jpeg"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0]
-                        if (f) handleUpload(item.id, f)
-                        if (fileRefs.current[item.id]) fileRefs.current[item.id]!.value = ''
-                      }}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 text-indigo-600 hover:bg-indigo-50"
-                      disabled={uploadingId === item.id}
-                      onClick={() => fileRefs.current[item.id]?.click()}
-                    >
-                      {uploadingId === item.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Upload className="h-3.5 w-3.5" />
-                      )}
-                    </Button>
-                    <Select
-                      value={item.status}
-                      onValueChange={(v) => handleStatusChange(item.id, v)}
-                    >
-                      <SelectTrigger className="h-7 w-[110px] text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Pendente">Pendente</SelectItem>
-                        <SelectItem value="Recebida">Recebida</SelectItem>
-                        <SelectItem value="Aprovada">Aprovada</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {item.arquivo_url && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 text-red-400 hover:text-red-600"
-                        onClick={() => handleRemoveFile(item.id)}
+                    {!readOnly && (
+                      <>
+                        <input
+                          ref={(el) => {
+                            fileRefs.current[item.id] = el
+                          }}
+                          type="file"
+                          accept=".pdf,.png,.jpg,.jpeg"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0]
+                            if (f) handleUpload(item.id, f)
+                            if (fileRefs.current[item.id]) fileRefs.current[item.id]!.value = ''
+                          }}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 text-indigo-600 hover:bg-indigo-50"
+                          disabled={uploadingId === item.id}
+                          onClick={() => fileRefs.current[item.id]?.click()}
+                        >
+                          {uploadingId === item.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Upload className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                        <Select
+                          value={item.status}
+                          onValueChange={(v) => handleStatusChange(item.id, v)}
+                        >
+                          <SelectTrigger className="h-7 w-[110px] text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Pendente">Pendente</SelectItem>
+                            <SelectItem value="Recebida">Recebida</SelectItem>
+                            <SelectItem value="Aprovada">Aprovada</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {item.arquivo_url && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-red-400 hover:text-red-600"
+                            onClick={() => handleRemoveFile(item.id)}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </>
+                    )}
+                    {readOnly && (
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          'text-xs shrink-0',
+                          item.status === 'Aprovada'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : item.status === 'Recebida'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200',
+                        )}
                       >
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
+                        {item.status}
+                      </Badge>
                     )}
                   </div>
                 ))}
@@ -263,7 +286,7 @@ export function DocumentacaoAdesaoTab({
         ))}
       </Accordion>
 
-      {statusGeral !== 'Recebida e Aprovada' && (
+      {!readOnly && statusGeral !== 'Recebida e Aprovada' && (
         <Button
           onClick={handleApproveAll}
           disabled={receivedCount < items.length}

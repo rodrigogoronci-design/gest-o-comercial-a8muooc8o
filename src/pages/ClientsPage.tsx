@@ -384,6 +384,13 @@ export default function ClientsPage() {
     setSearchParams(params, { replace: true })
   }
 
+  // Salva URL completa da lista (com busca, ordenação e filtros) para permitir retorno fiel a partir da tela de detalhe
+  useEffect(() => {
+    const queryString = searchParams.toString()
+    const fullListUrl = queryString ? `/clientes?${queryString}` : '/clientes'
+    sessionStorage.setItem('clients_list_url', fullListUrl)
+  }, [searchParams])
+
   // Preservação e restauração da posição de rolagem
   useEffect(() => {
     const savedScrollY = sessionStorage.getItem('clients_page_scroll_y')

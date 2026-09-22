@@ -136,14 +136,19 @@ export default function ClientDetailPage() {
     }
   }, [id])
 
+  const getBackListUrl = () => {
+    return sessionStorage.getItem('clients_list_url') || '/clientes'
+  }
+
   const handleBackToList = () => {
-    // Preserva URL de retorno conforme histórico
-    navigate('/clientes')
+    navigate(getBackListUrl())
   }
 
   const handleOpenLegacySheet = () => {
-    // Redireciona para /clientes com query param sheetClient={id} para abrir o sheet legado
-    navigate(`/clientes?sheetClient=${id}`)
+    // Redireciona para a lista preservando busca/filtros/ordenação junto de sheetClient={id}
+    const savedUrl = getBackListUrl()
+    const separator = savedUrl.includes('?') ? '&' : '?'
+    navigate(`${savedUrl}${separator}sheetClient=${id}`)
   }
 
   // Normalização de módulos contratados
@@ -223,7 +228,7 @@ export default function ClientDetailPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-slate-500">
             <Link
-              to="/clientes"
+              to={getBackListUrl()}
               className="hover:text-slate-900 transition-colors font-medium flex items-center gap-1"
             >
               Clientes
@@ -797,6 +802,7 @@ export default function ClientDetailPage() {
                   clienteId={client.id}
                   clientName={client.nome}
                   telefone={client.telefone || ''}
+                  readOnly
                 />
               </CardContent>
             </Card>
