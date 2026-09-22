@@ -9,31 +9,31 @@ const corsHeaders = {
 }
 
 const MODULE_NAMES_MAP: Record<string, string> = {
-  Administração: 'mod-admin',
-  Básicos: 'mod-basico',
-  Carga: 'mod-carga',
-  Comercial: 'mod-comercial',
-  Faturamento: 'mod-faturamento',
-  Financeiro: 'mod-financeiro',
-  EDI: 'mod-edi',
+  'Administração': 'mod-admin',
+  'Básicos': 'mod-basico',
+  'Carga': 'mod-carga',
+  'Comercial': 'mod-comercial',
+  'Faturamento': 'mod-faturamento',
+  'Financeiro': 'mod-financeiro',
+  'EDI': 'mod-edi',
   'Controle de Viagem': 'mod-ctrl-viagem',
   'Frota (até 10 placas)': 'mod-frota',
   'Frota – Até 20 Placas': 'mod-frota-20',
-  Frota: 'mod-frota',
-  Medição: 'mod-medicao',
-  Fracionado: 'mod-fracionado',
+  'Frota': 'mod-frota',
+  'Medição': 'mod-medicao',
+  'Fracionado': 'mod-fracionado',
   'Bloco TCI e TCE': 'mod-transp',
   'Fundo de proteção': 'mod-fundo-prot',
-  Calendário: 'mod-calendario',
+  'Calendário': 'mod-calendario',
   'Painel de Informações': 'mod-painel',
-  Fiscal: 'mod-fiscal',
+  'Fiscal': 'mod-fiscal',
   'DF-e': 'mod-dfe',
   'Power BI': 'mod-powerbi',
   'SL-Trip': 'mod-sltrip',
   'SL-Track': 'mod-sltrack',
   'Homologação Bancaria': 'mod-homolog-banc',
-  CIOT: 'mod-ciot',
-  'Torre de Controle Logística': 'mod-torre-controle',
+  'CIOT': 'mod-ciot',
+  'Torre de Controle Logística': 'mod-torre-controle'
 }
 
 const ERROR_MSG =
@@ -89,9 +89,7 @@ function extractData(text: string) {
   }
 
   if (!contratanteBlock) {
-    const fallbackMatch = text.match(
-      /\bCONTRATANTE\b:?\s*([\s\S]*?)(?:CONTRATADA|As partes acima|DO OBJETO)/i,
-    )
+    const fallbackMatch = text.match(/\bCONTRATANTE\b:?\s*([\s\S]*?)(?:CONTRATADA|As partes acima|DO OBJETO)/i)
     if (fallbackMatch) {
       contratanteBlock = fallbackMatch[1]
     }
@@ -134,9 +132,7 @@ function extractData(text: string) {
     const addrMatch = block.match(/sede (?:na|em)\s*(.+?)\s*(?:,.*?neste ato|\.\s*Neste ato)/i)
     if (addrMatch) endereco = addrMatch[1].trim()
 
-    const repNameMatch = block.match(
-      /representantes? legais?[,\s]*(?:Sra?\.?|Sr\(a\)\.?)?\s*(.+?)\s*,/i,
-    )
+    const repNameMatch = block.match(/representantes? legais?[,\s]*(?:Sra?\.?|Sr\(a\)\.?)?\s*(.+?)\s*,/i)
     if (repNameMatch) repName = repNameMatch[1].trim()
 
     const repCpfMatch = block.match(/CPF.*?([\d.\-]{11,14})/)
@@ -199,9 +195,7 @@ function extractData(text: string) {
   if (implMatch) valorImplantacao = parseCurrency(implMatch[1])
 
   if (valorMensalidade === 0 && planoBase) {
-    const summaryPlanMatch = text.match(
-      new RegExp(`Plano \\(${planoBase.replace('+', '\\+')}\\)\\s*R\\$\\s*([\\d.,]+)`, 'i'),
-    )
+    const summaryPlanMatch = text.match(new RegExp(`Plano \\(${planoBase.replace('+', '\\+')}\\)\\s*R\\$\\s*([\\d.,]+)`, 'i'))
     if (summaryPlanMatch) {
       valorMensalidade = parseCurrency(summaryPlanMatch[1])
     }
@@ -219,22 +213,13 @@ function extractData(text: string) {
     }
   }
   if (planoBase) {
-    ;[
-      'mod-admin',
-      'mod-basico',
-      'mod-carga',
-      'mod-comercial',
-      'mod-faturamento',
-      'mod-financeiro',
-    ].forEach((m) => {
+    ['mod-admin', 'mod-basico', 'mod-carga', 'mod-comercial', 'mod-faturamento', 'mod-financeiro'].forEach(m => {
       if (!modulos.includes(m)) modulos.push(m)
     })
   }
 
   let dataAssinatura: string | null = null
-  const signatureMatches = [
-    ...text.matchAll(/Assinado como contratante em (\d{2}\/\d{2}\/\d{4})/gi),
-  ]
+  const signatureMatches = [...text.matchAll(/Assinado como contratante em (\d{2}\/\d{2}\/\d{4})/gi)]
   if (signatureMatches.length > 0) {
     const lastMatch = signatureMatches[signatureMatches.length - 1][1]
     const parts = lastMatch.split('/')
