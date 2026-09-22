@@ -576,8 +576,6 @@ export default function ClientsPage() {
     if (!confirm('Deseja realmente efetivar esta solicitação?')) return
 
     try {
-      let novoValorTotal = viewingClient.totalValue
-
       if (sol.tipo === 'Upsell') {
         const { data: hist } = await supabase
           .from('historico_contratos')
@@ -608,11 +606,9 @@ export default function ClientsPage() {
             price: m.price,
           })),
         ]
-        novoValorTotal = viewingClient.totalValue + (hist?.valor_adicional || sol.valor || 0)
 
         await updateCliente(viewingClient.id, {
           modulos: { ...currentModulosRaw, adicionais: updatedAdicionais },
-          valor_total: novoValorTotal,
         })
       }
 
@@ -623,7 +619,7 @@ export default function ClientsPage() {
         tipo: sol.tipo === 'Upsell' ? 'Upsell Efetivado' : 'Serviço Efetivado',
         data_solicitacao: new Date().toISOString().split('T')[0],
         observacoes: `A solicitação "${sol.tipo}" foi efetivada e o serviço iniciado/concluído.`,
-        valor_total: novoValorTotal,
+        valor_total: viewingClient.totalValue,
       })
 
       toast.success('Solicitação efetivada com sucesso!')
@@ -737,12 +733,8 @@ export default function ClientsPage() {
         filiais_detalhes: updatedFiliaisDet,
       }
 
-      let novoValorTotal = viewingClient.totalValue - priceToDeduct
-      if (novoValorTotal < 0) novoValorTotal = 0
-
       await updateCliente(viewingClient.id, {
         modulos: updatedModulos,
-        valor_total: novoValorTotal,
         filiais_detalhes:
           viewingClient.originalData?.filiais_detalhes?.filter(
             (f: any) => (f.cnpj || '').replace(/\D/g, '') !== extractedCnpj,
@@ -759,7 +751,7 @@ export default function ClientsPage() {
         data_solicitacao: new Date().toISOString().split('T')[0],
         observacoes: 'Remoção manual do item: ' + moduleToRemove.name,
         valor_adicional: -priceToDeduct,
-        valor_total: novoValorTotal,
+        valor_total: viewingClient.totalValue,
       })
 
       toast.success('Item removido com sucesso!')
@@ -778,11 +770,11 @@ export default function ClientsPage() {
         ...viewingClient,
         modules: parsedModules,
         filiais_detalhes: updatedFiliaisDet,
-        totalValue: novoValorTotal,
+        totalValue: viewingClient.totalValue,
         originalData: {
           ...viewingClient.originalData!,
           modulos: updatedModulos,
-          valor_total: novoValorTotal,
+          valor_total: viewingClient.totalValue,
         },
       })
     } catch (err) {
@@ -808,7 +800,6 @@ export default function ClientsPage() {
 
       if (viewingClient && historyRecord) {
         let changed = false
-        let novoValorTotal = viewingClient.totalValue
 
         let currentModulosRaw = viewingClient.originalData?.modulos || {
           plano_base: viewingClient.plano_base,
@@ -835,7 +826,6 @@ export default function ClientsPage() {
             const name = typeof m === 'string' ? m : m.name
             return !removedNames.includes(name)
           })
-          novoValorTotal -= historyRecord.valor_adicional || 0
           changed = true
         } else if (historyRecord.tipo === 'Aditivo de Filial' && historyRecord.observacoes) {
           const cnpjMatch = historyRecord.observacoes.match(/CNPJ:\s*([\d.\-/]+)/)
@@ -866,13 +856,11 @@ export default function ClientsPage() {
             updatedFiliaisDet = updatedFiliaisDet.filter(
               (f: any) => (f.cnpj || '').replace(/\D/g, '') !== extractedCnpj,
             )
-            novoValorTotal -= historyRecord.valor_adicional || 0
             changed = true
           }
         }
 
         if (changed) {
-          novoValorTotal = Math.max(0, novoValorTotal)
           const updatedModulos = {
             ...currentModulosRaw,
             adicionais: updatedAdicionais,
@@ -881,7 +869,6 @@ export default function ClientsPage() {
 
           await updateCliente(viewingClient.id, {
             modulos: updatedModulos,
-            valor_total: novoValorTotal,
           })
 
           const formatMod = (m: any): ModuleItem | null => {
@@ -919,11 +906,9 @@ export default function ClientsPage() {
                   ...prev,
                   modules: parsedModules,
                   filiais_detalhes: updatedFiliaisDet,
-                  totalValue: novoValorTotal,
                   originalData: {
                     ...prev.originalData!,
                     modulos: updatedModulos,
-                    valor_total: novoValorTotal,
                   },
                 }
               : null,
@@ -982,65 +967,8 @@ export default function ClientsPage() {
 
   useEffect(() => {
     if (!isSheetOpen) return
-
-    // Comparar módulos atuais com os módulos anteriores para detectar inclusão/remoção/alteração de módulos
-    const modulosChanged =
-      JSON.stringify(watchModulos || []) !== JSON.stringify(prevModulosRef.current || [])
-
-    // Se o valor foi definido manualmente e os módulos não mudaram, preservar o valor manual sem recalcular
-    if (isManualValorTotal && !modulosChanged) {
-      return
-    }
-
-    const isDirty =
-      form.formState.dirtyFields.plano_base ||
-      form.formState.dirtyFields.filiais ||
-      form.formState.dirtyFields.modulos ||
-      form.formState.dirtyFields.desconto_mensalidade ||
-      form.formState.dirtyFields.tipo_desconto
-
-    // Recalcular apenas se os módulos mudaram, ou (se não for manual) quando o formulário for dirty ou estiver em edição
-    if (modulosChanged || (!isManualValorTotal && (isDirty || editingClient))) {
-      let total = 0
-      if (watchPlanoBase) {
-        const plan = PLANS.find((p) => p.id === watchPlanoBase || p.name === watchPlanoBase)
-        if (plan) total += plan.price
-      }
-
-      if (watchFiliais) {
-        total += watchFiliais * 199.0
-      }
-
-      if (watchModulos) {
-        watchModulos.forEach((modItem: any) => {
-          if (typeof modItem === 'string') {
-            const mod = MODULES.find((m) => m.name === modItem || m.id === modItem)
-            if (mod) total += mod.price
-          } else if (modItem && typeof modItem.price === 'number') {
-            total += modItem.price
-          }
-        })
-      }
-
-      let calcDiscount =
-        watchTipoDesconto === 'percentual'
-          ? (total * (watchDesconto || 0)) / 100
-          : watchDesconto || 0
-
-      form.setValue('valor_total', Math.max(0, total - calcDiscount), { shouldValidate: true })
-      prevModulosRef.current = watchModulos || []
-    }
-  }, [
-    watchPlanoBase,
-    watchFiliais,
-    watchModulos,
-    watchDesconto,
-    watchTipoDesconto,
-    isSheetOpen,
-    form,
-    editingClient,
-    isManualValorTotal,
-  ])
+    prevModulosRef.current = watchModulos || []
+  }, [watchModulos, isSheetOpen])
 
   useEffect(() => {
     loadClientes()
@@ -1855,11 +1783,8 @@ Obrigada,`
         adicionais: updatedAdicionais,
       }
 
-      const novoValorTotal = viewingClient.totalValue + valorTotalFilial
-
       await updateCliente(viewingClient.id, {
         modulos: updatedModulos,
-        valor_total: novoValorTotal,
         filiais_detalhes: [...(viewingClient.originalData?.filiais_detalhes || []), novaFilial],
         quantidade_filiais: (viewingClient.originalData?.quantidade_filiais || 0) + 1,
       })
@@ -1883,7 +1808,7 @@ Obrigada,`
         data_solicitacao: new Date().toISOString().split('T')[0],
         observacoes: `Adição de Filial: ${novaFilial.nome} (CNPJ: ${novaFilial.cnpj}). DF-e: ${novaFilial.dfe_incluso ? `Sim (${formatCurrency(novaFilial.valor_dfe || 0)})` : 'Não'}`,
         valor_adicional: valorTotalFilial,
-        valor_total: novoValorTotal,
+        valor_total: viewingClient.totalValue,
         modulos: modulosAditivo,
       })
 
@@ -1905,12 +1830,12 @@ Obrigada,`
           ? {
               ...prev,
               modules: [...prev.modules, ...novasAdicoes],
-              totalValue: novoValorTotal,
+              totalValue: viewingClient.totalValue,
               filiais_detalhes: [...(prev.filiais_detalhes || []), novaFilial],
               originalData: {
                 ...prev.originalData!,
                 modulos: updatedModulos,
-                valor_total: novoValorTotal,
+                valor_total: viewingClient.totalValue,
               },
             }
           : null,
@@ -1931,7 +1856,6 @@ Obrigada,`
         .map((id) => MODULES.find((m) => m.id === id)!)
         .filter(Boolean)
       const valorAdicional = novos.reduce((acc, m) => acc + m.price, 0)
-      const novoValorTotal = viewingClient.totalValue + valorAdicional
 
       let currentModulosRaw = viewingClient.originalData?.modulos || {
         plano_base: '',
@@ -1957,7 +1881,6 @@ Obrigada,`
 
       await updateCliente(viewingClient.id, {
         modulos: updatedModulos,
-        valor_total: novoValorTotal,
       })
 
       await createHistorico({
@@ -1966,7 +1889,7 @@ Obrigada,`
         data_solicitacao: aditivoDate,
         modulos: novos,
         valor_adicional: valorAdicional,
-        valor_total: novoValorTotal,
+        valor_total: viewingClient.totalValue,
         observacoes: `Adição de ${novos.length} módulo(s)`,
       })
 
@@ -1983,11 +1906,11 @@ Obrigada,`
           ? {
               ...prev,
               modules: [...prev.modules, ...novos.map((m) => ({ name: m.name, price: m.price }))],
-              totalValue: novoValorTotal,
+              totalValue: viewingClient.totalValue,
               originalData: {
                 ...prev.originalData!,
                 modulos: updatedModulos,
-                valor_total: novoValorTotal,
+                valor_total: viewingClient.totalValue,
               },
             }
           : null,
