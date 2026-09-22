@@ -121,7 +121,7 @@ import { ConsultoriaContractDocument } from '@/components/ConsultoriaContractDoc
 import { AddendumDocument } from '@/components/AddendumDocument'
 
 import { TrainingProposalDocument } from '@/components/TrainingProposalDocument'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { getImplementacaoByCliente, createImplementacao } from '@/services/implementacoes'
 import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
@@ -356,9 +356,49 @@ const clientSchema = z.object({
 type ClientFormValues = z.infer<typeof clientSchema>
 
 export default function ClientsPage() {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
-  const [filterType, setFilterType] = useState<'all' | 'with_contract' | 'without_contract'>('all')
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const urlSearch = searchParams.get('q') || ''
+  const urlSort = (searchParams.get('sort') === 'desc' ? 'desc' : 'asc') as 'asc' | 'desc'
+  const urlFilter = (searchParams.get('filter') || 'all') as
+    | 'all'
+    | 'with_contract'
+    | 'without_contract'
+
+  const [searchTerm, setSearchTerm] = useState(urlSearch)
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(urlSort)
+  const [filterType, setFilterType] = useState<'all' | 'with_contract' | 'without_contract'>(
+    urlFilter,
+  )
+
+  // Sincroniza estado de busca/filtro/ordenação na URL para persistir retorno
+  const updateUrlFilters = (
+    newSearch: string,
+    newSort: 'asc' | 'desc',
+    newFilter: 'all' | 'with_contract' | 'without_contract',
+  ) => {
+    const params = new URLSearchParams()
+    if (newSearch) params.set('q', newSearch)
+    if (newSort !== 'asc') params.set('sort', newSort)
+    if (newFilter !== 'all') params.set('filter', newFilter)
+    setSearchParams(params, { replace: true })
+  }
+
+  // Preservação e restauração da posição de rolagem
+  useEffect(() => {
+    const savedScrollY = sessionStorage.getItem('clients_page_scroll_y')
+    if (savedScrollY) {
+      setTimeout(() => {
+        window.scrollTo({ top: parseInt(savedScrollY, 10), behavior: 'instant' })
+      }, 50)
+    }
+
+    const handleScroll = () => {
+      sessionStorage.setItem('clients_page_scroll_y', window.scrollY.toString())
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
   const [clientes, setClientes] = useState<ClienteRecord[]>([])
   const [receipts, setReceipts] = useState<any[]>([])
   const [dbPlanos, setDbPlanos] = useState<any[]>([])
@@ -1019,9 +1059,52 @@ export default function ClientsPage() {
           .limit(10000),
         supabase.from('planos_saude').select('id, codigo'),
       ])
-      setClientes((data || []) as any)
+      const loadedClients = (data || []) as any
+      setClientes(loadedClients)
       setReceipts(receiptsData || [])
       setDbPlanos(planosData || [])
+
+      // Se veio com ?sheetClient=id pela navegação "Abrir visualização anterior", abre o Sheet legado
+      const sheetClientId = searchParams.get('sheetClient')
+      if (sheetClientId) {
+        const target = loadedClients.find((c: any) => c.id === sheetClientId)
+        if (target) {
+          // mergedClients será construído, mapeamos o target equivalente
+          const mergedTarget = {
+            id: target.id,
+            name: target.nome,
+            cnpj: target.cnpj,
+            endereco: target.endereco,
+            rep_nome: target.rep_nome,
+            rep_cpf: target.rep_cpf,
+            rep_rg: target.rep_rg,
+            valor_implantacao: target.valor_implantacao,
+            modo_implantacao: target.modo_implantacao,
+            modules: Array.isArray(target.modulos?.adicionais)
+              ? target.modulos.adicionais
+              : Array.isArray(target.modulos)
+                ? target.modulos
+                : [],
+            plano_base: target.modulos?.plano_base || target.planos_saude?.descricao,
+            filiais: target.modulos?.filiais || 0,
+            filiais_detalhes: target.filiais_detalhes || [],
+            totalValue: target.valor_total || 0,
+            createdAt: target.created_at,
+            originalData: target,
+            contratoUrl: target.contrato_url,
+            tags: target.tags,
+            desconto_mensalidade: target.desconto_mensalidade,
+            tipo_desconto: target.tipo_desconto,
+            data_assinatura: target.data_assinatura,
+            vencimento_mensal: target.vencimento_mensal,
+            data_cancelamento: target.data_cancelamento,
+            motivo_cancelamento: target.motivo_cancelamento,
+            link_assinatura: target.link_assinatura,
+          }
+          setViewingClient(mergedTarget as any)
+          setIsViewSheetOpen(true)
+        }
+      }
     } catch (error) {
       console.error(error)
       toast.error('Erro ao carregar clientes do banco')
@@ -5529,7 +5612,10 @@ Obrigada.`)
                     placeholder="Buscar por nome ou CNPJ..."
                     className="pl-9 h-9 bg-slate-50"
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value)
+                      updateUrlFilters(e.target.value, sortOrder, filterType)
+                    }}
                   />
                 </div>
                 <DropdownMenu>
@@ -5542,7 +5628,10 @@ Obrigada.`)
                     <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
                     <DropdownMenuRadioGroup
                       value={filterType}
-                      onValueChange={(val: any) => setFilterType(val)}
+                      onValueChange={(val: any) => {
+                        setFilterType(val)
+                        updateUrlFilters(searchTerm, sortOrder, val)
+                      }}
                     >
                       <DropdownMenuRadioItem value="all" className="cursor-pointer">
                         Todos os clientes
@@ -5558,7 +5647,10 @@ Obrigada.`)
                     <DropdownMenuLabel>Ordenar Alfabeticamente</DropdownMenuLabel>
                     <DropdownMenuRadioGroup
                       value={sortOrder}
-                      onValueChange={(val: any) => setSortOrder(val)}
+                      onValueChange={(val: any) => {
+                        setSortOrder(val)
+                        updateUrlFilters(searchTerm, val, filterType)
+                      }}
                     >
                       <DropdownMenuRadioItem value="asc" className="cursor-pointer">
                         A - Z (Crescente)
@@ -5610,7 +5702,12 @@ Obrigada.`)
                       )}
                     >
                       <TableCell>
-                        <div className="font-medium text-slate-900">{client.name}</div>
+                        <Link
+                          to={`/clientes/${client.id}`}
+                          className="font-medium text-slate-900 hover:text-indigo-600 transition-colors cursor-pointer"
+                        >
+                          {client.name}
+                        </Link>
                         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-1">
                           <span className="text-xs text-slate-500 font-mono">
                             {formatCNPJ(client.cnpj)}
