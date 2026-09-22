@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase/client'
-import { formatCNPJ, formatDate } from '@/lib/formatters'
+import { formatCNPJ, formatDate, formatCurrency } from '@/lib/formatters'
 import { getImplementacaoByCliente } from '@/services/implementacoes'
 import { getSolicitacoesByCliente } from '@/services/solicitacoes_servico'
 import { getHistoricoByCliente } from '@/services/historico_contratos'
@@ -329,7 +329,7 @@ export default function ClientDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Card 2: Mensalidade (REGRA CRÍTICA: NÃO usar valor_total — exibir A validar se não confiável) */}
+          {/* Card 2: Mensalidade */}
           <Card className="border-slate-200 shadow-sm bg-white">
             <CardContent className="p-5 flex items-center gap-4">
               <div className="h-12 w-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
@@ -339,8 +339,13 @@ export default function ClientDetailPage() {
                 <span className="text-xs font-medium text-slate-500 uppercase block tracking-wider">
                   Mensalidade
                 </span>
-                <span className="text-base font-bold text-amber-700 block">A validar</span>
-                <span className="text-[10px] text-slate-400">Fonte confiável pendente</span>
+                {client.valor_total && Number(client.valor_total) > 0 ? (
+                  <span className="text-lg font-bold text-slate-900 block truncate">
+                    {formatCurrency(Number(client.valor_total))}
+                  </span>
+                ) : (
+                  <span className="text-sm font-medium text-slate-500 block">Não informado</span>
+                )}
               </div>
             </CardContent>
           </Card>
