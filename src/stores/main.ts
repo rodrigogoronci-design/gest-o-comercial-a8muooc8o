@@ -46,7 +46,7 @@ const initialModules: Module[] = [
   {
     id: 'tms-100',
     name: 'TMS 100',
-    price: 757.0,
+    price: 657.0,
     description: 'De 0 à 100',
     color: 'bg-indigo-100 text-indigo-800 border-indigo-200',
   },
