@@ -11,7 +11,7 @@ export interface PlanItem {
 export const PLANS: PlanItem[] = [
   { id: 'tms-30', name: 'TMS-30', limit: 'Até 30', maxDocs: '30', price: 250.0 },
   { id: 'tms-50', name: 'TMS-50', limit: 'Até 50', maxDocs: '50', price: 399.0 },
-  { id: 'tms-100', name: 'TMS-100', limit: 'à 100', maxDocs: '100', price: 657.0 },
+  { id: 'tms-100', name: 'TMS-100', limit: 'à 100', maxDocs: '100', price: 757.0 },
   { id: 'tms-200', name: 'TMS-200', limit: 'à 200', maxDocs: '200', price: 585.0 },
   { id: 'tms-300', name: 'TMS-300', limit: 'à 300', maxDocs: '300', price: 877.0 },
   { id: 'tms-500', name: 'TMS-500', limit: 'à 500', maxDocs: '500', price: 1097.0 },
@@ -59,6 +59,7 @@ export const MODULES = [
   { id: 'mod-financeiro', name: 'Financeiro', price: 0.0, implHours: 0, isBasic: true },
   { id: 'mod-edi', name: 'EDI', price: 250.0, implHours: 2 },
   { id: 'mod-ctrl-viagem', name: 'Controle de Viagem', price: 199.0, implHours: 3 },
+  { id: 'mod-patrimonio', name: 'Patrimônio', price: 199.0, implHours: 0 },
   { id: 'mod-frota', name: 'Frota (até 10 placas)', price: 250.0, implHours: 16 },
   {
     id: 'mod-frota-20',
@@ -79,7 +80,6 @@ export const MODULES = [
   { id: 'mod-powerbi', name: 'Power BI', price: 199.0, implHours: 0 },
   { id: 'mod-sltrip', name: 'SL-Trip', price: 299.0, implHours: 3 },
   { id: 'mod-sltrack', name: 'SL-Track', price: 299.0, implHours: 5 },
-  { id: 'mod-patrimonio', name: 'Patrimônio', price: 199.0, implHours: 0 },
   { id: 'mod-homolog-banc', name: 'Homologação Bancaria', price: 200.0, implHours: 0 },
   { id: 'mod-ciot', name: 'CIOT', price: 250.0, implHours: 0 },
   {
