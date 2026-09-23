@@ -189,6 +189,7 @@ export const diagnosticoSections: SectionDef[] = [
           'BI',
           'Frota',
           'Controle de Viagem',
+          'Patrimônio',
           'Financeiro',
           'Calendário',
           'Painel de Informações',

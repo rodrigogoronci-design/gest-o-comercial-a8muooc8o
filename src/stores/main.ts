@@ -71,6 +71,13 @@ const initialModules: Module[] = [
     description: 'Gestão de viagens',
     color: 'bg-slate-100 text-slate-800 border-slate-200',
   },
+  {
+    id: 'mod-patrimonio',
+    name: 'Patrimônio',
+    price: 199.0,
+    description: 'Gestão de patrimônio',
+    color: 'bg-slate-100 text-slate-800 border-slate-200',
+  },
 ]
 
 const initialClients: Client[] = [

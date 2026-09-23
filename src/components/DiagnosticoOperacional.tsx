@@ -536,6 +536,7 @@ export function DiagnosticoOperacional({
                 <SelectItem value="BI">BI</SelectItem>
                 <SelectItem value="Frota">Frota</SelectItem>
                 <SelectItem value="Controle de Viagem">Controle de Viagem</SelectItem>
+                <SelectItem value="Patrimônio">Patrimônio</SelectItem>
                 <SelectItem value="Financeiro">Financeiro</SelectItem>
                 <SelectItem value="Calendário">Calendário</SelectItem>
                 <SelectItem value="Painel de Informações">Painel de Informações</SelectItem>
