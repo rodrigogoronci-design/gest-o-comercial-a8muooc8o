@@ -260,9 +260,7 @@ function processQuestionarioTecnicoPdf(text: string, fileName: string) {
       campo: 'Média de Consumo de Combustível Informada',
       valorInformado: abastecimentoInfo.mediaInformadaKmL,
       valorCalculado: abastecimentoInfo.mediaCalculadaConferencia,
-      diferenca: +(
-        abastecimentoInfo.mediaCalculadaConferencia - abastecimentoInfo.mediaInformadaKmL
-      ).toFixed(3),
+      diferenca: +(abastecimentoInfo.mediaCalculadaConferencia - abastecimentoInfo.mediaInformadaKmL).toFixed(3),
       descricao:
         'Conferência recomendada: a média informada no questionário é de 3,973 km/l, enquanto a razão direta entre 214.463 km e 52.863,85 L resulta em 4,057 km/l. Tratar separadamente na frente de Abastecimento sem alterar as etapas já homologadas de Pneus.',
       bloqueiaExito: false, // NÃO bloqueia taxa de êxito
