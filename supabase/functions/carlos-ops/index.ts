@@ -4,8 +4,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
 }
 
 Deno.serve(async (req: Request) => {
@@ -28,7 +27,7 @@ Deno.serve(async (req: Request) => {
       if (!resp.ok) {
         return new Response(
           JSON.stringify({ error: `Failed to download: status ${resp.status} ${resp.statusText}` }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
       const fileBytes = new Uint8Array(await resp.arrayBuffer())
@@ -37,8 +36,7 @@ Deno.serve(async (req: Request) => {
       const { data, error } = await supabase.storage
         .from('via-cargas-anexos')
         .upload(targetPath, fileBytes, {
-          contentType:
-            contentType || resp.headers.get('content-type') || 'application/octet-stream',
+          contentType: contentType || resp.headers.get('content-type') || 'application/octet-stream',
           upsert: true,
         })
 
@@ -50,12 +48,9 @@ Deno.serve(async (req: Request) => {
         })
       }
 
-      return new Response(
-        JSON.stringify({ success: true, targetPath, bytes: fileBytes.length, data }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
+      return new Response(JSON.stringify({ success: true, targetPath, bytes: fileBytes.length, data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
     if (action === 'test_import_flow') {
@@ -63,7 +58,7 @@ Deno.serve(async (req: Request) => {
       const projetoId = body.projetoId || '4bdc5746-5c78-45e8-9eeb-0870546e6afa'
       const testHash = body.testHash || 'hash-teste-' + Date.now()
       const testFileName = body.fileName || 'relatorio_teste_medicao.pdf'
-
+      
       // 1. check duplicate
       const { data: existing } = await supabase
         .from('vc_importacoes_relatorios')
@@ -74,7 +69,7 @@ Deno.serve(async (req: Request) => {
 
       if (existing) {
         return new Response(JSON.stringify({ blockedDuplicate: true, existing }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
       }
 
@@ -93,7 +88,7 @@ Deno.serve(async (req: Request) => {
           situacao_validacao: 'Armazenado com segurança',
           versao: 1,
           fonte_relacionada: 'Relatório Teste Controlado',
-          storage_status: 'armazenado',
+          storage_status: 'armazenado'
         })
         .select()
         .single()
@@ -101,7 +96,7 @@ Deno.serve(async (req: Request) => {
       if (anexoErr) {
         return new Response(JSON.stringify({ error: anexoErr }), {
           status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
       }
 
@@ -119,38 +114,33 @@ Deno.serve(async (req: Request) => {
           quantidade_registros: 10,
           totais_extraidos: {
             pneusAnalisados: 10,
-            prejuizoPotencial: 5000.0,
+            prejuizoPotencial: 5000.00
           },
           inconsistencias: [],
           dados_brutos: { teste: true },
-          alteracoes_sugeridas: [
-            {
-              etapa: 3,
-              item: 'Pneus Teste',
-              acao: 'Atualizar medição de teste',
-              status: 'pendente',
-            },
-          ],
+          alteracoes_sugeridas: [{
+            etapa: 3,
+            item: 'Pneus Teste',
+            acao: 'Atualizar medição de teste',
+            status: 'pendente'
+          }],
           etapas_afetadas: [2, 3, 6, 7],
           status_processamento: 'ARQUIVO RECEBIDO',
           storage_path: anexo.storage_path,
           tamanho_bytes: 12345,
           usuario_envio_nome: 'Carlos Moura (Consultor SL Consult)',
-          versao_leitura: '1.0',
+          versao_leitura: '1.0'
         })
         .select()
         .single()
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          anexo,
-          importacao,
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
+      return new Response(JSON.stringify({
+        success: true,
+        anexo,
+        importacao
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
     }
 
     return new Response(JSON.stringify({ message: 'carlos-ops ready' }), {
