@@ -20,20 +20,22 @@ import {
 } from '@/components/ui/select'
 import {
   Loader2,
-  Users,
   FileSpreadsheet,
   AlertCircle,
-  Building2,
-  Printer,
   RotateCw,
   Search,
   Filter,
   CheckCircle2,
   XCircle,
+  FileText,
+  Printer,
   Layers,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { getClientesRelatorio, type ClienteRelatorio } from '@/services/relatorio-clientes'
+import {
+  getRelatorioGeralContratos,
+  type ContratoRelatorioGeral,
+} from '@/services/relatorio-clientes'
 import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
 import { parseModulosToList } from '@/lib/modules-parser'
 import { MODULES } from '@/constants/contracts'
@@ -48,17 +50,29 @@ function normalizeModuleName(name: string): string {
   return name.trim().toLowerCase()
 }
 
-function downloadCSV(rows: ClienteRelatorio[]) {
+function formatDateBR(dateString: string | null | undefined): string {
+  if (!dateString) return '—'
+  const datePart = dateString.includes('T') ? dateString.split('T')[0] : dateString
+  if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+    const [year, month, day] = datePart.split('-')
+    return `${day}/${month}/${year}`
+  }
+  const d = new Date(dateString)
+  if (isNaN(d.getTime())) return dateString
+  return d.toLocaleDateString('pt-BR')
+}
+
+function downloadCSV(rows: ContratoRelatorioGeral[]) {
   const headers = [
-    'Nome / Razão Social',
+    'Cliente',
     'CNPJ',
-    'Mensalidade',
-    'Dia de Vencimento',
-    'Código do Plano',
-    'Plano Contratado',
-    'Módulos',
-    'Endereço',
-    'Status',
+    'Tipo de Contrato / Operação',
+    'Data de Solicitação',
+    'Plano',
+    'Mensalidade (R$)',
+    'Módulos Contratados',
+    'Status Contrato',
+    'Status Cliente',
   ]
   const csvLines = [headers.map(escapeCSVField).join(';')]
 
@@ -66,15 +80,15 @@ function downloadCSV(rows: ClienteRelatorio[]) {
     const modulos = parseModulosToList(row.modulos)
     csvLines.push(
       [
-        row.nome,
-        row.cnpj ? formatCNPJ(row.cnpj) : '',
+        row.cliente_nome,
+        row.cliente_cnpj ? formatCNPJ(row.cliente_cnpj) : '',
+        row.tipo ?? '-',
+        formatDateBR(row.data_solicitacao),
+        row.plano ?? '-',
         row.valor_total != null ? formatCurrency(row.valor_total) : '',
-        row.vencimento_mensal != null ? String(row.vencimento_mensal) : '',
-        row.plano_codigo ?? '-',
-        row.plano_descricao ?? '-',
         modulos.join(', '),
-        row.endereco ?? '',
         row.status ?? '',
+        row.cliente_status ?? '',
       ]
         .map(escapeCSVField)
         .join(';'),
@@ -87,54 +101,51 @@ function downloadCSV(rows: ClienteRelatorio[]) {
   const link = document.createElement('a')
   const today = new Date().toISOString().split('T')[0]
   link.href = url
-  link.download = `relatorio_clientes_${today}.csv`
+  link.download = `relatorio_geral_contratos_${today}.csv`
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
 }
 
-export function ClientReportTab() {
-  const [clientes, setClientes] = useState<ClienteRelatorio[]>([])
+export function GeneralContractsReport() {
+  const [contratos, setContratos] = useState<ContratoRelatorioGeral[]>([])
   const [loading, setLoading] = useState(false)
   const [hasGenerated, setHasGenerated] = useState(false)
   const [lastGeneratedAt, setLastGeneratedAt] = useState<Date | null>(null)
 
-  // Filtros locais (após gerar)
+  // Filtros locais após gerar
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'ativo' | 'inativo'>('all')
+  const [tipoFilter, setTipoFilter] = useState<string>('all')
   const [selectedModule, setSelectedModule] = useState<string>('all')
   const [modulePresence, setModulePresence] = useState<'with' | 'without'>('with')
 
   const handleGenerate = async () => {
     setLoading(true)
     try {
-      const data = await getClientesRelatorio()
-      setClientes(data)
+      const data = await getRelatorioGeralContratos()
+      setContratos(data)
       setHasGenerated(true)
       setLastGeneratedAt(new Date())
-      toast.success(`${data.length} cliente(s) carregado(s) com dados frescos do banco.`)
+      toast.success(`${data.length} contrato(s) carregado(s) com dados frescos do banco.`)
     } catch (error: any) {
-      toast.error('Erro ao carregar relatório de clientes: ' + (error.message || ''))
+      toast.error('Erro ao buscar dados do relatório geral: ' + (error.message || ''))
     } finally {
       setLoading(false)
     }
   }
 
-  // Descobrir catálogo completo + quaisquer módulos gravados nos clientes que não constem no catálogo
+  // Descobrir catálogo completo + quaisquer módulos gravados nos contratos
   const allModuleOptions = useMemo(() => {
-    const map = new Map<string, string>() // normalized -> displayName
+    const map = new Map<string, string>()
 
-    // 1. Módulos do catálogo oficial (incluindo BI WEB, etc)
     for (const mod of MODULES) {
       map.set(normalizeModuleName(mod.name), mod.name)
     }
-    // Garantir explicitamente BI WEB caso nome varie
     map.set('bi web', 'BI WEB')
 
-    // 2. Módulos encontrados no banco
-    for (const cliente of clientes) {
-      const list = parseModulosToList(cliente.modulos)
+    for (const contrato of contratos) {
+      const list = parseModulosToList(contrato.modulos)
       for (const m of list) {
         const norm = normalizeModuleName(m)
         if (!map.has(norm)) {
@@ -146,34 +157,39 @@ export function ClientReportTab() {
     return Array.from(map.entries())
       .map(([key, label]) => ({ key, label }))
       .sort((a, b) => a.label.localeCompare(b.label))
-  }, [clientes])
+  }, [contratos])
 
-  // Filtragem dos clientes em tela
-  const filteredClientes = useMemo(() => {
-    return clientes.filter((cliente) => {
-      // 1. Busca por nome ou CNPJ
+  // Tipos de contratos únicos para o filtro
+  const uniqueTipos = useMemo(() => {
+    const set = new Set<string>()
+    for (const c of contratos) {
+      if (c.tipo) set.add(c.tipo)
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [contratos])
+
+  // Filtragem dos contratos
+  const filteredContratos = useMemo(() => {
+    return contratos.filter((contrato) => {
+      // 1. Busca textual (cliente, cnpj, plano)
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim()
-        const matchNome = cliente.nome?.toLowerCase().includes(q)
+        const matchCliente = contrato.cliente_nome?.toLowerCase().includes(q)
         const matchCnpj =
-          cliente.cnpj?.toLowerCase().includes(q) || cliente.cnpj?.replace(/\D/g, '').includes(q)
-        if (!matchNome && !matchCnpj) return false
+          contrato.cliente_cnpj?.toLowerCase().includes(q) ||
+          contrato.cliente_cnpj?.replace(/\D/g, '').includes(q)
+        const matchPlano = contrato.plano?.toLowerCase().includes(q)
+        if (!matchCliente && !matchCnpj && !matchPlano) return false
       }
 
-      // 2. Filtro de status
-      if (statusFilter !== 'all') {
-        const isInactive =
-          cliente.status === 'Inativo' ||
-          cliente.status === 'Cancelado' ||
-          cliente.status?.toLowerCase() === 'inativo' ||
-          cliente.status?.toLowerCase() === 'cancelado'
-        if (statusFilter === 'ativo' && isInactive) return false
-        if (statusFilter === 'inativo' && !isInactive) return false
+      // 2. Filtro de tipo
+      if (tipoFilter !== 'all' && contrato.tipo !== tipoFilter) {
+        return false
       }
 
-      // 3. Filtro por módulo (com ou sem determinado módulo)
+      // 3. Filtro de módulo
       if (selectedModule !== 'all') {
-        const modulos = parseModulosToList(cliente.modulos)
+        const modulos = parseModulosToList(contrato.modulos)
         const hasMod = modulos.some((m) => normalizeModuleName(m) === selectedModule)
         if (modulePresence === 'with' && !hasMod) return false
         if (modulePresence === 'without' && hasMod) return false
@@ -181,14 +197,14 @@ export function ClientReportTab() {
 
       return true
     })
-  }, [clientes, searchQuery, statusFilter, selectedModule, modulePresence])
+  }, [contratos, searchQuery, tipoFilter, selectedModule, modulePresence])
 
-  // Estatísticas rápidas baseadas no filtro de módulo selecionado
+  // Estatísticas de módulo selecionado
   const moduleStats = useMemo(() => {
     if (selectedModule === 'all') return null
     let countWith = 0
     let countWithout = 0
-    for (const c of clientes) {
+    for (const c of contratos) {
       const modulos = parseModulosToList(c.modulos)
       if (modulos.some((m) => normalizeModuleName(m) === selectedModule)) {
         countWith++
@@ -202,15 +218,15 @@ export function ClientReportTab() {
       countWith,
       countWithout,
     }
-  }, [clientes, selectedModule, allModuleOptions])
+  }, [contratos, selectedModule, allModuleOptions])
 
   const handleExport = () => {
-    if (filteredClientes.length === 0) {
+    if (filteredContratos.length === 0) {
       toast.warning('Não há dados para exportar.')
       return
     }
-    downloadCSV(filteredClientes)
-    toast.success('Relatório de clientes exportado com sucesso!')
+    downloadCSV(filteredContratos)
+    toast.success('Relatório geral de contratos exportado com sucesso!')
   }
 
   return (
@@ -218,7 +234,7 @@ export function ClientReportTab() {
       <div className="hidden print:flex items-center gap-8 border-b-2 border-slate-200 pb-3 mb-2">
         <img src={logoUrl} alt="Service Logic" className="h-12 object-contain" />
         <div>
-          <h1 className="text-xl font-bold text-[#1b4382]">Relatório de Clientes</h1>
+          <h1 className="text-xl font-bold text-[#1b4382]">Relatório Geral de Contratos</h1>
           <p className="text-[10pt] text-slate-600">
             Documento gerado em{' '}
             {lastGeneratedAt
@@ -233,12 +249,12 @@ export function ClientReportTab() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-[#1b4382]" />
-                Relatório de Clientes
+                <FileSpreadsheet className="h-5 w-5 text-[#1b4382]" />
+                Relatório Geral de Contratos
               </CardTitle>
               <CardDescription className="mt-1">
-                Visão consolidada de todos os clientes cadastrados com informações financeiras,
-                contratuais, status atual e módulos adicionais contratados.
+                Acompanhamento completo de contratos, aditivos, reativações e propostas com
+                separação e filtros por módulos adicionais e valores vigentes.
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -259,14 +275,14 @@ export function ClientReportTab() {
                   <Button
                     onClick={() => window.print()}
                     variant="outline"
-                    disabled={clientes.length === 0}
+                    disabled={contratos.length === 0}
                   >
                     <Printer className="h-4 w-4 mr-2" />
                     Imprimir
                   </Button>
                   <Button
                     onClick={handleExport}
-                    disabled={loading || filteredClientes.length === 0}
+                    disabled={loading || filteredContratos.length === 0}
                     variant="outline"
                   >
                     <FileSpreadsheet className="h-4 w-4 mr-2" />
@@ -286,8 +302,8 @@ export function ClientReportTab() {
                     </>
                   ) : (
                     <>
-                      <Building2 className="h-4 w-4 mr-2" />
-                      Gerar Relatório
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      Gerar Relatório Geral
                     </>
                   )}
                 </Button>
@@ -296,25 +312,25 @@ export function ClientReportTab() {
           </div>
         </CardHeader>
         <CardContent className="print:p-0">
-          {/* Se ainda não gerou, exibe estado inicial informativo */}
+          {/* Estado inicial vazio antes de gerar */}
           {!hasGenerated && !loading && (
             <div className="flex flex-col items-center justify-center py-16 text-center no-print border border-dashed border-slate-200 rounded-lg bg-slate-50/50">
               <div className="rounded-full bg-blue-50 p-4 mb-4 text-[#1b4382]">
-                <Building2 className="h-8 w-8" />
+                <FileSpreadsheet className="h-8 w-8" />
               </div>
               <p className="text-base font-semibold text-slate-800">
                 Gere o relatório para ver os dados atuais
               </p>
               <p className="text-sm text-slate-500 max-w-md mt-1 mb-5">
-                Clique no botão abaixo para buscar os dados frescos diretamente do banco de dados,
-                refletindo as alterações recentes em mensalidades, módulos e status.
+                Os dados de contratos, aditivos e mensalidades não são pré-carregados para garantir
+                que você visualize sempre o estado mais recente do banco de dados.
               </p>
               <Button
                 onClick={handleGenerate}
                 className="bg-[#1b4382] hover:bg-[#1b4382]/90 text-white"
               >
-                <Building2 className="h-4 w-4 mr-2" />
-                Gerar Relatório de Clientes
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Gerar Relatório Geral
               </Button>
             </div>
           )}
@@ -324,10 +340,10 @@ export function ClientReportTab() {
             <div className="flex flex-col items-center justify-center py-20 no-print">
               <Loader2 className="h-8 w-8 animate-spin text-[#1b4382] mb-3" />
               <span className="text-sm font-medium text-slate-600">
-                Buscando clientes e módulos atualizados no banco...
+                Buscando contratos e alterações atualizadas no banco...
               </span>
               <span className="text-xs text-slate-400 mt-1">
-                Isso garante que os dados em tela sejam 100% atuais.
+                Carregando dados frescos do Supabase sem cache prévio.
               </span>
             </div>
           )}
@@ -335,18 +351,18 @@ export function ClientReportTab() {
           {/* Área de conteúdo após gerar */}
           {hasGenerated && !loading && (
             <div className="space-y-4">
-              {/* Barra de Filtros (Pesquisa, Status, Módulo) */}
+              {/* Barra de Filtros (Pesquisa, Tipo, Módulo) */}
               <div className="no-print bg-slate-50/80 border border-slate-200 rounded-lg p-3.5 space-y-3">
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-600">
                   <Filter className="h-3.5 w-3.5 text-[#1b4382]" />
-                  Filtros e Análise de Módulos
+                  Filtros de Contratos e Módulos
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {/* Busca textual */}
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-slate-600 flex items-center gap-1">
-                      <Search className="h-3 w-3 text-slate-400" /> Buscar por nome ou CNPJ
+                      <Search className="h-3 w-3 text-slate-400" /> Buscar por cliente ou CNPJ
                     </label>
                     <Input
                       placeholder="Ex: Transportes, 00.000..."
@@ -356,17 +372,20 @@ export function ClientReportTab() {
                     />
                   </div>
 
-                  {/* Filtro Status */}
+                  {/* Filtro Tipo de Contrato */}
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-slate-600">Status do Cliente</label>
-                    <Select value={statusFilter} onValueChange={(val: any) => setStatusFilter(val)}>
+                    <label className="text-xs font-medium text-slate-600">Tipo de Contrato</label>
+                    <Select value={tipoFilter} onValueChange={setTipoFilter}>
                       <SelectTrigger className="h-9 bg-white text-sm">
-                        <SelectValue placeholder="Todos os status" />
+                        <SelectValue placeholder="Todos os tipos" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Todos os status</SelectItem>
-                        <SelectItem value="ativo">Apenas Ativos</SelectItem>
-                        <SelectItem value="inativo">Apenas Inativos / Cancelados</SelectItem>
+                        <SelectItem value="all">Todos os tipos</SelectItem>
+                        {uniqueTipos.map((tipo) => (
+                          <SelectItem key={tipo} value={tipo}>
+                            {tipo}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -391,7 +410,7 @@ export function ClientReportTab() {
                     </Select>
                   </div>
 
-                  {/* Condição do Módulo (Quem TEM vs Quem NÃO TEM) */}
+                  {/* Condição do Módulo */}
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-slate-600">Presença do Módulo</label>
                     <Select
@@ -403,8 +422,8 @@ export function ClientReportTab() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="with">Clientes que POSSUEM o módulo</SelectItem>
-                        <SelectItem value="without">Clientes que NÃO POSSUEM</SelectItem>
+                        <SelectItem value="with">Contratos que POSSUEM o módulo</SelectItem>
+                        <SelectItem value="without">Contratos que NÃO POSSUEM</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -420,22 +439,22 @@ export function ClientReportTab() {
                       </span>
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">
                         <CheckCircle2 className="h-3 w-3" />
-                        {moduleStats.countWith} cliente(s) possuem
+                        {moduleStats.countWith} contrato(s) possuem
                       </span>
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-medium">
                         <XCircle className="h-3 w-3" />
-                        {moduleStats.countWithout} cliente(s) não possuem
+                        {moduleStats.countWithout} contrato(s) não possuem
                       </span>
                     </div>
 
-                    {(searchQuery || statusFilter !== 'all' || selectedModule !== 'all') && (
+                    {(searchQuery || tipoFilter !== 'all' || selectedModule !== 'all') && (
                       <Button
                         variant="ghost"
                         size="sm"
                         className="h-6 text-xs text-slate-500 hover:text-slate-900"
                         onClick={() => {
                           setSearchQuery('')
-                          setStatusFilter('all')
+                          setTipoFilter('all')
                           setSelectedModule('all')
                           setModulePresence('with')
                         }}
@@ -448,30 +467,30 @@ export function ClientReportTab() {
               </div>
 
               {/* Tabela de Resultados */}
-              {clientes.length === 0 ? (
+              {contratos.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center no-print">
                   <div className="rounded-full bg-slate-100 p-4 mb-4">
-                    <Users className="h-8 w-8 text-slate-400" />
+                    <FileText className="h-8 w-8 text-slate-400" />
                   </div>
                   <p className="text-base font-medium text-slate-600">
-                    Nenhum cliente cadastrado no banco
+                    Nenhum contrato cadastrado no banco
                   </p>
                 </div>
-              ) : filteredClientes.length === 0 ? (
+              ) : filteredContratos.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center no-print border border-slate-200 rounded-lg bg-slate-50/50">
                   <AlertCircle className="h-8 w-8 text-amber-500 mb-2" />
                   <p className="text-sm font-semibold text-slate-700">
-                    Nenhum cliente corresponde aos filtros aplicados
+                    Nenhum contrato corresponde aos filtros aplicados
                   </p>
                   <p className="text-xs text-slate-400 mt-1 mb-3">
-                    Tente ajustar o termo de busca ou selecionar outro módulo.
+                    Tente ajustar o termo de busca ou selecionar outro tipo/módulo.
                   </p>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => {
                       setSearchQuery('')
-                      setStatusFilter('all')
+                      setTipoFilter('all')
                       setSelectedModule('all')
                       setModulePresence('with')
                     }}
@@ -486,94 +505,78 @@ export function ClientReportTab() {
                       <TableHeader>
                         <TableRow className="bg-slate-50 hover:bg-slate-50 print:bg-slate-100">
                           <TableHead className="min-w-[180px] font-semibold text-slate-700 print:text-[8pt] print:py-1">
-                            Nome / Razão Social
+                            Cliente / Razão Social
                           </TableHead>
                           <TableHead className="min-w-[140px] font-semibold text-slate-700 print:text-[8pt] print:py-1">
                             CNPJ
                           </TableHead>
-                          <TableHead className="min-w-[120px] text-right font-semibold text-slate-700 print:text-[8pt] print:py-1">
-                            Mensalidade
+                          <TableHead className="min-w-[150px] font-semibold text-slate-700 print:text-[8pt] print:py-1">
+                            Tipo de Operação
                           </TableHead>
-                          <TableHead className="min-w-[90px] text-center font-semibold text-slate-700 print:text-[8pt] print:py-1">
-                            Vencimento
+                          <TableHead className="min-w-[110px] text-center font-semibold text-slate-700 print:text-[8pt] print:py-1">
+                            Data
                           </TableHead>
-                          <TableHead className="min-w-[90px] font-semibold text-slate-700 print:text-[8pt] print:py-1">
-                            Código
-                          </TableHead>
-                          <TableHead className="min-w-[140px] font-semibold text-slate-700 print:text-[8pt] print:py-1">
+                          <TableHead className="min-w-[120px] font-semibold text-slate-700 print:text-[8pt] print:py-1">
                             Plano
+                          </TableHead>
+                          <TableHead className="min-w-[110px] text-right font-semibold text-slate-700 print:text-[8pt] print:py-1">
+                            Mensalidade
                           </TableHead>
                           <TableHead className="min-w-[220px] font-semibold text-slate-700 print:text-[8pt] print:py-1">
                             Módulos Adicionais
                           </TableHead>
-                          <TableHead className="min-w-[160px] font-semibold text-slate-700 print:hidden">
-                            Endereço
-                          </TableHead>
-                          <TableHead className="min-w-[90px] text-center font-semibold text-slate-700 print:text-[8pt] print:py-1">
+                          <TableHead className="min-w-[100px] text-center font-semibold text-slate-700 print:text-[8pt] print:py-1">
                             Status
                           </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredClientes.map((cliente) => {
-                          const modulos = parseModulosToList(cliente.modulos)
+                        {filteredContratos.map((contrato) => {
+                          const modulos = parseModulosToList(contrato.modulos)
                           const isInactive =
-                            cliente.status === 'Inativo' ||
-                            cliente.status === 'Cancelado' ||
-                            cliente.status?.toLowerCase() === 'inativo' ||
-                            cliente.status?.toLowerCase() === 'cancelado'
+                            contrato.cliente_status === 'Inativo' ||
+                            contrato.cliente_status === 'Cancelado' ||
+                            contrato.cliente_status?.toLowerCase() === 'inativo' ||
+                            contrato.cliente_status?.toLowerCase() === 'cancelado'
 
                           return (
                             <TableRow
-                              key={cliente.id}
+                              key={contrato.id}
                               className="hover:bg-slate-50/60 transition-colors print:hover:bg-transparent print:break-inside-avoid"
                             >
                               <TableCell className="font-medium text-slate-800 print:text-[8pt] print:py-1">
-                                {cliente.nome}
+                                {contrato.cliente_nome}
                               </TableCell>
                               <TableCell className="text-slate-600 print:text-[8pt] print:py-1">
-                                {cliente.cnpj ? formatCNPJ(cliente.cnpj) : '—'}
+                                {contrato.cliente_cnpj ? formatCNPJ(contrato.cliente_cnpj) : '—'}
                               </TableCell>
-                              <TableCell className="text-right font-medium text-slate-800 print:text-[8pt] print:py-1">
-                                {cliente.valor_total != null && cliente.valor_total > 0
-                                  ? formatCurrency(cliente.valor_total)
-                                  : '—'}
+                              <TableCell className="text-slate-700 font-medium print:text-[8pt] print:py-1">
+                                <Badge
+                                  variant="outline"
+                                  className="bg-slate-100 border-slate-300 text-slate-700 text-[10px] py-0 px-2 font-medium"
+                                >
+                                  {contrato.tipo || 'Contrato'}
+                                </Badge>
                               </TableCell>
                               <TableCell className="text-center text-slate-600 print:text-[8pt] print:py-1">
-                                {cliente.vencimento_mensal != null
-                                  ? `${cliente.vencimento_mensal}º`
-                                  : '—'}
+                                {formatDateBR(contrato.data_solicitacao)}
                               </TableCell>
                               <TableCell className="text-slate-600 print:text-[8pt] print:py-1">
-                                {cliente.plano_codigo ? (
+                                {contrato.plano ? (
                                   <Badge
                                     variant="outline"
                                     className="bg-blue-50 border-blue-200 text-blue-700 text-[10px] py-0 px-1.5 font-medium print:border-slate-300"
                                   >
-                                    {cliente.plano_codigo}
+                                    {contrato.plano}
                                   </Badge>
                                 ) : (
-                                  <span className="text-xs text-slate-400 italic">-</span>
+                                  <span className="text-xs text-slate-400 italic">—</span>
                                 )}
                               </TableCell>
-                              <TableCell className="text-slate-600 print:text-[8pt] print:py-1">
-                                {cliente.plano_descricao || cliente.plano_codigo ? (
-                                  <div className="flex flex-col gap-0.5">
-                                    {cliente.plano_descricao && (
-                                      <span className="font-medium">{cliente.plano_descricao}</span>
-                                    )}
-                                    {cliente.plano_codigo && !cliente.plano_descricao && (
-                                      <Badge
-                                        variant="outline"
-                                        className="w-fit bg-blue-50 border-blue-200 text-blue-700 text-[10px] py-0 px-1.5 font-medium"
-                                      >
-                                        {cliente.plano_codigo}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <span className="text-xs text-slate-400 italic">-</span>
-                                )}
+                              <TableCell className="text-right font-medium text-slate-800 print:text-[8pt] print:py-1">
+                                {contrato.valor_total != null && contrato.valor_total > 0
+                                  ? formatCurrency(contrato.valor_total)
+                                  : '—'}
                               </TableCell>
                               <TableCell className="print:text-[8pt] print:py-1">
                                 {modulos.length > 0 ? (
@@ -599,12 +602,9 @@ export function ClientReportTab() {
                                   </div>
                                 ) : (
                                   <span className="text-xs text-slate-400 italic">
-                                    Nenhum módulo selecionado
+                                    Nenhum módulo específico
                                   </span>
                                 )}
-                              </TableCell>
-                              <TableCell className="text-slate-600 max-w-[200px] truncate print:hidden">
-                                {cliente.endereco || '—'}
                               </TableCell>
                               <TableCell className="text-center print:text-[8pt] print:py-1">
                                 <Badge
@@ -615,7 +615,7 @@ export function ClientReportTab() {
                                       : 'bg-green-100 text-green-700 hover:bg-green-100'
                                   }
                                 >
-                                  {cliente.status ?? 'Ativo'}
+                                  {contrato.status || contrato.cliente_status || 'Ativo'}
                                 </Badge>
                               </TableCell>
                             </TableRow>
@@ -626,8 +626,9 @@ export function ClientReportTab() {
                   </div>
                   <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50/50 no-print gap-2">
                     <span className="text-sm text-slate-500">
-                      Exibindo <strong className="text-slate-700">{filteredClientes.length}</strong>{' '}
-                      de <strong className="text-slate-700">{clientes.length}</strong> cliente(s)
+                      Exibindo{' '}
+                      <strong className="text-slate-700">{filteredContratos.length}</strong> de{' '}
+                      <strong className="text-slate-700">{contratos.length}</strong> contrato(s)
                     </span>
                     {lastGeneratedAt && (
                       <span className="text-xs text-slate-400">
@@ -636,7 +637,7 @@ export function ClientReportTab() {
                     )}
                   </div>
                   <div className="hidden print:flex items-center justify-end px-4 py-2 border-t border-slate-300 text-[8pt] text-slate-600">
-                    Total de {filteredClientes.length} cliente(s)
+                    Total de {filteredContratos.length} contrato(s)
                   </div>
                 </div>
               )}
@@ -645,10 +646,9 @@ export function ClientReportTab() {
               <div className="mt-3 flex items-start gap-2 text-xs text-slate-400 no-print">
                 <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-slate-400" />
                 <span>
-                  A mensalidade reflete <code className="text-slate-600">clientes.valor_total</code>{' '}
-                  (valor oficial e confiável). Os módulos listam todos os adicionais gravados do
-                  cliente, e qualquer alteração recente é obtida clicando em &quot;Atualizar
-                  Dados&quot;.
+                  O relatório geral busca os contratos registrados e aditivos diretamente do banco.
+                  A mensalidade corresponde ao valor atualizado de cada registro, permitindo
+                  acompanhar o histórico completo por cliente.
                 </span>
               </div>
             </div>

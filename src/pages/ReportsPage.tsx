@@ -25,7 +25,7 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { AtendimentoReportTab } from '@/components/AtendimentoReportTab'
-import { GeneralAtendimentosReport } from '@/components/GeneralAtendimentosReport'
+import { GeneralContractsReport } from '@/components/GeneralContractsReport'
 import { ClientReportTab } from '@/components/ClientReportTab'
 import { ClientIndividualReport } from '@/components/ClientIndividualReport'
 import { ClientAdhesionReport } from '@/components/ClientAdhesionReport'
@@ -245,7 +245,7 @@ export default function ReportsPage() {
         </TabsContent>
 
         <TabsContent value="relatorio-geral" className="mt-6">
-          <GeneralAtendimentosReport />
+          <GeneralContractsReport />
         </TabsContent>
 
         <TabsContent value="clientes" className="mt-6">

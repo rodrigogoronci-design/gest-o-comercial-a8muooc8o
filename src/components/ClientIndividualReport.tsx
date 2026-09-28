@@ -200,41 +200,48 @@ export function ClientIndividualReport() {
   const [clientes, setClientes] = useState<{ id: string; nome: string }[]>([])
   const [selectedId, setSelectedId] = useState<string>('')
   const [clienteData, setClienteData] = useState<ClienteRelatorioDetalhado | null>(null)
-  const [loadingList, setLoadingList] = useState(true)
+  const [loadingList, setLoadingList] = useState(false)
   const [loadingData, setLoadingData] = useState(false)
+  const [hasLoadedList, setHasLoadedList] = useState(false)
 
-  const loadClientes = useCallback(async () => {
+  const handleFetchList = useCallback(async () => {
     setLoadingList(true)
     try {
       const data = await getClientesParaRelatorioIndividual()
       setClientes(data)
-      if (data.length > 0 && !selectedId) setSelectedId(data[0].id)
+      setHasLoadedList(true)
     } catch (error: any) {
-      toast.error('Erro: ' + (error.message || ''))
+      toast.error('Erro ao listar clientes: ' + (error.message || ''))
     } finally {
       setLoadingList(false)
     }
-  }, [selectedId])
+  }, [])
 
-  useEffect(() => {
-    loadClientes()
-  }, [loadClientes])
-
-  useEffect(() => {
-    if (!selectedId) return
-    const fetchD = async () => {
-      setLoadingData(true)
-      try {
-        setClienteData(await getClienteRelatorioDetalhado(selectedId))
-      } catch (error: any) {
-        toast.error('Erro: ' + (error.message || ''))
-        setClienteData(null)
-      } finally {
-        setLoadingData(false)
-      }
+  const handleFetchReport = async (clientIdToFetch?: string) => {
+    const targetId = clientIdToFetch || selectedId
+    if (!targetId) {
+      toast.warning('Selecione um cliente para gerar o relatório.')
+      return
     }
-    fetchD()
-  }, [selectedId])
+    setLoadingData(true)
+    try {
+      const data = await getClienteRelatorioDetalhado(targetId)
+      setClienteData(data)
+      toast.success('Relatório individual atualizado com dados recentes.')
+    } catch (error: any) {
+      toast.error('Erro ao carregar dados do cliente: ' + (error.message || ''))
+      setClienteData(null)
+    } finally {
+      setLoadingData(false)
+    }
+  }
+
+  // Carrega lista ao montar caso ainda não tenha carregado
+  useEffect(() => {
+    if (!hasLoadedList) {
+      handleFetchList()
+    }
+  }, [hasLoadedList, handleFetchList])
 
   const modulosData = useMemo(() => parseModulosData(clienteData), [clienteData])
   const modulosList = modulosData.adicionais
@@ -248,13 +255,18 @@ export function ClientIndividualReport() {
         <div className="flex-1">
           <p className="text-sm font-semibold text-slate-700 mb-2">Selecione o Cliente</p>
           {loadingList ? (
-            <div className="flex items-center gap-2 text-sm text-slate-500 h-10">
-              <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
+            <div className="flex items-center gap-2 text-sm text-slate-500 h-10 px-3 border rounded-md bg-slate-50">
+              <Loader2 className="h-4 w-4 animate-spin" /> Carregando lista de clientes...
             </div>
           ) : (
-            <Select value={selectedId} onValueChange={setSelectedId}>
+            <Select
+              value={selectedId}
+              onValueChange={(val) => {
+                setSelectedId(val)
+              }}
+            >
               <SelectTrigger className="w-full bg-white">
-                <SelectValue placeholder="Selecione um cliente" />
+                <SelectValue placeholder="Selecione um cliente para gerar..." />
               </SelectTrigger>
               <SelectContent>
                 {clientes.map((c) => (
@@ -266,13 +278,30 @@ export function ClientIndividualReport() {
             </Select>
           )}
         </div>
-        <div className="flex items-end">
+        <div className="flex items-end gap-2">
+          <Button
+            onClick={() => handleFetchReport()}
+            disabled={!selectedId || loadingData}
+            className="bg-[#1b4382] hover:bg-[#1b4382]/90 text-white h-10"
+          >
+            {loadingData ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Buscando...
+              </>
+            ) : clienteData ? (
+              'Atualizar Dados'
+            ) : (
+              'Gerar Relatório'
+            )}
+          </Button>
           <Button
             onClick={() => window.print()}
             disabled={!clienteData || loadingData}
-            className="bg-[#1b4382] hover:bg-[#1b4382]/90 text-white w-full sm:w-auto h-10"
+            variant="outline"
+            className="h-10"
           >
-            <Printer className="h-4 w-4 mr-2" /> Imprimir Relatório
+            <Printer className="h-4 w-4 mr-2" /> Imprimir
           </Button>
         </div>
       </div>
@@ -501,8 +530,24 @@ export function ClientIndividualReport() {
           </div>
         </div>
       ) : (
-        <div className="text-center py-20 text-slate-500 no-print">
-          Selecione um cliente para visualizar o relatório.
+        <div className="flex flex-col items-center justify-center py-16 text-center no-print border border-dashed border-slate-200 rounded-lg bg-slate-50/50">
+          <div className="rounded-full bg-blue-50 p-4 mb-4 text-[#1b4382]">
+            <UserRound className="h-8 w-8" />
+          </div>
+          <p className="text-base font-semibold text-slate-800">
+            Gere o relatório para ver os dados atuais
+          </p>
+          <p className="text-sm text-slate-500 max-w-md mt-1 mb-5">
+            Selecione o cliente no campo acima e clique em &quot;Gerar Relatório&quot; para buscar
+            os detalhes contratuais mais recentes direto do banco de dados.
+          </p>
+          <Button
+            onClick={() => handleFetchReport()}
+            disabled={!selectedId || loadingData}
+            className="bg-[#1b4382] hover:bg-[#1b4382]/90 text-white"
+          >
+            Gerar Relatório Individual
+          </Button>
         </div>
       )}
     </div>

@@ -60,13 +60,77 @@ export const getClientesRelatorio = async (): Promise<ClienteRelatorio[]> => {
     nome: c.nome,
     cnpj: c.cnpj,
     modulos: c.modulos,
-    valor_total: c.valor_total,
+    valor_total: c.valor_total != null ? Number(c.valor_total) : 0,
     vencimento_mensal: c.vencimento_mensal,
     endereco: c.endereco,
     status: c.status,
     plano_descricao: c.planos_saude?.descricao ?? null,
     plano_codigo: c.planos_saude?.codigo ?? null,
   }))
+}
+
+export interface ContratoRelatorioGeral {
+  id: string
+  cliente_id: string
+  cliente_nome: string
+  cliente_cnpj: string | null
+  cliente_status: string | null
+  tipo: string | null
+  data_solicitacao: string | null
+  plano: string | null
+  modulos: any
+  valor_total: number
+  status: string | null
+  observacoes: string | null
+}
+
+export const getRelatorioGeralContratos = async (): Promise<ContratoRelatorioGeral[]> => {
+  const { data, error } = await supabase
+    .from('historico_contratos')
+    .select(`
+      id,
+      cliente_id,
+      tipo,
+      data_solicitacao,
+      plano,
+      modulos,
+      valor_total,
+      status,
+      observacoes,
+      clientes (
+        id,
+        nome,
+        cnpj,
+        status,
+        valor_total
+      )
+    `)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+
+  return (data || []).map((item: any) => {
+    const cliente = item.clientes
+    return {
+      id: item.id,
+      cliente_id: item.cliente_id,
+      cliente_nome: cliente?.nome || 'Cliente não identificado',
+      cliente_cnpj: cliente?.cnpj || null,
+      cliente_status: cliente?.status || null,
+      tipo: item.tipo,
+      data_solicitacao: item.data_solicitacao,
+      plano: item.plano,
+      modulos: item.modulos,
+      valor_total:
+        item.valor_total != null
+          ? Number(item.valor_total)
+          : cliente?.valor_total != null
+            ? Number(cliente.valor_total)
+            : 0,
+      status: item.status,
+      observacoes: item.observacoes,
+    }
+  })
 }
 
 export const getClientesParaRelatorioIndividual = async (): Promise<
