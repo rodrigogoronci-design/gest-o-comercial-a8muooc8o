@@ -58,7 +58,7 @@ const FALLBACK_MODULES: PlanItem[] = [
   { id: 'mod-painel', codigo: 'MOD-PAINEL', descricao: 'Painel de Informações', preco: 165 },
   { id: 'mod-fiscal', codigo: 'MOD-FISCAL', descricao: 'Fiscal', preco: 199 },
   { id: 'mod-dfe', codigo: 'MOD-DFE', descricao: 'DF-e', preco: 165 },
-  { id: 'mod-power-bi', codigo: 'MOD-POWER-BI', descricao: 'Power BI', preco: 199 },
+  { id: 'mod-power-bi', codigo: 'MOD-POWER-BI', descricao: 'BI WEB', preco: 199 },
   { id: 'mod-sl-trip', codigo: 'MOD-SL-TRIP', descricao: 'SL-Trip', preco: 299 },
   { id: 'mod-sl-track', codigo: 'MOD-SL-TRACK', descricao: 'SL-Track', preco: 299 },
   { id: 'mod-homol-banc', codigo: 'MOD-HOMOL-BANC', descricao: 'Homologação Bancaria', preco: 200 },

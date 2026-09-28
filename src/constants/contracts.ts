@@ -77,7 +77,7 @@ export const MODULES = [
   { id: 'mod-painel', name: 'Painel de Informações', price: 165.0, implHours: 1 },
   { id: 'mod-fiscal', name: 'Fiscal', price: 199.0, implHours: 3 },
   { id: 'mod-dfe', name: 'DF-e', price: 165.0, implHours: 2 },
-  { id: 'mod-powerbi', name: 'Power BI', price: 199.0, implHours: 0 },
+  { id: 'mod-powerbi', name: 'BI WEB', price: 199.0, implHours: 0 },
   { id: 'mod-sltrip', name: 'SL-Trip', price: 299.0, implHours: 3 },
   { id: 'mod-sltrack', name: 'SL-Track', price: 299.0, implHours: 5 },
   { id: 'mod-homolog-banc', name: 'Homologação Bancaria', price: 200.0, implHours: 0 },
@@ -122,7 +122,7 @@ export const PREDEFINED_TRAININGS = [
   { id: 'train-gerador-relatorio', name: 'Gerador de Relatório', price: 0.0 },
   { id: 'train-sl-track', name: 'SL Track', price: 100.0 },
   { id: 'train-sl-trip', name: 'SL TRIP', price: 100.0 },
-  { id: 'train-powerbi', name: 'Power BI', price: 200.0 },
+  { id: 'train-powerbi', name: 'BI WEB', price: 200.0 },
   {
     id: 'train-encontro-duvidas',
     name: 'Encontro posterior para dúvidas (1 hora remoto)',
