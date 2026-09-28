@@ -11,6 +11,7 @@ export interface ClienteRelatorio {
   status: string | null
   plano_descricao: string | null
   plano_codigo: string | null
+  data_assinatura: string | null
   cnpj_duplicado_count?: number
 }
 
@@ -50,6 +51,7 @@ export const getClientesRelatorio = async (): Promise<ClienteRelatorio[]> => {
       endereco,
       status,
       plano_id,
+      data_assinatura,
       planos_saude(descricao, codigo)
     `)
     .order('nome', { ascending: true })
@@ -81,6 +83,7 @@ export const getClientesRelatorio = async (): Promise<ClienteRelatorio[]> => {
       status: c.status,
       plano_descricao: planoBase,
       plano_codigo: c.planos_saude?.codigo ?? null,
+      data_assinatura: c.data_assinatura ?? null,
       cnpj_duplicado_count: dupCount > 1 ? dupCount : undefined,
     }
   })

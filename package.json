@@ -49,6 +49,7 @@
     "@supabase/supabase-js": "^2.103.3",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "caniuse-lite": "^1.0.30001786",
+    "exceljs": "^4.4.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
