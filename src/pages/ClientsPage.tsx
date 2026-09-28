@@ -18,6 +18,7 @@ import {
   Printer,
   ChevronDown,
   Ban,
+  RotateCcw,
   Send,
   PenLine,
   Rocket,
@@ -176,6 +177,8 @@ export interface ClienteRecord {
   vencimento_mensal?: number | null
   data_cancelamento?: string | null
   motivo_cancelamento?: string | null
+  data_retorno?: string | null
+  observacao_retorno?: string | null
   link_assinatura?: string | null
   indice_reajuste_ipca?: number | null
 }
@@ -294,6 +297,8 @@ type MergedClient = {
   vencimento_mensal?: number | null
   data_cancelamento?: string | null
   motivo_cancelamento?: string | null
+  data_retorno?: string | null
+  observacao_retorno?: string | null
   link_assinatura?: string | null
   plano_id?: string | null
   plano_descricao?: string | null
@@ -672,6 +677,13 @@ export default function ClientsPage() {
   const [cancelMotivo, setCancelMotivo] = useState('')
   const [isSubmittingCancel, setIsSubmittingCancel] = useState(false)
 
+  const [isReactivateModalOpen, setIsReactivateModalOpen] = useState(false)
+  const [reactivateClient, setReactivateClient] = useState<MergedClient | null>(null)
+  const [reactivateDate, setReactivateDate] = useState('')
+  const [reactivateObservacao, setReactivateObservacao] = useState('')
+  const [reactivateError, setReactivateError] = useState('')
+  const [isSubmittingReactivate, setIsSubmittingReactivate] = useState(false)
+
   const handleRemoveModule = async (moduleToRemove: ModuleItem) => {
     if (!viewingClient) return
     if (!confirm('Tem certeza que deseja remover "' + moduleToRemove.name + '"?')) return
@@ -1034,6 +1046,8 @@ export default function ClientsPage() {
             vencimento_mensal: target.vencimento_mensal,
             data_cancelamento: target.data_cancelamento,
             motivo_cancelamento: target.motivo_cancelamento,
+            data_retorno: target.data_retorno,
+            observacao_retorno: target.observacao_retorno,
             link_assinatura: target.link_assinatura,
           }
           setViewingClient(mergedTarget as any)
@@ -1496,6 +1510,79 @@ Obrigada,`
     } catch (error) {
       console.error(error)
       toast.error('Erro ao excluir cliente')
+    }
+  }
+
+  const handleOpenReactivate = (client: MergedClient) => {
+    setReactivateClient(client)
+    setReactivateDate(new Date().toISOString().split('T')[0])
+    setReactivateObservacao('')
+    setReactivateError('')
+    setIsReactivateModalOpen(true)
+  }
+
+  const handleConfirmReactivate = async () => {
+    if (!reactivateClient) return
+
+    if (!reactivateDate) {
+      setReactivateError('A data do retorno é obrigatória.')
+      return
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0]
+    if (reactivateDate > todayStr) {
+      setReactivateError('A data do retorno não pode ser futura.')
+      return
+    }
+
+    setIsSubmittingReactivate(true)
+    setReactivateError('')
+    try {
+      const observacaoText = reactivateObservacao.trim() || null
+
+      await updateCliente(reactivateClient.id, {
+        status: 'ativo',
+        data_retorno: reactivateDate,
+        observacao_retorno: observacaoText,
+      })
+
+      await createHistorico({
+        cliente_id: reactivateClient.id,
+        tipo: 'Reativação de Contrato',
+        data_solicitacao: reactivateDate,
+        observacoes: observacaoText || 'Cliente reativado na carteira ativa.',
+        valor_total: reactivateClient.totalValue || 0,
+      })
+
+      toast.success('Cliente reativado com sucesso!')
+      setIsReactivateModalOpen(false)
+      const clientId = reactivateClient.id
+      setReactivateClient(null)
+      setReactivateDate('')
+      setReactivateObservacao('')
+      setReactivateError('')
+
+      loadClientes()
+      loadHistory(clientId)
+
+      if (viewingClient && viewingClient.id === clientId) {
+        setViewingClient({
+          ...viewingClient,
+          data_retorno: reactivateDate,
+          observacao_retorno: observacaoText,
+          originalData: {
+            ...viewingClient.originalData!,
+            status: 'ativo',
+            data_retorno: reactivateDate,
+            observacao_retorno: observacaoText,
+          },
+        })
+      }
+    } catch (error: any) {
+      console.error(error)
+      toast.error('Erro ao reativar cliente: ' + (error?.message || 'Falha desconhecida'))
+    } finally {
+      setIsSubmittingReactivate(false)
     }
   }
 
@@ -2683,6 +2770,8 @@ Obrigada.`)
         vencimento_mensal: c.vencimento_mensal,
         data_cancelamento: c.data_cancelamento,
         motivo_cancelamento: c.motivo_cancelamento,
+        data_retorno: c.data_retorno,
+        observacao_retorno: c.observacao_retorno,
         link_assinatura: c.link_assinatura,
       }
     }),
@@ -5171,7 +5260,7 @@ Obrigada.`)
                     <Plus className="h-3.5 w-3.5 mr-1.5" /> Gerar Upsell
                   </Link>
                 </Button>
-                {viewingClient?.originalData?.status?.toLowerCase() !== 'inativo' && (
+                {viewingClient?.originalData?.status?.toLowerCase() !== 'inativo' ? (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -5184,6 +5273,15 @@ Obrigada.`)
                     className="text-red-600 hover:text-red-800 hover:bg-red-50"
                   >
                     <Ban className="h-3.5 w-3.5 mr-1.5" /> Cancelamento
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpenReactivate(viewingClient)}
+                    className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Reativar cliente
                   </Button>
                 )}
               </div>
@@ -5445,6 +5543,98 @@ Obrigada.`)
               className="bg-indigo-600 hover:bg-indigo-700"
             >
               <Mail className="h-4 w-4 mr-2" /> Enviar via E-mail
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isReactivateModalOpen}
+        onOpenChange={(open) => {
+          setIsReactivateModalOpen(open)
+          if (!open) {
+            setReactivateError('')
+            setReactivateClient(null)
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reativar Cliente</DialogTitle>
+            <DialogDescription>
+              Informe os dados de retorno para reativar o contrato de{' '}
+              <strong className="text-slate-900">{reactivateClient?.name}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          {reactivateClient &&
+            (reactivateClient.data_cancelamento || reactivateClient.motivo_cancelamento) && (
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900 space-y-1">
+                <span className="font-semibold block text-amber-950">
+                  Contexto do cancelamento anterior:
+                </span>
+                <p>
+                  Cancelado em{' '}
+                  {reactivateClient.data_cancelamento
+                    ? formatDate(reactivateClient.data_cancelamento)
+                    : 'data não informada'}
+                  {reactivateClient.motivo_cancelamento
+                    ? ` — ${reactivateClient.motivo_cancelamento}`
+                    : ''}
+                </p>
+              </div>
+            )}
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="reactivate-date">
+                Data do Retorno <span className="text-red-500">*</span>
+              </Label>
+              <AdvancedDatePicker
+                value={reactivateDate}
+                onChange={(val) => {
+                  setReactivateDate(val)
+                  const todayStr = new Date().toISOString().split('T')[0]
+                  if (val && val > todayStr) {
+                    setReactivateError('A data do retorno não pode ser futura.')
+                  } else {
+                    setReactivateError('')
+                  }
+                }}
+                placeholder="Selecione a data do retorno"
+              />
+              {reactivateError && (
+                <p className="text-xs text-red-600 font-medium">{reactivateError}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="reactivate-obs">Observação do Retorno (opcional)</Label>
+              <Textarea
+                id="reactivate-obs"
+                placeholder="Ex: Cliente retomou as operações e solicitou reativação imediata..."
+                value={reactivateObservacao}
+                onChange={(e) => setReactivateObservacao(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsReactivateModalOpen(false)}
+              disabled={isSubmittingReactivate}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmReactivate}
+              disabled={!reactivateDate || !!reactivateError || isSubmittingReactivate}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              {isSubmittingReactivate && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Confirmar reativação
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -5785,7 +5975,13 @@ Obrigada.`)
                                       },
                                     },
                                   ]
-                                : []),
+                                : [
+                                    {
+                                      icon: RotateCcw,
+                                      label: 'Reativar cliente',
+                                      onClick: () => handleOpenReactivate(client),
+                                    },
+                                  ]),
                               ...(client.contratoUrl
                                 ? [
                                     {
