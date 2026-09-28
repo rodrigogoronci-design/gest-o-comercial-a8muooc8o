@@ -41,6 +41,7 @@ import {
   type ClienteRelatorioDetalhado,
 } from '@/services/relatorio-clientes'
 import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
+import { isModuloReal } from '@/lib/modules-parser'
 import logoUrl from '@/assets/logomarca-service-ea011.png'
 
 const MODULE_INFO: Record<string, { desc: string; icon: any }> = {
@@ -244,7 +245,7 @@ export function ClientIndividualReport() {
   }, [hasLoadedList, handleFetchList])
 
   const modulosData = useMemo(() => parseModulosData(clienteData), [clienteData])
-  const modulosList = modulosData.adicionais
+  const modulosList = useMemo(() => modulosData.adicionais.filter(isModuloReal), [modulosData])
   const planoFranquia =
     modulosData.plano_base || clienteData?.plano_descricao || 'Nenhum plano vinculado'
   const valorMensalidade = clienteData?.valor_total ?? 0

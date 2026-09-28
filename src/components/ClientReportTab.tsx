@@ -52,7 +52,7 @@ import {
   ORDERED_DEFAULT_MODULES,
 } from '@/services/relatorio-clientes-excel'
 import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
-import { parseModulosToList } from '@/lib/modules-parser'
+import { parseModulosToList, isModuloReal } from '@/lib/modules-parser'
 import { MODULES } from '@/constants/contracts'
 import logoUrl from '@/assets/logomarca-service-ea011.png'
 
@@ -78,7 +78,7 @@ function downloadCSV(rows: ClienteRelatorio[]) {
   const csvLines = [headers.map(escapeCSVField).join(';')]
 
   for (const row of rows) {
-    const modulos = parseModulosToList(row.modulos)
+    const modulos = parseModulosToList(row.modulos).filter(isModuloReal)
     const dupText = row.cnpj_duplicado_count
       ? `CNPJ duplicado (${row.cnpj_duplicado_count} registros)`
       : 'Não duplicado'
@@ -181,10 +181,11 @@ export function ClientReportTab() {
       }
     }
 
-    // 3. Módulos encontrados no banco
+    // 3. Módulos encontrados no banco (apenas módulos reais)
     for (const cliente of clientes) {
       const list = parseModulosToList(cliente.modulos)
       for (const m of list) {
+        if (!isModuloReal(m)) continue
         const norm = normalizeExactModuleName(m)
         if (norm.startsWith('frota') && existingNorms.has('frota')) continue
         if ((norm === 'bi web' || norm === 'power bi' || norm === 'bi') && existingNorms.has('bi'))
@@ -271,7 +272,7 @@ export function ClientReportTab() {
 
       // 5. Filtro Módulo Contratado (multi-seleção com comparação exata)
       if (selectedModules.length > 0) {
-        const modulosList = parseModulosToList(cliente.modulos)
+        const modulosList = parseModulosToList(cliente.modulos).filter(isModuloReal)
 
         if (modulePresence === 'with') {
           if (moduleMatchMode === 'and') {
@@ -881,7 +882,7 @@ export function ClientReportTab() {
                       </TableHeader>
                       <TableBody>
                         {filteredClientes.map((cliente, idx) => {
-                          const modulos = parseModulosToList(cliente.modulos)
+                          const modulos = parseModulosToList(cliente.modulos).filter(isModuloReal)
                           const isInactive =
                             cliente.status === 'Inativo' ||
                             cliente.status === 'Cancelado' ||

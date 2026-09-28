@@ -38,7 +38,7 @@ import {
   type ContratoRelatorioGeral,
 } from '@/services/relatorio-clientes'
 import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
-import { parseModulosToList } from '@/lib/modules-parser'
+import { parseModulosToList, isModuloReal } from '@/lib/modules-parser'
 import { MODULES } from '@/constants/contracts'
 import logoUrl from '@/assets/logomarca-service-ea011.png'
 
@@ -80,7 +80,7 @@ function downloadCSV(rows: ContratoRelatorioGeral[]) {
   const csvLines = [headers.map(escapeCSVField).join(';')]
 
   for (const row of rows) {
-    const modulos = parseModulosToList(row.modulos)
+    const modulos = parseModulosToList(row.modulos).filter(isModuloReal)
     const dupText = row.cnpj_duplicado_count
       ? `CNPJ duplicado (${row.cnpj_duplicado_count} registros)`
       : 'Não duplicado'
@@ -159,13 +159,16 @@ export function GeneralContractsReport() {
     const map = new Map<string, string>()
 
     for (const mod of MODULES) {
-      map.set(normalizeModuleName(mod.name), mod.name)
+      if (isModuloReal(mod.name)) {
+        map.set(normalizeModuleName(mod.name), mod.name)
+      }
     }
     map.set('bi web', 'BI WEB')
 
     for (const contrato of contratos) {
       const list = parseModulosToList(contrato.modulos)
       for (const m of list) {
+        if (!isModuloReal(m)) continue
         const norm = normalizeModuleName(m)
         if (!map.has(norm)) {
           map.set(norm, m.trim())
@@ -285,7 +288,7 @@ export function GeneralContractsReport() {
 
       // 5. Filtro de módulo
       if (selectedModule !== 'all') {
-        const modulos = parseModulosToList(contrato.modulos)
+        const modulos = parseModulosToList(contrato.modulos).filter(isModuloReal)
         const hasMod = modulos.some((m) => normalizeModuleName(m) === selectedModule)
         if (modulePresence === 'with' && !hasMod) return false
         if (modulePresence === 'without' && hasMod) return false
@@ -309,7 +312,7 @@ export function GeneralContractsReport() {
     let countWith = 0
     let countWithout = 0
     for (const c of contratos) {
-      const modulos = parseModulosToList(c.modulos)
+      const modulos = parseModulosToList(c.modulos).filter(isModuloReal)
       if (modulos.some((m) => normalizeModuleName(m) === selectedModule)) {
         countWith++
       } else {
@@ -733,7 +736,7 @@ export function GeneralContractsReport() {
                       </TableHeader>
                       <TableBody>
                         {filteredContratos.map((contrato) => {
-                          const modulos = parseModulosToList(contrato.modulos)
+                          const modulos = parseModulosToList(contrato.modulos).filter(isModuloReal)
                           const isClientInactive =
                             contrato.cliente_status === 'Inativo' ||
                             contrato.cliente_status === 'Cancelado' ||

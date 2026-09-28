@@ -1,8 +1,10 @@
 import ExcelJS from 'exceljs'
 import type { ClienteRelatorio } from './relatorio-clientes'
-import { parseModulosToList } from '@/lib/modules-parser'
+import { parseModulosToList, isModuloReal } from '@/lib/modules-parser'
 import { formatCNPJ } from '@/lib/formatters'
 import { MODULES } from '@/constants/contracts'
+
+export { isModuloReal }
 
 /**
  * Normaliza nome de módulo para comparação exata (sem acentos, minúsculo, espaços unificados)
@@ -78,6 +80,7 @@ export function getExcelModuleColumns(clientes: ClienteRelatorio[]): string[] {
 
   // Adicionar outros módulos do catálogo oficial se não estiverem presentes
   for (const mod of MODULES) {
+    if (!isModuloReal(mod.name)) continue
     const norm = normalizeExactModuleName(mod.name)
     // Se for frota ou bi com outro nome, verificar se já temos o representante
     if (!existingNorms.has(norm)) {
@@ -89,10 +92,11 @@ export function getExcelModuleColumns(clientes: ClienteRelatorio[]): string[] {
     }
   }
 
-  // Adicionar módulos que existam nos dados dos clientes
+  // Adicionar módulos que existam nos dados dos clientes (apenas módulos reais)
   for (const cliente of clientes) {
     const list = parseModulosToList(cliente.modulos)
     for (const m of list) {
+      if (!isModuloReal(m)) continue
       const norm = normalizeExactModuleName(m)
       if (norm.startsWith('frota') && existingNorms.has('frota')) continue
       if (
@@ -190,7 +194,7 @@ export async function exportClientesToExcel(rows: ClienteRelatorio[]): Promise<v
 
   // Adicionar dados
   rows.forEach((cliente, index) => {
-    const modulosList = parseModulosToList(cliente.modulos)
+    const modulosList = parseModulosToList(cliente.modulos).filter(isModuloReal)
     const dupText =
       cliente.cnpj_duplicado_count && cliente.cnpj_duplicado_count > 1
         ? `CNPJ duplicado (${cliente.cnpj_duplicado_count} registros)`
