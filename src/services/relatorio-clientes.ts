@@ -79,7 +79,7 @@ export const getClientesRelatorio = async (): Promise<ClienteRelatorio[]> => {
       vencimento_mensal: c.vencimento_mensal,
       endereco: c.endereco,
       status: c.status,
-      plano_descricao: c.planos_saude?.descricao ?? planoBase ?? null,
+      plano_descricao: planoBase,
       plano_codigo: c.planos_saude?.codigo ?? null,
       cnpj_duplicado_count: dupCount > 1 ? dupCount : undefined,
     }
@@ -103,18 +103,20 @@ export interface ContratoRelatorioGeral {
   cnpj_duplicado_count?: number
 }
 
-function resolvePlanoBaseCliente(cliente: any): string | null {
-  if (!cliente) return null
+export function normalizePlanName(raw: string | null | undefined): string {
+  if (!raw) return ''
+  // Normaliza trim, maiúsculas, remove hífens e múltiplos espaços para agrupamento equivalente
+  // "TMS 100" ≡ "TMS-100" -> "TMS100"
+  return raw
+    .trim()
+    .toUpperCase()
+    .replace(/[\s\-_]+/g, '')
+}
 
-  // 1. planos_saude join
-  const embedded = Array.isArray(cliente.planos_saude)
-    ? cliente.planos_saude[0]
-    : cliente.planos_saude
-  if (embedded && (embedded.descricao || embedded.codigo)) {
-    return embedded.descricao || embedded.codigo
-  }
+export function resolvePlanoCliente(cliente: any): string {
+  if (!cliente) return 'Não informado'
 
-  // 2. modulos.plano_base
+  // 1. Fonte primária: clientes.modulos->>'plano_base' (exatamente como gravado no cadastro)
   const modulosRaw = cliente.modulos
   if (modulosRaw && typeof modulosRaw === 'object' && !Array.isArray(modulosRaw)) {
     const pb = (modulosRaw as any).plano_base
@@ -123,7 +125,33 @@ function resolvePlanoBaseCliente(cliente: any): string | null {
     }
   }
 
-  return null
+  // 2. Fallback: descricao do plano via plano_id (join planos_saude)
+  const embedded = Array.isArray(cliente.planos_saude)
+    ? cliente.planos_saude[0]
+    : cliente.planos_saude
+  if (
+    embedded &&
+    embedded.descricao &&
+    typeof embedded.descricao === 'string' &&
+    embedded.descricao.trim()
+  ) {
+    return embedded.descricao.trim()
+  }
+  if (
+    embedded &&
+    embedded.codigo &&
+    typeof embedded.codigo === 'string' &&
+    embedded.codigo.trim()
+  ) {
+    return embedded.codigo.trim()
+  }
+
+  // 3. Fallback se ambos vazios: "Não informado"
+  return 'Não informado'
+}
+
+function resolvePlanoBaseCliente(cliente: any): string {
+  return resolvePlanoCliente(cliente)
 }
 
 export const getRelatorioGeralContratos = async (): Promise<ContratoRelatorioGeral[]> => {
@@ -203,7 +231,15 @@ export const getRelatorioGeralContratos = async (): Promise<ContratoRelatorioGer
               ? Number(h.valor_total)
               : 0
 
-        const planoResolved = h.plano || resolvePlanoBaseCliente(cliente)
+        // A fonte primária do plano para o relatório de contratos é o plano do cadastro do cliente
+        // (espelho da lista de clientes), ou fallback histórico se h.plano existir e cadastro for "Não informado"
+        const planoCadastro = resolvePlanoBaseCliente(cliente)
+        const planoResolved =
+          planoCadastro !== 'Não informado'
+            ? planoCadastro
+            : h.plano && typeof h.plano === 'string' && h.plano.trim()
+              ? h.plano.trim()
+              : 'Não informado'
         const modulosResolved = h.modulos || cliente.modulos
 
         result.push({

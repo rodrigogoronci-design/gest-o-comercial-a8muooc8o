@@ -33,7 +33,11 @@ import {
   Layers,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { getClientesRelatorio, type ClienteRelatorio } from '@/services/relatorio-clientes'
+import {
+  getClientesRelatorio,
+  normalizePlanName,
+  type ClienteRelatorio,
+} from '@/services/relatorio-clientes'
 import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
 import { parseModulosToList } from '@/lib/modules-parser'
 import { MODULES } from '@/constants/contracts'
@@ -68,6 +72,10 @@ function downloadCSV(rows: ClienteRelatorio[]) {
     const dupText = row.cnpj_duplicado_count
       ? `CNPJ duplicado (${row.cnpj_duplicado_count} registros)`
       : 'Não duplicado'
+    const planoExibido =
+      row.plano_descricao && row.plano_descricao.trim()
+        ? row.plano_descricao.trim()
+        : 'Não informado'
     csvLines.push(
       [
         row.nome,
@@ -76,7 +84,7 @@ function downloadCSV(rows: ClienteRelatorio[]) {
         row.valor_total != null ? formatCurrency(row.valor_total) : '',
         row.vencimento_mensal != null ? String(row.vencimento_mensal) : '',
         row.plano_codigo ?? '-',
-        row.plano_descricao ?? '-',
+        planoExibido,
         modulos.join(', '),
         row.endereco ?? '',
         row.status ?? '',
@@ -108,6 +116,7 @@ export function ClientReportTab() {
   // Filtros locais (após gerar)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'ativo' | 'inativo'>('all')
+  const [planoFilter, setPlanoFilter] = useState<string>('all')
   const [selectedModule, setSelectedModule] = useState<string>('all')
   const [modulePresence, setModulePresence] = useState<'with' | 'without'>('with')
 
@@ -153,16 +162,46 @@ export function ClientReportTab() {
       .sort((a, b) => a.label.localeCompare(b.label))
   }, [clientes])
 
+  // Opções de planos agrupadas por valor normalizado (TMS 100 ≡ TMS-100)
+  // mantendo a exibição fiel e cobrindo todas as variações da base
+  const allPlanoOptions = useMemo(() => {
+    const groupMap = new Map<string, { key: string; label: string; count: number }>()
+
+    for (const c of clientes) {
+      const rawPlano =
+        c.plano_descricao && c.plano_descricao.trim() ? c.plano_descricao.trim() : 'Não informado'
+      const normKey = rawPlano === 'Não informado' ? 'NAO_INFORMADO' : normalizePlanName(rawPlano)
+
+      if (!groupMap.has(normKey)) {
+        groupMap.set(normKey, {
+          key: normKey,
+          label: rawPlano,
+          count: 1,
+        })
+      } else {
+        const item = groupMap.get(normKey)!
+        item.count++
+      }
+    }
+
+    return Array.from(groupMap.values()).sort((a, b) => {
+      if (a.key === 'NAO_INFORMADO') return 1
+      if (b.key === 'NAO_INFORMADO') return -1
+      return a.label.localeCompare(b.label, undefined, { numeric: true })
+    })
+  }, [clientes])
+
   // Filtragem dos clientes em tela
   const filteredClientes = useMemo(() => {
     return clientes.filter((cliente) => {
-      // 1. Busca por nome ou CNPJ
+      // 1. Busca por nome, CNPJ ou plano
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim()
         const matchNome = cliente.nome?.toLowerCase().includes(q)
         const matchCnpj =
           cliente.cnpj?.toLowerCase().includes(q) || cliente.cnpj?.replace(/\D/g, '').includes(q)
-        if (!matchNome && !matchCnpj) return false
+        const matchPlano = cliente.plano_descricao?.toLowerCase().includes(q)
+        if (!matchNome && !matchCnpj && !matchPlano) return false
       }
 
       // 2. Filtro de status
@@ -176,7 +215,17 @@ export function ClientReportTab() {
         if (statusFilter === 'inativo' && !isInactive) return false
       }
 
-      // 3. Filtro por módulo (com ou sem determinado módulo)
+      // 3. Filtro por plano
+      if (planoFilter !== 'all') {
+        const rawPlano =
+          cliente.plano_descricao && cliente.plano_descricao.trim()
+            ? cliente.plano_descricao.trim()
+            : 'Não informado'
+        const normKey = rawPlano === 'Não informado' ? 'NAO_INFORMADO' : normalizePlanName(rawPlano)
+        if (normKey !== planoFilter) return false
+      }
+
+      // 4. Filtro por módulo (com ou sem determinado módulo)
       if (selectedModule !== 'all') {
         const modulos = parseModulosToList(cliente.modulos)
         const hasMod = modulos.some((m) => normalizeModuleName(m) === selectedModule)
@@ -186,7 +235,7 @@ export function ClientReportTab() {
 
       return true
     })
-  }, [clientes, searchQuery, statusFilter, selectedModule, modulePresence])
+  }, [clientes, searchQuery, statusFilter, planoFilter, selectedModule, modulePresence])
 
   // Estatísticas rápidas baseadas no filtro de módulo selecionado
   const moduleStats = useMemo(() => {
@@ -347,7 +396,7 @@ export function ClientReportTab() {
                   Filtros e Análise de Módulos
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                   {/* Busca textual */}
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-slate-600 flex items-center gap-1">
@@ -372,6 +421,24 @@ export function ClientReportTab() {
                         <SelectItem value="all">Todos os status</SelectItem>
                         <SelectItem value="ativo">Apenas Ativos</SelectItem>
                         <SelectItem value="inativo">Apenas Inativos / Cancelados</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Filtro de Plano */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-600">Plano</label>
+                    <Select value={planoFilter} onValueChange={setPlanoFilter}>
+                      <SelectTrigger className="h-9 bg-white text-sm">
+                        <SelectValue placeholder="Todos os planos" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        <SelectItem value="all">Todos os planos</SelectItem>
+                        {allPlanoOptions.map((opt) => (
+                          <SelectItem key={opt.key} value={opt.key}>
+                            {opt.label} ({opt.count})
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -433,7 +500,10 @@ export function ClientReportTab() {
                       </span>
                     </div>
 
-                    {(searchQuery || statusFilter !== 'all' || selectedModule !== 'all') && (
+                    {(searchQuery ||
+                      statusFilter !== 'all' ||
+                      planoFilter !== 'all' ||
+                      selectedModule !== 'all') && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -441,6 +511,7 @@ export function ClientReportTab() {
                         onClick={() => {
                           setSearchQuery('')
                           setStatusFilter('all')
+                          setPlanoFilter('all')
                           setSelectedModule('all')
                           setModulePresence('with')
                         }}
@@ -477,6 +548,7 @@ export function ClientReportTab() {
                     onClick={() => {
                       setSearchQuery('')
                       setStatusFilter('all')
+                      setPlanoFilter('all')
                       setSelectedModule('all')
                       setModulePresence('with')
                     }}
@@ -574,22 +646,27 @@ export function ClientReportTab() {
                                 )}
                               </TableCell>
                               <TableCell className="text-slate-600 print:text-[8pt] print:py-1">
-                                {cliente.plano_descricao || cliente.plano_codigo ? (
+                                {cliente.plano_descricao &&
+                                cliente.plano_descricao !== 'Não informado' ? (
                                   <div className="flex flex-col gap-0.5">
-                                    {cliente.plano_descricao && (
-                                      <span className="font-medium">{cliente.plano_descricao}</span>
-                                    )}
-                                    {cliente.plano_codigo && !cliente.plano_descricao && (
-                                      <Badge
-                                        variant="outline"
-                                        className="w-fit bg-blue-50 border-blue-200 text-blue-700 text-[10px] py-0 px-1.5 font-medium"
-                                      >
+                                    <span className="font-medium">{cliente.plano_descricao}</span>
+                                    {cliente.plano_codigo && (
+                                      <span className="text-[10px] text-slate-400 font-mono">
                                         {cliente.plano_codigo}
-                                      </Badge>
+                                      </span>
                                     )}
                                   </div>
+                                ) : cliente.plano_codigo ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="w-fit bg-blue-50 border-blue-200 text-blue-700 text-[10px] py-0 px-1.5 font-medium"
+                                  >
+                                    {cliente.plano_codigo}
+                                  </Badge>
                                 ) : (
-                                  <span className="text-xs text-slate-400 italic">-</span>
+                                  <span className="text-xs text-slate-400 italic">
+                                    Não informado
+                                  </span>
                                 )}
                               </TableCell>
                               <TableCell className="print:text-[8pt] print:py-1">

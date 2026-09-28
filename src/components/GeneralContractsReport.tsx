@@ -34,6 +34,7 @@ import {
 import { toast } from 'sonner'
 import {
   getRelatorioGeralContratos,
+  normalizePlanName,
   type ContratoRelatorioGeral,
 } from '@/services/relatorio-clientes'
 import { formatCurrency, formatCNPJ, formatDate } from '@/lib/formatters'
@@ -88,6 +89,7 @@ function downloadCSV(rows: ContratoRelatorioGeral[]) {
     const statusContratoText = row.tem_historico
       ? row.status || 'Ativo'
       : 'Sem registro no histórico'
+    const planoExibido = row.plano && row.plano.trim() ? row.plano.trim() : 'Não informado'
 
     csvLines.push(
       [
@@ -97,7 +99,7 @@ function downloadCSV(rows: ContratoRelatorioGeral[]) {
         histText,
         tipoText,
         formatDateBR(row.data_solicitacao),
-        row.plano ?? '-',
+        planoExibido,
         row.valor_total != null ? formatCurrency(row.valor_total) : '',
         modulos.join(', '),
         statusContratoText,
@@ -130,6 +132,7 @@ export function GeneralContractsReport() {
   // Filtros locais após gerar
   const [searchQuery, setSearchQuery] = useState('')
   const [tipoFilter, setTipoFilter] = useState<string>('all')
+  const [planoFilter, setPlanoFilter] = useState<string>('all')
   const [selectedModule, setSelectedModule] = useState<string>('all')
   const [modulePresence, setModulePresence] = useState<'with' | 'without'>('with')
   const [historicoFilter, setHistoricoFilter] = useState<
@@ -182,6 +185,35 @@ export function GeneralContractsReport() {
       if (c.tipo) set.add(c.tipo)
     }
     return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [contratos])
+
+  // Opções de planos agrupadas por valor normalizado (TMS 100 ≡ TMS-100)
+  // mas exibindo as variações ou label representativo
+  const allPlanoOptions = useMemo(() => {
+    // normalizado -> { key: string, label: string, count: number }
+    const groupMap = new Map<string, { key: string; label: string; count: number }>()
+
+    for (const c of contratos) {
+      const rawPlano = c.plano && c.plano.trim() ? c.plano.trim() : 'Não informado'
+      const normKey = rawPlano === 'Não informado' ? 'NAO_INFORMADO' : normalizePlanName(rawPlano)
+
+      if (!groupMap.has(normKey)) {
+        groupMap.set(normKey, {
+          key: normKey,
+          label: rawPlano,
+          count: 1,
+        })
+      } else {
+        const item = groupMap.get(normKey)!
+        item.count++
+      }
+    }
+
+    return Array.from(groupMap.values()).sort((a, b) => {
+      if (a.key === 'NAO_INFORMADO') return 1
+      if (b.key === 'NAO_INFORMADO') return -1
+      return a.label.localeCompare(b.label, undefined, { numeric: true })
+    })
   }, [contratos])
 
   // Contadores globais no topo (base de clientes reais, com histórico, sem histórico, duplicados de CNPJ)
@@ -243,7 +275,15 @@ export function GeneralContractsReport() {
       if (historicoFilter === 'with_history' && !contrato.tem_historico) return false
       if (historicoFilter === 'without_history' && contrato.tem_historico) return false
 
-      // 4. Filtro de módulo
+      // 4. Filtro de Plano
+      if (planoFilter !== 'all') {
+        const rawPlano =
+          contrato.plano && contrato.plano.trim() ? contrato.plano.trim() : 'Não informado'
+        const normKey = rawPlano === 'Não informado' ? 'NAO_INFORMADO' : normalizePlanName(rawPlano)
+        if (normKey !== planoFilter) return false
+      }
+
+      // 5. Filtro de módulo
       if (selectedModule !== 'all') {
         const modulos = parseModulosToList(contrato.modulos)
         const hasMod = modulos.some((m) => normalizeModuleName(m) === selectedModule)
@@ -253,7 +293,15 @@ export function GeneralContractsReport() {
 
       return true
     })
-  }, [contratos, searchQuery, tipoFilter, historicoFilter, selectedModule, modulePresence])
+  }, [
+    contratos,
+    searchQuery,
+    tipoFilter,
+    planoFilter,
+    historicoFilter,
+    selectedModule,
+    modulePresence,
+  ])
 
   // Estatísticas de módulo selecionado
   const moduleStats = useMemo(() => {
@@ -461,7 +509,7 @@ export function GeneralContractsReport() {
                   Filtros de Contratos, Histórico e Módulos
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
                   {/* Busca textual */}
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-slate-600 flex items-center gap-1">
@@ -508,6 +556,24 @@ export function GeneralContractsReport() {
                         {uniqueTipos.map((tipo) => (
                           <SelectItem key={tipo} value={tipo}>
                             {tipo}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Filtro de Plano */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-600">Plano</label>
+                    <Select value={planoFilter} onValueChange={setPlanoFilter}>
+                      <SelectTrigger className="h-9 bg-white text-sm">
+                        <SelectValue placeholder="Todos os planos" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        <SelectItem value="all">Todos os planos</SelectItem>
+                        {allPlanoOptions.map((opt) => (
+                          <SelectItem key={opt.key} value={opt.key}>
+                            {opt.label} ({opt.count})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -573,6 +639,7 @@ export function GeneralContractsReport() {
 
                     {(searchQuery ||
                       tipoFilter !== 'all' ||
+                      planoFilter !== 'all' ||
                       historicoFilter !== 'all' ||
                       selectedModule !== 'all') && (
                       <Button
@@ -582,6 +649,7 @@ export function GeneralContractsReport() {
                         onClick={() => {
                           setSearchQuery('')
                           setTipoFilter('all')
+                          setPlanoFilter('all')
                           setHistoricoFilter('all')
                           setSelectedModule('all')
                           setModulePresence('with')
@@ -619,6 +687,7 @@ export function GeneralContractsReport() {
                     onClick={() => {
                       setSearchQuery('')
                       setTipoFilter('all')
+                      setPlanoFilter('all')
                       setHistoricoFilter('all')
                       setSelectedModule('all')
                       setModulePresence('with')
@@ -727,7 +796,7 @@ export function GeneralContractsReport() {
                                 )}
                               </TableCell>
                               <TableCell className="text-slate-600 print:text-[8pt] print:py-1">
-                                {contrato.plano ? (
+                                {contrato.plano && contrato.plano !== 'Não informado' ? (
                                   <Badge
                                     variant="outline"
                                     className="bg-blue-50 border-blue-200 text-blue-700 text-[10px] py-0 px-1.5 font-medium print:border-slate-300"
@@ -735,7 +804,9 @@ export function GeneralContractsReport() {
                                     {contrato.plano}
                                   </Badge>
                                 ) : (
-                                  <span className="text-xs text-slate-400 italic">—</span>
+                                  <span className="text-xs text-slate-400 italic">
+                                    Não informado
+                                  </span>
                                 )}
                               </TableCell>
                               <TableCell className="text-right font-medium text-slate-800 print:text-[8pt] print:py-1">
