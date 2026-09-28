@@ -66,9 +66,11 @@ function downloadCSV(rows: ContratoRelatorioGeral[]) {
   const headers = [
     'Cliente',
     'CNPJ',
+    'Duplicidade CNPJ',
+    'Histórico de Contrato',
     'Tipo de Contrato / Operação',
-    'Data de Solicitação',
-    'Plano',
+    'Data de Solicitação / Assinatura',
+    'Plano Base',
     'Mensalidade (R$)',
     'Módulos Contratados',
     'Status Contrato',
@@ -78,16 +80,27 @@ function downloadCSV(rows: ContratoRelatorioGeral[]) {
 
   for (const row of rows) {
     const modulos = parseModulosToList(row.modulos)
+    const dupText = row.cnpj_duplicado_count
+      ? `CNPJ duplicado (${row.cnpj_duplicado_count} registros)`
+      : 'Não duplicado'
+    const histText = row.tem_historico ? 'Com registro' : 'Sem registro no histórico'
+    const tipoText = row.tem_historico ? row.tipo || 'Contrato' : 'Sem registro no histórico'
+    const statusContratoText = row.tem_historico
+      ? row.status || 'Ativo'
+      : 'Sem registro no histórico'
+
     csvLines.push(
       [
         row.cliente_nome,
         row.cliente_cnpj ? formatCNPJ(row.cliente_cnpj) : '',
-        row.tipo ?? '-',
+        dupText,
+        histText,
+        tipoText,
         formatDateBR(row.data_solicitacao),
         row.plano ?? '-',
         row.valor_total != null ? formatCurrency(row.valor_total) : '',
         modulos.join(', '),
-        row.status ?? '',
+        statusContratoText,
         row.cliente_status ?? '',
       ]
         .map(escapeCSVField)
@@ -119,6 +132,9 @@ export function GeneralContractsReport() {
   const [tipoFilter, setTipoFilter] = useState<string>('all')
   const [selectedModule, setSelectedModule] = useState<string>('all')
   const [modulePresence, setModulePresence] = useState<'with' | 'without'>('with')
+  const [historicoFilter, setHistoricoFilter] = useState<
+    'all' | 'with_history' | 'without_history'
+  >('all')
 
   const handleGenerate = async () => {
     setLoading(true)
@@ -127,7 +143,7 @@ export function GeneralContractsReport() {
       setContratos(data)
       setHasGenerated(true)
       setLastGeneratedAt(new Date())
-      toast.success(`${data.length} contrato(s) carregado(s) com dados frescos do banco.`)
+      toast.success(`${data.length} linha(s) carregada(s) cobrindo toda a base de clientes.`)
     } catch (error: any) {
       toast.error('Erro ao buscar dados do relatório geral: ' + (error.message || ''))
     } finally {
@@ -168,6 +184,38 @@ export function GeneralContractsReport() {
     return Array.from(set).sort((a, b) => a.localeCompare(b))
   }, [contratos])
 
+  // Contadores globais no topo (base de clientes reais, com histórico, sem histórico, duplicados de CNPJ)
+  const summaryCounts = useMemo(() => {
+    const uniqueClientIds = new Set<string>()
+    const clientsWithHistory = new Set<string>()
+    const clientsWithoutHistory = new Set<string>()
+    const duplicatedCnpjs = new Set<string>()
+    let duplicatedRowsCount = 0
+
+    for (const c of contratos) {
+      uniqueClientIds.add(c.cliente_id)
+      if (c.tem_historico) {
+        clientsWithHistory.add(c.cliente_id)
+      } else {
+        clientsWithoutHistory.add(c.cliente_id)
+      }
+      if (c.cnpj_duplicado_count && c.cnpj_duplicado_count > 1) {
+        duplicatedRowsCount++
+        const clean = c.cliente_cnpj ? c.cliente_cnpj.replace(/\D/g, '') : ''
+        if (clean) duplicatedCnpjs.add(clean)
+      }
+    }
+
+    return {
+      totalClientes: uniqueClientIds.size,
+      totalLinhas: contratos.length,
+      comHistorico: clientsWithHistory.size,
+      semHistorico: clientsWithoutHistory.size,
+      cnpjsDuplicados: duplicatedCnpjs.size,
+      linhasDuplicadas: duplicatedRowsCount,
+    }
+  }, [contratos])
+
   // Filtragem dos contratos
   const filteredContratos = useMemo(() => {
     return contratos.filter((contrato) => {
@@ -183,11 +231,19 @@ export function GeneralContractsReport() {
       }
 
       // 2. Filtro de tipo
-      if (tipoFilter !== 'all' && contrato.tipo !== tipoFilter) {
-        return false
+      if (tipoFilter !== 'all') {
+        if (tipoFilter === 'sem_historico') {
+          if (contrato.tem_historico) return false
+        } else if (contrato.tipo !== tipoFilter) {
+          return false
+        }
       }
 
-      // 3. Filtro de módulo
+      // 3. Filtro de Histórico (todos, com histórico, sem histórico)
+      if (historicoFilter === 'with_history' && !contrato.tem_historico) return false
+      if (historicoFilter === 'without_history' && contrato.tem_historico) return false
+
+      // 4. Filtro de módulo
       if (selectedModule !== 'all') {
         const modulos = parseModulosToList(contrato.modulos)
         const hasMod = modulos.some((m) => normalizeModuleName(m) === selectedModule)
@@ -197,7 +253,7 @@ export function GeneralContractsReport() {
 
       return true
     })
-  }, [contratos, searchQuery, tipoFilter, selectedModule, modulePresence])
+  }, [contratos, searchQuery, tipoFilter, historicoFilter, selectedModule, modulePresence])
 
   // Estatísticas de módulo selecionado
   const moduleStats = useMemo(() => {
@@ -351,25 +407,92 @@ export function GeneralContractsReport() {
           {/* Área de conteúdo após gerar */}
           {hasGenerated && !loading && (
             <div className="space-y-4">
-              {/* Barra de Filtros (Pesquisa, Tipo, Módulo) */}
+              {/* Resumo no topo com contadores reais (Requisito 5) */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 print:grid-cols-4 print:gap-2">
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center print:bg-white print:border-slate-300">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 block">
+                    Total de Clientes
+                  </span>
+                  <div className="text-2xl font-bold text-slate-800 mt-0.5">
+                    {summaryCounts.totalClientes}
+                  </div>
+                  <span className="text-[11px] text-slate-500">
+                    {summaryCounts.totalLinhas} registro(s) no total
+                  </span>
+                </div>
+
+                <div className="bg-blue-50/70 border border-blue-200 rounded-lg p-3 text-center print:bg-white print:border-slate-300">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-700 block">
+                    Com Registro no Histórico
+                  </span>
+                  <div className="text-2xl font-bold text-[#1b4382] mt-0.5">
+                    {summaryCounts.comHistorico}
+                  </div>
+                  <span className="text-[11px] text-blue-600">Contratos / Aditivos gravados</span>
+                </div>
+
+                <div className="bg-amber-50/70 border border-amber-200 rounded-lg p-3 text-center print:bg-white print:border-slate-300">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 block">
+                    Sem Registro no Histórico
+                  </span>
+                  <div className="text-2xl font-bold text-amber-800 mt-0.5">
+                    {summaryCounts.semHistorico}
+                  </div>
+                  <span className="text-[11px] text-amber-700">Exibidos com dados do cadastro</span>
+                </div>
+
+                <div className="bg-rose-50/70 border border-rose-200 rounded-lg p-3 text-center print:bg-white print:border-slate-300">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-rose-700 block">
+                    Duplicidade de CNPJ
+                  </span>
+                  <div className="text-2xl font-bold text-rose-800 mt-0.5">
+                    {summaryCounts.cnpjsDuplicados}
+                  </div>
+                  <span className="text-[11px] text-rose-600">
+                    {summaryCounts.linhasDuplicadas} cadastro(s) impactados
+                  </span>
+                </div>
+              </div>
+
+              {/* Barra de Filtros (Pesquisa, Tipo, Histórico, Módulo) */}
               <div className="no-print bg-slate-50/80 border border-slate-200 rounded-lg p-3.5 space-y-3">
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-600">
                   <Filter className="h-3.5 w-3.5 text-[#1b4382]" />
-                  Filtros de Contratos e Módulos
+                  Filtros de Contratos, Histórico e Módulos
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                   {/* Busca textual */}
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-slate-600 flex items-center gap-1">
-                      <Search className="h-3 w-3 text-slate-400" /> Buscar por cliente ou CNPJ
+                      <Search className="h-3 w-3 text-slate-400" /> Buscar cliente ou CNPJ
                     </label>
                     <Input
-                      placeholder="Ex: Transportes, 00.000..."
+                      placeholder="Ex: A Brito, 00.000..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="h-9 bg-white text-sm"
                     />
+                  </div>
+
+                  {/* Filtro Status de Histórico */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-600">
+                      Registro no Histórico
+                    </label>
+                    <Select
+                      value={historicoFilter}
+                      onValueChange={(val: any) => setHistoricoFilter(val)}
+                    >
+                      <SelectTrigger className="h-9 bg-white text-sm">
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os clientes</SelectItem>
+                        <SelectItem value="with_history">Com registro no histórico</SelectItem>
+                        <SelectItem value="without_history">Sem registro no histórico</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Filtro Tipo de Contrato */}
@@ -381,6 +504,7 @@ export function GeneralContractsReport() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Todos os tipos</SelectItem>
+                        <SelectItem value="sem_historico">Sem registro no histórico</SelectItem>
                         {uniqueTipos.map((tipo) => (
                           <SelectItem key={tipo} value={tipo}>
                             {tipo}
@@ -393,7 +517,7 @@ export function GeneralContractsReport() {
                   {/* Filtro Módulo */}
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-slate-600 flex items-center gap-1">
-                      <Layers className="h-3 w-3 text-[#1b4382]" /> Módulo Adicional
+                      <Layers className="h-3 w-3 text-[#1b4382]" /> Módulo / Catálogo
                     </label>
                     <Select value={selectedModule} onValueChange={setSelectedModule}>
                       <SelectTrigger className="h-9 bg-white text-sm">
@@ -422,8 +546,8 @@ export function GeneralContractsReport() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="with">Contratos que POSSUEM o módulo</SelectItem>
-                        <SelectItem value="without">Contratos que NÃO POSSUEM</SelectItem>
+                        <SelectItem value="with">Clientes que POSSUEM o módulo</SelectItem>
+                        <SelectItem value="without">Clientes que NÃO POSSUEM</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -439,15 +563,18 @@ export function GeneralContractsReport() {
                       </span>
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">
                         <CheckCircle2 className="h-3 w-3" />
-                        {moduleStats.countWith} contrato(s) possuem
+                        {moduleStats.countWith} registro(s) possuem
                       </span>
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-medium">
                         <XCircle className="h-3 w-3" />
-                        {moduleStats.countWithout} contrato(s) não possuem
+                        {moduleStats.countWithout} registro(s) não possuem
                       </span>
                     </div>
 
-                    {(searchQuery || tipoFilter !== 'all' || selectedModule !== 'all') && (
+                    {(searchQuery ||
+                      tipoFilter !== 'all' ||
+                      historicoFilter !== 'all' ||
+                      selectedModule !== 'all') && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -455,6 +582,7 @@ export function GeneralContractsReport() {
                         onClick={() => {
                           setSearchQuery('')
                           setTipoFilter('all')
+                          setHistoricoFilter('all')
                           setSelectedModule('all')
                           setModulePresence('with')
                         }}
@@ -491,6 +619,7 @@ export function GeneralContractsReport() {
                     onClick={() => {
                       setSearchQuery('')
                       setTipoFilter('all')
+                      setHistoricoFilter('all')
                       setSelectedModule('all')
                       setModulePresence('with')
                     }}
@@ -523,21 +652,30 @@ export function GeneralContractsReport() {
                             Mensalidade
                           </TableHead>
                           <TableHead className="min-w-[220px] font-semibold text-slate-700 print:text-[8pt] print:py-1">
-                            Módulos Adicionais
+                            Módulos
+                          </TableHead>
+                          <TableHead className="min-w-[120px] text-center font-semibold text-slate-700 print:text-[8pt] print:py-1">
+                            Status Contrato
                           </TableHead>
                           <TableHead className="min-w-[100px] text-center font-semibold text-slate-700 print:text-[8pt] print:py-1">
-                            Status
+                            Status Cliente
                           </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredContratos.map((contrato) => {
                           const modulos = parseModulosToList(contrato.modulos)
-                          const isInactive =
+                          const isClientInactive =
                             contrato.cliente_status === 'Inativo' ||
                             contrato.cliente_status === 'Cancelado' ||
                             contrato.cliente_status?.toLowerCase() === 'inativo' ||
                             contrato.cliente_status?.toLowerCase() === 'cancelado'
+
+                          const isContractInactive =
+                            contrato.status === 'Inativo' ||
+                            contrato.status === 'Cancelado' ||
+                            contrato.status?.toLowerCase() === 'inativo' ||
+                            contrato.status?.toLowerCase() === 'cancelado'
 
                           return (
                             <TableRow
@@ -545,21 +683,48 @@ export function GeneralContractsReport() {
                               className="hover:bg-slate-50/60 transition-colors print:hover:bg-transparent print:break-inside-avoid"
                             >
                               <TableCell className="font-medium text-slate-800 print:text-[8pt] print:py-1">
-                                {contrato.cliente_nome}
+                                <div className="flex flex-col gap-0.5">
+                                  <span>{contrato.cliente_nome}</span>
+                                  {contrato.cnpj_duplicado_count &&
+                                    contrato.cnpj_duplicado_count > 1 && (
+                                      <Badge
+                                        variant="outline"
+                                        className="w-fit bg-amber-50 text-amber-800 border-amber-300 text-[9px] py-0 px-1 font-medium"
+                                        title={`Há ${contrato.cnpj_duplicado_count} cadastros com este mesmo CNPJ.`}
+                                      >
+                                        CNPJ duplicado ({contrato.cnpj_duplicado_count} registros)
+                                      </Badge>
+                                    )}
+                                </div>
                               </TableCell>
                               <TableCell className="text-slate-600 print:text-[8pt] print:py-1">
                                 {contrato.cliente_cnpj ? formatCNPJ(contrato.cliente_cnpj) : '—'}
                               </TableCell>
                               <TableCell className="text-slate-700 font-medium print:text-[8pt] print:py-1">
-                                <Badge
-                                  variant="outline"
-                                  className="bg-slate-100 border-slate-300 text-slate-700 text-[10px] py-0 px-2 font-medium"
-                                >
-                                  {contrato.tipo || 'Contrato'}
-                                </Badge>
+                                {contrato.tem_historico ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-slate-100 border-slate-300 text-slate-700 text-[10px] py-0 px-2 font-medium"
+                                  >
+                                    {contrato.tipo || 'Contrato'}
+                                  </Badge>
+                                ) : (
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-amber-50 border-amber-200 text-amber-700 text-[10px] py-0 px-2 font-medium italic"
+                                  >
+                                    Sem registro no histórico
+                                  </Badge>
+                                )}
                               </TableCell>
                               <TableCell className="text-center text-slate-600 print:text-[8pt] print:py-1">
-                                {formatDateBR(contrato.data_solicitacao)}
+                                {contrato.data_solicitacao ? (
+                                  formatDateBR(contrato.data_solicitacao)
+                                ) : contrato.tem_historico ? (
+                                  '—'
+                                ) : (
+                                  <span className="text-xs text-slate-400 italic">Cadastro</span>
+                                )}
                               </TableCell>
                               <TableCell className="text-slate-600 print:text-[8pt] print:py-1">
                                 {contrato.plano ? (
@@ -607,15 +772,33 @@ export function GeneralContractsReport() {
                                 )}
                               </TableCell>
                               <TableCell className="text-center print:text-[8pt] print:py-1">
+                                {contrato.tem_historico ? (
+                                  <Badge
+                                    variant={isContractInactive ? 'destructive' : 'secondary'}
+                                    className={
+                                      isContractInactive
+                                        ? 'bg-red-100 text-red-700 hover:bg-red-100'
+                                        : 'bg-green-100 text-green-700 hover:bg-green-100'
+                                    }
+                                  >
+                                    {contrato.status || 'Ativo'}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-[11px] text-slate-400 italic">
+                                    Sem registro no histórico
+                                  </span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center print:text-[8pt] print:py-1">
                                 <Badge
-                                  variant={isInactive ? 'destructive' : 'secondary'}
+                                  variant={isClientInactive ? 'destructive' : 'secondary'}
                                   className={
-                                    isInactive
+                                    isClientInactive
                                       ? 'bg-red-100 text-red-700 hover:bg-red-100'
                                       : 'bg-green-100 text-green-700 hover:bg-green-100'
                                   }
                                 >
-                                  {contrato.status || contrato.cliente_status || 'Ativo'}
+                                  {contrato.cliente_status || 'Ativo'}
                                 </Badge>
                               </TableCell>
                             </TableRow>
@@ -646,9 +829,13 @@ export function GeneralContractsReport() {
               <div className="mt-3 flex items-start gap-2 text-xs text-slate-400 no-print">
                 <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-slate-400" />
                 <span>
-                  O relatório geral busca os contratos registrados e aditivos diretamente do banco.
-                  A mensalidade corresponde ao valor atualizado de cada registro, permitindo
-                  acompanhar o histórico completo por cliente.
+                  O relatório geral tem a tabela <strong>clientes</strong> como fonte mestre com
+                  LEFT JOIN em <strong>historico_contratos</strong>. Todos os clientes aparecem no
+                  relatório. Para aqueles sem registro de contrato no histórico, os dados do
+                  cadastro (plano base, módulos, mensalidade e status) são exibidos e os campos
+                  contratuais indicam explicitamente &quot;Sem registro no histórico&quot;. Casos de
+                  duplicidade de CNPJ são identificados com aviso visual discreto para decisão do
+                  usuário.
                 </span>
               </div>
             </div>

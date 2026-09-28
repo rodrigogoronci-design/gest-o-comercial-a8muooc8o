@@ -52,6 +52,7 @@ function downloadCSV(rows: ClienteRelatorio[]) {
   const headers = [
     'Nome / Razão Social',
     'CNPJ',
+    'Duplicidade CNPJ',
     'Mensalidade',
     'Dia de Vencimento',
     'Código do Plano',
@@ -64,10 +65,14 @@ function downloadCSV(rows: ClienteRelatorio[]) {
 
   for (const row of rows) {
     const modulos = parseModulosToList(row.modulos)
+    const dupText = row.cnpj_duplicado_count
+      ? `CNPJ duplicado (${row.cnpj_duplicado_count} registros)`
+      : 'Não duplicado'
     csvLines.push(
       [
         row.nome,
         row.cnpj ? formatCNPJ(row.cnpj) : '',
+        dupText,
         row.valor_total != null ? formatCurrency(row.valor_total) : '',
         row.vencimento_mensal != null ? String(row.vencimento_mensal) : '',
         row.plano_codigo ?? '-',
@@ -529,7 +534,19 @@ export function ClientReportTab() {
                               className="hover:bg-slate-50/60 transition-colors print:hover:bg-transparent print:break-inside-avoid"
                             >
                               <TableCell className="font-medium text-slate-800 print:text-[8pt] print:py-1">
-                                {cliente.nome}
+                                <div className="flex flex-col gap-0.5">
+                                  <span>{cliente.nome}</span>
+                                  {cliente.cnpj_duplicado_count &&
+                                    cliente.cnpj_duplicado_count > 1 && (
+                                      <Badge
+                                        variant="outline"
+                                        className="w-fit bg-amber-50 text-amber-800 border-amber-300 text-[9px] py-0 px-1 font-medium"
+                                        title={`Há ${cliente.cnpj_duplicado_count} cadastros com este mesmo CNPJ.`}
+                                      >
+                                        CNPJ duplicado ({cliente.cnpj_duplicado_count} registros)
+                                      </Badge>
+                                    )}
+                                </div>
                               </TableCell>
                               <TableCell className="text-slate-600 print:text-[8pt] print:py-1">
                                 {cliente.cnpj ? formatCNPJ(cliente.cnpj) : '—'}

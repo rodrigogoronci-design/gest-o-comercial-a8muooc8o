@@ -11,6 +11,7 @@ export interface ClienteRelatorio {
   status: string | null
   plano_descricao: string | null
   plano_codigo: string | null
+  cnpj_duplicado_count?: number
 }
 
 export interface ClienteRelatorioDetalhado {
@@ -55,18 +56,34 @@ export const getClientesRelatorio = async (): Promise<ClienteRelatorio[]> => {
 
   if (error) throw error
 
-  return (data || []).map((c: any) => ({
-    id: c.id,
-    nome: c.nome,
-    cnpj: c.cnpj,
-    modulos: c.modulos,
-    valor_total: c.valor_total != null ? Number(c.valor_total) : 0,
-    vencimento_mensal: c.vencimento_mensal,
-    endereco: c.endereco,
-    status: c.status,
-    plano_descricao: c.planos_saude?.descricao ?? null,
-    plano_codigo: c.planos_saude?.codigo ?? null,
-  }))
+  // Contar duplicidade de CNPJ
+  const cnpjCountMap = new Map<string, number>()
+  for (const c of data || []) {
+    const rawCnpj = c.cnpj ? String(c.cnpj).replace(/\D/g, '') : ''
+    if (rawCnpj) {
+      cnpjCountMap.set(rawCnpj, (cnpjCountMap.get(rawCnpj) || 0) + 1)
+    }
+  }
+
+  return (data || []).map((c: any) => {
+    const rawCnpj = c.cnpj ? String(c.cnpj).replace(/\D/g, '') : ''
+    const dupCount = rawCnpj ? cnpjCountMap.get(rawCnpj) || 1 : 1
+    const planoBase = resolvePlanoBaseCliente(c)
+
+    return {
+      id: c.id,
+      nome: c.nome,
+      cnpj: c.cnpj,
+      modulos: c.modulos,
+      valor_total: c.valor_total != null ? Number(c.valor_total) : 0,
+      vencimento_mensal: c.vencimento_mensal,
+      endereco: c.endereco,
+      status: c.status,
+      plano_descricao: c.planos_saude?.descricao ?? planoBase ?? null,
+      plano_codigo: c.planos_saude?.codigo ?? null,
+      cnpj_duplicado_count: dupCount > 1 ? dupCount : undefined,
+    }
+  })
 }
 
 export interface ContratoRelatorioGeral {
@@ -82,10 +99,55 @@ export interface ContratoRelatorioGeral {
   valor_total: number
   status: string | null
   observacoes: string | null
+  tem_historico: boolean
+  cnpj_duplicado_count?: number
+}
+
+function resolvePlanoBaseCliente(cliente: any): string | null {
+  if (!cliente) return null
+
+  // 1. planos_saude join
+  const embedded = Array.isArray(cliente.planos_saude)
+    ? cliente.planos_saude[0]
+    : cliente.planos_saude
+  if (embedded && (embedded.descricao || embedded.codigo)) {
+    return embedded.descricao || embedded.codigo
+  }
+
+  // 2. modulos.plano_base
+  const modulosRaw = cliente.modulos
+  if (modulosRaw && typeof modulosRaw === 'object' && !Array.isArray(modulosRaw)) {
+    const pb = (modulosRaw as any).plano_base
+    if (pb && typeof pb === 'string' && pb.trim()) {
+      return pb.trim()
+    }
+  }
+
+  return null
 }
 
 export const getRelatorioGeralContratos = async (): Promise<ContratoRelatorioGeral[]> => {
-  const { data, error } = await supabase
+  // 1. Buscar todos os clientes (fonte mestre)
+  const { data: clientesData, error: clientesError } = await supabase
+    .from('clientes')
+    .select(`
+      id,
+      nome,
+      cnpj,
+      status,
+      valor_total,
+      data_assinatura,
+      created_at,
+      modulos,
+      plano_id,
+      planos_saude(descricao, codigo)
+    `)
+    .order('nome', { ascending: true })
+
+  if (clientesError) throw clientesError
+
+  // 2. Buscar todo o histórico de contratos
+  const { data: historicosData, error: histError } = await supabase
     .from('historico_contratos')
     .select(`
       id,
@@ -97,40 +159,98 @@ export const getRelatorioGeralContratos = async (): Promise<ContratoRelatorioGer
       valor_total,
       status,
       observacoes,
-      clientes (
-        id,
-        nome,
-        cnpj,
-        status,
-        valor_total
-      )
+      created_at
     `)
     .order('created_at', { ascending: false })
 
-  if (error) throw error
+  if (histError) throw histError
 
-  return (data || []).map((item: any) => {
-    const cliente = item.clientes
-    return {
-      id: item.id,
-      cliente_id: item.cliente_id,
-      cliente_nome: cliente?.nome || 'Cliente não identificado',
-      cliente_cnpj: cliente?.cnpj || null,
-      cliente_status: cliente?.status || null,
-      tipo: item.tipo,
-      data_solicitacao: item.data_solicitacao,
-      plano: item.plano,
-      modulos: item.modulos,
-      valor_total:
-        item.valor_total != null
-          ? Number(item.valor_total)
-          : cliente?.valor_total != null
-            ? Number(cliente.valor_total)
-            : 0,
-      status: item.status,
-      observacoes: item.observacoes,
+  // Mapear históricos por cliente_id (preservando ordem descendente de created_at)
+  const histByCliente = new Map<string, any[]>()
+  for (const h of historicosData || []) {
+    if (!h.cliente_id) continue
+    const arr = histByCliente.get(h.cliente_id) || []
+    arr.push(h)
+    histByCliente.set(h.cliente_id, arr)
+  }
+
+  // Contar ocorrências por CNPJ limpo para identificar duplicidades
+  const cnpjCountMap = new Map<string, number>()
+  for (const c of clientesData || []) {
+    const rawCnpj = c.cnpj ? String(c.cnpj).replace(/\D/g, '') : ''
+    if (rawCnpj) {
+      cnpjCountMap.set(rawCnpj, (cnpjCountMap.get(rawCnpj) || 0) + 1)
     }
-  })
+  }
+
+  const result: ContratoRelatorioGeral[] = []
+
+  for (const cliente of clientesData || []) {
+    const rawCnpj = cliente.cnpj ? String(cliente.cnpj).replace(/\D/g, '') : ''
+    const dupCount = rawCnpj ? cnpjCountMap.get(rawCnpj) || 1 : 1
+
+    const clientHistoricos = histByCliente.get(cliente.id)
+
+    if (clientHistoricos && clientHistoricos.length > 0) {
+      // Cliente possui 1 ou mais registros de contrato no histórico
+      for (const h of clientHistoricos) {
+        // Mensalidade continua do cadastro (valor_total) como regra de fallback ou valor específico
+        // Requisito 7: Mensalidade continua do cadastro (valor_total) em reais
+        const valorMensalidade =
+          cliente.valor_total != null
+            ? Number(cliente.valor_total)
+            : h.valor_total != null
+              ? Number(h.valor_total)
+              : 0
+
+        const planoResolved = h.plano || resolvePlanoBaseCliente(cliente)
+        const modulosResolved = h.modulos || cliente.modulos
+
+        result.push({
+          id: h.id,
+          cliente_id: cliente.id,
+          cliente_nome: cliente.nome || 'Cliente não identificado',
+          cliente_cnpj: cliente.cnpj || null,
+          cliente_status: cliente.status || null,
+          tipo: h.tipo || 'Contrato',
+          data_solicitacao: h.data_solicitacao || cliente.data_assinatura || null,
+          plano: planoResolved,
+          modulos: modulosResolved,
+          valor_total: valorMensalidade,
+          status: h.status || cliente.status || 'Ativo',
+          observacoes: h.observacoes || null,
+          tem_historico: true,
+          cnpj_duplicado_count: dupCount > 1 ? dupCount : undefined,
+        })
+      }
+    } else {
+      // Cliente SEM registro no histórico:
+      // Exibir a linha normalmente com os dados do cadastro (plano_base de modulos->>'plano_base',
+      // módulos adicionais, mensalidade valor_total, status) e nos campos de contrato mostrar
+      // explicitamente "Sem registro no histórico" — NUNCA omitir o cliente nem inventar contrato.
+      const valorMensalidade = cliente.valor_total != null ? Number(cliente.valor_total) : 0
+      const planoBase = resolvePlanoBaseCliente(cliente)
+
+      result.push({
+        id: `cliente-${cliente.id}`,
+        cliente_id: cliente.id,
+        cliente_nome: cliente.nome || 'Cliente não identificado',
+        cliente_cnpj: cliente.cnpj || null,
+        cliente_status: cliente.status || null,
+        tipo: null, // UI exibirá "Sem registro no histórico"
+        data_solicitacao: cliente.data_assinatura || null,
+        plano: planoBase,
+        modulos: cliente.modulos,
+        valor_total: valorMensalidade,
+        status: null, // UI exibirá "Sem registro no histórico" para contrato
+        observacoes: null,
+        tem_historico: false,
+        cnpj_duplicado_count: dupCount > 1 ? dupCount : undefined,
+      })
+    }
+  }
+
+  return result
 }
 
 export const getClientesParaRelatorioIndividual = async (): Promise<
