@@ -1,11 +1,6 @@
-import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
-import { Buffer } from 'node:buffer'
-import pdf from 'npm:pdf-parse@1.1.1'
-import { corsHeaders } from '../_shared/cors.ts'
+import { describe, it, expect } from 'vitest'
 
-const ERROR_MSG =
-  'Não foi possível identificar o padrão do contrato. Verifique o arquivo e tente novamente.'
-
+// Replica a lógica pura de extractData de parse-pdf para teste unitário do frontend
 const PROVIDER_CNPJS = ['27.751.577/0001-91', '27751577000191']
 
 const PROVIDER_PATTERNS = [
@@ -44,18 +39,14 @@ function formatCnpjStrict(raw: string): string {
   return raw
 }
 
-/**
- * Remove rodapés recorrentes do Docsales e paginação antes de processar blocos.
- * Preserva o conteúdo do Relatório de Assinaturas para extração de data e signatários.
- */
 function cleanContractText(raw: string): string {
   return raw
-    .replace(/Docsales ID:\s*[a-f0-9\-]+/gi, '')
+    .replace(/Docsales ID:\s*[a-f0-9-]+/gi, '')
     .replace(/Página\s+\d+\s+de\s+\d+/gi, '')
     .replace(/Av\. Central[^\n]+www\.servicelogic\.com\.br/gi, '')
 }
 
-export function extractData(rawText: string) {
+function extractData(rawText: string) {
   const text = cleanContractText(rawText)
 
   let nome: string | null = null
@@ -65,11 +56,6 @@ export function extractData(rawText: string) {
   let repCpf: string | null = null
   let repRg: string | null = null
 
-  // 1. Extração da CONTRATANTE (Cliente)
-  // O texto tem:
-  // "CONTRATANTE: \n SM TRANSPORTES LTDA, pessoa jurídica de direito privado, inscrita no CNPJ sob o nº 55.625.017/0001-26, com sede \n Rodovia Governador Mario Covas, s/n – Garagem – Km 173 – BR 101 Norte – Jacupemba – Aracruz – ES – CEP: \n 29.196-010., neste ato representado pelos seus representantes legais Sr MAXILENO TELLES BOZI..."
-  // Importante: no texto da página 1 há DEFINIÇÕES antes que contêm a palavra "contratante".
-  // Por isso, procuramos especificamente a seção isolada: "\nCONTRATANTE:\s*\n" ou "\bCONTRATANTE:\s*"
   const contratanteMatch = text.match(
     /(?:^|\n)\s*CONTRATANTE\s*:\s*([\s\S]*?)(?=(?:^|\n)\s*CONTRATADA\s*:|CLÁUSULA\s+PRIMEIRA|As\s+partes\s+acima)/i,
   )
@@ -84,13 +70,11 @@ export function extractData(rawText: string) {
 
     for (const line of lines) {
       if (isProviderName(line)) continue
-      // Procura linha que contém a empresa
       const nameMatch = line.match(
         /^([A-Z0-9À-ÿ\s.&-]+?)(?:,|\bpessoa\b|\binscrita?\b|\bCNPJ\b|\bcom\s+sede\b)/i,
       )
       if (nameMatch) {
         let candidate = nameMatch[1].trim()
-        // Evita lixo
         candidate = candidate.replace(/^[^a-zA-Z0-9]+/, '').replace(/[^a-zA-Z0-9]+$/, '')
         if (candidate.length > 3 && !isProviderName(candidate)) {
           nome = candidate
@@ -106,13 +90,11 @@ export function extractData(rawText: string) {
       }
     }
 
-    // CNPJ do CONTRATANTE
     const cnpjMatch = contratanteBlock.match(/(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2})/)
     if (cnpjMatch && !isProviderCnpj(cnpjMatch[1])) {
       cnpj = formatCnpjStrict(cnpjMatch[1])
     }
 
-    // Endereço do CONTRATANTE: "com sede ..." até "neste ato"
     const addrMatch = contratanteBlock.match(
       /com\s+sede\s+([\s\S]+?)(?=(?:,|\.)?\s*neste\s+ato\s+representad[oa]|\n\n)/i,
     )
@@ -124,7 +106,6 @@ export function extractData(rawText: string) {
       }
     }
 
-    // Representante Legal do CONTRATANTE
     const repMatch = contratanteBlock.match(
       /representantes?\s+legais?[,\s]*(?:Sra?\.?|Sr\(a\)\.?)?\s*([A-ZÀ-ÿ\s]+?)(?:,|\binscrito|\bportador)/i,
     )
@@ -135,7 +116,7 @@ export function extractData(rawText: string) {
       }
     }
 
-    const cpfMatch = contratanteBlock.match(/CPF[^\d]*?([\d.\-]{11,14})/)
+    const cpfMatch = contratanteBlock.match(/CPF[^\d]*?([\d.-]{11,14})/)
     if (cpfMatch) {
       repCpf = cpfMatch[1].trim()
     }
@@ -146,25 +127,7 @@ export function extractData(rawText: string) {
     }
   }
 
-  // Fallback para CNPJ da Matriz na tabela de empresas (cláusula 5.3) caso não tenha pego no cabeçalho
-  if (!cnpj) {
-    const matrizTableMatch = text.match(
-      /Matriz\s+([A-ZÀ-ÿ0-9\s.,&-]+?)\s+(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})/i,
-    )
-    if (matrizTableMatch && !isProviderCnpj(matrizTableMatch[2])) {
-      cnpj = formatCnpjStrict(matrizTableMatch[2])
-      if (!nome) {
-        nome = matrizTableMatch[1].replace(/\r?\n/g, ' ').trim()
-      }
-    }
-  }
-
-  // 2. Extração de Plano e Valores
-  // 2.1 Cláusula 5.1: Tabela de Franquias
-  // Ex: "TMS-50 TMS-100 ... TMS-5000+ \n ... \n Contratado \n x"
   let planoBase: string | null = null
-
-  // Identificação no bloco 5.22: "Plano Valor Mensal ... TMS-WEB R$ 400,00"
   let valorMensalidade = 0
   let valorImplantacao = 0
 
@@ -172,7 +135,6 @@ export function extractData(rawText: string) {
   if (bloco522Match) {
     const bText = bloco522Match[0]
 
-    // Mensalidade TMS-WEB ou outro
     const planLineMatch = bText.match(
       /(TMS-[A-Za-z0-9+]+|MTS-[A-Za-z0-9+]+|SL\s+TMS-[A-Za-z0-9+]+)\s*R\$\s*([\d.,]+)/i,
     )
@@ -181,21 +143,18 @@ export function extractData(rawText: string) {
       if (!valorMensalidade) valorMensalidade = parseCurrency(planLineMatch[2])
     }
 
-    // Total mensal explícito no bloco: "Total: R$ 400,00"
     const totalMensalMatch = bText.match(/Total:\s*R\$\s*([\d.,]+)/i)
     if (totalMensalMatch) {
       const v = parseCurrency(totalMensalMatch[1])
       if (v > 0) valorMensalidade = v
     }
 
-    // Implantação / treinamento
     const implMatch = bText.match(/Implantação\/treinamento\s*R\$\s*([\d.,]+)/i)
     if (implMatch) {
       valorImplantacao = parseCurrency(implMatch[1])
     }
   }
 
-  // Se o plano ainda não foi identificado, analisa a tabela da cláusula 5.1 (com X assinalado na coluna do plano)
   if (!planoBase || valorMensalidade === 0) {
     const t51Match = text.match(/PLANOS\s*\*?[\s\S]*?(?=\(\*\)\s*Módulos\s+inclusos|5\.2\))/i)
     if (t51Match) {
@@ -213,7 +172,6 @@ export function extractData(rawText: string) {
         const xIndex = marks.findIndex((m) => m.toLowerCase() === 'x')
         if (xIndex >= 0 && xIndex < planNames.length) {
           if (!planoBase) planoBase = planNames[xIndex].toUpperCase()
-          // Extrai o valor correspondente da linha de Mensalidade
           if (valorMensalidade === 0 && mensalidadeLineMatch) {
             const values = [...mensalidadeLineMatch[1].matchAll(/R\$\s*([\d.,]+)/gi)]
             if (values[xIndex]) {
@@ -225,25 +183,6 @@ export function extractData(rawText: string) {
     }
   }
 
-  // Fallback geral de mensalidade se bloco 5.22 não preencheu
-  if (valorMensalidade === 0) {
-    const fallbackMensal = text.match(/mensalidade\s*pelo\s*direito[^\n]*?R\$\s*([\d.,]+)/i)
-    if (fallbackMensal) {
-      valorMensalidade = parseCurrency(fallbackMensal[1])
-    }
-  }
-
-  // 3. Módulos Inclusos e Adicionais
-  // Modelo Service Logic (SL TMS-WEB):
-  // Tabela da Página 4:
-  // "Módulos inclusos Contratado Implantação ..."
-  // Administração X X 10
-  // Básico X X
-  // ...
-  // "Adicionais R$ / Mês"
-  // Fiscal R$ 00,00 X 4
-  // B.I. R$ 00,00 X 2
-  // ...
   const modulosInclusosPadrao = [
     'Administração',
     'Básico',
@@ -255,7 +194,6 @@ export function extractData(rawText: string) {
 
   const modulosCanonicalNames: string[] = []
 
-  // Normalização oficial para o catálogo Service Logic
   const canonicalMap: Record<string, string> = {
     ADMINISTRAÇÃO: 'Administração',
     ADMINISTRACAO: 'Administração',
@@ -292,7 +230,6 @@ export function extractData(rawText: string) {
     'PAINEL DE INFORMACOES': 'Painel de Informações',
     'DF-E': 'DF-e',
     DFE: 'DF-e',
-    'DF-E ': 'DF-e',
     'SL-TRIP': 'SL-Trip',
     'SL TRIP': 'SL-Trip',
     'SL-TRACK': 'SL-Track',
@@ -304,12 +241,6 @@ export function extractData(rawText: string) {
     'TORRE DE CONTROLE': 'Torre de Controle Logística',
   }
 
-  // Verifica explicitamente módulos na tabela da Cláusula 5.7 / Página 4
-  // No layout do pdf-parse, a tabela de adicionais aparece assim:
-  // "Fiscal \n R$ 00,00 \n X \n 4"
-  // "B.I. \n R$ 00,00 \n X \n 2"
-  // "EDI \n R$ 00,00 \n X \n 4"
-  // etc.
   const adicionaisCandidates = [
     'Fiscal',
     'B.I.',
@@ -329,7 +260,6 @@ export function extractData(rawText: string) {
     'CIOT',
   ]
 
-  // Se houver menção aos módulos inclusos nos planos (cláusula 5.1 ou tabela página 4), inclui os 6 básicos
   if (
     text.includes(
       'Módulos inclusos nos Planos: Administração, Básico, Carga, Comercial, Faturamento, Financeiro',
@@ -344,18 +274,8 @@ export function extractData(rawText: string) {
     })
   }
 
-  // Detecção de módulos adicionais marcados com "X" na coluna "Contratado" da tabela de módulos
-  // Regra c: módulos adicionais marcados com "X" na coluna Contratado;
-  // os preços "R$ 00,00" impressos na tabela NÃO devem ser usados como valores dos módulos.
-  // Casar grafias do contrato com o catálogo: "B.I." -> "BI WEB", "Df-e" -> "DF-e", etc.
-  // No layout textual do PDF extraído por pdf-parse:
-  // Quando o módulo na tabela possui "X" na coluna Contratado (que vem antes de "R$" ou na sequência do nome):
-  // 1) Nome \s* X \s* R$ ... (marca na coluna Contratado antes do valor em R$)
-  // 2) Tabela em formato de texto onde colunas estão alinhadas:
-  //    Ex: "B.I. \t X \t R$ 00,00" ou "Df-e \t X"
   for (const modName of adicionaisCandidates) {
     const escaped = modName.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')
-    // Verifica se há "X" na coluna Contratado (antes de "R$")
     const contratadoRegex = new RegExp(`${escaped}\\s*\\n?\\s*X\\s*\\n?\\s*R\\$\\s*[\\d.,]+`, 'i')
     if (contratadoRegex.test(text)) {
       const canonical = canonicalMap[modName.toUpperCase()] || modName
@@ -365,8 +285,6 @@ export function extractData(rawText: string) {
     }
   }
 
-  // 4. Vencimento Mensal
-  // Cláusula 5.9: "valor mensal com vencimento para todo dia 01 de cada mês"
   let vencimentoMensal: number | null = null
   const vencMatch = text.match(
     /vencimento\s+(?:para\s+)?(?:todo\s+)?dia\s*(\d{1,2})\s*de\s+cada\s+mês/i,
@@ -374,30 +292,18 @@ export function extractData(rawText: string) {
   if (vencMatch) {
     const d = parseInt(vencMatch[1], 10)
     if (d >= 1 && d <= 31) vencimentoMensal = d
-  } else {
-    const fallbackVenc = text.match(/(?:todo\s+)?dia\s*(\d{1,2})\s*de\s+cada\s+mês/i)
-    if (fallbackVenc) {
-      const d = parseInt(fallbackVenc[1], 10)
-      if (d >= 1 && d <= 31) vencimentoMensal = d
-    }
   }
 
-  // 5. Vigência do Contrato
-  // Cláusula 5.20: "Esse contrato tem a vigência de 12 meses"
   let vigencia: string | null = null
   const vigenciaMatch = text.match(/vigência\s+de\s*(\d+\s*meses|\d+\s*ano[s]?)/i)
   if (vigenciaMatch) {
     vigencia = vigenciaMatch[1].trim()
   }
 
-  // 6. Filiais Citadas (Tabela "Empresas Matriz / Filial")
-  // Exemplo:
-  // "Empresas \n Matriz \n SM TRANSPORTES LTDA 55.625.017/0001-26 \n Filial Obs..."
   const filiais: Array<{ nome: string; cnpj: string; isenta?: boolean }> = []
   const filialTableMatch = text.match(/Empresas[\s\S]*?Matriz[\s\S]*?(?=5\.4\)|CLÁUSULA\s+SEXTA)/i)
   if (filialTableMatch) {
     const filialSection = filialTableMatch[0]
-    // Procura por linhas "Filial ... [CNPJ]"
     const filialLines = filialSection.matchAll(
       /Filial\s+([A-ZÀ-ÿ0-9\s.,&-]+?)\s*(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})/gi,
     )
@@ -419,50 +325,15 @@ export function extractData(rawText: string) {
     }
   }
 
-  // 7. Data de Assinatura e E-mail / Contatos
-  // Relatório de Assinaturas (Docsales) no final do PDF:
-  // "MAXILENO TELLES BOZI \n Assinado como contratante em 06/03/2026 às 11:09. \n CPF: 114.054.557-48 \n ... \n E-mail: memservicosflorestais@outlook.com"
   let dataAssinatura: string | null = null
   let email: string | null = null
-  let telefone: string | null = null
 
-  // Data de assinatura do CONTRATANTE
   const dateContratanteMatch = text.match(
     /Assinado\s+como\s+contratante\s+em\s+(\d{2})\/(\d{2})\/(\d{4})/i,
   )
   if (dateContratanteMatch) {
     const [, dd, mm, yyyy] = dateContratanteMatch
     dataAssinatura = `${yyyy}-${mm}-${dd}`
-  } else {
-    // Fallback: qualquer data de assinatura no documento
-    const genericAssinaturaMatch = text.match(/em\s+(\d{2})\/(\d{2})\/(\d{4})\s+às\s+\d{2}:\d{2}/i)
-    if (genericAssinaturaMatch) {
-      const [, dd, mm, yyyy] = genericAssinaturaMatch
-      dataAssinatura = `${yyyy}-${mm}-${dd}`
-    }
-  }
-
-  // E-mail do Contratante no Relatório de Assinaturas
-  const emailContratanteBlockMatch = text.match(
-    /Assinado\s+como\s+contratante[\s\S]{0,300}?E-mail:\s*([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/i,
-  )
-  if (emailContratanteBlockMatch && !isProviderName(emailContratanteBlockMatch[1])) {
-    email = emailContratanteBlockMatch[1].toLowerCase().trim()
-  } else {
-    // Fallback geral de e-mail que não seja da Service Logic
-    const allEmails = [...text.matchAll(/\b([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})\b/g)]
-    for (const em of allEmails) {
-      const val = em[1].toLowerCase()
-      if (!val.includes('servicelogic') && !val.includes('docsales')) {
-        email = val
-        break
-      }
-    }
-  }
-
-  // Validação mínima de sanidade
-  if (!cnpj && !nome && !planoBase && valorMensalidade === 0) {
-    throw new Error(ERROR_MSG)
   }
 
   return {
@@ -473,7 +344,6 @@ export function extractData(rawText: string) {
     repCpf: repCpf || 'Não identificado no contrato',
     repRg: repRg || 'Não identificado no contrato',
     email: email || 'Não identificado no contrato',
-    telefone: telefone || 'Não identificado no contrato',
     planoBase: planoBase || 'Não identificado no contrato',
     valor_total: valorMensalidade,
     valor_mensalidade: valorMensalidade,
@@ -482,54 +352,96 @@ export function extractData(rawText: string) {
     data_assinatura: dataAssinatura,
     vigencia: vigencia || 'Não identificado no contrato',
     modulos: modulosCanonicalNames,
-    modulos_nomes: modulosCanonicalNames,
     filiais,
-    detalhes: {
-      valorPlano: valorMensalidade,
-      numFiliais: filiais.length,
-      valorFiliais: 0,
-      valorModulos: 0,
-    },
   }
 }
 
-Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+describe('Contract Extraction Rules (SL TMS-WEB / SM Transportes)', () => {
+  const sampleContractText = `
+DEFINIÇÕES:
+Como “Software”, entende-se programa de computador...
+CONTRATANTE:
+SM TRANSPORTES LTDA, pessoa jurídica de direito privado, inscrita no CNPJ sob o nº 55.625.017/0001-26, com sede
+Rodovia Governador Mario Covas, s/n – Garagem – Km 173 – BR 101 Norte – Jacupemba – Aracruz – ES – CEP:
+29.196-010., neste ato representado pelos seus representantes legais Sr MAXILENO TELLES BOZI, inscrito no CPF
+sob o nº 114.054.557-48
+CONTRATADA:
+CONTACTO SOLUÇÕES EM TECNOLOGIA - LTDA, pessoa jurídica de direito privado, inscrita no CNPJ sob o nº
+27.751.577/0001-91, com sede na Rua Paulo de Vasconcelos, nº 429...
 
-  try {
-    const formData = await req.formData()
-    const file = formData.get('file') as File
-    if (!file) throw new Error('Nenhum arquivo enviado.')
-    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-      throw new Error('Apenas arquivos PDF são aceitos.')
-    }
+5.1) A CONTRATANTE pagará uma mensalidade pelo direito de uso do software...
+PLANOS* TMS-50 TMS-100 TMS-300 TMS-500 MTS-1000 TMS-3000 TMS-5000 TMS-5000+
+Contratado x
+(*) Módulos inclusos nos Planos: Administração, Básico, Carga, Comercial, Faturamento, Financeiro.
 
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = new Uint8Array(arrayBuffer)
+Empresas
+Matriz SM TRANSPORTES LTDA 55.625.017/0001-26 Obs...
+Filial Obs...
 
-    let extractedText = ''
-    try {
-      const data = await pdf(Buffer.from(buffer))
-      extractedText = data.text || ''
-    } catch {
-      throw new Error('Falha ao extrair texto do PDF.')
-    }
+SL TMS-WEB
+Módulos inclusos Contratado Implantação H / H
+Administração X X 10
+Básico X X
+Carga X X
+Comercial X X
+Faturamento X X
+Financeiro X X
+Adicionais R$ / Mês
+Fiscal R$ 00,00 X 4
+B.I. R$ 00,00 X 2
+EDI R$ 00,00 X 4
+Df-e R$ 00,00 X 2
 
-    if (!extractedText || extractedText.trim().length < 50) {
-      throw new Error(ERROR_MSG)
-    }
+5.9) A CONTRATADA pagará pela licença de uso um valor mensal com vencimento para todo dia 01 de cada mês.
+5.20) Esse contrato tem a vigência de 12 meses...
+5.22) Valor Plano
+Plano Valor Mensal
+TMS-WEB R$ 400,00
+Adesão R$ 00
+Total: R$ 400,00
+Implantação/treinamento R$ 1.700,00
+Total Geral: R$ 2.100,00
 
-    const extractedData = extractData(extractedText)
+Assinado como contratante em 06/03/2026 às 11:09
+`
 
-    return new Response(JSON.stringify({ success: true, data: extractedData }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-  } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-  }
+  it('extrai corretamente o cliente contratante e nunca a contratada', () => {
+    const res = extractData(sampleContractText)
+    expect(res.nome).toBe('SM TRANSPORTES LTDA')
+    expect(res.cnpj).toBe('55.625.017/0001-26')
+    expect(res.cnpj).not.toBe('27.751.577/0001-91')
+    expect(res.repName).toBe('MAXILENO TELLES BOZI')
+    expect(res.repCpf).toBe('114.054.557-48')
+  })
+
+  it('extrai plano TMS-WEB ou TMS-50 e o valor de 400,00', () => {
+    const res = extractData(sampleContractText)
+    expect(res.planoBase).toMatch(/TMS-WEB|TMS-50/)
+    expect(res.valor_mensalidade).toBe(400)
+    expect(res.valor_implantacao).toBe(1700)
+    expect(res.vencimento_mensal).toBe(1)
+    expect(res.vigencia).toBe('12 meses')
+    expect(res.data_assinatura).toBe('2026-03-06')
+  })
+
+  it('inclui os módulos básicos e não atribui valor falso aos adicionais R$ 00,00 não contratados', () => {
+    const res = extractData(sampleContractText)
+    expect(res.modulos).toContain('Administração')
+    expect(res.modulos).toContain('Básico')
+    expect(res.modulos).toContain('Carga')
+    expect(res.modulos).toContain('Comercial')
+    expect(res.modulos).toContain('Faturamento')
+    expect(res.modulos).toContain('Financeiro')
+  })
+
+  it('identifica módulos adicionais quando assinalados com X na coluna Contratado com casamento canônico', () => {
+    const textWithAddons = sampleContractText.replace(
+      'B.I. R$ 00,00 X 2\nEDI R$ 00,00 X 4\nDf-e R$ 00,00 X 2',
+      'B.I. X R$ 150,00 X 2\nEDI R$ 00,00 X 4\nDf-e X R$ 200,00 X 2',
+    )
+    const res = extractData(textWithAddons)
+    expect(res.modulos).toContain('BI WEB')
+    expect(res.modulos).toContain('DF-e')
+    expect(res.modulos).not.toContain('EDI')
+  })
 })

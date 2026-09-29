@@ -141,6 +141,8 @@ export function ImportContractDialog({ open, onOpenChange, onSuccess }: ImportCo
 
     // 2. Variações conhecidas
     if (
+      lower === 'b.i.' ||
+      lower === 'bi' ||
       lower.includes('power bi') ||
       lower.includes('powerbi') ||
       lower.includes('bi web') ||
@@ -148,6 +150,9 @@ export function ImportContractDialog({ open, onOpenChange, onSuccess }: ImportCo
       lower.includes('bi-web')
     ) {
       return 'BI WEB'
+    }
+    if (lower === 'df-e' || lower === 'dfe') {
+      return 'DF-e'
     }
     if (lower.includes('bloco tci') || lower.includes('tci e tce')) {
       return 'Bloco TCI e TCE (Transportes)'
