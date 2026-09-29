@@ -137,6 +137,7 @@ import { TableActionsMenu } from '@/components/TableActionsMenu'
 import { SectionNav, type SectionNavItem } from '@/components/section-nav'
 import { CollapsibleSection } from '@/components/collapsible-section'
 import { ClientReunioesTab } from '@/components/ClientReunioesTab'
+import { ImportContractDialog } from '@/components/ImportContractDialog'
 
 // Cliente com contrato específico de Consultoria de Estruturação Operacional e Regulatória
 const CONSULTORIA_CONTRACT_CLIENT_ID = '6f86db2c-4b22-4fcc-86c0-62817173a11c'
@@ -803,6 +804,7 @@ export default function ClientsPage() {
   }
 
   const [isImporting, setIsImporting] = useState(false)
+  const [isImportContractOpen, setIsImportContractOpen] = useState(false)
   const [isLoadingCnpj, setIsLoadingCnpj] = useState(false)
   const [isUploadingDocs, setIsUploadingDocs] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -3574,6 +3576,15 @@ Obrigada.`)
             Importar Base
           </Button>
 
+          <Button
+            variant="outline"
+            onClick={() => setIsImportContractOpen(true)}
+            className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800"
+          >
+            <FileText className="mr-2 h-4 w-4 text-indigo-600" />
+            Importar Contrato
+          </Button>
+
           <Button onClick={handleOpenAdd} className="bg-indigo-600 hover:bg-indigo-700">
             <Plus className="mr-2 h-4 w-4" />
             Novo Cliente
@@ -3589,6 +3600,16 @@ Obrigada.`)
             icon: <Building2 className="h-3.5 w-3.5" />,
           },
         ]}
+      />
+
+      {/* Diálogo de Importação de Contrato Assinado */}
+      <ImportContractDialog
+        open={isImportContractOpen}
+        onOpenChange={setIsImportContractOpen}
+        onSuccess={async (clientId) => {
+          await loadClientes()
+          navigate(`/clientes/${clientId}`)
+        }}
       />
 
       {/* Adicionar Módulo Dialog */}

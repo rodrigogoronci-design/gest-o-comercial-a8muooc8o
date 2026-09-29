@@ -9,12 +9,22 @@ export interface ExtractedContractData {
   repName?: string | null
   repCpf?: string | null
   repRg?: string | null
+  email?: string | null
+  telefone?: string | null
   valor_total: number
   valor_mensalidade?: number
   valor_implantacao?: number
   modulos: string[]
+  modulos_nomes?: string[]
   planoBase?: string | null
   data_assinatura?: string | null
+  vencimento_mensal?: number | null
+  vigencia?: string | null
+  filiais?: Array<{
+    nome: string
+    cnpj: string
+    isenta?: boolean
+  }>
   detalhes?: {
     valorPlano: number
     numFiliais: number
