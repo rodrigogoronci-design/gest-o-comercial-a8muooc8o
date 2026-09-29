@@ -19,8 +19,6 @@ import {
 import { ADESAO_CHECKLIST } from '@/lib/document-requirements'
 import { HistoricoAditivos } from '@/components/HistoricoAditivos'
 import { DocumentacaoAdesaoTab } from '@/components/DocumentacaoAdesaoTab'
-import { AdesaoLinkManagerCard } from '@/components/AdesaoLinkManagerCard'
-import { AdesaoFichaRespostasViewer } from '@/components/AdesaoFichaRespostasViewer'
 
 import {
   ChevronRight,
@@ -840,18 +838,6 @@ export default function ClientDetailPage() {
                 )}
               </CardContent>
             </Card>
-
-            {/* Gestão do Link de Adesão e Envio WhatsApp */}
-            <AdesaoLinkManagerCard
-              clienteId={client.id}
-              clientName={client.nome}
-              telefone={client.telefone || null}
-              title="Link de Adesão e Onboarding"
-              description="Geração do link único com validade configurável e mensagem cordial para WhatsApp."
-            />
-
-            {/* Ficha de Adesão Preenchida pelo Cliente (Respostas e Campos) */}
-            <AdesaoFichaRespostasViewer clienteId={client.id} />
 
             {/* SUBSEÇÃO "Documentos" renderizando DocumentacaoAdesaoTab (preservando a correção 0.0.812 e prop readOnly) */}
             <Card className="border-slate-200 shadow-sm bg-white">
