@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase/client'
+import { cn } from '@/lib/utils'
 import { formatCNPJ, formatDate, formatCurrency } from '@/lib/formatters'
 import { getImplementacaoByCliente } from '@/services/implementacoes'
 import { getSolicitacoesByCliente } from '@/services/solicitacoes_servico'
@@ -18,6 +19,8 @@ import {
 import { ADESAO_CHECKLIST } from '@/lib/document-requirements'
 import { HistoricoAditivos } from '@/components/HistoricoAditivos'
 import { DocumentacaoAdesaoTab } from '@/components/DocumentacaoAdesaoTab'
+import { AdesaoLinkManagerCard } from '@/components/AdesaoLinkManagerCard'
+import { AdesaoFichaRespostasViewer } from '@/components/AdesaoFichaRespostasViewer'
 
 import {
   ChevronRight,
@@ -186,6 +189,31 @@ export default function ClientDetailPage() {
     if (!client) return 'Não informado'
     return client.planos_saude?.descricao || client.modulos?.plano_base || 'Não informado'
   }, [client])
+
+  // Contagem e lista de pendências da documentação de adesão
+  const docStatusCounts = useMemo(() => {
+    if (!docItems || docItems.length === 0) {
+      const allChecklistItems = ADESAO_CHECKLIST.flatMap((cat) => cat.items)
+      return {
+        recebidos: 0,
+        pendentes: allChecklistItems.length,
+        pendentesList: allChecklistItems,
+      }
+    }
+    const recebidos = docItems.filter(
+      (d) => d.status === 'Recebida' || d.status === 'Aprovada',
+    ).length
+    const pendentes = docItems.filter((d) => d.status === 'Pendente' || !d.status).length
+    const pendentesList = docItems
+      .filter((d) => d.status === 'Pendente' || !d.status)
+      .map((d) => d.item)
+
+    return {
+      recebidos,
+      pendentes,
+      pendentesList,
+    }
+  }, [docItems])
 
   // Iniciais para avatar neutro
   const avatarInitials = useMemo(() => {
@@ -525,28 +553,50 @@ export default function ClientDetailPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-4 text-sm space-y-3">
-                    {docStatusGeral !== 'Recebida e Aprovada' ? (
-                      <div className="flex items-start justify-between p-3 rounded-lg bg-amber-50/50 border border-amber-100">
-                        <div className="space-y-0.5">
-                          <p className="font-medium text-slate-800 text-xs">
-                            Documentação de Adesão
-                          </p>
-                          <p className="text-[11px] text-slate-500">
-                            Status atual: {docStatusGeral}
-                          </p>
-                        </div>
+                    <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-slate-800">
+                          Documentos de Adesão: {docStatusCounts.recebidos} recebidos /{' '}
+                          {docStatusCounts.pendentes} pendentes
+                        </span>
                         <Badge
                           variant="outline"
-                          className="text-[10px] bg-amber-50 text-amber-700 border-amber-200"
+                          className={cn(
+                            'text-[10px]',
+                            docStatusCounts.pendentes === 0
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200',
+                          )}
                         >
-                          Em aberto
+                          {docStatusCounts.pendentes === 0
+                            ? 'Completo'
+                            : `${docStatusCounts.pendentes} pendente(s)`}
                         </Badge>
                       </div>
-                    ) : (
-                      <p className="text-xs text-slate-500 italic">
-                        Nenhuma pendência crítica registrada.
-                      </p>
-                    )}
+
+                      {docStatusCounts.pendentes > 0 ? (
+                        <div className="pt-1">
+                          <span className="text-[11px] font-medium text-slate-500 block mb-1">
+                            Lista dos pendentes:
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {docStatusCounts.pendentesList.map((item, idx) => (
+                              <Badge
+                                key={idx}
+                                variant="secondary"
+                                className="bg-amber-100/70 text-amber-900 border-amber-200 text-[10px]"
+                              >
+                                {item}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-emerald-600 font-medium">
+                          Todos os documentos de adesão foram enviados.
+                        </p>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -791,7 +841,19 @@ export default function ClientDetailPage() {
               </CardContent>
             </Card>
 
-            {/* SUBSEÇÃO "Documentos" renderizando DocumentacaoAdesaoTab (preservando a correção 0.0.812) */}
+            {/* Gestão do Link de Adesão e Envio WhatsApp */}
+            <AdesaoLinkManagerCard
+              clienteId={client.id}
+              clientName={client.nome}
+              telefone={client.telefone || null}
+              title="Link de Adesão e Onboarding"
+              description="Geração do link único com validade configurável e mensagem cordial para WhatsApp."
+            />
+
+            {/* Ficha de Adesão Preenchida pelo Cliente (Respostas e Campos) */}
+            <AdesaoFichaRespostasViewer clienteId={client.id} />
+
+            {/* SUBSEÇÃO "Documentos" renderizando DocumentacaoAdesaoTab (preservando a correção 0.0.812 e prop readOnly) */}
             <Card className="border-slate-200 shadow-sm bg-white">
               <CardHeader className="pb-3 border-b border-slate-100">
                 <CardTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">

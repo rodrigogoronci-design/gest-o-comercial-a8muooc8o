@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Plus, Eye, FileText, Loader2, Send } from 'lucide-react'
+import { ArrowLeft, Plus, Eye, FileText, Loader2, Send, Link as LinkIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -23,6 +23,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { supabase } from '@/lib/supabase/client'
 import { CrmPropostaForm, type PropostaFormValues } from './CrmPropostaForm'
 import { CrmPropostaUpload } from './CrmPropostaUpload'
+import { AdesaoLinkManagerCard } from '@/components/AdesaoLinkManagerCard'
 
 export function CrmProspectPropostasTab({
   prospectId,
@@ -53,6 +54,7 @@ export function CrmProspectPropostasTab({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [sendingProposal, setSendingProposal] = useState<any | null>(null)
   const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const [adesaoModalProposta, setAdesaoModalProposta] = useState<any | null>(null)
 
   const { toast } = useToast()
   const { user } = useAuth()
@@ -185,6 +187,11 @@ export function CrmProspectPropostasTab({
 
       setPropostas((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)))
       toast({ title: 'Proposta atualizada com sucesso' })
+
+      if (updates.status_negociacao === 'Aceita') {
+        const prop = propostas.find((p) => p.id === id) || { id }
+        setAdesaoModalProposta(prop)
+      }
     } catch (e: any) {
       toast({ title: 'Erro ao atualizar', description: e.message, variant: 'destructive' })
     }
@@ -575,10 +582,46 @@ export function CrmProspectPropostasTab({
                   />
                 </div>
               </div>
+
+              {/* Botão de gerar link quando Aceita */}
+              {p.status_negociacao === 'Aceita' && (
+                <div className="pt-2 border-t border-slate-100 flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAdesaoModalProposta(p)}
+                    className="text-xs h-7 gap-1.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border-indigo-200"
+                  >
+                    <LinkIcon className="h-3 w-3" /> Gerar link de adesão
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
         </div>
       )}
+
+      {/* Modal para Gerenciar Link de Adesão no Aceite */}
+      <Dialog
+        open={!!adesaoModalProposta}
+        onOpenChange={(open) => !open && setAdesaoModalProposta(null)}
+      >
+        <DialogContent className="sm:max-w-[560px] p-0 overflow-hidden">
+          {adesaoModalProposta && (
+            <div className="p-4 sm:p-6 space-y-4">
+              <AdesaoLinkManagerCard
+                prospectId={prospectId}
+                clienteId={entityData?.cliente_id || null}
+                propostaId={adesaoModalProposta.id}
+                clientName={prospectName}
+                telefone={entityData?.telefone || null}
+                title="Link de Adesão (Proposta Aceita)"
+                description="Gere o link único com validade configurável e envie a mensagem pronta via WhatsApp."
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!sendingProposal} onOpenChange={(open) => !open && setSendingProposal(null)}>
         <DialogContent className="sm:max-w-[600px]">
