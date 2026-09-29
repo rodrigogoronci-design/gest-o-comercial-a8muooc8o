@@ -58,6 +58,23 @@ Deno.serve(async (req: Request) => {
       )
     }
 
+    if (action === 'test_receber_lead_post') {
+      const targetUrl = 'https://tdxasfvufrbaansugdmi.supabase.co/functions/v1/receber-lead'
+      const leadPayload = body.payload || {}
+      const resp = await fetch(targetUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(leadPayload),
+      })
+      const status = resp.status
+      const data = await resp.json().catch(() => ({}))
+      return new Response(JSON.stringify({ status, data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     if (action === 'test_import_flow') {
       // Step 3 automation runner for verification
       const projetoId = body.projetoId || '4bdc5746-5c78-45e8-9eeb-0870546e6afa'
