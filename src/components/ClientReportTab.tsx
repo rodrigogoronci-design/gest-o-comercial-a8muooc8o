@@ -69,7 +69,6 @@ function downloadCSV(rows: ClienteRelatorio[]) {
     'Data de assinatura do contrato',
     'Mensalidade',
     'Dia de Vencimento',
-    'Código do Plano',
     'Plano Contratado',
     'Módulos',
     'Endereço',
@@ -96,7 +95,6 @@ function downloadCSV(rows: ClienteRelatorio[]) {
         dataAssinaturaFormatada,
         row.valor_total != null ? formatCurrency(row.valor_total) : '',
         row.vencimento_mensal != null ? String(row.vencimento_mensal) : '',
-        row.plano_codigo ?? '-',
         planoExibido,
         modulos.join(', '),
         row.endereco ?? '',
@@ -863,9 +861,6 @@ export function ClientReportTab() {
                           <TableHead className="w-[85px] min-w-[75px] text-center font-semibold text-white print:text-[8pt] print:py-1">
                             Vencimento
                           </TableHead>
-                          <TableHead className="w-[90px] min-w-[80px] font-semibold text-white print:text-[8pt] print:py-1">
-                            Código
-                          </TableHead>
                           <TableHead className="w-[150px] min-w-[140px] font-semibold text-white print:text-[8pt] print:py-1">
                             Plano
                           </TableHead>
@@ -956,46 +951,14 @@ export function ClientReportTab() {
                                   : '—'}
                               </TableCell>
 
-                              {/* Código do Plano */}
-                              <TableCell className="w-[90px] min-w-[80px] text-slate-600 print:text-[8pt] print:py-1">
-                                {cliente.plano_codigo ? (
-                                  <Badge
-                                    variant="outline"
-                                    className="bg-blue-50 border-blue-200 text-blue-700 text-[10px] py-0 px-1.5 font-medium print:border-slate-300"
-                                  >
-                                    {cliente.plano_codigo}
-                                  </Badge>
-                                ) : (
-                                  <span className="text-xs text-slate-400 italic">-</span>
-                                )}
-                              </TableCell>
-
                               {/* Plano Contratado */}
                               <TableCell className="w-[150px] min-w-[140px] text-slate-600 break-words print:text-[8pt] print:py-1">
-                                {cliente.plano_descricao &&
-                                cliente.plano_descricao !== 'Não informado' ? (
-                                  <div className="flex flex-col gap-0.5">
-                                    <span className="font-medium text-xs leading-tight">
-                                      {cliente.plano_descricao}
-                                    </span>
-                                    {cliente.plano_codigo && (
-                                      <span className="text-[10px] text-slate-400 font-mono">
-                                        {cliente.plano_codigo}
-                                      </span>
-                                    )}
-                                  </div>
-                                ) : cliente.plano_codigo ? (
-                                  <Badge
-                                    variant="outline"
-                                    className="w-fit bg-blue-50 border-blue-200 text-blue-700 text-[10px] py-0 px-1.5 font-medium"
-                                  >
-                                    {cliente.plano_codigo}
-                                  </Badge>
-                                ) : (
-                                  <span className="text-xs text-slate-400 italic">
-                                    Não informado
-                                  </span>
-                                )}
+                                <span className="font-medium text-xs leading-tight">
+                                  {cliente.plano_descricao &&
+                                  cliente.plano_descricao !== 'Não informado'
+                                    ? cliente.plano_descricao
+                                    : 'Não informado'}
+                                </span>
                               </TableCell>
 
                               {/* Módulos como Etiquetas Individuais */}

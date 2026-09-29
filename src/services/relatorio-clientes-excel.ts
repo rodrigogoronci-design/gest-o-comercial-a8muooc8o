@@ -150,7 +150,6 @@ export async function exportClientesToExcel(rows: ClienteRelatorio[]): Promise<v
     { header: 'Data de assinatura do contrato', key: 'data_assinatura', width: 24 },
     { header: 'Mensalidade', key: 'mensalidade', width: 18 },
     { header: 'Dia Vencimento', key: 'vencimento', width: 16 },
-    { header: 'Código do Plano', key: 'plano_codigo', width: 18 },
     { header: 'Plano Contratado', key: 'plano_descricao', width: 24 },
     { header: 'Resumo dos módulos', key: 'modulos_resumo', width: 36 },
     ...moduleColumns.map((modName) => ({
@@ -214,7 +213,6 @@ export async function exportClientesToExcel(rows: ClienteRelatorio[]): Promise<v
       data_assinatura: dataAssinaturaFormatada,
       mensalidade: mensalidadeValor,
       vencimento: cliente.vencimento_mensal != null ? `${cliente.vencimento_mensal}º` : '—',
-      plano_codigo: cliente.plano_codigo ?? '-',
       plano_descricao: planoExibido,
       modulos_resumo: modulosList.length > 0 ? modulosList.join(', ') : 'Nenhum',
       endereco: cliente.endereco || '—',
@@ -263,20 +261,13 @@ export async function exportClientesToExcel(rows: ClienteRelatorio[]): Promise<v
       // 4: Data de assinatura (centro)
       // 5: Mensalidade (direita + moeda R$)
       // 6: Dia Vencimento (centro)
-      // 7: Código do Plano (centro)
-      // 8: Plano (esquerda)
-      // 9: Resumo módulos (esquerda)
-      // 10 .. N-2: Módulos Sim/Não (centro)
+      // 7: Plano (esquerda)
+      // 8: Resumo módulos (esquerda)
+      // 9 .. N-2: Módulos Sim/Não (centro)
       // N-1: Endereço (esquerda)
       // N: Status (centro + cor verde/vermelho)
 
-      if (
-        colNumber === 2 ||
-        colNumber === 3 ||
-        colNumber === 4 ||
-        colNumber === 6 ||
-        colNumber === 7
-      ) {
+      if (colNumber === 2 || colNumber === 3 || colNumber === 4 || colNumber === 6) {
         cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
       }
 
@@ -288,7 +279,7 @@ export async function exportClientesToExcel(rows: ClienteRelatorio[]): Promise<v
       }
 
       // Colunas dos módulos: Sim / Não
-      const totalFixedLeft = 9
+      const totalFixedLeft = 8
       const totalModules = moduleColumns.length
       if (colNumber > totalFixedLeft && colNumber <= totalFixedLeft + totalModules) {
         cell.alignment = { vertical: 'middle', horizontal: 'center' }
