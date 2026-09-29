@@ -1,1 +1,2 @@
-export const dummy = true
+// PDF debug removed
+export {}

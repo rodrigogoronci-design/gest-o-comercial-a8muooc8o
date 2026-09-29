@@ -1,68 +1,15 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { Buffer } from 'node:buffer'
 import pdf from 'npm:pdf-parse@1.1.1'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-const MODULE_NAMES_MAP: Record<string, { id: string; canonicalName: string }> = {
-  'Administração': { id: 'mod-admin', canonicalName: 'Administração' },
-  'Administracao': { id: 'mod-admin', canonicalName: 'Administração' },
-  'Básicos': { id: 'mod-basico', canonicalName: 'Básico' },
-  'Basicos': { id: 'mod-basico', canonicalName: 'Básico' },
-  'Básico': { id: 'mod-basico', canonicalName: 'Básico' },
-  'Basico': { id: 'mod-basico', canonicalName: 'Básico' },
-  'Carga': { id: 'mod-carga', canonicalName: 'Carga' },
-  'Comercial': { id: 'mod-comercial', canonicalName: 'Comercial' },
-  'Faturamento': { id: 'mod-faturamento', canonicalName: 'Faturamento' },
-  'Financeiro': { id: 'mod-financeiro', canonicalName: 'Financeiro' },
-  'EDI': { id: 'mod-edi', canonicalName: 'EDI' },
-  'Controle de Viagem': { id: 'mod-ctrl-viagem', canonicalName: 'Controle de Viagem' },
-  'Controle de Viagens': { id: 'mod-ctrl-viagem', canonicalName: 'Controle de Viagem' },
-  'Patrimônio': { id: 'mod-patrimonio', canonicalName: 'Patrimônio' },
-  'Patrimonio': { id: 'mod-patrimonio', canonicalName: 'Patrimônio' },
-  'Frota (até 10 placas)': { id: 'mod-frota', canonicalName: 'Frota (até 10 placas)' },
-  'Frota – Até 20 Placas': { id: 'mod-frota-20', canonicalName: 'Frota – Até 20 Placas' },
-  'Frota - Até 20 Placas': { id: 'mod-frota-20', canonicalName: 'Frota – Até 20 Placas' },
-  'Frota': { id: 'mod-frota', canonicalName: 'Frota (até 10 placas)' },
-  'Medição': { id: 'mod-medicao', canonicalName: 'Medição' },
-  'Medicao': { id: 'mod-medicao', canonicalName: 'Medição' },
-  'Fracionado': { id: 'mod-fracionado', canonicalName: 'Fracionado' },
-  'Bloco TCI e TCE (Transportes)': { id: 'mod-transp', canonicalName: 'Bloco TCI e TCE (Transportes)' },
-  'Bloco TCI e TCE': { id: 'mod-transp', canonicalName: 'Bloco TCI e TCE (Transportes)' },
-  'Fundo de proteção': { id: 'mod-fundo-prot', canonicalName: 'Fundo de proteção' },
-  'Fundo de Protecao': { id: 'mod-fundo-prot', canonicalName: 'Fundo de proteção' },
-  'Calendário': { id: 'mod-calendario', canonicalName: 'Calendário' },
-  'Calendario': { id: 'mod-calendario', canonicalName: 'Calendário' },
-  'Painel de Informações': { id: 'mod-painel', canonicalName: 'Painel de Informações' },
-  'Painel de Informacoes': { id: 'mod-painel', canonicalName: 'Painel de Informações' },
-  'Fiscal': { id: 'mod-fiscal', canonicalName: 'Fiscal' },
-  'DF-e': { id: 'mod-dfe', canonicalName: 'DF-e' },
-  'DFE': { id: 'mod-dfe', canonicalName: 'DF-e' },
-  'BI WEB': { id: 'mod-powerbi', canonicalName: 'BI WEB' },
-  'BI Web': { id: 'mod-powerbi', canonicalName: 'BI WEB' },
-  'BI-WEB': { id: 'mod-powerbi', canonicalName: 'BI WEB' },
-  'BIWEB': { id: 'mod-powerbi', canonicalName: 'BI WEB' },
-  'Power BI': { id: 'mod-powerbi', canonicalName: 'BI WEB' },
-  'PowerBI': { id: 'mod-powerbi', canonicalName: 'BI WEB' },
-  'Power Bi': { id: 'mod-powerbi', canonicalName: 'BI WEB' },
-  'SL-Trip': { id: 'mod-sltrip', canonicalName: 'SL-Trip' },
-  'SL Trip': { id: 'mod-sltrip', canonicalName: 'SL-Trip' },
-  'SL-Track': { id: 'mod-sltrack', canonicalName: 'SL-Track' },
-  'SL Track': { id: 'mod-sltrack', canonicalName: 'SL-Track' },
-  'Homologação Bancaria': { id: 'mod-homolog-banc', canonicalName: 'Homologação Bancaria' },
-  'Homologação Bancária': { id: 'mod-homolog-banc', canonicalName: 'Homologação Bancaria' },
-  'Homologacao Bancaria': { id: 'mod-homolog-banc', canonicalName: 'Homologação Bancaria' },
-  'CIOT': { id: 'mod-ciot', canonicalName: 'CIOT' },
-  'Torre de Controle Logística': { id: 'mod-torre-controle', canonicalName: 'Torre de Controle Logística' },
-  'Torre de Controle': { id: 'mod-torre-controle', canonicalName: 'Torre de Controle Logística' }
-}
+import { corsHeaders } from '../_shared/cors.ts'
 
 const ERROR_MSG =
   'Não foi possível identificar o padrão do contrato. Verifique o arquivo e tente novamente.'
+
+const PROVIDER_CNPJS = [
+  '27.751.577/0001-91',
+  '27751577000191',
+]
 
 const PROVIDER_PATTERNS = [
   'SERVICE LOGIC',
@@ -70,14 +17,25 @@ const PROVIDER_PATTERNS = [
   'SERVIC LOGIC',
   'SERVICE LOGIC TECNOLOGIA',
   'SERVICE LOGIC TECNOLOGIA LTDA',
+  'CONTACTO SOLUÇÕES EM TECNOLOGIA',
+  'CONTACTO SOLUCOES EM TECNOLOGIA',
+  'CONTACTO SOLUÇÕES',
+  'CONTACTO SOLUCOES',
 ]
 
 function isProviderName(name: string): boolean {
+  if (!name) return false
   const upper = name.toUpperCase()
-  return PROVIDER_PATTERNS.some((p) => upper.includes(p.toUpperCase()))
+  return PROVIDER_PATTERNS.some((p) => upper.includes(p))
+}
+
+function isProviderCnpj(cnpjVal: string): boolean {
+  const digits = (cnpjVal || '').replace(/\D/g, '')
+  return PROVIDER_CNPJS.some((p) => p.replace(/\D/g, '') === digits)
 }
 
 function parseCurrency(val: string): number {
+  if (!val) return 0
   return parseFloat(val.replace(/\./g, '').replace(',', '.')) || 0
 }
 
@@ -89,7 +47,20 @@ function formatCnpjStrict(raw: string): string {
   return raw
 }
 
-function extractData(text: string) {
+/**
+ * Remove rodapés recorrentes do Docsales e paginação antes de processar blocos.
+ * Preserva o conteúdo do Relatório de Assinaturas para extração de data e signatários.
+ */
+function cleanContractText(raw: string): string {
+  return raw
+    .replace(/Docsales ID:\s*[a-f0-9\-]+/gi, '')
+    .replace(/Página\s+\d+\s+de\s+\d+/gi, '')
+    .replace(/Av\. Central[^\n]+www\.servicelogic\.com\.br/gi, '')
+}
+
+export function extractData(rawText: string) {
+  const text = cleanContractText(rawText)
+
   let nome: string | null = null
   let cnpj: string | null = null
   let endereco: string | null = null
@@ -97,296 +68,406 @@ function extractData(text: string) {
   let repCpf: string | null = null
   let repRg: string | null = null
 
-  const clientKeywords = ['CONTRATANTE', 'CLIENTE', 'TOMADOR']
+  // 1. Extração da CONTRATANTE (Cliente)
+  // O texto tem:
+  // "CONTRATANTE: \n SM TRANSPORTES LTDA, pessoa jurídica de direito privado, inscrita no CNPJ sob o nº 55.625.017/0001-26, com sede \n Rodovia Governador Mario Covas, s/n – Garagem – Km 173 – BR 101 Norte – Jacupemba – Aracruz – ES – CEP: \n 29.196-010., neste ato representado pelos seus representantes legais Sr MAXILENO TELLES BOZI..."
+  // Importante: no texto da página 1 há DEFINIÇÕES antes que contêm a palavra "contratante".
+  // Por isso, procuramos especificamente a seção isolada: "\nCONTRATANTE:\s*\n" ou "\bCONTRATANTE:\s*"
+  const contratanteMatch = text.match(
+    /(?:^|\n)\s*CONTRATANTE\s*:\s*([\s\S]*?)(?=(?:^|\n)\s*CONTRATADA\s*:|CLÁUSULA\s+PRIMEIRA|As\s+partes\s+acima)/i,
+  )
 
-  let contratanteBlock: string | null = null
-
-  for (const keyword of clientKeywords) {
-    if (contratanteBlock) break
-    const regex = new RegExp(
-      `\\b${keyword}\\b\\s*:?\\s*([\\s\\S]*?)(?=\\b(?:CONTRATADA|PRESTADORA|SERVICE\\s+LOGIC|SERVIÇO\\s+LOGIC|DO\\s+OBJETO|As\\s+partes\\s+acima|CLÁUSULA|CONSIDERANDO)\\b|$)`,
-      'i',
-    )
-    const match = text.match(regex)
-    if (match && match[1].trim().length > 10) {
-      contratanteBlock = match[1]
-    }
-  }
-
-  if (!contratanteBlock) {
-    const fallbackMatch = text.match(/\bCONTRATANTE\b:?\s*([\s\S]*?)(?:CONTRATADA|As partes acima|DO OBJETO)/i)
-    if (fallbackMatch) {
-      contratanteBlock = fallbackMatch[1]
-    }
-  }
+  let contratanteBlock = contratanteMatch ? contratanteMatch[1].trim() : ''
 
   if (contratanteBlock) {
-    const block = contratanteBlock.replace(/\n/g, ' ')
+    const lines = contratanteBlock
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0)
 
-    const nameMatch = block.match(/^\s*(.+?)(?:,|\bpessoa\b|\binscrita?\b|\bCNPJ\b|\bcom sede\b)/i)
-    if (nameMatch) {
-      let rawName = nameMatch[1].trim()
-      rawName = rawName.replace(/^[^a-zA-ZÀ-ÿ0-9]+/, '')
-      rawName = rawName.replace(/[^a-zA-ZÀ-ÿ0-9]+$/, '')
-      rawName = rawName.replace(/^"(.+)"$/, '$1')
-      if (!isProviderName(rawName)) {
-        nome = rawName.trim()
+    for (const line of lines) {
+      if (isProviderName(line)) continue
+      // Procura linha que contém a empresa
+      const nameMatch = line.match(/^([A-Z0-9À-ÿ\s.&-]+?)(?:,|\bpessoa\b|\binscrita?\b|\bCNPJ\b|\bcom\s+sede\b)/i)
+      if (nameMatch) {
+        let candidate = nameMatch[1].trim()
+        // Evita lixo
+        candidate = candidate.replace(/^[^a-zA-Z0-9]+/, '').replace(/[^a-zA-Z0-9]+$/, '')
+        if (candidate.length > 3 && !isProviderName(candidate)) {
+          nome = candidate
+          break
+        }
+      } else if (/LTDA|S\.?A\.?|ME|EPP|EIRELI/i.test(line)) {
+        let candidate = line.replace(/,.*$/, '').trim()
+        candidate = candidate.replace(/^[^a-zA-Z0-9]+/, '').replace(/[^a-zA-Z0-9]+$/, '')
+        if (!isProviderName(candidate)) {
+          nome = candidate
+          break
+        }
       }
     }
 
-    if (!nome) {
-      const altNameMatch = block.match(/([A-Z][A-ZÀ-ÿ0-9\s,.]+(?:LTDA|S\.?A\.?|ME|EPP|EIRELI))/i)
-      if (altNameMatch) {
-        const altName = altNameMatch[1].trim()
-        if (!isProviderName(altName)) nome = altName
-      }
-    }
-
-    const cnpjMatch = block.match(/(?:\bCNPJ[^\d]*?|)(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2})/i)
-    if (cnpjMatch) {
+    // CNPJ do CONTRATANTE
+    const cnpjMatch = contratanteBlock.match(/(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2})/)
+    if (cnpjMatch && !isProviderCnpj(cnpjMatch[1])) {
       cnpj = formatCnpjStrict(cnpjMatch[1])
     }
 
-    if (!cnpj) {
-      const unformattedCnpjMatch = block.match(/CNPJ[:\s]*(\d{14})/i)
-      if (unformattedCnpjMatch) {
-        cnpj = formatCnpjStrict(unformattedCnpjMatch[1])
+    // Endereço do CONTRATANTE: "com sede ..." até "neste ato"
+    const addrMatch = contratanteBlock.match(/com\s+sede\s+([\s\S]+?)(?=(?:,|\.)?\s*neste\s+ato\s+representad[oa]|\n\n)/i)
+    if (addrMatch) {
+      let rawAddr = addrMatch[1].replace(/\r?\n/g, ' ').replace(/\s+/g, ' ').trim()
+      rawAddr = rawAddr.replace(/[.,;]+$/, '').trim()
+      if (rawAddr.length > 5) {
+        endereco = rawAddr
       }
     }
 
-    const addrMatch = block.match(/sede (?:na|em)\s*(.+?)\s*(?:,.*?neste ato|\.\s*Neste ato)/i)
-    if (addrMatch) endereco = addrMatch[1].trim()
+    // Representante Legal do CONTRATANTE
+    const repMatch = contratanteBlock.match(/representantes?\s+legais?[,\s]*(?:Sra?\.?|Sr\(a\)\.?)?\s*([A-ZÀ-ÿ\s]+?)(?:,|\binscrito|\bportador)/i)
+    if (repMatch) {
+      const candidate = repMatch[1].replace(/\r?\n/g, ' ').replace(/\s+/g, ' ').trim()
+      if (candidate.length > 3 && !candidate.toUpperCase().includes('CONTRATADA')) {
+        repName = candidate
+      }
+    }
 
-    const repNameMatch = block.match(/representantes? legais?[,\s]*(?:Sra?\.?|Sr\(a\)\.?)?\s*(.+?)\s*,/i)
-    if (repNameMatch) repName = repNameMatch[1].trim()
+    const cpfMatch = contratanteBlock.match(/CPF[^\d]*?([\d.\-]{11,14})/)
+    if (cpfMatch) {
+      repCpf = cpfMatch[1].trim()
+    }
 
-    const repCpfMatch = block.match(/CPF.*?([\d.\-]{11,14})/)
-    if (repCpfMatch) repCpf = repCpfMatch[1]
-
-    const repRgMatch = block.match(/RG.*?([\d.\-A-Za-z]+)\s*(?:[.,]|$)/)
-    if (repRgMatch) repRg = repRgMatch[1]
+    const rgMatch = contratanteBlock.match(/RG[^\d]*?([\d.\-A-Za-z]+)\s*(?:[.,]|$)/)
+    if (rgMatch) {
+      repRg = rgMatch[1].trim()
+    }
   }
 
+  // Fallback para CNPJ da Matriz na tabela de empresas (cláusula 5.3) caso não tenha pego no cabeçalho
   if (!cnpj) {
-    for (const keyword of clientKeywords) {
-      if (cnpj) break
-      const regex = new RegExp(
-        `${keyword}[\\s\\S]{0,500}?(\\d{2}\\.?\\d{3}\\.?\\d{3}\\/?\\d{4}-?\\d{2})`,
-        'i',
-      )
-      const match = text.match(regex)
-      if (match) {
-        cnpj = formatCnpjStrict(match[1])
+    const matrizTableMatch = text.match(/Matriz\s+([A-ZÀ-ÿ0-9\s.,&-]+?)\s+(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})/i)
+    if (matrizTableMatch && !isProviderCnpj(matrizTableMatch[2])) {
+      cnpj = formatCnpjStrict(matrizTableMatch[2])
+      if (!nome) {
+        nome = matrizTableMatch[1].replace(/\r?\n/g, ' ').trim()
       }
     }
   }
 
-  if (!cnpj) {
-    const allCnpjs = [...text.matchAll(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/g)]
-    for (const cnpjMatch of allCnpjs) {
-      const start = Math.max(0, (cnpjMatch.index || 0) - 200)
-      const context = text.substring(start, (cnpjMatch.index || 0) + cnpjMatch[0].length + 50)
-      if (!isProviderName(context)) {
-        cnpj = cnpjMatch[0]
-        break
-      }
-    }
-    if (!cnpj && allCnpjs.length > 0) {
-      cnpj = allCnpjs[0][0]
-    }
-  }
-
+  // 2. Extração de Plano e Valores
+  // 2.1 Cláusula 5.1: Tabela de Franquias
+  // Ex: "TMS-50 TMS-100 ... TMS-5000+ \n ... \n Contratado \n x"
   let planoBase: string | null = null
-  const planLines = text.match(/(?:TMS-\d+(?:\+)?|MTS-\d+).*?R\$\s*[\d.,]+.*?R\$\s*[\d.,]+.*?X/gi)
-  if (planLines && planLines.length > 0) {
-    const matchedPlan = planLines[planLines.length - 1].match(/(TMS-\d+(?:\+)?|MTS-\d+)/i)
-    if (matchedPlan) planoBase = matchedPlan[1].toUpperCase()
-  }
 
-  if (!planoBase) {
-    const summaryPlanMatch = text.match(/Plano \((TMS-\d+(?:\+)?|MTS-\d+)\)/i)
-    if (summaryPlanMatch) {
-      planoBase = summaryPlanMatch[1].toUpperCase()
-    }
-  }
-
+  // Identificação no bloco 5.22: "Plano Valor Mensal ... TMS-WEB R$ 400,00"
   let valorMensalidade = 0
   let valorImplantacao = 0
 
-  const mensalMatch = text.match(/Total Mensal Inicial\s*R\$\s*([\d.,]+)/i)
-  if (mensalMatch) valorMensalidade = parseCurrency(mensalMatch[1])
+  const bloco522Match = text.match(/5\.22\)\s*Valor[\s\S]*?(?=CLÁUSULA\s+SEXTA|$)/i)
+  if (bloco522Match) {
+    const bText = bloco522Match[0]
 
-  const implMatch = text.match(/Total Visitas \/ Implantação\s*R\$\s*([\d.,]+)/i)
-  if (implMatch) valorImplantacao = parseCurrency(implMatch[1])
+    // Mensalidade TMS-WEB ou outro
+    const planLineMatch = bText.match(/(TMS-[A-Za-z0-9+]+|MTS-[A-Za-z0-9+]+)\s*R\$\s*([\d.,]+)/i)
+    if (planLineMatch) {
+      if (!planoBase) planoBase = planLineMatch[1].toUpperCase()
+      if (!valorMensalidade) valorMensalidade = parseCurrency(planLineMatch[2])
+    }
 
-  if (valorMensalidade === 0 && planoBase) {
-    const summaryPlanMatch = text.match(new RegExp(`Plano \\(${planoBase.replace('+', '\\+')}\\)\\s*R\\$\\s*([\\d.,]+)`, 'i'))
-    if (summaryPlanMatch) {
-      valorMensalidade = parseCurrency(summaryPlanMatch[1])
+    // Total mensal explícito no bloco: "Total: R$ 400,00"
+    const totalMensalMatch = bText.match(/Total:\s*R\$\s*([\d.,]+)/i)
+    if (totalMensalMatch) {
+      const v = parseCurrency(totalMensalMatch[1])
+      if (v > 0) valorMensalidade = v
+    }
+
+    // Implantação / treinamento
+    const implMatch = bText.match(/Implantação\/treinamento\s*R\$\s*([\d.,]+)/i)
+    if (implMatch) {
+      valorImplantacao = parseCurrency(implMatch[1])
     }
   }
 
-  const modulos: string[] = []
-  const lines = text.split('\n')
-  for (const line of lines) {
-    for (const [modName, modId] of Object.entries(MODULE_NAMES_MAP)) {
-      if (line.toLowerCase().includes(modName.toLowerCase()) && line.match(/\bX\b/i)) {
-        if (!modulos.includes(modId)) {
-          modulos.push(modId)
+  // Se o plano ainda não foi identificado, analisa a tabela da cláusula 5.1
+  if (!planoBase) {
+    const t51Match = text.match(/PLANOS\s*\*?[\s\S]*?(?=\(\*\)\s*Módulos\s+inclusos|5\.2\))/i)
+    if (t51Match) {
+      const tableText = t51Match[0]
+      const planColsMatch = tableText.match(/PLANOS\*?\s*([\s\S]*?)(?=\*\*|\n\n)/i)
+      const contratadoLineMatch = tableText.match(/Contratado\s*([\s\S]*?)$/i)
+      if (planColsMatch && contratadoLineMatch) {
+        const planNames = planColsMatch[1].trim().split(/\s+/).filter((p) => /TMS|MTS/i.test(p))
+        const marks = contratadoLineMatch[1].trim().split(/\s+/)
+        const xIndex = marks.findIndex((m) => m.toLowerCase() === 'x')
+        if (xIndex >= 0 && xIndex < planNames.length) {
+          planoBase = planNames[xIndex].toUpperCase()
         }
       }
     }
   }
-  if (planoBase) {
-    ['mod-admin', 'mod-basico', 'mod-carga', 'mod-comercial', 'mod-faturamento', 'mod-financeiro'].forEach(m => {
-      if (!modulos.includes(m)) modulos.push(m)
-    })
-  }
 
-  let dataAssinatura: string | null = null
-  const signatureMatches = [...text.matchAll(/Assinado como contratante em (\d{2}\/\d{2}\/\d{4})/gi)]
-  if (signatureMatches.length > 0) {
-    const lastMatch = signatureMatches[signatureMatches.length - 1][1]
-    const parts = lastMatch.split('/')
-    if (parts.length === 3) {
-      dataAssinatura = `${parts[2]}-${parts[1]}-${parts[0]}`
+  // Fallback geral de mensalidade se bloco 5.22 não preencheu
+  if (valorMensalidade === 0) {
+    const fallbackMensal = text.match(/mensalidade\s*pelo\s*direito[^\n]*?R\$\s*([\d.,]+)/i)
+    if (fallbackMensal) {
+      valorMensalidade = parseCurrency(fallbackMensal[1])
     }
   }
 
-  if (!dataAssinatura) {
-    // Procura formatos genéricos tipo "Assinado eletronicamente em DD/MM/AAAA" ou "Data: DD/MM/AAAA"
-    const genericDateMatch = text.match(/(?:assinado|assinatura|firmado)[^\d\n]{0,30}(\d{2}\/\d{2}\/\d{4})/i)
-    if (genericDateMatch) {
-      const parts = genericDateMatch[1].split('/')
-      if (parts.length === 3) {
-        dataAssinatura = `${parts[2]}-${parts[1]}-${parts[0]}`
-      }
-    }
-  }
+  // 3. Módulos Inclusos e Adicionais
+  // Modelo Service Logic (SL TMS-WEB):
+  // Tabela da Página 4:
+  // "Módulos inclusos Contratado Implantação ..."
+  // Administração X X 10
+  // Básico X X
+  // ...
+  // "Adicionais R$ / Mês"
+  // Fiscal R$ 00,00 X 4
+  // B.I. R$ 00,00 X 2
+  // ...
+  const modulosInclusosPadrao = [
+    'Administração',
+    'Básico',
+    'Carga',
+    'Comercial',
+    'Faturamento',
+    'Financeiro',
+  ]
 
-  // Extração de módulos com nomes canônicos e reconhecimento de módulos extras
   const modulosCanonicalNames: string[] = []
-  for (const line of lines) {
-    for (const [modKey, modDef] of Object.entries(MODULE_NAMES_MAP)) {
-      if (line.toLowerCase().includes(modKey.toLowerCase()) && line.match(/\bX\b/i)) {
-        if (!modulos.includes(modDef.id)) {
-          modulos.push(modDef.id)
-        }
-        if (!modulosCanonicalNames.includes(modDef.canonicalName)) {
-          modulosCanonicalNames.push(modDef.canonicalName)
-        }
-      }
-    }
+
+  // Normalização oficial para o catálogo Service Logic
+  const canonicalMap: Record<string, string> = {
+    'ADMINISTRAÇÃO': 'Administração',
+    'ADMINISTRACAO': 'Administração',
+    'BÁSICO': 'Básico',
+    'BASICO': 'Básico',
+    'CARGA': 'Carga',
+    'COMERCIAL': 'Comercial',
+    'FATURAMENTO': 'Faturamento',
+    'FINANCEIRO': 'Financeiro',
+    'FISCAL': 'Fiscal',
+    'B.I.': 'BI WEB',
+    'BI': 'BI WEB',
+    'BI WEB': 'BI WEB',
+    'POWER BI': 'BI WEB',
+    'EDI': 'EDI',
+    'CONTROLE DE VIAGEM': 'Controle de Viagem',
+    'CONTROLE DE VIAGENS': 'Controle de Viagem',
+    'FROTA': 'Frota (até 10 placas)',
+    'FROTA (ATÉ 10 PLACAS)': 'Frota (até 10 placas)',
+    'FROTA – ATÉ 20 PLACAS': 'Frota – Até 20 Placas',
+    'MEDIÇÃO': 'Medição',
+    'MEDICAO': 'Medição',
+    'FRACIONADO': 'Fracionado',
+    'TRANSPORTE (BLOCO/TCE/TCI)': 'Transporte (Bloco TCI/TCE)',
+    'TRANSPORTE (BLOCO TCI/TCE)': 'Transporte (Bloco TCI/TCE)',
+    'BLOCO TCI E TCE (TRANSPORTES)': 'Transporte (Bloco TCI/TCE)',
+    'FUNDO DE PROTEÇÃO': 'Fundo de proteção',
+    'FUNDO DE PROTECAO': 'Fundo de proteção',
+    'PATRIMÔNIO': 'Patrimônio',
+    'PATRIMONIO': 'Patrimônio',
+    'CALENDÁRIO': 'Calendário',
+    'CALENDARIO': 'Calendário',
+    'PAINEL DE INFORMAÇÕES': 'Painel de Informações',
+    'PAINEL DE INFORMACOES': 'Painel de Informações',
+    'DF-E': 'DF-e',
+    'DFE': 'DF-e',
+    'SL-TRIP': 'SL-Trip',
+    'SL TRIP': 'SL-Trip',
+    'SL-TRACK': 'SL-Track',
+    'SL TRACK': 'SL-Track',
+    'HOMOLOGAÇÃO BANCARIA': 'Homologação Bancaria',
+    'HOMOLOGAÇÃO BANCÁRIA': 'Homologação Bancaria',
+    'CIOT': 'CIOT',
+    'TORRE DE CONTROLE LOGÍSTICA': 'Torre de Controle Logística',
+    'TORRE DE CONTROLE': 'Torre de Controle Logística',
   }
 
-  const defaultBasicCanonical: Record<string, string> = {
-    'mod-admin': 'Administração',
-    'mod-basico': 'Básico',
-    'mod-carga': 'Carga',
-    'mod-comercial': 'Comercial',
-    'mod-faturamento': 'Faturamento',
-    'mod-financeiro': 'Financeiro',
-  }
-  if (planoBase) {
-    Object.entries(defaultBasicCanonical).forEach(([mId, mName]) => {
-      if (!modulos.includes(mId)) modulos.push(mId)
-      if (!modulosCanonicalNames.includes(mName)) modulosCanonicalNames.push(mName)
+  // Verifica explicitamente módulos na tabela da Cláusula 5.7 / Página 4
+  // No layout do pdf-parse, a tabela de adicionais aparece assim:
+  // "Fiscal \n R$ 00,00 \n X \n 4"
+  // "B.I. \n R$ 00,00 \n X \n 2"
+  // "EDI \n R$ 00,00 \n X \n 4"
+  // etc.
+  const adicionaisCandidates = [
+    'Fiscal',
+    'B.I.',
+    'EDI',
+    'Controle de Viagem',
+    'Frota',
+    'Medição',
+    'Fracionado',
+    'Transporte (Bloco/TCE/TCI)',
+    'Fundo de proteção',
+    'Patrimônio',
+    'Calendário',
+    'Painel de Informações',
+    'Df-e',
+    'SL-Trip',
+    'SL-Track',
+    'CIOT',
+  ]
+
+  // Se houver menção aos módulos inclusos nos planos (cláusula 5.1 ou tabela página 4), inclui os 6 básicos
+  if (
+    text.includes('Módulos inclusos nos Planos: Administração, Básico, Carga, Comercial, Faturamento, Financeiro') ||
+    text.includes('SL TMS-WEB') ||
+    planoBase
+  ) {
+    modulosInclusosPadrao.forEach((m) => {
+      if (!modulosCanonicalNames.includes(m)) {
+        modulosCanonicalNames.push(m)
+      }
     })
   }
 
-  // Extração de Filiais citadas no contrato
-  const filiais: Array<{ nome: string; cnpj: string; isenta?: boolean }> = []
-  const filialRegex = /Filial\s+(\d+|[A-Za-z0-9_-]+)?[^\n]*?([A-Z0-9À-ÿ\s.,&-]+?)\s*(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})/gi
-  const filialMatches = [...text.matchAll(filialRegex)]
-  for (const fm of filialMatches) {
-    const fCnpj = formatCnpjStrict(fm[3])
-    if (fCnpj !== cnpj && !isProviderName(fCnpj)) {
-      let fNome = fm[2].trim().replace(/^Filial\s*\d*\s*/i, '').replace(/[\s,;-]+$/, '')
-      if (!fNome || fNome.length < 3 || fNome.toLowerCase().includes('preencher')) {
-        fNome = `Filial (${fCnpj})`
-      }
-      if (!filiais.some((f) => f.cnpj === fCnpj)) {
-        filiais.push({
-          nome: fNome,
-          cnpj: fCnpj,
-          isenta: fm[0].toLowerCase().includes('isenta'),
-        })
-      }
-    }
-  }
-
-  // Se não achou pelo formato acima, procura por qualquer CNPJ que não seja o da matriz e não seja da prestadora
-  if (filiais.length === 0) {
-    const allCnpjs = [...text.matchAll(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/g)]
-    for (const cm of allCnpjs) {
-      const foundCnpj = cm[0]
-      if (foundCnpj !== cnpj && !isProviderName(foundCnpj)) {
-        const start = Math.max(0, (cm.index || 0) - 100)
-        const context = text.substring(start, (cm.index || 0) + 100)
-        if (context.toLowerCase().includes('filial') || context.toLowerCase().includes('coligada')) {
-          if (!filiais.some((f) => f.cnpj === foundCnpj)) {
-            filiais.push({
-              nome: `Filial (${foundCnpj})`,
-              cnpj: foundCnpj,
-              isenta: context.toLowerCase().includes('isenta'),
-            })
-          }
-        }
+  // Detecção de módulos adicionais marcados com "X" na coluna "Contratado" da tabela "Adicionais R$ / Mês"
+  // No contrato analisado da Service Logic (Página 4):
+  // Colunas da tabela:
+  // [Nome do Módulo] | [Contratado (com "X" se contratado)] | [R$ / Mês] | [Implantação: Remoto, Híbrido, Presencial] | [H / H]
+  //
+  // No texto do PDF extraído pelo pdf-parse:
+  // Para Adicionais:
+  // "Fiscal \n R$ 00,00 \n X \n 4"
+  // O "X" que aparece aqui está na coluna Implantação ("Remoto"), NÃO na coluna Contratado!
+  // Note que "Contratado" fica VAZIO antes de "R$ 00,00", e "X" vem logo após "R$ 00,00" (na coluna Remoto).
+  //
+  // Quando o módulo é CONTRATADO:
+  // O "X" aparece ANTES do valor "R$ / Mês", exatamente como na tabela de módulos inclusos:
+  // "Administração \n X \n X \n 10"  -> 1º X = Contratado, 2º X = Remoto, 10 = H/H!
+  // "Básico \n X \n X" -> 1º X = Contratado, 2º X = Remoto!
+  //
+  // Já nos adicionais não contratados:
+  // "Fiscal \n R$ 00,00 \n X \n 4" -> Não há "X" antes de "R$ 00,00"!
+  // Se fosse contratado, viria:
+  // "Fiscal \n X \n R$ ... \n X \n 4"
+  //
+  // Portanto:
+  // Só é considerado adicional CONTRATADO se houver a marca "X" entre o nome do módulo e o valor R$ / Mês:
+  // `${escaped}\\s*\\n?\\s*X\\s*\\n?\\s*R\\$\\s*[\\d.,]+`
+  for (const modName of adicionaisCandidates) {
+    const escaped = modName.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')
+    // Verifica se há "X" ANTES de "R$" (coluna Contratado)
+    const contratadoRegex = new RegExp(`${escaped}\\s*\\n?\\s*X\\s*\\n?\\s*R\\$\\s*[\\d.,]+`, 'i')
+    if (contratadoRegex.test(text)) {
+      const canonical = canonicalMap[modName.toUpperCase()] || modName
+      if (!modulosCanonicalNames.includes(canonical)) {
+        modulosCanonicalNames.push(canonical)
       }
     }
   }
 
-  // Extração de vencimento mensal e vigência se presentes
+  // 4. Vencimento Mensal
+  // Cláusula 5.9: "valor mensal com vencimento para todo dia 01 de cada mês"
   let vencimentoMensal: number | null = null
-  const vencimentoMatch = text.match(/(?:dia|vencimento|vencerá no dia)\s*(\d{1,2})\s*(?:de cada mês|do mês)/i)
-  if (vencimentoMatch) {
-    const dia = parseInt(vencimentoMatch[1], 10)
-    if (dia >= 1 && dia <= 31) {
-      vencimentoMensal = dia
+  const vencMatch = text.match(/vencimento\s+(?:para\s+)?(?:todo\s+)?dia\s*(\d{1,2})\s*de\s+cada\s+mês/i)
+  if (vencMatch) {
+    const d = parseInt(vencMatch[1], 10)
+    if (d >= 1 && d <= 31) vencimentoMensal = d
+  } else {
+    const fallbackVenc = text.match(/(?:todo\s+)?dia\s*(\d{1,2})\s*de\s+cada\s+mês/i)
+    if (fallbackVenc) {
+      const d = parseInt(fallbackVenc[1], 10)
+      if (d >= 1 && d <= 31) vencimentoMensal = d
     }
   }
 
+  // 5. Vigência do Contrato
+  // Cláusula 5.20: "Esse contrato tem a vigência de 12 meses"
   let vigencia: string | null = null
-  const vigenciaMatch = text.match(/(?:vigência|prazo de vigência)[^\.\n]{0,50}?(\d+\s*(?:meses|anos|dias|ano|mês|mes))/i)
+  const vigenciaMatch = text.match(/vigência\s+de\s*(\d+\s*meses|\d+\s*ano[s]?)/i)
   if (vigenciaMatch) {
     vigencia = vigenciaMatch[1].trim()
   }
 
-  // Contatos (e-mail, telefone)
+  // 6. Filiais Citadas (Tabela "Empresas Matriz / Filial")
+  // Exemplo:
+  // "Empresas \n Matriz \n SM TRANSPORTES LTDA 55.625.017/0001-26 \n Filial Obs..."
+  const filiais: Array<{ nome: string; cnpj: string; isenta?: boolean }> = []
+  const filialTableMatch = text.match(/Empresas[\s\S]*?Matriz[\s\S]*?(?=5\.4\)|CLÁUSULA\s+SEXTA)/i)
+  if (filialTableMatch) {
+    const filialSection = filialTableMatch[0]
+    // Procura por linhas "Filial ... [CNPJ]"
+    const filialLines = filialSection.matchAll(/Filial\s+([A-ZÀ-ÿ0-9\s.,&-]+?)\s*(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})/gi)
+    for (const fl of filialLines) {
+      const fCnpj = formatCnpjStrict(fl[2])
+      if (fCnpj !== cnpj && !isProviderCnpj(fCnpj)) {
+        let fNome = fl[1].trim()
+        if (!fNome || fNome.length < 3 || fNome.toLowerCase().includes('obs')) {
+          fNome = `Filial (${fCnpj})`
+        }
+        if (!filiais.some((f) => f.cnpj === fCnpj)) {
+          filiais.push({
+            nome: fNome,
+            cnpj: fCnpj,
+            isenta: fl[0].toLowerCase().includes('isenta'),
+          })
+        }
+      }
+    }
+  }
+
+  // 7. Data de Assinatura e E-mail / Contatos
+  // Relatório de Assinaturas (Docsales) no final do PDF:
+  // "MAXILENO TELLES BOZI \n Assinado como contratante em 06/03/2026 às 11:09. \n CPF: 114.054.557-48 \n ... \n E-mail: memservicosflorestais@outlook.com"
+  let dataAssinatura: string | null = null
   let email: string | null = null
-  const emailMatch = text.match(/\b([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})\b/)
-  if (emailMatch && !isProviderName(emailMatch[1]) && !emailMatch[1].toLowerCase().includes('servicelogic')) {
-    email = emailMatch[1].toLowerCase()
-  }
-
   let telefone: string | null = null
-  const telMatch = text.match(/(?:\btelefone|\bfone|\bcelular|\bcontato)[^\d\n]{0,20}(\(?\d{2}\)?\s*9?\d{4}[-\s]?\d{4})/i)
-  if (telMatch) {
-    telefone = telMatch[1].trim()
+
+  // Data de assinatura do CONTRATANTE
+  const dateContratanteMatch = text.match(/Assinado\s+como\s+contratante\s+em\s+(\d{2})\/(\d{2})\/(\d{4})/i)
+  if (dateContratanteMatch) {
+    const [, dd, mm, yyyy] = dateContratanteMatch
+    dataAssinatura = `${yyyy}-${mm}-${dd}`
+  } else {
+    // Fallback: qualquer data de assinatura no documento
+    const genericAssinaturaMatch = text.match(/em\s+(\d{2})\/(\d{2})\/(\d{4})\s+às\s+\d{2}:\d{2}/i)
+    if (genericAssinaturaMatch) {
+      const [, dd, mm, yyyy] = genericAssinaturaMatch
+      dataAssinatura = `${yyyy}-${mm}-${dd}`
+    }
   }
 
+  // E-mail do Contratante no Relatório de Assinaturas
+  const emailContratanteBlockMatch = text.match(/Assinado\s+como\s+contratante[\s\S]{0,300}?E-mail:\s*([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/i)
+  if (emailContratanteBlockMatch && !isProviderName(emailContratanteBlockMatch[1])) {
+    email = emailContratanteBlockMatch[1].toLowerCase().trim()
+  } else {
+    // Fallback geral de e-mail que não seja da Service Logic
+    const allEmails = [...text.matchAll(/\b([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})\b/g)]
+    for (const em of allEmails) {
+      const val = em[1].toLowerCase()
+      if (!val.includes('servicelogic') && !val.includes('docsales')) {
+        email = val
+        break
+      }
+    }
+  }
+
+  // Validação mínima de sanidade
   if (!cnpj && !nome && !planoBase && valorMensalidade === 0) {
     throw new Error(ERROR_MSG)
   }
 
   return {
-    nome: nome || '',
-    cnpj: cnpj || '',
-    endereco,
-    repName,
-    repCpf,
-    repRg,
-    email,
-    telefone,
+    nome: nome || 'Não identificado no contrato',
+    cnpj: cnpj || 'Não identificado no contrato',
+    endereco: endereco || 'Não identificado no contrato',
+    repName: repName || 'Não identificado no contrato',
+    repCpf: repCpf || 'Não identificado no contrato',
+    repRg: repRg || 'Não identificado no contrato',
+    email: email || 'Não identificado no contrato',
+    telefone: telefone || 'Não identificado no contrato',
+    planoBase: planoBase || 'Não identificado no contrato',
     valor_total: valorMensalidade,
     valor_mensalidade: valorMensalidade,
     valor_implantacao: valorImplantacao,
-    modulos,
-    modulos_nomes: modulosCanonicalNames,
-    planoBase,
-    data_assinatura: dataAssinatura,
     vencimento_mensal: vencimentoMensal,
-    vigencia,
+    data_assinatura: dataAssinatura,
+    vigencia: vigencia || 'Não identificado no contrato',
+    modulos: modulosCanonicalNames,
+    modulos_nomes: modulosCanonicalNames,
     filiais,
     detalhes: {
       valorPlano: valorMensalidade,
@@ -406,7 +487,9 @@ Deno.serve(async (req: Request) => {
     const formData = await req.formData()
     const file = formData.get('file') as File
     if (!file) throw new Error('Nenhum arquivo enviado.')
-    if (file.type !== 'application/pdf') throw new Error('Apenas arquivos PDF são aceitos.')
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      throw new Error('Apenas arquivos PDF são aceitos.')
+    }
 
     const arrayBuffer = await file.arrayBuffer()
     const buffer = new Uint8Array(arrayBuffer)
@@ -414,12 +497,14 @@ Deno.serve(async (req: Request) => {
     let extractedText = ''
     try {
       const data = await pdf(Buffer.from(buffer))
-      extractedText = data.text
+      extractedText = data.text || ''
     } catch {
       throw new Error('Falha ao extrair texto do PDF.')
     }
 
-    if (!extractedText || extractedText.trim().length < 50) throw new Error(ERROR_MSG)
+    if (!extractedText || extractedText.trim().length < 50) {
+      throw new Error(ERROR_MSG)
+    }
 
     const extractedData = extractData(extractedText)
 

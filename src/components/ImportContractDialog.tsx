@@ -174,6 +174,15 @@ export function ImportContractDialog({ open, onOpenChange, onSuccess }: ImportCo
       return 'Controle de Viagem'
     }
 
+    if (
+      lower.includes('transporte (bloco/tce/tci)') ||
+      lower.includes('transporte (bloco tci/tce)') ||
+      lower.includes('bloco/tce/tci') ||
+      lower.includes('bloco tci/tce')
+    ) {
+      return 'Transporte (Bloco TCI/TCE)'
+    }
+
     // Se estiver fora do catálogo, grava o nome do contrato exatamente como citado
     return trimmed
   }
