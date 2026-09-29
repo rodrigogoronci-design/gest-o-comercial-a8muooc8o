@@ -11,7 +11,7 @@ import logoUrl from '@/assets/logomarca-service-ea011.png'
  *
  * O conteúdo jurídico abaixo é intocável. Apenas a diagramação (CSS) foi
  * totalmente refeita do zero. Ver bloco de estilos em src/main.css
- * ("Contrato de Consultoria (Prysmian) — diagramação profissional").
+ * ("Contrato de Consultoria — diagramação profissional").
  */
 
 type ClauseProps = {
@@ -812,7 +812,7 @@ export function ConsultoriaContractDocument() {
         </section>
 
         {/* Rodapé visível apenas na tela (o rodapé do PDF vem de @page) */}
-        <div className="cc-screen-footer">Contrato de Consultoria — Prysmian × ServiceLogic</div>
+        <div className="cc-screen-footer">Service Logic</div>
       </div>
     </div>
   )

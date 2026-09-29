@@ -55,10 +55,7 @@ Deno.serve(async (req: Request) => {
     } = await callerClient.auth.getUser()
 
     if (callerError || !callerUser) {
-      return jsonResponse(
-        { error: 'Não autorizado: token inválido ou sessão expirada.' },
-        401,
-      )
+      return jsonResponse({ error: 'Não autorizado: token inválido ou sessão expirada.' }, 401)
     }
 
     // 2. Verificar se o chamador possui papel ADMINISTRADOR na tabela vc_perfis
@@ -117,10 +114,12 @@ Deno.serve(async (req: Request) => {
         : `Vc@${generateRandomPassword(8)}`
 
     // 6. Atualizar a senha via Admin API (sem alterar email ou outros metadados)
-    const { data: updatedUserData, error: updateErr } =
-      await adminClient.auth.admin.updateUserById(targetUserId, {
+    const { data: updatedUserData, error: updateErr } = await adminClient.auth.admin.updateUserById(
+      targetUserId,
+      {
         password: provisionalPassword,
-      })
+      },
+    )
 
     if (updateErr) {
       return jsonResponse(

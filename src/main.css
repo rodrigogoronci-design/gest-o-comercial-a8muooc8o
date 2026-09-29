@@ -104,7 +104,7 @@
 
     /* Canto inferior esquerdo: identificação do contrato */
     @bottom-left {
-      content: 'Contrato de Consultoria — Prysmian × ServiceLogic';
+      content: 'Service Logic';
       font-family: 'Times New Roman', 'Liberation Serif', Georgia, serif;
       font-size: 9pt;
       color: #94a3b8;
@@ -412,7 +412,7 @@
 }
 
 /* ============================================================
-   Contrato de Consultoria (Prysmian) — diagramação profissional
+   Contrato de Consultoria — diagramação profissional
    Layout totalmente reconstruído. Conteúdo jurídico intocado.
    Estilos válidos para tela e para impressão/PDF (Chrome/Edge).
    ============================================================ */
