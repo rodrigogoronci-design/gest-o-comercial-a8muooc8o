@@ -28,6 +28,7 @@ interface PlanItem {
 
 const FALLBACK_PLANS: PlanItem[] = [
   { id: 'none', codigo: 'ERP-NONE', descricao: 'Nenhum (Somente Módulos / Upsell)', preco: 0 },
+  { id: 'ponto-web', codigo: 'ERP-PONTO-WEB', descricao: 'Ponto Web', preco: 0 },
   { id: 'frota-20', codigo: 'FROTA_20', descricao: 'Frota – Até 20 Placas', preco: 320 },
   { id: 'erp-50', codigo: 'ERP-TMS-50', descricao: 'TMS-50', preco: 399 },
   { id: 'erp-100', codigo: 'ERP-TMS-100', descricao: 'TMS-100', preco: 657 },

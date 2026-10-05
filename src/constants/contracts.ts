@@ -9,6 +9,7 @@ export interface PlanItem {
 }
 
 export const PLANS: PlanItem[] = [
+  { id: 'ponto-web', name: 'Ponto Web', limit: 'Ponto Web', maxDocs: '-', price: 0.0 },
   { id: 'tms-30', name: 'TMS-30', limit: 'Até 30', maxDocs: '30', price: 250.0 },
   { id: 'tms-50', name: 'TMS-50', limit: 'Até 50', maxDocs: '50', price: 399.0 },
   { id: 'tms-100', name: 'TMS-100', limit: 'à 100', maxDocs: '100', price: 657.0 },
@@ -92,10 +93,6 @@ export const MODULES = [
   },
 ]
 
-export const PLAN_MODULE_MAP: Record<string, string[]> = {
-  'tms-30': ['mod-admin', 'mod-basico', 'mod-carga', 'mod-comercial'],
-}
-
 export const DEFAULT_BASIC_MODULE_IDS = [
   'mod-admin',
   'mod-basico',
@@ -104,6 +101,11 @@ export const DEFAULT_BASIC_MODULE_IDS = [
   'mod-faturamento',
   'mod-financeiro',
 ]
+
+export const PLAN_MODULE_MAP: Record<string, string[]> = {
+  'ponto-web': DEFAULT_BASIC_MODULE_IDS,
+  'tms-30': ['mod-admin', 'mod-basico', 'mod-carga', 'mod-comercial'],
+}
 
 export const PREDEFINED_TRAININGS = [
   { id: 'train-admin-basico-comercial', name: 'Administrativo, Básico e Comercial', price: 200.0 },

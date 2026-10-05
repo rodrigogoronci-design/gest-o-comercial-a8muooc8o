@@ -3,6 +3,8 @@ import { PLANS, PlanItem } from '@/constants/contracts'
 import { fetchPlanosErp, PlanoErp } from '@/services/planos'
 
 const CODE_TO_PLAN_ID: Record<string, string> = {
+  'ERP-PONTO-WEB': 'ponto-web',
+  'PONTO-WEB': 'ponto-web',
   FROTA_20: 'frota-20',
   'ERP-TMS-30': 'tms-30',
   'ERP-TMS-50': 'tms-50',

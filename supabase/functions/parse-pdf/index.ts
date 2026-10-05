@@ -172,12 +172,19 @@ export function extractData(rawText: string) {
   if (bloco522Match) {
     const bText = bloco522Match[0]
 
-    // Mensalidade TMS-WEB ou outro
+    // Mensalidade TMS-WEB, PONTO-WEB ou outro
     const planLineMatch = bText.match(
-      /(TMS-[A-Za-z0-9+]+|MTS-[A-Za-z0-9+]+|SL\s+TMS-[A-Za-z0-9+]+)\s*R\$\s*([\d.,]+)/i,
+      /(TMS-[A-Za-z0-9+]+|MTS-[A-Za-z0-9+]+|SL\s+TMS-[A-Za-z0-9+]+|PONTO\s*WEB|PONTO-WEB|PONTOWEB)\s*R\$\s*([\d.,]+)/i,
     )
     if (planLineMatch) {
-      if (!planoBase) planoBase = planLineMatch[1].toUpperCase()
+      if (!planoBase) {
+        const rawFound = planLineMatch[1].trim()
+        if (/PONTO\s*WEB|PONTO-WEB|PONTOWEB/i.test(rawFound)) {
+          planoBase = 'Ponto Web'
+        } else {
+          planoBase = rawFound.toUpperCase()
+        }
+      }
       if (!valorMensalidade) valorMensalidade = parseCurrency(planLineMatch[2])
     }
 
@@ -205,14 +212,30 @@ export function extractData(rawText: string) {
       const mensalidadeLineMatch = tableText.match(/Mensalidade\s*([\s\S]*?)(?=Doc\.|\n\n)/i)
 
       if (planColsMatch && contratadoLineMatch) {
-        const planNames = planColsMatch[1]
-          .trim()
-          .split(/\s+/)
-          .filter((p) => /TMS|MTS/i.test(p))
+        // Suporta nomes como "Ponto Web" ou planos com hífens (TMS-50, etc.)
+        const rawPlanHeader = planColsMatch[1].trim()
+        const tokens = rawPlanHeader.split(/\s+/)
+        const planNames: string[] = []
+        for (let i = 0; i < tokens.length; i++) {
+          if (/^ponto$/i.test(tokens[i]) && i + 1 < tokens.length && /^web$/i.test(tokens[i + 1])) {
+            planNames.push('Ponto Web')
+            i++
+          } else if (/TMS|MTS|PONTO/i.test(tokens[i])) {
+            if (/^ponto-?web$/i.test(tokens[i])) {
+              planNames.push('Ponto Web')
+            } else {
+              planNames.push(tokens[i])
+            }
+          }
+        }
+
         const marks = contratadoLineMatch[1].trim().split(/\s+/)
         const xIndex = marks.findIndex((m) => m.toLowerCase() === 'x')
         if (xIndex >= 0 && xIndex < planNames.length) {
-          if (!planoBase) planoBase = planNames[xIndex].toUpperCase()
+          if (!planoBase) {
+            const matchedName = planNames[xIndex]
+            planoBase = /ponto\s*web/i.test(matchedName) ? 'Ponto Web' : matchedName.toUpperCase()
+          }
           // Extrai o valor correspondente da linha de Mensalidade
           if (valorMensalidade === 0 && mensalidadeLineMatch) {
             const values = [...mensalidadeLineMatch[1].matchAll(/R\$\s*([\d.,]+)/gi)]
@@ -330,6 +353,11 @@ export function extractData(rawText: string) {
   ]
 
   // Se houver menção aos módulos inclusos nos planos (cláusula 5.1 ou tabela página 4), inclui os 6 básicos
+  // Normalização final de planoBase (ex: 'PONTO WEB' -> 'Ponto Web')
+  if (planoBase && /^(PONTO\s*WEB|PONTO-WEB|PONTOWEB)$/i.test(planoBase)) {
+    planoBase = 'Ponto Web'
+  }
+
   if (
     text.includes(
       'Módulos inclusos nos Planos: Administração, Básico, Carga, Comercial, Faturamento, Financeiro',

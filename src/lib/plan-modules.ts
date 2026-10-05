@@ -42,6 +42,8 @@ export function isModuleIncludedInPlan(moduleId: string, planId: string): boolea
  * Ex.: 'ERP-TMS-300' -> 'tms-300', 'ERP-MTS-1000' -> 'mts-1000'.
  */
 export const ERP_CODE_TO_PLAN_ID: Record<string, string> = {
+  'ERP-PONTO-WEB': 'ponto-web',
+  'PONTO-WEB': 'ponto-web',
   'ERP-TMS-30': 'tms-30',
   'ERP-TMS-50': 'tms-50',
   'ERP-TMS-100': 'tms-100',

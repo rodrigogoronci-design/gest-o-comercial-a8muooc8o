@@ -136,10 +136,17 @@ function extractData(rawText: string) {
     const bText = bloco522Match[0]
 
     const planLineMatch = bText.match(
-      /(TMS-[A-Za-z0-9+]+|MTS-[A-Za-z0-9+]+|SL\s+TMS-[A-Za-z0-9+]+)\s*R\$\s*([\d.,]+)/i,
+      /(TMS-[A-Za-z0-9+]+|MTS-[A-Za-z0-9+]+|SL\s+TMS-[A-Za-z0-9+]+|PONTO\s*WEB|PONTO-WEB|PONTOWEB)\s*R\$\s*([\d.,]+)/i,
     )
     if (planLineMatch) {
-      if (!planoBase) planoBase = planLineMatch[1].toUpperCase()
+      if (!planoBase) {
+        const rawFound = planLineMatch[1].trim()
+        if (/PONTO\s*WEB|PONTO-WEB|PONTOWEB/i.test(rawFound)) {
+          planoBase = 'Ponto Web'
+        } else {
+          planoBase = rawFound.toUpperCase()
+        }
+      }
       if (!valorMensalidade) valorMensalidade = parseCurrency(planLineMatch[2])
     }
 
@@ -164,14 +171,29 @@ function extractData(rawText: string) {
       const mensalidadeLineMatch = tableText.match(/Mensalidade\s*([\s\S]*?)(?=Doc\.|\n\n)/i)
 
       if (planColsMatch && contratadoLineMatch) {
-        const planNames = planColsMatch[1]
-          .trim()
-          .split(/\s+/)
-          .filter((p) => /TMS|MTS/i.test(p))
+        const rawPlanHeader = planColsMatch[1].trim()
+        const tokens = rawPlanHeader.split(/\s+/)
+        const planNames: string[] = []
+        for (let i = 0; i < tokens.length; i++) {
+          if (/^ponto$/i.test(tokens[i]) && i + 1 < tokens.length && /^web$/i.test(tokens[i + 1])) {
+            planNames.push('Ponto Web')
+            i++
+          } else if (/TMS|MTS|PONTO/i.test(tokens[i])) {
+            if (/^ponto-?web$/i.test(tokens[i])) {
+              planNames.push('Ponto Web')
+            } else {
+              planNames.push(tokens[i])
+            }
+          }
+        }
+
         const marks = contratadoLineMatch[1].trim().split(/\s+/)
         const xIndex = marks.findIndex((m) => m.toLowerCase() === 'x')
         if (xIndex >= 0 && xIndex < planNames.length) {
-          if (!planoBase) planoBase = planNames[xIndex].toUpperCase()
+          if (!planoBase) {
+            const matchedName = planNames[xIndex]
+            planoBase = /ponto\s*web/i.test(matchedName) ? 'Ponto Web' : matchedName.toUpperCase()
+          }
           if (valorMensalidade === 0 && mensalidadeLineMatch) {
             const values = [...mensalidadeLineMatch[1].matchAll(/R\$\s*([\d.,]+)/gi)]
             if (values[xIndex]) {
@@ -259,6 +281,10 @@ function extractData(rawText: string) {
     'SL-Track',
     'CIOT',
   ]
+
+  if (planoBase && /^(PONTO\s*WEB|PONTO-WEB|PONTOWEB)$/i.test(planoBase)) {
+    planoBase = 'Ponto Web'
+  }
 
   if (
     text.includes(
@@ -443,5 +469,54 @@ Assinado como contratante em 06/03/2026 às 11:09
     expect(res.modulos).toContain('BI WEB')
     expect(res.modulos).toContain('DF-e')
     expect(res.modulos).not.toContain('EDI')
+  })
+
+  it('extrai corretamente contrato com plano Ponto Web marcado com X na tabela da cláusula 5.1', () => {
+    const pontoWebContractText = `
+CONTRATANTE:
+TRANSPORTADORA EXEMPLO LTDA, pessoa jurídica de direito privado, inscrita no CNPJ sob o nº 12.345.678/0001-90, com sede
+Av. das Nações, 1000 - Centro - São Paulo - SP - CEP: 01000-000, neste ato representado pelo Sr JOAO SILVA, inscrito no CPF sob o nº 123.456.789-00
+CONTRATADA:
+CONTACTO SOLUÇÕES EM TECNOLOGIA - LTDA, pessoa jurídica de direito privado, inscrita no CNPJ sob o nº 27.751.577/0001-91
+
+5.1) A CONTRATANTE pagará uma mensalidade pelo direito de uso do software...
+PLANOS* Ponto Web TMS-30 TMS-50 TMS-100 TMS-200
+Contratado X
+Mensalidade R$ 350,00 R$ 250,00 R$ 399,00 R$ 657,00 R$ 757,00
+(*) Módulos inclusos nos Planos: Administração, Básico, Carga, Comercial, Faturamento, Financeiro.
+
+5.9) A CONTRATADA pagará pela licença de uso um valor mensal com vencimento para todo dia 10 de cada mês.
+5.20) Esse contrato tem a vigência de 12 meses.
+Assinado como contratante em 15/04/2026 às 14:00
+`
+    const res = extractData(pontoWebContractText)
+    expect(res.nome).toBe('TRANSPORTADORA EXEMPLO LTDA')
+    expect(res.cnpj).toBe('12.345.678/0001-90')
+    expect(res.cnpj).not.toBe('27.751.577/0001-91')
+    expect(res.planoBase).toBe('Ponto Web')
+    expect(res.valor_mensalidade).toBe(350)
+    expect(res.vencimento_mensal).toBe(10)
+    expect(res.data_assinatura).toBe('2026-04-15')
+    expect(res.modulos).toContain('Administração')
+    expect(res.modulos).toContain('Financeiro')
+  })
+
+  it('extrai corretamente plano Ponto Web a partir do bloco 5.22', () => {
+    const pontoWebBloco522Text = `
+CONTRATANTE:
+LOGISTICA BRASIL LTDA, inscrita no CNPJ sob o nº 98.765.432/0001-11, com sede Rua A, 100, neste ato representado pelo Sr CARLOS, CPF 999.888.777-66
+CONTRATADA:
+CONTACTO SOLUÇÕES EM TECNOLOGIA - LTDA, CNPJ 27.751.577/0001-91
+
+5.22) Valor Plano
+Plano Valor Mensal
+PONTO WEB R$ 500,00
+Total: R$ 500,00
+Implantação/treinamento R$ 1.000,00
+`
+    const res = extractData(pontoWebBloco522Text)
+    expect(res.planoBase).toBe('Ponto Web')
+    expect(res.valor_mensalidade).toBe(500)
+    expect(res.valor_implantacao).toBe(1000)
   })
 })
