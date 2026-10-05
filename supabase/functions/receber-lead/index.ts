@@ -22,13 +22,16 @@ Deno.serve(async (req: Request) => {
   }
 
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ ok: false, error: 'Método não permitido. Use POST.' }), {
-      status: 405,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json',
+    return new Response(
+      JSON.stringify({ ok: false, error: 'Método não permitido. Use POST.' }),
+      {
+        status: 405,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
       },
-    })
+    )
   }
 
   try {
@@ -52,13 +55,16 @@ Deno.serve(async (req: Request) => {
     const empresa = typeof body.empresa === 'string' ? body.empresa.trim() : ''
     const whatsapp = typeof body.whatsapp === 'string' ? body.whatsapp.trim() : ''
     const email = typeof body.email === 'string' ? body.email.trim() : ''
-    const cidadeEstado = typeof body.cidade_estado === 'string' ? body.cidade_estado.trim() : ''
+    const cidadeEstado =
+      typeof body.cidade_estado === 'string' ? body.cidade_estado.trim() : ''
     const quantidadeVeiculosRaw =
       body.quantidade_veiculos !== undefined && body.quantidade_veiculos !== null
         ? String(body.quantidade_veiculos).trim()
         : ''
-    const dificuldade = typeof body.dificuldade === 'string' ? body.dificuldade.trim() : ''
-    const mensagem = typeof body.mensagem === 'string' ? body.mensagem.trim() : ''
+    const dificuldade =
+      typeof body.dificuldade === 'string' ? body.dificuldade.trim() : ''
+    const mensagem =
+      typeof body.mensagem === 'string' ? body.mensagem.trim() : ''
 
     // Validação dos campos obrigatórios
     const missing: string[] = []
@@ -109,11 +115,12 @@ Deno.serve(async (req: Request) => {
     // Formato exato: "≈25 veículos · Dificuldade: Pneus · Mensagem: ..."
     const qtdClean = quantidadeVeiculosRaw.replace(/\s+/g, '')
     const isDigitsOnly = /^\d+$/.test(qtdClean)
-    const veiculosTexto = isDigitsOnly
-      ? `≈${qtdClean} veículos`
-      : `${quantidadeVeiculosRaw} veículos`
+    const veiculosTexto = isDigitsOnly ? `≈${qtdClean} veículos` : `${quantidadeVeiculosRaw} veículos`
 
-    const obsParts: string[] = [veiculosTexto, `Dificuldade: ${dificuldade}`]
+    const obsParts: string[] = [
+      veiculosTexto,
+      `Dificuldade: ${dificuldade}`,
+    ]
 
     if (mensagem) {
       obsParts.push(`Mensagem: ${mensagem}`)
@@ -126,9 +133,7 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error(
-        'Configuração do servidor incompleta: SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY ausente.',
-      )
+      console.error('Configuração do servidor incompleta: SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY ausente.')
       return new Response(
         JSON.stringify({ ok: false, error: 'Erro de configuração do servidor.' }),
         {
@@ -184,13 +189,16 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json',
+    return new Response(
+      JSON.stringify({ ok: true }),
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
       },
-    })
+    )
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err)
     console.error('Exceção inesperada em receber-lead:', errorMsg)
