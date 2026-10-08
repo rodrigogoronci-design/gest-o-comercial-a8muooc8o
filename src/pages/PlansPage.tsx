@@ -1,4 +1,13 @@
-import { CheckCircle2, ShieldCheck, Settings, Package, Layers } from 'lucide-react'
+import { useState } from 'react'
+import {
+  CheckCircle2,
+  ShieldCheck,
+  Settings,
+  Package,
+  Layers,
+  FileSpreadsheet,
+  Loader2,
+} from 'lucide-react'
 import {
   Card,
   CardContent,
@@ -11,9 +20,32 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/formatters'
 import { PLANS, MODULES, DFE_TIERS } from '@/constants/contracts'
+import { exportCatalogoToExcel } from '@/services/export-catalogo-excel'
+import { toast } from '@/hooks/use-toast'
 
 export default function PlansPage() {
+  const [isExporting, setIsExporting] = useState(false)
   const additionalModules = MODULES.filter((mod) => !mod.isBasic)
+
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting(true)
+      await exportCatalogoToExcel()
+      toast({
+        title: 'Catálogo exportado com sucesso',
+        description: 'A planilha XLSX com as abas Planos e Módulos foi gerada.',
+      })
+    } catch (err: any) {
+      console.error('Erro ao exportar catálogo para Excel:', err)
+      toast({
+        title: 'Falha na exportação',
+        description: err?.message || 'Não foi possível gerar a planilha do catálogo.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   return (
     <div className="space-y-8 animate-fade-in pb-10">
@@ -24,10 +56,24 @@ export default function PlansPage() {
             Configure as ofertas e valores base do sistema comercial.
           </p>
         </div>
-        <Button variant="outline" className="gap-2 self-start md:self-auto">
-          <Settings className="h-4 w-4" />
-          Gerenciar Regras
-        </Button>
+        <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
+          <Button
+            onClick={handleExportExcel}
+            disabled={isExporting}
+            className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+          >
+            {isExporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="h-4 w-4" />
+            )}
+            Exportar catálogo (Excel)
+          </Button>
+          <Button variant="outline" className="gap-2">
+            <Settings className="h-4 w-4" />
+            Gerenciar Regras
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-6">

@@ -11,13 +11,14 @@ export interface PlanoErp {
   franquia_quantidade: number | null
   valor_excedente: number | null
   tipo: string | null
+  ativo?: boolean | null
+  modulos?: any
 }
 
 export async function fetchPlanosErp(): Promise<PlanoErp[]> {
-  const { data, error } = await supabase
-    .from('planos_saude')
+  const { data, error } = await (supabase.from('planos_saude') as any)
     .select(
-      'id, codigo, descricao, valor_titular, valor_dependente, com_coparticipacao, padrao, franquia_quantidade, valor_excedente, tipo',
+      'id, codigo, descricao, valor_titular, valor_dependente, com_coparticipacao, padrao, franquia_quantidade, valor_excedente, tipo, ativo, modulos',
     )
     .or('codigo.like.FROTA_%,codigo.like.ERP-%,codigo.like.MOD-%')
     .order('valor_titular', { ascending: true })
@@ -27,10 +28,9 @@ export async function fetchPlanosErp(): Promise<PlanoErp[]> {
 }
 
 export async function fetchPlanoByCodigo(codigo: string): Promise<PlanoErp | null> {
-  const { data, error } = await supabase
-    .from('planos_saude')
+  const { data, error } = await (supabase.from('planos_saude') as any)
     .select(
-      'id, codigo, descricao, valor_titular, valor_dependente, com_coparticipacao, padrao, franquia_quantidade, valor_excedente, tipo',
+      'id, codigo, descricao, valor_titular, valor_dependente, com_coparticipacao, padrao, franquia_quantidade, valor_excedente, tipo, ativo, modulos',
     )
     .eq('codigo', codigo)
     .maybeSingle()
@@ -44,10 +44,9 @@ export async function fetchFrotaPlan(): Promise<PlanoErp | null> {
 }
 
 export async function fetchModulosAdicionais(): Promise<PlanoErp[]> {
-  const { data, error } = await supabase
-    .from('planos_saude')
+  const { data, error } = await (supabase.from('planos_saude') as any)
     .select(
-      'id, codigo, descricao, valor_titular, valor_dependente, com_coparticipacao, padrao, franquia_quantidade, valor_excedente, tipo',
+      'id, codigo, descricao, valor_titular, valor_dependente, com_coparticipacao, padrao, franquia_quantidade, valor_excedente, tipo, ativo, modulos',
     )
     .eq('tipo', 'modulo')
     .order('descricao', { ascending: true })
