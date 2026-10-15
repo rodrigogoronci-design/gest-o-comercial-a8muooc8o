@@ -136,7 +136,12 @@ Deno.serve(async (req: Request) => {
           if (orphan) {
             authUser = orphan
           } else {
-            authUser = await createAuthUserSafely(supabase, payload.email, payload.password, payload.name)
+            authUser = await createAuthUserSafely(
+              supabase,
+              payload.email,
+              payload.password,
+              payload.name,
+            )
             if (!authUser) return emailInUseResponse()
           }
         }
@@ -155,7 +160,10 @@ Deno.serve(async (req: Request) => {
         app_source: 'controle-de-beneficios',
         departamento: payload.departamento || null,
         avatar_url: payload.avatar_url || null,
-        recebe_transporte: payload.recebe_transporte === false || payload.recebe_transporte === 'false' ? false : true,
+        recebe_transporte:
+          payload.recebe_transporte === false || payload.recebe_transporte === 'false'
+            ? false
+            : true,
         cpf: payload.cpf || null,
         rg: payload.rg || null,
         data_nascimento: payload.data_nascimento || null,
@@ -177,7 +185,11 @@ Deno.serve(async (req: Request) => {
         throw dbErr
       }
 
-      return jsonResponse({ success: true, id: colabId, linked: !!(payload.sendInvite || payload.systemAccess !== false) })
+      return jsonResponse({
+        success: true,
+        id: colabId,
+        linked: !!(payload.sendInvite || payload.systemAccess !== false),
+      })
     }
 
     if (action === 'resend_invite') {
@@ -234,7 +246,8 @@ Deno.serve(async (req: Request) => {
           conflict: true,
           type: 'orphaned_auth',
           record: { id: orphan.id, email: orphan.email },
-          message: 'Existe uma conta de autenticação órfã (sem vínculo a colaborador) com este e-mail. O sistema pode vinculá-la automaticamente ao criar o colaborador.',
+          message:
+            'Existe uma conta de autenticação órfã (sem vínculo a colaborador) com este e-mail. O sistema pode vinculá-la automaticamente ao criar o colaborador.',
           canAutoResolve: true,
         })
       }
@@ -277,12 +290,18 @@ Deno.serve(async (req: Request) => {
           }
           if (password) updateData.password = password
 
-          const { error: authErr } = await supabase.auth.admin.updateUserById(authUserId, updateData)
+          const { error: authErr } = await supabase.auth.admin.updateUserById(
+            authUserId,
+            updateData,
+          )
           if (authErr) {
             if (isEmailConflict(authErr)) {
               const orphan = await findOrphanedAuthUser(supabase, email)
               if (orphan) {
-                await supabase.from('colaboradores').update({ user_id: orphan.id }).eq('id', colabId)
+                await supabase
+                  .from('colaboradores')
+                  .update({ user_id: orphan.id })
+                  .eq('id', colabId)
               } else {
                 return emailInUseResponse()
               }
@@ -306,7 +325,8 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      const receivesTransport = recebe_transporte === false || recebe_transporte === 'false' ? false : true
+      const receivesTransport =
+        recebe_transporte === false || recebe_transporte === 'false' ? false : true
 
       const updateDataDb: any = {
         nome: name,
@@ -319,18 +339,24 @@ Deno.serve(async (req: Request) => {
       if (payload.avatar_url !== undefined) updateDataDb.avatar_url = payload.avatar_url
       if (payload.cpf !== undefined) updateDataDb.cpf = payload.cpf
       if (payload.rg !== undefined) updateDataDb.rg = payload.rg
-      if (payload.data_nascimento !== undefined) updateDataDb.data_nascimento = payload.data_nascimento
+      if (payload.data_nascimento !== undefined)
+        updateDataDb.data_nascimento = payload.data_nascimento
       if (payload.endereco !== undefined) updateDataDb.endereco = payload.endereco
       if (payload.telefone !== undefined) updateDataDb.telefone = payload.telefone
       if (payload.cargo !== undefined) updateDataDb.cargo = payload.cargo
       if (payload.data_admissao !== undefined) updateDataDb.data_admissao = payload.data_admissao
-      if (payload.salario !== undefined) updateDataDb.salario = payload.salario ? parseFloat(payload.salario) : null
+      if (payload.salario !== undefined)
+        updateDataDb.salario = payload.salario ? parseFloat(payload.salario) : null
       if (payload.tipo_contrato !== undefined) updateDataDb.tipo_contrato = payload.tipo_contrato
-      if (payload.codigo_funcionario !== undefined) updateDataDb.codigo_funcionario = payload.codigo_funcionario
+      if (payload.codigo_funcionario !== undefined)
+        updateDataDb.codigo_funcionario = payload.codigo_funcionario
       if (payload.chave_pix !== undefined) updateDataDb.chave_pix = payload.chave_pix
       if (payload.tipo_chave_pix !== undefined) updateDataDb.tipo_chave_pix = payload.tipo_chave_pix
 
-      const { error: dbErr } = await supabase.from('colaboradores').update(updateDataDb).eq('id', colabId)
+      const { error: dbErr } = await supabase
+        .from('colaboradores')
+        .update(updateDataDb)
+        .eq('id', colabId)
       if (dbErr) throw dbErr
 
       if (!receivesTransport) {

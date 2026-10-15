@@ -11,6 +11,7 @@ import {
   Edit,
   Trash2,
   FileText,
+  FileSpreadsheet,
   Upload,
   Loader2,
   Calendar,
@@ -138,6 +139,7 @@ import { SectionNav, type SectionNavItem } from '@/components/section-nav'
 import { CollapsibleSection } from '@/components/collapsible-section'
 import { ClientReunioesTab } from '@/components/ClientReunioesTab'
 import { ImportContractDialog } from '@/components/ImportContractDialog'
+import { ImportLoteMensalidadesDialog } from '@/components/ImportLoteMensalidadesDialog'
 
 // Cliente com contrato específico de Consultoria de Estruturação Operacional e Regulatória
 const CONSULTORIA_CONTRACT_CLIENT_ID = '6f86db2c-4b22-4fcc-86c0-62817173a11c'
@@ -808,6 +810,7 @@ export default function ClientsPage() {
 
   const [isImporting, setIsImporting] = useState(false)
   const [isImportContractOpen, setIsImportContractOpen] = useState(false)
+  const [isImportLoteMensalidadesOpen, setIsImportLoteMensalidadesOpen] = useState(false)
   const [isLoadingCnpj, setIsLoadingCnpj] = useState(false)
   const [isUploadingDocs, setIsUploadingDocs] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -3588,6 +3591,15 @@ Obrigada.`)
             Importar Contrato
           </Button>
 
+          <Button
+            variant="outline"
+            onClick={() => setIsImportLoteMensalidadesOpen(true)}
+            className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+          >
+            <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-600" />
+            Importar atualização de mensalidades
+          </Button>
+
           <Button onClick={handleOpenAdd} className="bg-indigo-600 hover:bg-indigo-700">
             <Plus className="mr-2 h-4 w-4" />
             Novo Cliente
@@ -3612,6 +3624,15 @@ Obrigada.`)
         onSuccess={async (clientId) => {
           await loadClientes()
           navigate(`/clientes/${clientId}`)
+        }}
+      />
+
+      {/* Diálogo de Atualização em Lote de Mensalidades */}
+      <ImportLoteMensalidadesDialog
+        open={isImportLoteMensalidadesOpen}
+        onOpenChange={setIsImportLoteMensalidadesOpen}
+        onSuccess={async () => {
+          await loadClientes()
         }}
       />
 
