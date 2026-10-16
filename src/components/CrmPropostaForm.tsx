@@ -13,7 +13,10 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { formatCNPJ } from '@/lib/formatters'
+import { formatCNPJ, formatCurrency } from '@/lib/formatters'
+import { calculateSla } from '@/lib/sla-calculations'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import { UpsellModuleSelector, type UpsellModule } from './UpsellModuleSelector'
 
 const filialSchema = z.object({
@@ -34,6 +37,11 @@ export const propostaFormSchema = z.object({
   filiais_detalhes: z.array(filialSchema).default([]),
   aos_cuidados_de: z.string().optional(),
   itens: z.any().optional(),
+  // SLA Diferenciado
+  sla_ativo: z.boolean().default(false),
+  percentual_sla: z.number().min(0).default(0),
+  valor_sla: z.number().min(0).default(0),
+  descricao_sla: z.string().optional().default(''),
 })
 
 export type PropostaFormValues = z.infer<typeof propostaFormSchema>
@@ -69,7 +77,23 @@ export function CrmPropostaForm({
       filiais_detalhes: initialData?.filiais_detalhes || [],
       aos_cuidados_de: initialData?.aos_cuidados_de || '',
       itens: initialData?.itens || [],
+      sla_ativo: initialData?.sla_ativo || false,
+      percentual_sla: initialData?.percentual_sla || 0,
+      valor_sla: initialData?.valor_sla || 0,
+      descricao_sla: initialData?.descricao_sla || '',
     },
+  })
+
+  // Controle de SLA Diferenciado
+  const slaAtivoWatch = form.watch('sla_ativo')
+  const percentualSlaWatch = form.watch('percentual_sla')
+  const tipoCobrancaWatch = form.watch('tipo_cobranca')
+  const tipoDescontoWatch = form.watch('tipo_desconto')
+  const descontoMensalidadeWatch = form.watch('desconto_mensalidade')
+
+  // Base de cálculo recorrente pura para o SLA no CRM
+  const [baseMensalRecorrente, setBaseMensalRecorrente] = useState<number>(() => {
+    return initialData?.valor_mensalidade || currentMonthlyFee || 0
   })
 
   const { fields, append, remove } = useFieldArray({
@@ -92,10 +116,21 @@ export function CrmPropostaForm({
       form.setValue('itens', selected)
       if (currentMonthlyFee != null) {
         const additional = selected.reduce((sum, m) => sum + m.valor, 0)
-        form.setValue('valor_mensalidade', currentMonthlyFee + additional)
+        setBaseMensalRecorrente(currentMonthlyFee + additional)
       }
     }
   }, [selectedModuleIds, availableModules, currentMonthlyFee])
+
+  // Recalcular valor adicional de SLA e total mensal
+  const slaCalc = calculateSla({
+    subtotalRecorrente: baseMensalRecorrente,
+    percentualSla: percentualSlaWatch || 0,
+    slaAtivo: Boolean(slaAtivoWatch),
+  })
+
+  useEffect(() => {
+    form.setValue('valor_sla', slaCalc.valorSla)
+  }, [slaCalc.valorSla, form])
 
   return (
     <Form {...form}>
@@ -138,19 +173,23 @@ export function CrmPropostaForm({
               </FormItem>
             )}
           />
-          {form.watch('tipo_cobranca') === 'mensal' ? (
+          {tipoCobrancaWatch === 'mensal' ? (
             <FormField
               control={form.control}
               name="valor_mensalidade"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valor Mensalidade (R$)</FormLabel>
+                  <FormLabel>Subtotal Mensalidade (R$)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       step="0.01"
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      value={baseMensalRecorrente}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 0
+                        setBaseMensalRecorrente(val)
+                        field.onChange(val)
+                      }}
                       readOnly={!!availableModules?.length}
                       className={availableModules?.length ? 'bg-slate-50 cursor-not-allowed' : ''}
                     />
@@ -218,6 +257,164 @@ export function CrmPropostaForm({
               />
             </div>
             <FormMessage />
+          </div>
+        </div>
+
+        {/* Seção SLA Diferenciado no formulário CRM */}
+        <div className="border border-indigo-100 bg-indigo-50/40 p-4 rounded-lg space-y-3">
+          <div className="flex items-center justify-between">
+            <FormLabel className="text-sm font-bold text-indigo-900 flex items-center gap-2">
+              <span className="w-2 h-4 bg-indigo-600 rounded-full" />
+              SLA Diferenciado
+            </FormLabel>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="crm-sla-ativo"
+                checked={slaAtivoWatch}
+                onCheckedChange={(c) => {
+                  const ativo = Boolean(c)
+                  form.setValue('sla_ativo', ativo)
+                  if (!ativo) {
+                    form.setValue('percentual_sla', 0)
+                    form.setValue('valor_sla', 0)
+                    form.setValue('descricao_sla', '')
+                  }
+                }}
+              />
+              <Label
+                htmlFor="crm-sla-ativo"
+                className="text-xs cursor-pointer font-medium text-slate-700"
+              >
+                Ativar SLA Diferenciado
+              </Label>
+            </div>
+          </div>
+
+          {slaAtivoWatch && (
+            <div className="space-y-4 pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="percentual_sla"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-semibold text-slate-700">
+                        Percentual de acréscimo (%)
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0,00"
+                          value={field.value || ''}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          className="bg-white border-slate-300"
+                        />
+                      </FormControl>
+                      <span className="text-[11px] text-slate-500">
+                        Incide sobre subtotal recorrente ({formatCurrency(baseMensalRecorrente)})
+                      </span>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-700">
+                    Valor adicional do SLA (R$)
+                  </Label>
+                  <Input
+                    type="text"
+                    readOnly
+                    disabled
+                    value={formatCurrency(slaCalc.valorSla)}
+                    className="bg-slate-100 font-bold text-indigo-700 cursor-not-allowed border-slate-300"
+                  />
+                  <span className="text-[11px] text-slate-500">Calculado automaticamente</span>
+                </div>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="descricao_sla"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-semibold text-slate-700">
+                      Descrição do SLA
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Descreva as condições específicas negociadas do SLA diferenciado..."
+                        {...field}
+                        className="bg-white border-slate-300"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          )}
+
+          {/* Resumo Financeiro no rodapé da seção */}
+          <div className="mt-3 pt-3 border-t border-indigo-100 text-xs space-y-1 text-slate-700">
+            <div className="flex justify-between">
+              <span>Subtotal mensal dos produtos e serviços:</span>
+              <span className="font-semibold">{formatCurrency(baseMensalRecorrente)}</span>
+            </div>
+            {descontoMensalidadeWatch > 0 && (
+              <div className="flex justify-between text-emerald-600">
+                <span>
+                  Desconto (
+                  {tipoDescontoWatch === 'percentual'
+                    ? `${descontoMensalidadeWatch}%`
+                    : formatCurrency(descontoMensalidadeWatch)}
+                  ):
+                </span>
+                <span className="font-semibold">
+                  -{' '}
+                  {formatCurrency(
+                    tipoDescontoWatch === 'percentual'
+                      ? (baseMensalRecorrente * descontoMensalidadeWatch) / 100
+                      : descontoMensalidadeWatch,
+                  )}
+                </span>
+              </div>
+            )}
+            {slaAtivoWatch && (
+              <>
+                <div className="flex justify-between text-indigo-700">
+                  <span>SLA diferenciado — percentual aplicado:</span>
+                  <span className="font-semibold">
+                    {(percentualSlaWatch || 0).toLocaleString('pt-BR', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                    %
+                  </span>
+                </div>
+                <div className="flex justify-between text-indigo-700">
+                  <span>Valor adicional mensal do SLA:</span>
+                  <span className="font-semibold">+ {formatCurrency(slaCalc.valorSla)}</span>
+                </div>
+              </>
+            )}
+            <div className="flex justify-between pt-2 border-t border-indigo-200 font-bold text-indigo-900 text-sm">
+              <span>{slaAtivoWatch ? 'Total mensal final com SLA:' : 'Total mensal final:'}</span>
+              <span>
+                {formatCurrency(
+                  Math.max(
+                    0,
+                    baseMensalRecorrente -
+                      (tipoDescontoWatch === 'percentual'
+                        ? (baseMensalRecorrente * (descontoMensalidadeWatch || 0)) / 100
+                        : descontoMensalidadeWatch || 0) +
+                      (slaAtivoWatch ? slaCalc.valorSla : 0),
+                  ),
+                )}
+              </span>
+            </div>
           </div>
         </div>
 

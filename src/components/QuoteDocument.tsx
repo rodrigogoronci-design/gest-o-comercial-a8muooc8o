@@ -1,4 +1,5 @@
 import { formatCurrency } from '@/lib/formatters'
+import { calculateSla } from '@/lib/sla-calculations'
 import logoUrlAsset from '@/assets/logomarca-service-ea011.png'
 
 export interface QuoteDocumentProps {
@@ -134,12 +135,14 @@ export function QuoteDocument(props: QuoteDocumentProps) {
   const planBaseContribution = showBasePlan && !isUpsell ? effectivePlanPrice : 0
   const totalRecorrenteBase =
     recurrentItems.reduce((acc, curr) => acc + (curr.price || 0), 0) + planBaseContribution
-  const calculatedSlaValor =
-    slaAtivo && percentualSla > 0
-      ? valorSla > 0
-        ? valorSla
-        : Math.round(((totalRecorrenteBase * percentualSla) / 100 + Number.EPSILON) * 100) / 100
-      : 0
+
+  const slaResult = calculateSla({
+    subtotalRecorrente: totalRecorrenteBase,
+    percentualSla,
+    slaAtivo,
+  })
+  const calculatedSlaValor = valorSla > 0 ? valorSla : slaResult.valorSla
+
   const discountAmount =
     discountType === 'valor' ? discountValue : (totalRecorrenteBase * discountValue) / 100
   const totalRecorrenteFinal = Math.max(

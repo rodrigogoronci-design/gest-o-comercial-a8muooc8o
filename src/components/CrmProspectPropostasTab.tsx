@@ -232,7 +232,11 @@ export function CrmProspectPropostasTab({
         data_proposta: new Date().toISOString().split('T')[0],
         status_negociacao: 'Gerada',
         documento_url,
-      })
+        sla_ativo: values.sla_ativo,
+        percentual_sla: values.sla_ativo ? values.percentual_sla : 0,
+        valor_sla: values.sla_ativo ? values.valor_sla : 0,
+        descricao_sla: values.sla_ativo ? values.descricao_sla : '',
+      } as any)
 
       if (error) throw error
 
@@ -401,6 +405,52 @@ export function CrmProspectPropostasTab({
             </div>
           )}
 
+          {selectedProposta.sla_ativo && (
+            <div className="col-span-2 border-t border-slate-200 pt-3 mt-1 bg-indigo-50/50 p-3 rounded-lg border border-indigo-100">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-indigo-900 text-xs uppercase tracking-wider font-bold flex items-center gap-1.5">
+                  <span className="w-2 h-3 bg-indigo-600 rounded-full" />
+                  SLA Diferenciado Ativo
+                </span>
+                <span className="text-xs font-bold text-indigo-700">
+                  {selectedProposta.percentual_sla
+                    ? Number(selectedProposta.percentual_sla).toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
+                    : '0,00'}
+                  %
+                </span>
+              </div>
+              <div className="text-xs text-slate-700 flex justify-between items-center mt-1">
+                <span>Valor adicional mensal do SLA:</span>
+                <span className="font-semibold text-indigo-700">
+                  +
+                  {selectedProposta.valor_sla?.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  }) || 'R$ 0,00'}
+                </span>
+              </div>
+              {selectedProposta.descricao_sla && (
+                <p className="text-xs text-slate-600 mt-2 pt-2 border-t border-indigo-100 italic">
+                  "{selectedProposta.descricao_sla}"
+                </p>
+              )}
+              <div className="flex justify-between items-center mt-2 pt-2 border-t border-indigo-200 font-bold text-slate-900 text-xs">
+                <span>Total mensal final com SLA:</span>
+                <span className="text-sm text-indigo-900">
+                  {(
+                    (selectedProposta.valor_mensalidade || 0) + (selectedProposta.valor_sla || 0)
+                  ).toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  })}
+                </span>
+              </div>
+            </div>
+          )}
+
           {selectedProposta.quantidade_filiais > 0 && (
             <div className="col-span-2 border-t border-slate-200 pt-3 mt-1">
               <div className="flex justify-between items-center mb-2">
@@ -489,11 +539,18 @@ export function CrmProspectPropostasTab({
                     <div className="text-xs text-slate-500 flex items-center gap-2">
                       <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-medium">
                         Mensal:{' '}
-                        {p.valor_mensalidade?.toLocaleString('pt-BR', {
+                        {(
+                          (p.valor_mensalidade || 0) + (p.sla_ativo ? p.valor_sla || 0 : 0)
+                        ).toLocaleString('pt-BR', {
                           style: 'currency',
                           currency: 'BRL',
                         })}
                       </span>
+                      {p.sla_ativo && (
+                        <span className="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded text-[10px] font-bold border border-indigo-200">
+                          SLA +{p.percentual_sla}%
+                        </span>
+                      )}
                       <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-medium">
                         Implantação:{' '}
                         {p.valor_implantacao?.toLocaleString('pt-BR', {

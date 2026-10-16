@@ -400,8 +400,11 @@ export default function ContractGeneratorPage() {
     if (diagVisits.length > 0) setDiagnosticVisits(diagVisits)
 
     // Carregar dados de SLA
-    setSlaAtivo(Boolean(prop.sla_ativo))
-    setPercentualSla(prop.percentual_sla != null ? parseFloat(prop.percentual_sla) : 0)
+    const propSlaAtivo = Boolean(prop.sla_ativo)
+    const propPercentualSla =
+      prop.percentual_sla != null ? parseFloat(String(prop.percentual_sla)) || 0 : 0
+    setSlaAtivo(propSlaAtivo)
+    setPercentualSla(propPercentualSla)
     setDescricaoSla(prop.descricao_sla || '')
   }
 
@@ -1855,7 +1858,7 @@ export default function ContractGeneratorPage() {
               percentual_sla: slaAtivo ? percentualSla : 0,
               valor_sla: slaAtivo ? valorAdicionalSla : 0,
               descricao_sla: slaAtivo ? descricaoSla : '',
-            })
+            } as any)
             .eq('id', loadedProposalId)
         }
 
@@ -1941,7 +1944,7 @@ export default function ContractGeneratorPage() {
               percentual_sla: slaAtivo ? percentualSla : 0,
               valor_sla: slaAtivo ? valorAdicionalSla : 0,
               descricao_sla: slaAtivo ? descricaoSla : '',
-            })
+            } as any)
             .eq('id', loadedProposalId)
         }
 
