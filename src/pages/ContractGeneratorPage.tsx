@@ -29,6 +29,7 @@ import { createCliente, updateCliente } from '@/services/clientes'
 import { createHistorico } from '@/services/historico_contratos'
 import { supabase } from '@/lib/supabase/client'
 import { QuoteDocument } from '@/components/QuoteDocument'
+import { calculateSla } from '@/lib/sla-calculations'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -126,6 +127,11 @@ export default function ContractGeneratorPage() {
   const [moduleGracePeriods, setModuleGracePeriods] = useState<Record<string, number>>({})
   const [prazosConcedidos, setPrazosConcedidos] = useState('')
 
+  // SLA Diferenciado
+  const [slaAtivo, setSlaAtivo] = useState(false)
+  const [percentualSla, setPercentualSla] = useState<number>(0)
+  const [descricaoSla, setDescricaoSla] = useState('')
+
   const [customModulePrices, setCustomModulePrices] = useState<Record<string, number | ''>>({})
   const [isExtractingCompany, setIsExtractingCompany] = useState(false)
 
@@ -214,7 +220,7 @@ export default function ContractGeneratorPage() {
           id, data_proposta, valor_mensalidade, valor_implantacao, itens,
           desconto_mensalidade, tipo_desconto, isencao_periodo, prazos_concedidos,
           is_gratuito, quantidade_filiais, filiais_detalhes, aos_cuidados_de,
-          parcelas_implantacao, cliente_id,
+          parcelas_implantacao, cliente_id, sla_ativo, percentual_sla, valor_sla, descricao_sla,
           crm_prospects ( id, empresa, contato_nome, cnpj, endereco ),
           clientes ( id, nome, rep_nome, cnpj, endereco, modulos, valor_total, plano_id )
         `)
@@ -392,6 +398,11 @@ export default function ContractGeneratorPage() {
     setIsTreinamentoGratuito(prop.is_gratuito || false)
     setIncludeDiagnosticVisit(includeDiag)
     if (diagVisits.length > 0) setDiagnosticVisits(diagVisits)
+
+    // Carregar dados de SLA
+    setSlaAtivo(Boolean(prop.sla_ativo))
+    setPercentualSla(prop.percentual_sla != null ? parseFloat(prop.percentual_sla) : 0)
+    setDescricaoSla(prop.descricao_sla || '')
   }
 
   const planData = useMemo(() => {
@@ -478,7 +489,21 @@ export default function ContractGeneratorPage() {
       ? (subtotalMensalidadeStandard * validDescontoMensalidade) / 100
       : validDescontoMensalidade
 
-  const calculatedTotalValue = Math.max(0, subtotalMensalidade - calculatedDiscount)
+  // Cálculo de SLA Diferenciado
+  const slaCalc = useMemo(() => {
+    return calculateSla({
+      subtotalRecorrente: subtotalMensalidade,
+      percentualSla,
+      slaAtivo,
+    })
+  }, [subtotalMensalidade, percentualSla, slaAtivo])
+
+  const valorAdicionalSla = slaCalc.valorSla
+
+  const calculatedTotalValue = Math.max(
+    0,
+    subtotalMensalidade - calculatedDiscount + valorAdicionalSla,
+  )
   const [manualMensalidadeValue, setManualMensalidadeValue] = useState<string>('')
   const [isMensalidadeManual, setIsMensalidadeManual] = useState(false)
 
@@ -493,7 +518,20 @@ export default function ContractGeneratorPage() {
       ? parseFloat(manualMensalidadeValue) || 0
       : calculatedTotalValue
 
-  const totalValueStandard = Math.max(0, subtotalMensalidadeStandard - calculatedDiscountStandard)
+  const slaCalcStandard = useMemo(() => {
+    return calculateSla({
+      subtotalRecorrente: subtotalMensalidadeStandard,
+      percentualSla,
+      slaAtivo,
+    })
+  }, [subtotalMensalidadeStandard, percentualSla, slaAtivo])
+
+  const totalValueStandard = Math.max(
+    0,
+    subtotalMensalidadeStandard -
+      calculatedDiscountStandard +
+      (slaAtivo ? slaCalcStandard.valorSla : 0),
+  )
 
   const totalBranchesCount = (cobrarPorFilial ? filiaisVinculadas.length : 0) + additionalBranches
   const finalFiliaisDetalhes = [...(cobrarPorFilial ? filiaisVinculadas : []), ...filiais].filter(
@@ -924,6 +962,10 @@ export default function ContractGeneratorPage() {
     discountType: tipoDesconto,
     items: quoteItems,
     logoUrl,
+    slaAtivo,
+    percentualSla,
+    valorSla: valorAdicionalSla,
+    descricaoSla,
   }
 
   const fetchCnpjData = async (cnpjValue: string) => {
@@ -1470,6 +1512,10 @@ export default function ContractGeneratorPage() {
             cobrar_filiais: cobrarPorFilial,
             prazos_concedidos: prazosConcedidos,
             parcelas_implantacao: parcelasImplantacao,
+            sla_ativo: slaAtivo,
+            percentual_sla: slaAtivo ? percentualSla : 0,
+            valor_sla: slaAtivo ? valorAdicionalSla : 0,
+            descricao_sla: slaAtivo ? descricaoSla : '',
           } as any)
           .select()
           .single()
@@ -1545,6 +1591,10 @@ export default function ContractGeneratorPage() {
             cobrar_filiais: cobrarPorFilial,
             prazos_concedidos: prazosConcedidos,
             parcelas_implantacao: parcelasImplantacao,
+            sla_ativo: slaAtivo,
+            percentual_sla: slaAtivo ? percentualSla : 0,
+            valor_sla: slaAtivo ? valorAdicionalSla : 0,
+            descricao_sla: slaAtivo ? descricaoSla : '',
           } as any)
           .select()
           .single()
@@ -1801,6 +1851,10 @@ export default function ContractGeneratorPage() {
               tipo_desconto: tipoDesconto,
               isencao_periodo: isencaoPeriodo,
               parcelas_implantacao: parcelasImplantacao,
+              sla_ativo: slaAtivo,
+              percentual_sla: slaAtivo ? percentualSla : 0,
+              valor_sla: slaAtivo ? valorAdicionalSla : 0,
+              descricao_sla: slaAtivo ? descricaoSla : '',
             })
             .eq('id', loadedProposalId)
         }
@@ -1883,6 +1937,10 @@ export default function ContractGeneratorPage() {
               tipo_desconto: tipoDesconto,
               isencao_periodo: isencaoPeriodo,
               parcelas_implantacao: parcelasImplantacao,
+              sla_ativo: slaAtivo,
+              percentual_sla: slaAtivo ? percentualSla : 0,
+              valor_sla: slaAtivo ? valorAdicionalSla : 0,
+              descricao_sla: slaAtivo ? descricaoSla : '',
             })
             .eq('id', loadedProposalId)
         }
@@ -2937,6 +2995,92 @@ export default function ContractGeneratorPage() {
                     </div>
                   </div>
 
+                  {/* Seção SLA Diferenciado (Aba Gerar Contrato) */}
+                  <div className="space-y-3 mt-4 pt-4 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-bold text-indigo-900 flex items-center gap-2">
+                        <span className="w-2 h-4 bg-indigo-600 rounded-full" />
+                        SLA Diferenciado
+                      </Label>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="sla-ativo-gerar"
+                          checked={slaAtivo}
+                          onCheckedChange={(c) => {
+                            const ativo = Boolean(c)
+                            setSlaAtivo(ativo)
+                            if (!ativo) {
+                              setPercentualSla(0)
+                              setDescricaoSla('')
+                            }
+                          }}
+                        />
+                        <Label
+                          htmlFor="sla-ativo-gerar"
+                          className="text-xs cursor-pointer font-medium text-slate-700"
+                        >
+                          Ativar SLA Diferenciado
+                        </Label>
+                      </div>
+                    </div>
+
+                    {slaAtivo && (
+                      <div className="space-y-4 bg-indigo-50/50 border border-indigo-100 p-3 rounded-lg">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-slate-700">
+                              Percentual de acréscimo (%)
+                            </Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="0,00"
+                              value={percentualSla || ''}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value) || 0
+                                setPercentualSla(val)
+                              }}
+                              className="bg-white border-slate-300"
+                            />
+                            <span className="text-[11px] text-slate-500">
+                              Incide sobre subtotal recorrente (
+                              {formatCurrency(subtotalMensalidade)})
+                            </span>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-slate-700">
+                              Valor adicional do SLA (R$)
+                            </Label>
+                            <Input
+                              type="text"
+                              readOnly
+                              disabled
+                              value={formatCurrency(valorAdicionalSla)}
+                              className="bg-slate-100 font-bold text-indigo-700 cursor-not-allowed border-slate-300"
+                            />
+                            <span className="text-[11px] text-slate-500">
+                              Calculado automaticamente
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-slate-700">
+                            Descrição do SLA
+                          </Label>
+                          <Input
+                            placeholder="Descreva as condições específicas negociadas do SLA diferenciado..."
+                            value={descricaoSla}
+                            onChange={(e) => setDescricaoSla(e.target.value)}
+                            className="bg-white border-slate-300"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="space-y-3 mt-4">
                     <Label className="text-sm font-bold">Valor Total da Mensalidade (R$)</Label>
                     <div className="flex gap-3 items-center flex-wrap">
@@ -2969,6 +3113,92 @@ export default function ContractGeneratorPage() {
                         </Button>
                       )}
                     </div>
+                  </div>
+
+                  {/* Seção SLA Diferenciado (Aba Gerar Cotação) */}
+                  <div className="space-y-3 mt-4 pt-4 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-bold text-indigo-900 flex items-center gap-2">
+                        <span className="w-2 h-4 bg-indigo-600 rounded-full" />
+                        SLA Diferenciado
+                      </Label>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="sla-ativo-quote"
+                          checked={slaAtivo}
+                          onCheckedChange={(c) => {
+                            const ativo = Boolean(c)
+                            setSlaAtivo(ativo)
+                            if (!ativo) {
+                              setPercentualSla(0)
+                              setDescricaoSla('')
+                            }
+                          }}
+                        />
+                        <Label
+                          htmlFor="sla-ativo-quote"
+                          className="text-xs cursor-pointer font-medium text-slate-700"
+                        >
+                          Ativar SLA Diferenciado
+                        </Label>
+                      </div>
+                    </div>
+
+                    {slaAtivo && (
+                      <div className="space-y-4 bg-indigo-50/50 border border-indigo-100 p-3 rounded-lg">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-slate-700">
+                              Percentual de acréscimo (%)
+                            </Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="0,00"
+                              value={percentualSla || ''}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value) || 0
+                                setPercentualSla(val)
+                              }}
+                              className="bg-white border-slate-300"
+                            />
+                            <span className="text-[11px] text-slate-500">
+                              Incide sobre subtotal recorrente (
+                              {formatCurrency(subtotalMensalidade)})
+                            </span>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-slate-700">
+                              Valor adicional do SLA (R$)
+                            </Label>
+                            <Input
+                              type="text"
+                              readOnly
+                              disabled
+                              value={formatCurrency(valorAdicionalSla)}
+                              className="bg-slate-100 font-bold text-indigo-700 cursor-not-allowed border-slate-300"
+                            />
+                            <span className="text-[11px] text-slate-500">
+                              Calculado automaticamente
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-slate-700">
+                            Descrição do SLA
+                          </Label>
+                          <Input
+                            placeholder="Descreva as condições específicas negociadas do SLA diferenciado..."
+                            value={descricaoSla}
+                            onChange={(e) => setDescricaoSla(e.target.value)}
+                            className="bg-white border-slate-300"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-3 mt-4">

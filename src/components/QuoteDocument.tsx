@@ -23,6 +23,11 @@ export interface QuoteDocumentProps {
   selectedModulesData?: any[]
   trainings?: any[]
   prazosConcedidos?: string
+  // SLA Diferenciado
+  slaAtivo?: boolean
+  percentualSla?: number
+  valorSla?: number
+  descricaoSla?: string
 }
 
 const SUB_FEATURES: Record<string, string[]> = {
@@ -76,6 +81,10 @@ export function QuoteDocument(props: QuoteDocumentProps) {
     selectedModulesData = [],
     trainings = [],
     prazosConcedidos = '',
+    slaAtivo = false,
+    percentualSla = 0,
+    valorSla = 0,
+    descricaoSla = '',
   } = props
 
   const isTms30 = /^tms[\s-]?30$/i.test(planName || '')
@@ -125,9 +134,18 @@ export function QuoteDocument(props: QuoteDocumentProps) {
   const planBaseContribution = showBasePlan && !isUpsell ? effectivePlanPrice : 0
   const totalRecorrenteBase =
     recurrentItems.reduce((acc, curr) => acc + (curr.price || 0), 0) + planBaseContribution
+  const calculatedSlaValor =
+    slaAtivo && percentualSla > 0
+      ? valorSla > 0
+        ? valorSla
+        : Math.round(((totalRecorrenteBase * percentualSla) / 100 + Number.EPSILON) * 100) / 100
+      : 0
   const discountAmount =
     discountType === 'valor' ? discountValue : (totalRecorrenteBase * discountValue) / 100
-  const totalRecorrenteFinal = Math.max(0, totalRecorrenteBase - discountAmount)
+  const totalRecorrenteFinal = Math.max(
+    0,
+    totalRecorrenteBase - discountAmount + (slaAtivo ? calculatedSlaValor : 0),
+  )
   const totalOneTime = oneTimeItems.reduce(
     (acc, curr) => acc + (curr.isFree ? 0 : curr.price || 0),
     0,
@@ -386,6 +404,37 @@ export function QuoteDocument(props: QuoteDocumentProps) {
         </div>
       </div>
 
+      {slaAtivo && (
+        <div className="mb-6 print:mb-2">
+          <h3 className="font-bold text-sm text-[#1e3a8a] mb-3 flex items-center gap-2 print:mb-1">
+            <div className="w-2 h-4 bg-orange-500 rounded-full" />
+            SLA Diferenciado
+          </h3>
+          <div className="bg-slate-50 border border-slate-200 p-3 rounded-md space-y-2">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-slate-700 font-semibold">
+                Acréscimo de SLA:{' '}
+                <span className="font-bold text-indigo-700">
+                  {percentualSla.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                  %
+                </span>
+              </span>
+              <span className="text-xs font-bold text-slate-800">
+                + {formatCurrency(calculatedSlaValor)} / mês
+              </span>
+            </div>
+            {descricaoSla && (
+              <p className="text-xs text-slate-700 text-justify border-t border-slate-200 pt-2 mt-2">
+                <strong>Condições específicas negociadas:</strong> {descricaoSla}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       {prazosConcedidos && (
         <div className="mb-6 print:mb-2">
           <h3 className="font-bold text-sm text-[#1e3a8a] mb-3 flex items-center gap-2 print:mb-1">
@@ -405,7 +454,7 @@ export function QuoteDocument(props: QuoteDocumentProps) {
               TOTAL RECORRENTE
             </h4>
             <div className="flex justify-between items-center mb-1 text-xs">
-              <span className="text-slate-600">Subtotal ({cycleLabel})</span>
+              <span className="text-slate-600">Subtotal mensal dos produtos e serviços</span>
               <span className="font-semibold">{formatCurrency(totalRecorrenteBase)}</span>
             </div>
             {discountAmount > 0 && (
@@ -414,9 +463,29 @@ export function QuoteDocument(props: QuoteDocumentProps) {
                 <span className="font-semibold">- {formatCurrency(discountAmount)}</span>
               </div>
             )}
+            {slaAtivo && (
+              <>
+                <div className="flex justify-between items-center mb-1 text-xs text-indigo-700">
+                  <span>SLA diferenciado — percentual aplicado</span>
+                  <span className="font-semibold">
+                    {percentualSla.toLocaleString('pt-BR', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                    %
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mb-1 text-xs text-indigo-700">
+                  <span>Valor adicional mensal do SLA</span>
+                  <span className="font-semibold">+ {formatCurrency(calculatedSlaValor)}</span>
+                </div>
+              </>
+            )}
           </div>
           <div className="flex justify-between items-center mt-4 pt-3 border-t border-slate-200">
-            <span className="font-bold text-[#1e3a8a]">Total {cycleLabel} Final</span>
+            <span className="font-bold text-[#1e3a8a]">
+              {slaAtivo ? 'Total mensal final com SLA' : `Total ${cycleLabel} Final`}
+            </span>
             <span className="font-bold text-lg text-[#1e3a8a]">
               {formatCurrency(totalRecorrenteFinal)}
             </span>
