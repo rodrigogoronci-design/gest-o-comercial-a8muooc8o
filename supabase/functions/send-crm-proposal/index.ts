@@ -5,8 +5,7 @@ import { Buffer } from 'node:buffer'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
 }
 
 Deno.serve(async (req: Request) => {
@@ -16,16 +15,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     const body = await req.json().catch(() => ({}))
-    const {
-      to,
-      companyName,
-      contactName,
-      senderName,
-      proposalId,
-      proposalUrl: fallbackUrl,
-      subject: customSubject,
-      message: customMessage,
-    } = body
+    const { to, companyName, contactName, senderName, proposalId, proposalUrl: fallbackUrl, subject: customSubject, message: customMessage } = body
 
     if (!to) throw new Error('E-mail do destinatário não informado.')
 
@@ -35,27 +25,25 @@ Deno.serve(async (req: Request) => {
       const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
       const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
       const reqAuthHeader = req.headers.get('Authorization')
-
+      
       const supabase = createClient(supabaseUrl, supabaseKey, {
-        global: { headers: reqAuthHeader ? { Authorization: reqAuthHeader } : {} },
+        global: { headers: reqAuthHeader ? { Authorization: reqAuthHeader } : {} }
       })
-
+      
       const { data: proposal } = await supabase
         .from('crm_propostas')
         .select('documento_url')
         .eq('id', proposalId)
         .single()
-
+      
       if (proposal?.documento_url) {
         actualProposalUrl = proposal.documento_url
       }
     }
 
     const subject = customSubject || `Proposta Comercial – ${companyName}`
-
-    let emailBody =
-      customMessage ||
-      `Olá, ${contactName}
+    
+    let emailBody = customMessage || `Olá, ${contactName}
 
 Conforme nossa conversa, encaminho em anexo a proposta comercial da Service Logic, elaborada de acordo com as necessidades apresentadas pela ${companyName}
 
@@ -81,7 +69,7 @@ ${senderName || 'Comercial'}`
         const safeName = companyName.replace(/[^a-z0-9]/gi, '_')
         attachments.push({
           filename: `Proposta_${safeName}.pdf`,
-          content: content,
+          content: content
         })
       } else {
         console.error('Failed to fetch proposal document:', fileRes.statusText)
@@ -104,7 +92,7 @@ ${senderName || 'Comercial'}`
           to: [to],
           subject: subject,
           html: `<div style="font-family: sans-serif; color: #333; line-height: 1.6;"><p>${emailBody.replace(/\n/g, '<br/>')}</p></div>`,
-          attachments: attachments.length > 0 ? attachments : undefined,
+          attachments: attachments.length > 0 ? attachments : undefined
         }),
       })
 
@@ -117,7 +105,7 @@ ${senderName || 'Comercial'}`
         to,
         subject,
         body: emailBody,
-        attachmentsCount: attachments.length,
+        attachmentsCount: attachments.length
       })
     }
 
