@@ -376,16 +376,11 @@ export function ContractDocument({
           <div className="space-y-3 mt-4 p-2 -mx-2 rounded-lg transition-colors duration-500">
             <p>5.4) A CONTRATANTE poderá cadastrar no sistema Usuários ilimitados.</p>
             <p>
-              5.5) Para Adesão ao plano SL-TMS WEB, será cobrado uma taxa única no valor de R$
-              165,00 (cento e sessenta e cinco reais) que deverá ser pago em 5 dias corridos após
-              assinatura do contrato.
-            </p>
-            <p>
-              5.6) A CONTRATANTE pagará um valor por cada módulo adicional que for incluído ao seu
+              5.5) A CONTRATANTE pagará um valor por cada módulo adicional que for incluído ao seu
               plano.
             </p>
             <p>
-              5.7) Para a Implantação / Treinamento será cobrado o valor referente aos módulos
+              5.6) Para a Implantação / Treinamento será cobrado o valor referente aos módulos
               contratados conforme assinalado com "X" na tabela abaixo:
             </p>
           </div>
@@ -559,7 +554,7 @@ export function ContractDocument({
           </div>
           <div className="space-y-3 mt-4">
             <p>
-              5.8) Caso a CONTRATANTE opte por contratar o módulo FROTA, já estará incluso nesta
+              5.7) Caso a CONTRATANTE opte por contratar o módulo FROTA, já estará incluso nesta
               contratação a franquia de 10 (dez) placas. Placas adicionais serão cobradas um valor
               unitário
               {additionalPlates > 0
@@ -568,54 +563,54 @@ export function ContractDocument({
               .
             </p>
             <p>
-              5.9) O valor da Licença de Uso será composto pelo somatório dos valores do plano
+              5.8) O valor da Licença de Uso será composto pelo somatório dos valores do plano
               contratado, o valor dos módulos contratados a parte, o total de placas adicionais e
               documentos excedentes.
             </p>
             <p>
-              5.10) Para apuração da quantidade dos Documentos Eletrônicos emitidos, placas de
+              5.9) Para apuração da quantidade dos Documentos Eletrônicos emitidos, placas de
               veículos no sistema e n° de filiais, será utilizado uma data de corte compreendendo o
               dia 01 do mês corrente até o último dia do mês corrente.
             </p>
             <p>
-              5.11) Os pagamentos serão realizados mediante quitação de boleto bancário enviado
+              5.10) Os pagamentos serão realizados mediante quitação de boleto bancário enviado
               antecipadamente para o endereço de e-mail fornecido pela CONTRATANTE.
             </p>
             <p>
-              5.12) A CONTRATANTE deverá informar antes da data de vencimento, a alteração do
+              5.11) A CONTRATANTE deverá informar antes da data de vencimento, a alteração do
               endereço de e-mail, como também, comunicar o não recebimento do boleto bancário, e
               solicitar segunda via para pagamento, antes da data do vencimento.
             </p>
             <p>
-              5.13) O presente contrato será reajustado de forma a preservar o equilíbrio econômico
+              5.12) O presente contrato será reajustado de forma a preservar o equilíbrio econômico
               financeiro de suas condições, sempre por meio de duas formas: o Reajuste de Preços ou
               a Recomposição de Preços.
             </p>
             <p>
-              5.14) O Reajuste de Preço é um procedimento automático, aplicado ao valor mensal pago
+              5.13) O Reajuste de Preço é um procedimento automático, aplicado ao valor mensal pago
               a CONTRATADA, em decorrência da variação do IPCA (Índice Nacional de Preços ao
               Consumidor Amplo) calculado pelo Instituto Brasileiro de Geografia e Estatística
               (IBGE) referente aos 12 (doze) meses praticados no contrato.
             </p>
             <p>
-              5.15) A Recomposição de Preços é o procedimento destinado a avaliar a ocorrência de
+              5.14) A Recomposição de Preços é o procedimento destinado a avaliar a ocorrência de
               eventos que afetam a equação econômico financeira do presente contrato e promove
               adequação das cláusulas contratuais aos parâmetros necessários para recompor o
               equilíbrio original.
             </p>
             <p>
-              5.16) Fica convencionado, que em caso de inadimplência do pagamento, ao valor do
+              5.15) Fica convencionado, que em caso de inadimplência do pagamento, ao valor do
               principal, incidirão multa de 2% (dois por cento), e juros de mora de 1% (um por
               cento) ao mês, a teor do art. 406 do Código Civil, e art. 52, parágrafo 2º do Código
               de Defesa do Consumidor.
             </p>
             <p>
-              5.17) A mensalidade da CONTRATANTE não sofrerá interrupções, adiamentos ou suspensão,
+              5.16) A mensalidade da CONTRATANTE não sofrerá interrupções, adiamentos ou suspensão,
               durante o prazo de vigência do presente contrato, independentemente do uso ou não do
               software devidamente implantado e em operação.
             </p>
             <p>
-              5.18) Em caso de inadimplência por parte do CONTRATANTE, por prazo superior à 10 dias
+              5.17) Em caso de inadimplência por parte do CONTRATANTE, por prazo superior à 10 dias
               (Dez dias), contado da data do vencimento da obrigação, os serviços serão
               imediatamente suspensos, sendo facultado a CONTRATADA efetuar a rescisão contratual,
               prosseguindo em qualquer hipótese com a cobrança dos débitos em atraso, não se
@@ -624,16 +619,16 @@ export function ContractDocument({
               relação a clientes finais.
             </p>
             <p>
-              5.19) A CONTRATADA se reserva ao direito, em caso de inadimplência dos pagamentos
+              5.18) A CONTRATADA se reserva ao direito, em caso de inadimplência dos pagamentos
               vencidos com datas superiores a 30 dias (trinta dias), por parte do CONTRATANTE, a
               inserir seu nome nos Serviços de Proteção ao Crédito (SPC).
             </p>
             <p>
-              5.20) A CONTRATANTE poderá solicitar o cancelamento do contrato a qualquer momento,
+              5.19) A CONTRATANTE poderá solicitar o cancelamento do contrato a qualquer momento,
               desde que esteja adimplente com suas obrigações financeiras.
             </p>
             <p>
-              5.21) No caso da CONTRATANTE solicitar o cancelamento do contrato, a CONTRATADA
+              5.20) No caso da CONTRATANTE solicitar o cancelamento do contrato, a CONTRATADA
               disponibilizará o sistema apenas para fins de consulta pelo período solicitado pela
               CONTRATANTE. Pela responsabilidade jurídica sobre os dados armazenados, bem como o
               custo de armazenamento dos dados em nosso Data Center, será cobrada uma taxa mensal
@@ -642,17 +637,17 @@ export function ContractDocument({
             </p>
             {parcelasImplantacao > 1 ? (
               <p>
-                5.21.1) O valor da implantação de {formatCurrency(implValue)} será pago em{' '}
+                5.20.1) O valor da implantação de {formatCurrency(implValue)} será pago em{' '}
                 {parcelasImplantacao} parcelas de {formatCurrency(implValue / parcelasImplantacao)},
                 mediante boleto bancário.
               </p>
             ) : (
               <p>
-                5.21.1) O valor da implantação de {formatCurrency(implValue)} será pago à vista,
+                5.20.1) O valor da implantação de {formatCurrency(implValue)} será pago à vista,
                 mediante boleto bancário.
               </p>
             )}
-            <p>5.22) Valor Resumo:</p>
+            <p>5.21) Valor Resumo:</p>
           </div>
 
           <div className="overflow-x-auto my-4">
